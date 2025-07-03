@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 Names of Allah</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .names-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        .name-card {
+            background-color: var(--tertiary-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .name-arabic {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin: 0;
+        }
+        .name-transliteration {
+            font-size: 1.2rem;
+            font-weight: 500;
+            margin-top: 0.5rem;
+        }
+        .name-translation {
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+        .name-number {
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fa-solid-star-of-david"></i> Asma Ul Husna</h1>
+            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
+        </header>
+
+        <div id="names-container" class="names-grid">
+            <p>Loading the 99 Names of Allah...</p>
+        </div>
+    </div>
+
+    <script src="names.js"></script>
+</body>
+</html>

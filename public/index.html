@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .portal-container {
+            text-align: center;
+        }
+        .portal-link {
+            display: inline-block;
+            background-color: #3b82f6;
+            color: #ffffff;
+            padding: 20px 40px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-size: 1.5rem;
+            font-weight: 500;
+            transition: transform 0.2s, filter 0.2s;
+        }
+        .portal-link:hover {
+            transform: scale(1.05);
+            filter: brightness(1.1);
+        }
+        .portal-link i {
+            margin-right: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="portal-container">
+        <a href="/translator.html" class="portal-link">
+            <i class="fa-solid fa-language"></i> Launch Shaikh Translator
+        </a>
+        <a href="/prayertimes.html" class="portal-link" style="margin-top: 20px; background-color: #10b981;">
+            <i class="fa-solid fa-mosque"></i> Launch Prayer Times
+        </a>
+        <a href="/explorer.html" class="portal-link" style="margin-top: 20px; background-color: #8b5cf6;">
+            <i class="fa-solid fa-book-quran"></i> Launch Quran & Hadith Explorer
+        </a>
+    </div>
+</body>
+</html>
+

@@ -1,0 +1,16 @@
+[
+    { "code": "ID", "name": "Indonesia", "muslim_percent": 87.2 },
+    { "code": "PK", "name": "Pakistan", "muslim_percent": 96.5 },
+    { "code": "IN", "name": "India", "muslim_percent": 14.2 },
+    { "code": "BD", "name": "Bangladesh", "muslim_percent": 90.4 },
+    { "code": "NG", "name": "Nigeria", "muslim_percent": 53.5 },
+    { "code": "EG", "name": "Egypt", "muslim_percent": 92.3 },
+    { "code": "IR", "name": "Iran", "muslim_percent": 99.4 },
+    { "code": "TR", "name": "Turkey", "muslim_percent": 99.2 },
+    { "code": "SA", "name": "Saudi Arabia", "muslim_percent": 93.0 },
+    { "code": "GB", "name": "United Kingdom", "muslim_percent": 6.5 },
+    { "code": "FR", "name": "France", "muslim_percent": 8.8 },
+    { "code": "DE", "name": "Germany", "muslim_percent": 6.1 },
+    { "code": "US", "name": "United States", "muslim_percent": 1.1 },
+    { "code": "CN", "name": "China", "muslim_percent": 1.8 }
+]

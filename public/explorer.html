@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quran & Hadith Explorer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .explorer-container {
+            width: 100%;
+            max-width: 900px;
+        }
+        .search-container {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 10px;
+        }
+        #explorer-search-input {
+            flex-grow: 1;
+        }
+        #search-type-select {
+            width: 150px;
+        }
+        .content-area {
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .verse-item, .hadith-item {
+            background-color: var(--tertiary-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .verse-arabic {
+            font-size: 1.8rem;
+            text-align: right;
+            margin-bottom: 1rem;
+        }
+        .verse-translation, .hadith-english {
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+        .verse-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .verse-controls button, .verse-controls select {
+             background: var(--primary-bg);
+        }
+        .bookmark-btn.bookmarked {
+            color: var(--favorite-color);
+        }
+        .tafsir-details {
+            margin-top: 1rem;
+            background-color: var(--primary-bg);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+        }
+        .tafsir-details summary {
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .tafsir-text {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container explorer-container">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-book-quran"></i> Quran & Hadith Explorer</h1>
+            <p><a href="/index.html">← Back to Portal</a></p>
+        </header>
+
+        <div class="search-container">
+            <input type="search" id="explorer-search-input" placeholder="Search for 'patience', 'salah', etc...">
+            <select id="search-type-select">
+                <option value="semantic">Semantic Search</option>
+                <option value="keyword">Keyword Search</option>
+            </select>
+            <button id="search-btn"><i class="fa-solid fa-search"></i> Search</button>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="quran-panel"><i class="fa-solid fa-book-quran"></i> Quran</button>
+                <button class="tab-button" data-tab="hadith-panel"><i class="fa-solid fa-book"></i> Hadith</button>
+                <button class="tab-button" data-tab="bookmarks-panel"><i class="fa-solid fa-bookmark"></i> My Bookmarks</button>
+            </div>
+        </div>
+        
+        <div id="quran-panel" class="tab-content active">
+            <div id="quran-controls" class="content-controls" style="display:flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="surah-select" style="flex-grow: 1;"></select>
+                <select id="translation-select" style="flex-grow: 1;">
+                    <option value="en.sahih">Saheeh International</option>
+                </select>
+                <select id="qari-select" style="flex-grow: 1;">
+                    <option value="ar.alafasy">Mishary Rashid Alafasy</option>
+                    <option value="ar.husary">Mahmud Al-Husary</option>
+                </select>
+            </div>
+            <div id="quran-content-area" class="content-area">
+                </div>
+        </div>
+
+        <div id="hadith-panel" class="tab-content">
+             <div id="hadith-controls" class="content-controls" style="display:flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="hadith-collection-select" style="flex-grow: 1;"></select>
+            </div>
+            <div id="hadith-content-area" class="content-area">
+                 </div>
+        </div>
+        
+        <div id="bookmarks-panel" class="tab-content">
+             <div id="bookmarks-content-area" class="content-area">
+                 </div>
+        </div>
+    </div>
+
+    <audio id="recitation-player" style="display:none;"></audio>
+
+    <script src="explorer.js"></script>
+</body>
+</html>
