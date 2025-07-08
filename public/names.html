@@ -3,65 +3,190 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>99 Names of Allah</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>99 Names of Allah - Islamic Portal</title>
     <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        .page-header { text-align: center; margin-bottom: 2rem; }
-        .names-grid {
+        /* Specific styles for names.html */
+        .names-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Responsive grid for names */
             gap: 1.5rem;
+            padding: 1rem;
         }
+
         .name-card {
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            box-shadow: var(--shadow);
+            overflow: hidden; /* Ensures borders/shadows are contained */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .name-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.4);
+        }
+
+        .name-header {
             background-color: var(--tertiary-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
+            padding: 1rem;
+            cursor: pointer;
             display: flex;
-            flex-direction: column;
+            justify-content: space-between;
             align-items: center;
-            text-align: center;
+            border-bottom: 1px solid var(--border-color);
         }
-        .name-arabic {
-            font-size: 2.5rem;
-            color: var(--accent-color);
+
+        .name-header h3 {
             margin: 0;
+            font-size: 1.4rem;
+            color: var(--text-primary);
         }
-        .name-transliteration {
-            font-size: 1.2rem;
-            font-weight: 500;
-            margin-top: 0.5rem;
+        .name-header .name-transliteration {
+            font-size: 1rem;
+            color: var(--accent-color);
+            margin-left: 10px;
         }
-        .name-translation {
+
+        .name-content {
+            padding: 1rem;
+            display: none; /* Hidden by default, shown by JS when expanded */
             color: var(--text-secondary);
-            margin-top: 0.25rem;
+            font-size: 0.95rem;
         }
-        .name-number {
-            background-color: var(--accent-color);
-            color: white;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
+
+        .name-card.expanded .name-content {
+            display: block;
+        }
+
+        .name-header i {
+            transition: transform 0.3s ease;
+        }
+
+        .name-card.expanded .name-header i {
+            transform: rotate(90deg); /* Rotate arrow when expanded */
+        }
+
+        /* Tab styles for explanations/invocations */
+        .name-tabs {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+            margin-top: 1rem;
+        }
+        .name-tab-button {
+            background: none;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: color 0.3s, border-bottom-color 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        .name-tab-button:hover {
+            color: var(--text-primary);
+        }
+        .name-tab-button.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
             font-weight: bold;
+        }
+
+        .name-tab-content {
+            display: none;
+        }
+        .name-tab-content.active {
+            display: block;
+        }
+        .name-tab-content h4 {
+            color: var(--text-primary);
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .name-tab-content ul {
+            list-style: none;
+            padding: 0;
+        }
+        .name-tab-content li {
+            margin-bottom: 0.5rem;
+            padding-left: 10px;
+            border-left: 2px solid var(--border-color);
+        }
+
+        .language-switcher {
+            display: flex;
+            justify-content: flex-end;
             margin-bottom: 1rem;
         }
+        .language-switcher select {
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+        .is-unique-tag {
+            background-color: var(--success-color);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .names-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 <body>
-    <div class="container">
-        <header class="page-header">
-            <h1><i class="fa-solid-star-of-david"></i> Asma Ul Husna</h1>
-            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
-        </header>
+    <header>
+        <nav class="navbar">
+            <a href="index.html" class="logo">Islamic Portal</a>
+            <ul class="nav-links">
+                <li><a href="translator.html">Translator</a></li>
+                <li><a href="prayertimes.html">Prayer Times</a></li>
+                <li><a href="explorer.html">Explorer</a></li>
+                <li><a href="duas.html">Duas</a></li>
+                <li><a href="names.html">99 Names</a></li>
+                <li><a href="zakat.html">Zakat</a></li>
+                <li><a href="converter.html">Date Converter</a></li>
+                <li><a href="analytics.html">Analytics</a></li>
+                <li><a href="history.html">History</a></li>
+                </ul>
+            <div class="theme-toggle">
+                <input type="checkbox" id="theme-switch" class="theme-switch" />
+                <label for="theme-switch" class="theme-label"></label>
+            </div>
+        </nav>
+    </header>
 
-        <div id="names-container" class="names-grid">
-            <p>Loading the 99 Names of Allah...</p>
+    <main>
+        <div class="container">
+            <h2>The 99 Names of Allah</h2>
+            <div class="language-switcher">
+                <label for="explanation-lang-select">Explanation Language:</label>
+                <select id="explanation-lang-select">
+                    </select>
+            </div>
+            <div id="names-list" class="names-list">
+                <p id="loading-message">Loading Names...</p>
+                <p id="error-message" style="display:none; color:var(--danger-color);">Failed to load names. Please try again later.</p>
+            </div>
         </div>
-    </div>
+    </main>
 
+    <footer>
+        <p>&copy; 2025 Islamic Portal App. All rights reserved.</p>
+    </footer>
+
+    <script src="common.js"></script>
     <script src="names.js"></script>
 </body>
+</html>
+</html>
 </html>

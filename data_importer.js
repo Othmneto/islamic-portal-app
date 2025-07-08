@@ -1,84 +1,88 @@
-// data_importer.js - A one-time script to import Quran/Hadith data and generate embeddings.
+// translator-backend - full/data_importer.js
 require('dotenv').config();
-const fs = require('fs').promises;
+const mongoose = require('mongoose');
 const path = require('path');
-const { connectToDb } = require('./utils/db');
-const { pineconeIndex } = require('./text-to-speech');
-const { OpenAI } = require('openai');
+const fs = require('fs');
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const BATCH_SIZE = 100;
+const Dua = require('./models/Dua');
+const Name = require('./models/Name'); // Our updated Name blueprint
 
-async function getOrCreateCollection(db, collectionName) {
-    const collections = await db.listCollections({ name: collectionName }).toArray();
-    if (collections.length > 0) {
-        console.log(`Collection '${collectionName}' already exists. Clearing it for re-import.`);
-        await db.collection(collectionName).deleteMany({});
-    }
-    return db.collection(collectionName);
-}
+const duasFilePath = path.join(__dirname, 'duas.json');
+// Point to the new merged file for 99 Names
+const namesFilePath = path.join(__dirname, 'asmaa_001_to_099_merged_final.json'); // NEW PATH FOR NAMES FILE
 
-async function generateEmbeddings(texts) {
+const quranSourcePath = path.join(__dirname, 'data', 'quran_source.json');
+const hadithSourcePath = path.join(__dirname, 'data', 'hadith_source.json');
+
+
+async function importData() {
     try {
-        const response = await openai.embeddings.create({
-            model: "text-embedding-ada-002",
-            input: texts.map(t => t.replace(/\n/g, ' ')),
+        await mongoose.connect(process.env.MONGO_URI, {
+            dbName: process.env.DB_NAME,
         });
-        return response.data.map(data => data.embedding);
-    } catch (error) {
-        console.error("Error generating embeddings:", error);
-        throw error;
-    }
-}
+        console.log("✅ Data Importer: Connected to MongoDB Atlas via Mongoose.");
 
-async function runImport() {
-    console.log("Starting data import process...");
-    let db;
+        // --- Import Duas (No change here from previous step) ---
+        //if (fs.existsSync(duasFilePath)) {
+        //    const duasData = JSON.parse(fs.readFileSync(duasFilePath, 'utf8'));
+        //    console.log(`Found ${duasData.length} duas in ${duasFilePath}`);
+        //    await Dua.deleteMany({});
+        //    console.log("Cleared existing Duas collection.");
+        //    await Dua.insertMany(duasData);
+        //    console.log(`✅ Successfully imported ${duasData.length} duas to MongoDB.`);
+        // } else {
+        //    console.warn(`⚠️ Duas file not found at ${duasFilePath}. Skipping Dua import.`);
+        //}
 
-    try {
-        db = await connectToDb();
-        console.log("✅ Connected to MongoDB and Pinecone.");
+        // --- Import 99 Names (MODIFIED for new JSON structure) ---
+        if (fs.existsSync(namesFilePath)) {
+            const rawNamesData = JSON.parse(fs.readFileSync(namesFilePath, 'utf8'));
 
-        // --- Process Quran Data ---
-        console.log("\n--- Processing Quran Data ---");
-        // (Assuming this part is already done and commented out if not needed again)
-        // ... previous Quran import logic ...
-        console.log("Skipping Quran import as it's likely complete.");
+            // The JSON is an object with numeric keys, not an array.
+            // We need to convert it into an array of objects for insertMany.
+            const namesData = Object.values(rawNamesData).map((nameEntry, index) => {
+                // Ensure the 'id' field is present and correct, if it's not part of the object values directly
+                // Assuming 'id' is implicitly the key + 1, or that the objects themselves contain an ID.
+                // Based on your previous Name.js, the `id` property is needed.
+                // The asmaa_001_to_099_merged_final.json keys (1-99) seem to represent the id.
+                return {
+                    id: parseInt(Object.keys(rawNamesData)[index]), // Take the key as the ID
+                    name: nameEntry.name,
+                    transliteration: nameEntry.transliteration,
+                    explanations: nameEntry.explanations,
+                    is_unique_to_Allah: nameEntry.is_unique_to_Allah,
+                    invocation: nameEntry.invocation
+                };
+            });
 
+            console.log(`Found ${namesData.length} names in ${namesFilePath}`);
 
-        // --- NEW: Process Hadith Data ---
-        console.log("\n--- Processing Hadith Data ---");
-        const hadithCollection = await getOrCreateCollection(db, 'hadiths');
-        const hadithPineconeNamespace = pineconeIndex.namespace('hadiths');
-        
-        const hadithDataPath = path.join(__dirname, 'data', 'hadith_source.json');
-        const hadithData = JSON.parse(await fs.readFile(hadithDataPath, 'utf8'));
+            await Name.deleteMany({});
+            console.log("Cleared existing Names collection.");
 
-        for (let i = 0; i < hadithData.length; i += BATCH_SIZE) {
-            const batch = hadithData.slice(i, i + BATCH_SIZE);
-            console.log(`Processing Hadith batch ${i / BATCH_SIZE + 1}...`);
-
-            await hadithCollection.insertMany(batch);
-
-            const textsToEmbed = batch.map(hadith => `${hadith.text_english}\n${hadith.explanation}`);
-            const embeddings = await generateEmbeddings(textsToEmbed);
-
-            const vectors = batch.map((hadith, index) => ({
-                id: hadith._id,
-                values: embeddings[index],
-                metadata: { collection: hadith.collection_name, number: hadith.hadith_number }
-            }));
-            
-            await hadithPineconeNamespace.upsert(vectors);
+            await Name.insertMany(namesData);
+            console.log(`✅ Successfully imported ${namesData.length} names to MongoDB.`);
+        } else {
+            console.warn(`⚠️ Names file not found at ${namesFilePath}. Skipping Name import.`);
         }
-        console.log(`✅ Successfully imported and embedded ${hadithData.length} hadiths.`);
+
+        // --- (Existing or Future Quran/Hadith Import logic) ---
+        if (fs.existsSync(quranSourcePath)) {
+            // console.log(`Found Quran data in ${quranSourcePath}. This import is more complex`);
+        }
+        if (fs.existsSync(hadithSourcePath)) {
+            // console.log(`Found Hadith data in ${hadithSourcePath}. Your existing data_importer might handle this differently.`);
+        }
+
 
     } catch (error) {
-        console.error("❌ Migration failed:", error);
+        console.error("❌ Data Import failed:", error);
+        process.exit(1);
     } finally {
-        console.log("\nImport process finished.");
+        await mongoose.disconnect();
+        console.log("Data Importer: Disconnected from MongoDB.");
         process.exit(0);
     }
 }
 
-runImport();
+importData();
