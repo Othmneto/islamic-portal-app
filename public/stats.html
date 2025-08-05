@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ummah Statistics</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .stats-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background-color: var(--tertiary-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+        }
+        .stat-card h3 {
+            color: var(--accent-color);
+            margin-top: 0;
+            font-size: 1.2rem;
+        }
+        .stat-card .value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin: 1rem 0;
+        }
+        .stat-card .source {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+        .country-table-container {
+            margin-top: 2rem;
+            background-color: var(--tertiary-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        #country-stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        #country-stats-table th, #country-stats-table td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #country-stats-table th { color: var(--accent-color); }
+        #country-stats-table td img { width: 30px; margin-right: 10px; vertical-align: middle; border: 1px solid var(--border-color); }
+    </style>
+</head>
+<body>
+    <div class="container" style="max-width: 1000px;">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-globe"></i> Ummah Statistics</h1>
+            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
+        </header>
+
+        <div id="stats-summary-container" class="stats-summary-grid">
+            <p>Loading summary...</p>
+        </div>
+
+        <div class="country-table-container">
+            <h3>Population by Country (Top Matches)</h3>
+            <table id="country-stats-table">
+                <thead>
+                    <tr>
+                        <th>Country</th>
+                        <th>Est. Muslim Population</th>
+                        <th>Total Population</th>
+                    </tr>
+                </thead>
+                <tbody id="country-table-body">
+                    <tr><td colspan="3">Loading country data...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="stats.js"></script>
+</body>
+</html>

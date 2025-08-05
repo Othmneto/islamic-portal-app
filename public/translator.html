@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Shaikh Voice Translator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script defer src="translator.js"></script>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="container">
+        <a href="/analytics.html" class="dashboard-link">📊 Dashboard</a>
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="theme-toggle"><input type="checkbox" id="theme-toggle" /><span class="slider round"></span></label>
+        </div>
+        <h1>🎙️ Shaikh Voice Translator</h1>
+        <p>Your intelligent, context-aware translation assistant.</p>
+
+        <div class="language-input-area">
+            <div class="language-selection-group">
+                <div class="language-row">
+                    <label for="fromLang">Translate From:</label>
+                    <select id="fromLang">
+                        <option value="auto">Auto-Detect</option>
+                        <option>English</option><option>Arabic</option><option>French</option><option>German</option><option>Urdu</option><option>Spanish</option><option>Hindi</option><option>Russian</option><option>Japanese</option><option>Chinese</option>
+                    </select>
+                </div>
+                 <div class="language-row">
+                    <label for="voice-select">Voice Persona:</label>
+                    <select id="voice-select">
+                        <option value="21m00Tcm4TlvDq8ikWAM">Arnold (Narrative)</option>
+                        <option value="2EiwWnXFnvU5JabPnv8n">Adam (Deep American)</option>
+                        <option value="5Q0t7uMcjvnagumLfvZi">Paul (Raspy)</option>
+                        <option value="ThT5KcBeY6CarfUdcANb">Thomas (Calm British)</option>
+                        <option value="N2lVSenMkNgVscIPy6TR">Giovanni (Storyteller)</option>
+                    </select>
+                </div>
+                <div class="language-row full-width">
+                    <label for="toLanguagesDisplay">Translate To:</label>
+                    <div id="toLanguagesDisplay" class="to-languages-display placeholder">Select target language(s)</div>
+                    <div id="toLangDropdown" class="language-selection-dropdown"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="live-speech-panel">Live Speech</button>
+                <button class="tab-button" data-tab="written-text-panel">Written Text</button>
+                <button class="tab-button" data-tab="file-upload-panel">File Upload</button>
+                <button class="tab-button" data-tab="history-panel">
+                    <i class="fa-solid fa-clock-rotate-left"></i> History
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content">
+            <div id="live-speech-panel" class="tab-panel active">
+                <h2>Live Speech</h2>
+                <p class="panel-subtitle">Defaults to Auto-Detect. Select a language for specific words.</p>
+                <button id="mic-button">🔵 Start Listening</button>
+                <p id="transcript">Transcript: ...</p>
+            </div>
+            <div id="written-text-panel" class="tab-panel">
+                <h2>Written Text</h2>
+                <div class="text-translation-area">
+                    <textarea id="text-input" placeholder="Type text to translate..."></textarea>
+                    <button id="text-translate-btn">Translate Text</button>
+                </div>
+            </div>
+            <div id="file-upload-panel" class="tab-panel">
+                <h2>File Upload</h2>
+                <form id="upload-form" class="file-upload-form">
+                    <input type="file" id="audio-file-input" name="audioBlob" accept="audio/*,video/*">
+                    <button type="submit">Upload & Translate</button>
+                </form>
+            </div>
+            <div id="history-panel" class="tab-panel">
+                <div id="history-container">
+                    <div class="history-header">
+                        <h2 id="history-title">All Translations</h2>
+                        <div>
+                            <button id="export-csv-btn" class="export-btn">Export CSV</button>
+                            <button id="export-pdf-btn" class="export-btn">Export PDF</button>
+                        </div>
+                    </div>
+                    <div class="history-filters">
+                        <input type="search" id="history-search" placeholder="Search history...">
+                        <button id="favorites-toggle-btn" title="Show Favorites Only"><i class="fa-regular fa-star"></i> Favorites</button>
+                    </div>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <hr>
+
+        <!-- THIS IS THE CONTAINER FOR THE LATEST TRANSLATION -->
+        <div id="latest-translation-container"></div>
+    </div>
+    
+    <div id="notification"></div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Duas & Azkar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .dua-card {
+            background-color: var(--tertiary-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        .dua-card h3 {
+            color: var(--accent-color);
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .dua-arabic {
+            font-size: 1.8rem;
+            text-align: right;
+            margin: 1rem 0;
+            line-height: 2.5rem;
+        }
+        .dua-transliteration, .dua-translation {
+            font-style: italic;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        .dua-translation {
+            font-style: normal;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-book-open"></i> Daily Duas & Azkar</h1>
+            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
+        </header>
+
+        <div id="duas-container">
+            <p>Loading duas...</p>
+        </div>
+    </div>
+
+    <script src="duas.js"></script>
+</body>
+</html>

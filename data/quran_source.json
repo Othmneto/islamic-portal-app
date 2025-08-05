@@ -1,0 +1,67 @@
+[
+  {
+    "_id": "1:1",
+    "surah_id": 1,
+    "verse_id": 1,
+    "text_arabic": "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ",
+    "translations": [
+      { "lang": "en", "author": "Saheeh International", "text": "In the name of Allah, the Entirely Merciful, the Especially Merciful." },
+      { "lang": "fr", "author": "Muhammad Hamidullah", "text": "Au nom d'Allah, le Tout Miséricordieux, le Très Miséricordieux." }
+    ],
+    "tafsirs": [
+      { "author": "Ibn Kathir", "text": "In the Name of Allah, the Most Gracious, the Most Merciful. These are the first words of the Quran and they are said before every action to seek blessings from Allah." }
+    ]
+  },
+  {
+    "_id": "1:2",
+    "surah_id": 1,
+    "verse_id": 2,
+    "text_arabic": "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ",
+    "translations": [
+      { "lang": "en", "author": "Saheeh International", "text": "[All] praise is [due] to Allah, Lord of the worlds." },
+      { "lang": "fr", "author": "Muhammad Hamidullah", "text": "Louange à Allah, Seigneur de l'univers." }
+    ],
+    "tafsirs": [
+      { "author": "Ibn Kathir", "text": "All praise and thanks are due to Allah, the Lord of all that exists." }
+    ]
+  },
+  {
+    "_id": "1:3",
+    "surah_id": 1,
+    "verse_id": 3,
+    "text_arabic": "الرَّحْمَٰنِ الرَّحِيمِ",
+    "translations": [
+      { "lang": "en", "author": "Saheeh International", "text": "The Entirely Merciful, the Especially Merciful." },
+      { "lang": "fr", "author": "Muhammad Hamidullah", "text": "Le Tout Miséricordieux, le Très Miséricordieux." }
+    ],
+    "tafsirs": [
+      { "author": "Ibn Kathir", "text": "He is the source of all mercy, both in this life and the hereafter." }
+    ]
+  },
+  {
+    "_id": "1:4",
+    "surah_id": 1,
+    "verse_id": 4,
+    "text_arabic": "مَالِكِ يَوْمِ الدِّينِ",
+    "translations": [
+      { "lang": "en", "author": "Saheeh International", "text": "Sovereign of the Day of Recompense." },
+      { "lang": "fr", "author": "Muhammad Hamidullah", "text": "Maître du Jour de la rétribution." }
+    ],
+    "tafsirs": [
+      { "author": "Ibn Kathir", "text": "He is the sole owner and judge on the Day of Judgment." }
+    ]
+  },
+  {
+    "_id": "1:5",
+    "surah_id": 1,
+    "verse_id": 5,
+    "text_arabic": "إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+    "translations": [
+      { "lang": "en", "author": "Saheeh International", "text": "It is You we worship and You we ask for help." },
+      { "lang": "fr", "author": "Muhammad Hamidullah", "text": "C'est Toi [Seul] que nous adorons, et c'est Toi [Seul] dont nous implorons secours." }
+    ],
+    "tafsirs": [
+      { "author": "Ibn Kathir", "text": "This verse establishes the core of worship: submission to Allah alone and seeking help only from Him." }
+    ]
+  }
+]

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Date Converter</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-hijri/2.1.2/moment-hijri.min.js"></script>
+    <style>
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        .converter-section {
+            background-color: var(--tertiary-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        .converter-section h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.75rem;
+        }
+        .input-group { margin-bottom: 1rem; }
+        .input-group label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 10px;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        .hijri-inputs { display: flex; gap: 1rem; }
+        .result-display {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background-color: var(--primary-bg);
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        #convert-btn {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1rem;
+            background-color: var(--accent-color);
+            border: none;
+            cursor: pointer;
+            margin-top: 1rem;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-sync-alt"></i> Date Converter</h1>
+            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
+        </header>
+
+        <div class="converter-section">
+            <h3>Gregorian to Hijri</h3>
+            <div class="input-group">
+                <label for="gregorian-date">Select a Gregorian Date</label>
+                <input type="date" id="gregorian-date">
+            </div>
+            <div id="g-to-h-result" class="result-display">--</div>
+        </div>
+
+        <div class="converter-section">
+            <h3>Hijri to Gregorian</h3>
+            <div class="input-group">
+                <label>Enter a Hijri Date</label>
+                <div class="hijri-inputs">
+                    <input type="number" id="hijri-day" placeholder="Day (DD)" min="1" max="30">
+                    <input type="number" id="hijri-month" placeholder="Month (MM)" min="1" max="12">
+                    <input type="number" id="hijri-year" placeholder="Year (YYYY)">
+                </div>
+            </div>
+            <div id="h-to-g-result" class="result-display">--</div>
+        </div>
+    </div>
+    <script src="converter.js"></script>
+</body>
+</html>

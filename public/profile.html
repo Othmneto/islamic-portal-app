@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <header>
+        </header>
+    <main class="container">
+        <h2>My Profile</h2>
+
+        <section id="location-settings">
+            <h3>Prayer Time Location</h3>
+            <p>Your currently saved location is: <strong id="current-location">Not set</strong></p>
+            <div class="form-group">
+                <label for="city-search">Search for your city:</label>
+                <input type="text" id="city-search" placeholder="e.g., Cairo, Egypt">
+                <button id="search-button">Search</button>
+            </div>
+            <div id="search-results"></div>
+            <div id="profile-message"></div>
+        </section>
+
+        <a href="settings.html">Manage Notification Toggles</a>
+    </main>
+    <footer>
+        </footer>
+    <script src="profile.js"></script>
+</body>
+</html>

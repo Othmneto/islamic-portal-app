@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zakat Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        #zakat-form-container, #zakat-results-container {
+            background-color: var(--secondary-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+        .accordion {
+            background-color: var(--tertiary-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            transition: 0.4s;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .accordion:after {
+            content: '\002B'; /* Plus sign */
+            color: var(--text-secondary);
+            font-weight: bold;
+            float: right;
+        }
+        .accordion.active:after { content: "\2212"; }
+        .panel {
+            padding: 0 18px;
+            background-color: var(--secondary-bg);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .panel-content { padding: 1.5rem 0.5rem; }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .input-group label {
+            flex: 1 1 200px;
+            text-align: left;
+            color: var(--text-secondary);
+        }
+        .input-group input, .input-group select {
+            flex: 2 1 300px;
+            padding: 10px;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        .sub-group {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+             gap: 1rem;
+        }
+        .dynamic-row { display: flex; gap: 1rem; margin-bottom: 0.5rem; align-items: center; }
+        .dynamic-row input { flex-grow: 1; }
+        .dynamic-add-btn, .dynamic-remove-btn { font-size: 1.5rem; cursor: pointer; color: var(--accent-color); padding: 0 5px; }
+        .dynamic-remove-btn { color: var(--danger-color); }
+        #calculate-btn, #recalculate-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background-color: #59771D; /* Color from reference site */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 2rem;
+            color: white;
+        }
+        .results-summary { list-style-type: none; padding: 0; margin-top: 1rem; }
+        .results-summary li { display: flex; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+        .results-summary li:last-child { border-bottom: none; }
+        .results-summary .final-zakat { font-size: 1.5rem; font-weight: bold; text-align: center; display: block; background-color: var(--accent-color); color: white; padding: 1rem; border-radius: 8px; }
+        .result-value { display: flex; gap: 0.5rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-calculator"></i> Zakat Calculator</h1>
+            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
+        </header>
+
+        <div id="zakat-form-container">
+            <div class="zakatcontainer">
+                <div class="input-group">
+                    <label for="currency-select">Currency</label>
+                    <select id="currency-select">
+                        <option value="USD">US Dollar (USD)</option>
+                        <option value="AED" selected>UAE Dirham (AED)</option>
+                        <option value="EGP">Egyptian Pound (EGP)</option>
+                        <option value="SAR">Saudi Riyal (SAR)</option>
+                        <option value="GBP">British Pound (GBP)</option>
+                        <option value="EUR">Euro (EUR)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="nisab-standard">Nisab Standard</label>
+                    <select id="nisab-standard">
+                        <option value="silver">Silver (if you have more than 595g)</option>
+                        <option value="gold">Gold (if you have more than 85g)</option>
+                    </select>
+                </div>
+                <div class="input-group" id="silver-price-group">
+                    <label for="silver-price">Price per gram of Silver</label>
+                    <input type="number" id="silver-price" placeholder="Enter current price" step="any">
+                </div>
+                <div class="input-group" id="gold-price-group" style="display: none;">
+                    <label for="gold-price">Price per gram of Gold (24k)</label>
+                    <input type="number" id="gold-price" placeholder="Enter current price" step="any">
+                </div>
+            </div>
+            <div class="zakatcontainer">
+                 <div class="input-group">
+                    <label for="zakat-year">Zakat Year</label>
+                    <select id="zakat-year"><option value="hijri">Hijri (rate: 2.5%)</option><option value="gregorian">Gregorian (rate: 2.577%)</option></select>
+                </div>
+            </div>
+
+            <button class="accordion">Cash</button>
+            <div class="panel"><div class="panel-content"><div class="input-group"><label>Cash & Bank Balances</label><input type="number" id="cash-assets" placeholder="0.00" step="any"></div></div></div>
+
+            <button class="accordion">Merchandise</button>
+            <div class="panel"><div class="panel-content"><div class="input-group"><label>Value of Business Merchandise/Stock</label><input type="number" id="merchandise" placeholder="0.00" step="any"></div></div></div>
+
+            <button class="accordion">Debts (Receivable/Payable)</button>
+            <div class="panel"><div class="panel-content">
+                <div class="input-group"><label>Debts owed TO YOU (Receivables)</label><input type="number" id="receivables" placeholder="0.00" step="any"></div>
+                <div class="input-group"><label>Debts YOU OWE (Liabilities)</label><input type="number" id="liabilities" placeholder="0.00" step="any"></div>
+            </div></div>
+            
+            <button class="accordion">Gold</button>
+            <div class="panel"><div class="panel-content sub-group">
+                <div class="input-group"><label>Gold 24k (grams)</label><input type="number" id="gold-24" placeholder="0" step="any"></div>
+                <div class="input-group"><label>Gold 22k (grams)</label><input type="number" id="gold-22" placeholder="0" step="any"></div>
+                <div class="input-group"><label>Gold 21k (grams)</label><input type="number" id="gold-21" placeholder="0" step="any"></div>
+                <div class="input-group"><label>Gold 18k (grams)</label><input type="number" id="gold-18" placeholder="0" step="any"></div>
+            </div></div>
+
+            <button class="accordion">Silver</button>
+            <div class="panel"><div class="panel-content"><div class="input-group"><label>Silver (grams)</label><input type="number" id="silver-grams" placeholder="0" step="any"></div></div></div>
+            
+            <button class="accordion">Shares</button>
+            <div class="panel"><div class="panel-content" id="shares-container">
+                <div class="dynamic-row"><input type="text" placeholder="Name of Stock/Share..."><input type="number" placeholder="No. of Shares" step="any"><input type="number" placeholder="Price per Share" step="any"><span class="dynamic-add-btn" data-type="shares">+</span></div>
+            </div></div>
+            
+            <button class="accordion">Investment Funds</button>
+            <div class="panel"><div class="panel-content" id="funds-container">
+                <div class="dynamic-row"><input type="text" placeholder="Name of Fund..."><input type="number" placeholder="No. of Units" step="any"><input type="number" placeholder="Price per Unit" step="any"><span class="dynamic-add-btn" data-type="funds">+</span></div>
+            </div></div>
+
+            <button id="calculate-btn">Show Zakat Result</button>
+        </div>
+
+        <div id="zakat-results-container" style="display: none;">
+             <h3 style="text-align:center; color: var(--accent-color);">Zakat Calculation Summary</h3>
+             <ul class="results-summary">
+                <li><span>Nisab Threshold</span><span class="result-value"><span id="result-nisab">0.00</span> <span class="result-currency"></span></span></li>
+                <li><span>Total Zakatable Wealth</span><span class="result-value"><span id="result-wealth">0.00</span> <span class="result-currency"></span></span></li>
+                <li class="final-zakat" id="final-zakat-box"></li>
+             </ul>
+             <button id="recalculate-btn">Edit Values</button>
+        </div>
+    </div>
+    <script src="zakat.js"></script>
+</body>
+</html>
