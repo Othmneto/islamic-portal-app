@@ -1,27 +1,53 @@
+// public/settings.js
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('notification-settings-form');
     const messageDiv = document.getElementById('settings-message');
-    const token = localStorage.getItem('token');
+    // Ensure you are storing the auth token in localStorage upon login
+    const token = localStorage.getItem('authToken');
 
-    // Function to populate the form with user's current settings
+    const showMessage = (text, type) => {
+        messageDiv.textContent = text;
+        messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+        setTimeout(() => messageDiv.textContent = '', 3000);
+    };
+
+    // Fetches current settings and populates the form
     async function loadSettings() {
-        const response = await fetch('/api/user/preferences', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const prefs = await response.json();
-
-        // Populate prayer time checkboxes
-        for (const prayer in prefs.prayerReminders) {
-            form.elements[prayer].checked = prefs.prayerReminders[prayer];
+        if (!token) {
+            showMessage('You must be logged in to view settings.', 'error');
+            return;
         }
-        // Populate announcements checkbox
-        form.elements.specialAnnouncements.checked = prefs.specialAnnouncements;
+        try {
+            const response = await fetch('/api/user/preferences', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) throw new Error('Failed to load settings.');
+
+            const prefs = await response.json();
+            if (prefs.prayerReminders) {
+                for (const prayer in prefs.prayerReminders) {
+                    if (form.elements[prayer]) {
+                        form.elements[prayer].checked = prefs.prayerReminders[prayer];
+                    }
+                }
+            }
+            if (form.elements.specialAnnouncements) {
+                form.elements.specialAnnouncements.checked = prefs.specialAnnouncements;
+            }
+        } catch (error) {
+            showMessage(error.message, 'error');
+        }
     }
 
-    // Function to save the user's updated settings
+    // Handles form submission to save updated settings
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        messageDiv.textContent = 'Saving...';
+        if (!token) {
+            showMessage('You must be logged in to save settings.', 'error');
+            return;
+        }
+        showMessage('Saving...', 'info');
 
         const updatedPrefs = {
             prayerReminders: {
@@ -34,28 +60,22 @@ document.addEventListener('DOMContentLoaded', () => {
             specialAnnouncements: form.elements.specialAnnouncements.checked,
         };
 
-        const response = await fetch('/api/user/preferences', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ notificationPreferences: updatedPrefs })
-        });
+        try {
+            const response = await fetch('/api/user/preferences', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ notificationPreferences: updatedPrefs })
+            });
 
-        if (response.ok) {
-            messageDiv.textContent = 'Settings saved successfully!';
-            messageDiv.className = 'success-message';
-        } else {
-            messageDiv.textContent = 'Failed to save settings.';
-            messageDiv.className = 'error-message';
+            if (!response.ok) throw new Error('Failed to save settings.');
+            showMessage('Settings saved successfully!', 'success');
+        } catch (error) {
+            showMessage(error.message, 'error');
         }
     });
 
-    // Load the settings when the page loads
-    if (token) {
-        loadSettings();
-    } else {
-        messageDiv.textContent = 'You must be logged in to manage settings.';
-    }
+    loadSettings();
 });

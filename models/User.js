@@ -1,31 +1,27 @@
 // translator-backend/models/User.js
 
 const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs'); // For securely hashing passwords
+const bcrypt = require('bcryptjs');
 
-// Define the structure of a User in our database
 const UserSchema = new mongoose.Schema({
-    // User's email address (must be unique)
     email: {
         type: String,
         required: true,
         unique: true,
-        lowercase: true, // Store emails in lowercase
+        lowercase: true,
         match: [/.+@.+\..+/, 'Please use a valid email address']
     },
-    // User's password (will be stored as a scrambled hash)
     password: {
         type: String,
         required: true,
         minlength: 6
     },
-    // Optional username for display purposes
     username: {
         type: String,
         unique: true,
-        sparse: true // Allows null values
+        sparse: true
     },
-    // --- NEW: Notification Preferences ---
+    // --- Standardized Notification Preferences ---
     notificationPreferences: {
         prayerReminders: {
             fajr: { type: Boolean, default: true },
@@ -39,24 +35,23 @@ const UserSchema = new mongoose.Schema({
             default: true,
         },
     },
-    // --- NEW: User Location for Prayer Time Calculations ---
+    // --- Standardized User Location ---
     location: {
         city: String,
         country: String,
+        // Use 'lat' and 'lon' consistently
         lat: Number,
         lon: Number,
     },
-    // User's general application preferences (e.g., default language, theme preference)
+    // --- Other User Data ---
     preferences: {
         type: Object,
         default: {}
     },
-    // An array to store references to their bookmarked Quran verses or Hadiths
     bookmarks: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Bookmark'
     }],
-    // An array to store authentication history/sessions
     loginAttempts: [{
         timestamp: { type: Date, default: Date.now },
         ipAddress: String,
@@ -64,12 +59,10 @@ const UserSchema = new mongoose.Schema({
         success: Boolean
     }]
 }, {
-    timestamps: true // Adds `createdAt` and `updatedAt` fields automatically
+    timestamps: true
 });
 
-// --- Mongoose Middleware (Actions before saving to database) ---
-
-// This code runs BEFORE a user is saved to the database to hash the password.
+// Hash password before saving
 UserSchema.pre('save', async function(next) {
     if (!this.isModified('password')) {
         return next();
@@ -83,14 +76,11 @@ UserSchema.pre('save', async function(next) {
     }
 });
 
-// --- Instance Method (Method available on a User object) ---
-
-// This method compares a candidate password with the securely hashed password in the database.
+// Method to compare passwords
 UserSchema.methods.comparePassword = async function(candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Create the Mongoose model from the schema
 const User = mongoose.model('User', UserSchema);
 
 module.exports = User;

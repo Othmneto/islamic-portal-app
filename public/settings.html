@@ -4,21 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notification Settings</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+    <link rel="stylesheet" href="style.css"> </head>
 <body>
     <div class="container">
         <h2>Notification Settings</h2>
         <form id="notification-settings-form">
             <h4>Prayer Reminders</h4>
-            <label><input type="checkbox" name="fajr"> Fajr</label><br>
-            <label><input type="checkbox" name="dhuhr"> Dhuhr</label><br>
-            <label><input type="checkbox" name="asr"> Asr</label><br>
-            <label><input type="checkbox" name="maghrib"> Maghrib</label><br>
-            <label><input type="checkbox" name="isha"> Isha</label><br>
+            <div class="form-group">
+                <label><input type="checkbox" name="fajr"> Fajr</label><br>
+                <label><input type="checkbox" name="dhuhr"> Dhuhr</label><br>
+                <label><input type="checkbox" name="asr"> Asr</label><br>
+                <label><input type="checkbox" name="maghrib"> Maghrib</label><br>
+                <label><input type="checkbox" name="isha"> Isha</label><br>
+            </div>
         
             <h4>Announcements</h4>
-            <label><input type="checkbox" name="specialAnnouncements"> Special Announcements</label><br>
+            <div class="form-group">
+                <label><input type="checkbox" name="specialAnnouncements"> Special Announcements</label><br>
+            </div>
         
             <br>
             <button type="submit">Save Settings</button>

@@ -1,72 +1,80 @@
+// public/login.js
+// Handles login, saves JWT in localStorage under both "authToken" and "token",
+// and triggers push subscription init safely.
+
 document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    const loginMessage = document.getElementById('login-message');
+  const loginForm = document.getElementById('login-form');
+  const loginMessage = document.getElementById('login-message');
 
-    // Function to display messages (success or error)
-    function displayMessage(message, isSuccess = false) {
-        if (loginMessage) {
-            loginMessage.textContent = message;
-            loginMessage.className = isSuccess ? 'success-message' : 'error-message';
-        } else {
-            console.warn('Login message element not found, displaying in console:', message);
-        }
+  function displayMessage(message, isSuccess = false) {
+    if (loginMessage) {
+      loginMessage.textContent = message;
+      loginMessage.className = isSuccess ? 'success-message' : 'error-message';
+    } else {
+      console.warn('Login message element not found:', message);
     }
+  }
 
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (event) => {
-            event.preventDefault(); // Stop the browser from refreshing
+  async function handleLogin(e) {
+    e.preventDefault();
 
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
+    const emailEl = document.getElementById('login-email');
+    const passEl = document.getElementById('login-password');
 
-            displayMessage('Logging in...', false);
+    const email = emailEl ? emailEl.value : '';
+    const password = passEl ? passEl.value : '';
 
-            try {
-                // Send the login data to our backend API
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email, password }),
-                });
+    displayMessage('Logging in...');
 
-                const data = await response.json();
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
 
-                if (response.ok) { // Check for a successful HTTP status code (2xx)
-                    displayMessage(data.msg + '. Redirecting...', true);
+      const data = await res.json().catch(() => ({}));
 
-                    if (data.token) {
-                        // Store the token in local storage for authenticated requests
-                        localStorage.setItem('token', data.token);
+      if (!res.ok) {
+        const msg = data?.errors
+          ? data.errors.map(e => e.msg).join(', ')
+          : (data?.msg || res.statusText || 'Login failed');
+        displayMessage(msg);
+        return;
+      }
 
-                        // --- NEW: INITIATE PUSH NOTIFICATION SUBSCRIPTION ---
-                        // This function is defined in push-client.js
-                        // It will check for permission and subscribe the user if needed.
-                        if (typeof initPushNotifications === 'function') {
-                            initPushNotifications();
-                        } else {
-                            console.error('initPushNotifications function not found. Make sure push-client.js is loaded.');
-                        }
-                    }
+      // Store token under BOTH keys so all code paths work
+      const token = data.token || data.accessToken || data.jwt;
+      if (token) {
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('token', token);
+      } else {
+        console.warn('Login response had no token field.');
+      }
 
-                    // Redirect to the main page or dashboard after a short delay
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 1500);
+      displayMessage((data.msg || 'Logged in') + '. Redirecting...', true);
 
-                } else {
-                    // Handle errors from the backend (e.g., invalid credentials)
-                    const errorMessage = data.errors 
-                                       ? data.errors.map(err => err.msg).join(', ') 
-                                       : (data.msg || 'Login failed. Please check your credentials.');
-                    displayMessage(errorMessage);
-                }
-            } catch (error) {
-                // Handle network errors or issues with the fetch itself
-                console.error('Error during login:', error);
-                displayMessage('An unexpected network error occurred. Please try again later.');
-            }
-        });
+      // Trigger push init if available (supports either function name)
+      const init =
+        (typeof window.initPushNotifications === 'function' && window.initPushNotifications) ||
+        (typeof window.initializePushNotifications === 'function' && window.initializePushNotifications);
+
+      if (init) {
+        try { await init(); } catch (e) { console.warn('Push init failed:', e); }
+      }
+
+      // Redirect home (adjust if your route differs)
+      setTimeout(() => { window.location.href = '/'; }, 800);
+
+    } catch (err) {
+      console.error('Error during login:', err);
+      displayMessage('Network error. Please try again.');
     }
+  }
+
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  } else {
+    console.warn('login-form not found in DOM.');
+  }
 });

@@ -1,12 +1,17 @@
-const { Queue } = require('bullmq');
-const { env } = require('../config'); // Use our validated Zod config
+// translator-backend/queues/notificationQueue.js
 
-// Defines a queue named 'notifications' that uses your Redis connection
-const notificationQueue = new Queue('notifications', {
-  connection: { 
-    host: env.REDIS_HOST, 
-    port: env.REDIS_PORT,
-  }
-});
+const { Queue } = require('bullmq');
+const { env } = require('../config'); // zod-validated env
+
+// Centralized Redis connection (password/TLS optional for future hardening)
+const connection = {
+  host: env.REDIS_HOST,
+  port: Number(env.REDIS_PORT),
+};
+
+if (env.REDIS_PASSWORD) connection.password = env.REDIS_PASSWORD;
+if (String(env.REDIS_TLS || '').toLowerCase() === 'true') connection.tls = {};
+
+const notificationQueue = new Queue('notifications', { connection });
 
 module.exports = { notificationQueue };
