@@ -1,8 +1,13 @@
-// public/prayer-time.js — stable, per-prayer alerts (NO OFFSETS), exact-time scheduling
-// - Hides audio controls if /audio/adhan.mp3 is missing
-// - Resolves method/madhab "auto" on the client to avoid server 500s
-// - Push-ready (Service Worker) with exact-time scheduling on the server
+// Register Service Worker for Push Notifications
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(registration => {
+    console.log('Service Worker registered successfully.');
+  }).catch(error => {
+    console.error('Service Worker registration failed:', error);
+  });
+}
 
+// --- existing code of prayer-time.js continues below ---
 document.addEventListener('DOMContentLoaded', async () => {
   // -----------------------------
   // STATE

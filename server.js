@@ -44,36 +44,29 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: env.CLIENT_ORIGIN || 'http://localhost:3000',
-    methods: ['GET', 'POST'],
     credentials: true,
   },
 });
 require('./websockets/socketManager')(io);
 
-// Ensure required directories exist
-const audioDir = path.join(__dirname, 'public/audio');
-const uploadDir = path.join(__dirname, 'uploads');
-if (!fs.existsSync(audioDir)) fs.mkdirSync(audioDir, { recursive: true });
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// ----- Global Middleware -----
+app.use(cookieParser()); // Must be before any route that needs cookies
 
-// ----- Security/CORS/body -----
-app.disable('x-powered-by');
-app.set('trust proxy', 1); // allow secure cookies behind proxies in prod
+// Enable Helmet with a secure Content Security Policy
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "script-src": ["'self'", "https://cdnjs.cloudflare.com"],
+      "style-src": ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
+      "font-src": ["'self'", "https://cdnjs.cloudflare.com", "https://fonts.gstatic.com"],
+      "connect-src": ["'self'", "https://kaabah-ai-model-1-0-0.onrender.com"],
+      "img-src": ["'self'", "data:"], // data: is for inline SVGs or base64 images
+    },
+  },
+}));
 
-// IMPORTANT: do NOT enable CSP here unless you add nonces to inline scripts.
-// (Your admin page has inline JS; CSP 'script-src self' would block it.)
-app.use(
-  helmet({
-    contentSecurityPolicy: false,
-    crossOriginOpenerPolicy: { policy: 'same-origin' },
-    crossOriginResourcePolicy: { policy: 'same-origin' },
-  })
-);
-
-app.use(cookieParser(env.COOKIE_SECRET));
-
-// If you’re serving the frontend from this same server, CORS isn’t needed.
-// Keep it enabled for dev tools or if your UI is on another origin.
+// CORS must be enabled for dev tools or if your UI is on another origin.
 app.use(
   cors({
     origin: env.CLIENT_ORIGIN || 'http://localhost:3000',
@@ -116,10 +109,10 @@ async function startServer() {
     console.log('✅ Successfully connected to MongoDB via Mongoose.');
 
     server.listen(env.PORT, () => {
-      console.log(`🚀 Server running at http://localhost:${env.PORT}`);
+      console.log(`🚀 Server running on port ${env.PORT}...`);
     });
-  } catch (error) {
-    console.error('❌ Failed to start server due to DB error:', error);
+  } catch (err) {
+    console.error('❌ Database connection failed:', err);
     process.exit(1);
   }
 }

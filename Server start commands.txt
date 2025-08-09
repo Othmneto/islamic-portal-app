@@ -3,3 +3,13 @@ docker start my-redis-server
 node server.js
 
 pm2 start ecosystem.config.js
+
+
+
+
+git init
+git add .
+git commit -m "Updated project with prayer notification patch"
+git branch -M main
+git remote add origin https://github.com/Othmneto/islamic-portal-app.git
+git push --force-with-lease origin main

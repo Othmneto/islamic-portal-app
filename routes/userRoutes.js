@@ -1,78 +1,55 @@
-// translator-backend/routes/userRoutes.js
-
+// routes/userRoutes.js
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/auth');
+const { requireSession, requireAuth } = require('../middleware/authMiddleware');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
-// GET /api/user/preferences - Fetches user's notification settings
-router.get('/preferences', authMiddleware, async (req, res, next) => {
-    try {
-        const user = await User.findById(req.user.id).select('notificationPreferences');
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found.' });
-        }
-        res.json(user.notificationPreferences);
-    } catch (error) {
-        logger.error('Failed to get user preferences', { userId: req.user.id, error });
-        next(error);
-    }
+// This uses requireAuth (Bearer token), but could use requireSession (cookie) too
+router.put('/location', requireAuth, async (req, res) => {
+  try {
+    const { city, country, lat, lng } = req.body;
+    await User.findByIdAndUpdate(req.user.id, {
+      $set: {
+        'location.city': city,
+        'location.country': country,
+        'location.coordinates': [lng, lat] // GeoJSON is [longitude, latitude]
+      }
+    });
+    res.json({ success: true, message: 'Location updated' });
+  } catch (error) {
+    logger.error('Error updating user location:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
 });
 
-// PUT /api/user/preferences - Updates user's notification settings
-router.put('/preferences', authMiddleware, async (req, res, next) => {
-    try {
-        const { notificationPreferences } = req.body;
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $set: { notificationPreferences } },
-            { new: true, runValidators: true }
-        ).select('notificationPreferences');
+// PUT /api/user/preferences - Update user's notification and app preferences
+// This uses requireSession (cookie-based) as it's likely called from the web UI
+router.put('/preferences', requireSession, async (req, res) => {
+  try {
+    const { prayerReminders, calculationMethod, madhab } = req.body;
+    const updateData = { $set: {} };
 
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found.' });
-        }
-        logger.info(`User ${req.user.id} updated their notification preferences.`);
-        res.json(user.notificationPreferences);
-    } catch (error) {
-        logger.error('Failed to update user preferences', { userId: req.user.id, error });
-        next(error);
+    // Update prayer reminder toggles
+    if (prayerReminders) {
+      updateData.$set['notificationPreferences.prayerReminders'] = prayerReminders;
     }
+
+    // Update calculation method and madhab
+    if (calculationMethod) {
+      updateData.$set['preferences.calculationMethod'] = calculationMethod;
+    }
+    if (madhab) {
+      updateData.$set['preferences.madhab'] = madhab;
+    }
+
+    await User.findByIdAndUpdate(req.user.id, updateData);
+    res.json({ success: true, message: 'Preferences updated.' });
+  } catch (error) {
+    logger.error('Error updating user preferences:', error);
+    res.status(500).json({ success: false, message: 'Failed to update preferences.' });
+  }
 });
 
-// PUT /api/user/location - Updates user's location
-router.put('/location', authMiddleware, async (req, res, next) => {
-    try {
-        const { city, country, lat, lng } = req.body; // Accept 'lng' from frontend
-
-        if (!city || !country || lat === undefined || lng === undefined) {
-            return res.status(400).json({ msg: 'Missing required location fields: city, country, lat, lng.' });
-        }
-
-        const locationUpdate = {
-            city,
-            country,
-            lat,
-            lon: lng // Store as 'lon' to match the schema
-        };
-
-        const user = await User.findByIdAndUpdate(
-            req.user.id,
-            { $set: { location: locationUpdate } },
-            { new: true }
-        ).select('location');
-
-        if (!user) {
-            return res.status(404).json({ msg: 'User not found.' });
-        }
-        
-        logger.info(`User ${req.user.id} updated their location to ${city}, ${country}.`);
-        res.json({ success: true, location: user.location });
-    } catch (error) {
-        logger.error('Failed to update user location', { userId: req.user.id, error });
-        next(error);
-    }
-});
 
 module.exports = router;

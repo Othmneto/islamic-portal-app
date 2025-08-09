@@ -1,120 +1,103 @@
-// translator-backend/routes/subscriptionRoutes.js
-
+// routes/subscriptionRoutes.js
 const express = require('express');
 const router = express.Router();
-
-const requireSession = require('../middleware/requireSession');
+const { requireSession } = require('../middleware/authMiddleware');
+const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const PushSubscription = require('../models/PushSubscription');
+const User = require('../models/User');
+const { queueTestNotification, queueTestPrayerNotification } = require('../services/notificationQueue');
 const logger = require('../utils/logger');
-const { env } = require('../config');
-const { notificationQueue } = require('../queues/notificationQueue');
 
-// A simple CSRF verification middleware.
-// This checks if the 'x-csrf-token' header matches the 'XSRF-TOKEN' cookie.
-function verifyCsrf(req, res, next) {
-  const header = req.get('x-csrf-token');
-  const cookie = req.cookies['XSRF-TOKEN'];
-  if (!header || !cookie || header !== cookie) {
-    logger.warn('Invalid CSRF token attempt', { userId: req.user?.id, path: req.path });
-    return res.status(403).json({ msg: 'Invalid CSRF token' });
-  }
-  next();
-}
-
-// VAPID public key (no authentication needed)
-router.get('/vapid-public-key', (_req, res) => {
-  res.send(env.VAPID_PUBLIC_KEY);
-});
-
-// Save or update a subscription.
-// Protected by both session and CSRF middleware.
+// POST /api/notifications/subscribe - Main endpoint to subscribe a user
 router.post('/subscribe', requireSession, verifyCsrf, async (req, res) => {
-  const { endpoint, keys } = req.body || {};
+  // The subscription object may be nested inside a 'subscription' key from the client
+  const sub = req.body.subscription || req.body;
+  const { endpoint, keys } = sub;
+
   if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
-    return res.status(400).json({ msg: 'Invalid subscription object provided.' });
+    return res.status(400).json({ success: false, message: 'Invalid subscription object.' });
   }
+
   try {
+    // 1. Save or update the push subscription endpoint and keys
     await PushSubscription.updateOne(
       { endpoint },
       { userId: req.user.id, endpoint, keys },
-      { upsert: true } // Creates a new subscription if one doesn't exist for the endpoint.
+      { upsert: true }
     );
-    logger.info(`Subscription upserted for user ${req.user.id}`);
-    res.status(201).json({ success: true });
+
+    // 2. Save the user's notification preferences and location if provided
+    const updates = {};
+    if (req.body.preferences && req.body.preferences.perPrayer) {
+      updates['notificationPreferences.prayerReminders'] = req.body.preferences.perPrayer;
+    }
+    if (req.body.location) {
+      updates.location = req.body.location;
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await User.findByIdAndUpdate(req.user.id, { $set: updates });
+    }
+
+    logger.info(`Subscription and preferences upserted for user ${req.user.id}`);
+    res.status(201).json({ success: true, message: 'Subscription and preferences updated.' });
+
   } catch (error) {
-    logger.error('Error saving push subscription', { userId: req.user.id, error: error.message });
-    res.status(500).send('Server Error');
+    logger.error('Failed to save push subscription or preferences:', error);
+    res.status(500).json({ success: false, message: 'Failed to save subscription.' });
   }
 });
 
-// Unsubscribe from push notifications.
-// Protected by both session and CSRF middleware.
+
+// POST /api/notifications/unsubscribe - Remove a subscription
 router.post('/unsubscribe', requireSession, verifyCsrf, async (req, res) => {
-  const { endpoint } = req.body || {};
+  const { endpoint } = req.body;
   if (!endpoint) {
-    return res.status(400).json({ msg: 'Endpoint is required to unsubscribe.' });
+    return res.status(400).json({ success: false, message: 'Endpoint is required.' });
   }
   try {
-    const result = await PushSubscription.deleteOne({ endpoint, userId: req.user.id });
-    if (result.deletedCount === 0) {
-        logger.warn(`Unsubscribe attempt failed for non-existent subscription for user ${req.user.id}`);
-    } else {
-        logger.info(`Subscription deleted for user ${req.user.id}`);
-    }
-    res.json({ success: true });
+    await PushSubscription.deleteOne({ userId: req.user.id, endpoint });
+    logger.info(`Subscription removed for user ${req.user.id}`);
+    res.status(200).json({ success: true, message: 'Unsubscribed successfully.' });
   } catch (error) {
-    logger.error('Error deleting subscription', { userId: req.user.id, error: error.message });
-    res.status(500).send('Server Error');
+    logger.error('Failed to unsubscribe:', error);
+    res.status(500).json({ success: false, message: 'Failed to unsubscribe.' });
   }
 });
 
-// Send a test push notification.
-// Protected by both session and CSRF middleware.
+
+// GET /api/notifications/vapid-public-key - Provide the public VAPID key to the client
+router.get('/vapid-public-key', (req, res) => {
+  if (!process.env.VAPID_PUBLIC_KEY) {
+    logger.error('VAPID_PUBLIC_KEY is not set in the environment variables.');
+    return res.status(500).send('VAPID public key not configured on the server.');
+  }
+  res.send(process.env.VAPID_PUBLIC_KEY);
+});
+
+// --- Test Routes ---
+
+// POST /api/notifications/test - Send a generic test notification
 router.post('/test', requireSession, verifyCsrf, async (req, res) => {
-  try {
-    const subs = await PushSubscription.find({ userId: req.user.id }).lean();
-    if (subs.length === 0) {
-        return res.status(404).json({ ok: false, message: "No subscriptions found for this user." });
+    try {
+        await queueTestNotification(req.user.id);
+        res.status(202).json({ success: true, message: 'Test notification queued.' });
+    } catch (error) {
+        logger.error(`Failed to queue test notification for user ${req.user.id}:`, error);
+        res.status(500).json({ success: false, error: 'Could not queue test notification.' });
     }
-    
-    let queued = 0;
-    for (const s of subs) {
-      await notificationQueue.add(
-        'test-notification',
-        {
-          subscription: { endpoint: s.endpoint, keys: s.keys },
-          payload: {
-            title: 'Test Notification',
-            body: 'If you see this, Web Push is working ✅',
-            icon: '/favicon.ico',
-            data: { url: '/' },
-          },
-        },
-        { removeOnComplete: true, removeOnFail: true }
-      );
-      queued++;
-    }
-    logger.info(`Queued ${queued} test notifications for user ${req.user.id}`);
-    res.json({ ok: true, queued });
-  } catch (e) {
-    logger.error('Failed to queue test notification', { userId: req.user.id, error: e.message });
-    res.status(500).json({ ok: false, error: 'Failed to queue test notification' });
-  }
 });
 
-// List all active subscriptions for the logged-in user.
-// Only protected by session middleware, as GET requests don't require CSRF.
-router.get('/list', requireSession, async (req, res) => {
-  try {
-    const subs = await PushSubscription.find({ userId: req.user.id })
-      .select('endpoint createdAt updatedAt')
-      .sort({ updatedAt: -1 })
-      .lean();
-    res.json({ ok: true, count: subs.length, subscriptions: subs });
-  } catch (e) {
-    logger.error('Failed to list subscriptions', { userId: req.user.id, error: e.message });
-    res.status(500).json({ ok: false, error: 'Failed to list subscriptions' });
-  }
+// POST /api/notifications/test-prayer - Send a test for the next prayer
+router.post('/test-prayer', requireSession, verifyCsrf, async (req, res) => {
+    try {
+        const result = await queueTestPrayerNotification(req.user.id);
+        res.status(202).json({ success: true, msg: result.message });
+    } catch (error) {
+        logger.error(`Failed to queue test prayer notification for user ${req.user.id}:`, error);
+        res.status(500).json({ success: false, error: 'Could not queue test prayer notification.' });
+    }
 });
+
 
 module.exports = router;
