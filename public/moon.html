@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Moon Status</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+  <style>
+    .page-header{ text-align:center; margin-bottom:1rem; }
+    .moon-panel{ background:var(--secondary-bg); border:1px solid var(--border-color); border-radius:12px; padding:1.5rem; }
+    .moon-panel h4{ margin:0 0 1rem 0; text-align:center; }
+    .moon-visual{ font-size:4rem; margin:.5rem 0; text-align:center; }
+    .moon-details{ text-align:center; color:var(--text-secondary); }
+    .moon-times{ display:flex; justify-content:center; gap:2rem; margin-top:1rem; }
+    .moon-extra{ display:flex; justify-content:center; gap:2rem; margin-top:.5rem; font-size:.9rem; color:var(--text-secondary); }
+    .pill{ background:var(--tertiary-bg); padding:.6rem .8rem; border-radius:8px; display:inline-block; }
+    .loc{ text-align:center; color:var(--text-secondary); margin:.5rem 0 1rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="page-header">
+      <h1><i class="fa-solid fa-moon"></i> <span data-i18n-key="moon_today">Moon Today</span></h1>
+      <p style="margin:.5rem 0; display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap;">
+        <a href="/index.html">← Portal</a><span>|</span>
+        <a href="/prayer-time.html">Prayer Times</a><span>|</span>
+        <a href="/qibla.html">Qibla Direction</a>
+      </p>
+    </header>
+
+    <div class="loc"><i class="fa-solid fa-location-dot"></i> <span id="m-status">Detecting location…</span></div>
+
+    <section class="moon-panel">
+      <h4 data-i18n-key="moon_today">Moon Today</h4>
+      <div id="moon-visual" class="moon-visual">🌘</div>
+      <div id="moon-details" class="moon-details">—</div>
+
+      <div class="moon-times">
+        <div><strong data-i18n-key="moon_rise">Rise:</strong> <span id="m-rise">—:—</span></div>
+        <div><strong data-i18n-key="moon_set">Set:</strong> <span id="m-set">—:—</span></div>
+      </div>
+
+      <div class="moon-extra">
+        <div><strong data-i18n-key="moon_age">Age:</strong> <span id="m-age">—</span></div>
+        <div><strong data-i18n-key="moon_distance">Distance:</strong> <span id="m-dist">—</span> km</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="moon.js"></script>
+</body>
+</html>

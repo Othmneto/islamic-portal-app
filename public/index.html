@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Islamic Portal App</title>
-    <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 <body>
     <header>
@@ -14,7 +14,9 @@
             <a href="index.html" class="logo">Islamic Portal</a>
             <ul class="nav-links">
                 <li><a href="translator.html">Translator</a></li>
-                <li><a href="prayertimes.html">Prayer Times</a></li>
+                <li><a href="prayer-time.html">Prayer Times</a></li>
+                <li><a href="qibla.html">Qibla Direction</a></li>
+                <li><a href="moon.html">Moon Status</a></li>
                 <li><a href="explorer.html">Explorer</a></li>
                 <li><a href="duas.html">Duas</a></li>
                 <li><a href="names.html">99 Names</a></li>
@@ -22,7 +24,9 @@
                 <li><a href="converter.html">Date Converter</a></li>
                 <li><a href="analytics.html">Analytics</a></li>
                 <li><a href="history.html">History</a></li>
-                </ul>
+                <li><a href="profile.html">Profile</a></li>
+                <li><a href="settings.html">Settings</a></li>
+            </ul>
             <div class="theme-toggle">
                 <input type="checkbox" id="theme-switch" class="theme-switch" />
                 <label for="theme-switch" class="theme-label"></label>
@@ -36,7 +40,9 @@
             <p>Explore, learn, and grow with our comprehensive Islamic tools and resources.</p>
             <div class="hero-buttons">
                 <a href="translator.html" class="btn primary-btn">Start Translating</a>
-                <a href="prayertimes.html" class="btn secondary-btn">View Prayer Times</a>
+                <a href="prayer-time.html" class="btn secondary-btn">View Prayer Times</a>
+                <a href="qibla.html" class="btn secondary-btn">Qibla Direction</a>
+                <a href="moon.html" class="btn secondary-btn">Moon Status</a>
             </div>
         </section>
 
@@ -47,37 +53,84 @@
                     <i class="fas fa-language"></i>
                     <h3>AI Translator</h3>
                     <p>Translate text and speech between multiple languages with AI precision.</p>
-                    <a href="translator.html" class="card-link">Learn More</a>
+                    <a href="translator.html" class="card-link">Open Translator</a>
                 </div>
+
                 <div class="feature-card">
                     <i class="fas fa-mosque"></i>
                     <h3>Prayer Times</h3>
-                    <p>Accurate prayer times for your location with Adhan notifications.</p>
-                    <a href="prayertimes.html" class="card-link">Learn More</a>
+                    <p>Accurate prayer times for your location with optional Adhan notifications.</p>
+                    <a href="prayer-time.html" class="card-link">Open Prayer Times</a>
                 </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-compass"></i>
+                    <h3>Qibla Direction</h3>
+                    <p>Find the exact bearing to the Kaaba from your current location.</p>
+                    <a href="qibla.html" class="card-link">Open Qibla</a>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-moon"></i>
+                    <h3>Moon Status</h3>
+                    <p>Live lunar phase, illumination, rise/set times, and distance.</p>
+                    <a href="moon.html" class="card-link">Open Moon Status</a>
+                </div>
+
                 <div class="feature-card">
                     <i class="fas fa-book-open"></i>
-                    <h3>Quran & Hadith Explorer</h3>
-                    <p>Browse, search, and bookmark verses and Hadiths with translations and recitations.</p>
-                    <a href="explorer.html" class="card-link">Learn More</a>
+                    <h3>Quran &amp; Hadith Explorer</h3>
+                    <p>Browse, search, and bookmark verses and Hadith with recitations.</p>
+                    <a href="explorer.html" class="card-link">Open Explorer</a>
                 </div>
+
                 <div class="feature-card">
                     <i class="fas fa-hands-praying"></i>
                     <h3>Daily Duas</h3>
-                    <p>Access a collection of essential supplications for various occasions.</p>
-                    <a href="duas.html" class="card-link">Learn More</a>
+                    <p>Essential supplications for different occasions and needs.</p>
+                    <a href="duas.html" class="card-link">Open Duas</a>
                 </div>
+
                 <div class="feature-card">
                     <i class="fas fa-coins"></i>
                     <h3>Zakat Calculator</h3>
-                    <p>Calculate your Zakat accurately based on live market prices.</p>
-                    <a href="zakat.html" class="card-link">Learn More</a>
+                    <p>Calculate your Zakat accurately based on market prices.</p>
+                    <a href="zakat.html" class="card-link">Open Zakat</a>
                 </div>
+
                 <div class="feature-card">
                     <i class="fas fa-calendar-alt"></i>
                     <h3>Date Converter</h3>
-                    <p>Convert between Gregorian and Hijri dates effortlessly.</p>
-                    <a href="converter.html" class="card-link">Learn More</a>
+                    <p>Convert between Gregorian and Hijri dates quickly.</p>
+                    <a href="converter.html" class="card-link">Open Converter</a>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Analytics</h3>
+                    <p>Usage insights and trends for your features.</p>
+                    <a href="analytics.html" class="card-link">Open Analytics</a>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-history"></i>
+                    <h3>History</h3>
+                    <p>Review your recent activity and saved items.</p>
+                    <a href="history.html" class="card-link">Open History</a>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-user"></i>
+                    <h3>Profile</h3>
+                    <p>Manage your account details and saved preferences.</p>
+                    <a href="profile.html" class="card-link">Open Profile</a>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-cog"></i>
+                    <h3>Settings</h3>
+                    <p>Configure notifications, language, and display options.</p>
+                    <a href="settings.html" class="card-link">Open Settings</a>
                 </div>
             </div>
         </section>
@@ -88,7 +141,7 @@
     </footer>
 
     <script src="common.js"></script>
-	<script src="/push-client.js"></script>
-	<script src="/login.js"></script>
-	</body>
+    <script src="push-client.js"></script>
+    <script src="login.js"></script>
+</body>
 </html>

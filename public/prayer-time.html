@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prayer Times</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="main.css">
+  <script src="https://cdn.jsdelivr.net/npm/adhan@4/dist/Adhan.js"></script>
+  <style>
+    .prayer-times-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-top:2rem}
+    .prayer-time-card{background:var(--tertiary-bg);padding:1.5rem;border-radius:8px;text-align:center;transition:all .3s ease}
+    .prayer-time-card h3{margin:0 0 .5rem 0;color:var(--accent-color)}
+    .prayer-time-card p{margin:0;font-size:1.5rem;font-weight:500}
+    .location-info{margin-top:1rem;color:var(--text-secondary)}
+    .next-prayer-info{background:var(--tertiary-bg);border-radius:12px;padding:1rem 2rem;margin-bottom:2rem}
+    .next-prayer-info h2{margin:0;font-size:1.2rem;color:var(--text-secondary)}
+    .next-prayer-info p{margin:0;font-size:3rem;font-weight:700;color:var(--accent-color)}
+    .prayer-time-card.next-prayer{background:var(--accent-color);color:#fff;transform:scale(1.05);box-shadow:0 5px 20px rgba(59,130,246,.4)}
+    .prayer-time-card.next-prayer h3{color:#fff}
+    .adhan-toggle-container{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:1rem;padding:1rem;background:var(--tertiary-bg);border-radius:8px}
+    .location-search-container{margin-top:2rem;position:relative}
+    #location-search-input{width:100%;padding:12px;font-size:1rem;background:var(--tertiary-bg);border:1px solid var(--border-color);border-radius:8px;color:var(--text-primary)}
+    #search-results{position:absolute;width:100%;background:var(--secondary-bg);border:1px solid var(--border-color);border-radius:8px;margin-top:4px;max-height:200px;overflow-y:auto;z-index:10}
+    .search-result-item{padding:12px;cursor:pointer}
+    .search-result-item:hover{background:var(--tertiary-bg)}
+    .settings-panel{margin-top:2rem;padding:1.5rem;background:var(--primary-bg);border:1px solid var(--border-color);border-radius:12px}
+    .settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;align-items:end}
+    .settings-group label{display:block;margin-bottom:.5rem;color:var(--text-secondary);font-size:.9rem}
+    .settings-group select{width:100%}
+    .settings-group.toggle-group{display:flex;align-items:center;gap:1rem;justify-content:center;background:var(--tertiary-bg);padding:1rem;border-radius:8px;grid-column:1 / -1;margin-top:1rem}
+    .pill-toggle-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin-top:.75rem}
+    .pill{display:flex;align-items:center;gap:.5rem;background:var(--tertiary-bg);border-radius:8px;padding:.6rem .8rem}
+    .language-switcher{position:absolute;top:1rem;left:1rem;z-index:5}
+    .language-switcher select{background:var(--tertiary-bg);color:var(--text-primary);padding:8px;border-radius:6px;border:1px solid var(--border-color)}
+    .floating-btn{position:fixed;bottom:2rem;right:2rem;width:60px;height:60px;background:var(--accent-color);color:#fff;border-radius:50%;border:none;font-size:1.8rem;display:flex;justify-content:center;align-items:center;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,.3);z-index:999}
+    .assistant-modal-content{height:70vh;max-height:600px;width:95%;max-width:500px}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:none;justify-content:center;align-items:center;opacity:0;transition:opacity .3s ease}
+    .modal-overlay.active{display:flex;opacity:1}
+    .modal-content{position:relative;background:var(--secondary-bg);padding:2rem;border-radius:12px;width:95%;max-width:900px;max-height:90vh;display:flex;flex-direction:column}
+    .modal-close-btn{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;color:var(--text-primary);cursor:pointer}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-color);padding-bottom:1rem;margin-bottom:1rem}
+    .assistant-chat-window{flex-grow:1;overflow-y:auto;padding:1rem 0;display:flex;flex-direction:column;gap:1rem}
+    .message{padding:.75rem 1rem;border-radius:12px;max-width:80%;line-height:1.5}
+    .message.user{background:var(--accent-color);color:#fff;align-self:flex-end;border-bottom-right-radius:2px}
+    .message.assistant{background:var(--tertiary-bg);align-self:flex-start;border-bottom-left-radius:2px}
+    .assistant-input-area{display:flex;gap:1rem;border-top:1px solid var(--border-color);padding-top:1rem}
+    #assistant-input{flex-grow:1;background:var(--tertiary-bg);border:1px solid var(--border-color);border-radius:6px;padding:10px;color:var(--text-primary)}
+    #assistant-send-btn{background:var(--accent-color);border:none;color:#fff;padding:0 1rem;border-radius:6px;cursor:pointer}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="language-switcher">
+      <select id="language-selector">
+        <option value="en">English</option>
+        <option value="ar">العربية</option>
+        <option value="fr">Français</option>
+        <option value="hi">हिन्दी</option>
+      </select>
+    </div>
+
+    <header class="page-header" style="text-align:center; margin-bottom:1rem;">
+      <h1><i class="fa-solid fa-clock"></i> Prayer Times</h1>
+      <p style="margin:.5rem 0; display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap;">
+        <a href="/index.html">← Portal</a><span>|</span>
+        <a href="/duas.html">Daily Duas</a><span>|</span>
+        <a href="/names.html">99 Names</a><span>|</span>
+        <a href="/zakat.html">Zakat Calculator</a><span>|</span>
+        <a href="/converter.html">Date Converter</a><span>|</span>
+        <a href="/stats.html">Ummah Stats →</a>
+      </p>
+    </header>
+
+    <div class="location-search-container">
+      <input type="text" id="location-search-input" data-i18n-placeholder="search_placeholder" placeholder="Type at least 2 letters...">
+      <div id="search-results"></div>
+    </div>
+
+    <div id="loading-message"><p>Fetching prayer times...</p></div>
+
+    <div id="prayer-times-content" style="display:none;">
+      <div class="next-prayer-info">
+        <h2><span id="next-prayer-name">--:--</span> in</h2>
+        <p id="countdown-timer">--:--:--</p>
+      </div>
+
+      <div class="prayer-times-grid">
+        <div id="fajr-card" class="prayer-time-card" data-key="fajr"><h3>Fajr</h3><p id="fajr-time">--:--</p></div>
+        <div id="dhuhr-card" class="prayer-time-card" data-key="dhuhr"><h3>Dhuhr</h3><p id="dhuhr-time">--:--</p></div>
+        <div id="asr-card" class="prayer-time-card" data-key="asr"><h3>Asr</h3><p id="asr-time">--:--</p></div>
+        <div id="maghrib-card" class="prayer-time-card" data-key="maghrib"><h3>Maghrib</h3><p id="maghrib-time">--:--</p></div>
+        <div id="isha-card" class="prayer-time-card" data-key="isha"><h3>Isha</h3><p id="isha-time">--:--</p></div>
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-panel">
+        <h3>Settings</h3>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <label>Calculation Method</label>
+            <select id="calculation-method-select">
+              <option value="auto">Auto (recommended)</option>
+              <option value="MuslimWorldLeague">Muslim World League</option>
+              <option value="Egyptian">Egyptian</option>
+              <option value="Karachi">Karachi</option>
+              <option value="NorthAmerica">North America (ISNA)</option>
+              <option value="Dubai">Dubai</option>
+              <option value="UmmAlQura">Umm al-Qura (KSA)</option>
+            </select>
+          </div>
+          <div class="settings-group">
+            <label>Asr Method</label>
+            <select id="madhab-select">
+              <option value="auto">Auto (by country)</option>
+              <option value="shafii">Shafi'i</option>
+              <option value="hanafi">Hanafi</option>
+            </select>
+          </div>
+          <div class="settings-group toggle-group">
+            <i class="fa-solid fa-hourglass-start"></i>
+            <label class="theme-switch"><input type="checkbox" id="clock-format-toggle" /></label>
+            <span>24-Hour Clock</span>
+          </div>
+          <div class="settings-group toggle-group">
+            <i class="fa-solid fa-bell"></i>
+            <label class="theme-switch"><input type="checkbox" id="notification-toggle" /></label>
+            <span>Enable Notifications</span>
+          </div>
+        </div>
+
+        <!-- NEW: Per-Prayer Alerts (no offsets) -->
+        <div style="margin-top:1rem">
+          <h4 style="margin:.5rem 0">Per-Prayer Alerts</h4>
+          <div class="pill-toggle-grid">
+            <label class="pill"><input type="checkbox" id="alert-fajr" checked> Fajr</label>
+            <label class="pill"><input type="checkbox" id="alert-dhuhr" checked> Dhuhr</label>
+            <label class="pill"><input type="checkbox" id="alert-asr" checked> Asr</label>
+            <label class="pill"><input type="checkbox" id="alert-maghrib" checked> Maghrib</label>
+            <label class="pill"><input type="checkbox" id="alert-isha" checked> Isha</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="adhan-toggle-container">
+        <i class="fa-solid fa-volume-high"></i>
+        <label class="theme-switch"><input type="checkbox" id="adhan-audio-toggle" /></label>
+        <span>Play Adhan Audio</span>
+        <button id="test-notification-btn" style="margin-left:10px"><i class="fa-solid fa-bell"></i> Test Notification</button>
+        <button id="test-prayer-notification-btn" style="margin-left:10px"><i class="fa-solid fa-mosque"></i> Test Prayer Alert</button>
+      </div>
+
+      <div class="location-info">
+        <p>Today's Date: <span id="gregorian-date"></span></p>
+        <p>Hijri Date: <span id="hijri-date"></span></p>
+        <p>Location: <span id="location-display"></span></p>
+      </div>
+
+      <button id="view-monthly-btn" class="btn">View Monthly Times</button>
+    </div>
+  </div>
+
+  <!-- Monthly modal -->
+  <div id="monthly-view-modal" class="modal-overlay"></div>
+
+  <!-- Assistant modal -->
+  <button id="open-assistant-btn" class="floating-btn" title="AI Assistant"><i class="fa-solid fa-robot"></i></button>
+  <div id="assistant-modal" class="modal-overlay">
+    <div class="modal-content assistant-modal-content">
+      <div class="modal-header">
+        <h3>AI Assistant</h3>
+        <button id="close-assistant-btn" class="modal-close-btn">&times;</button>
+      </div>
+      <div id="assistant-chat-window" class="assistant-chat-window">
+        <div class="message assistant">Hello! Ask me about prayer times, Zakat, date conversions, or your translation history.</div>
+      </div>
+      <div class="assistant-input-area">
+        <input type="text" id="assistant-input" placeholder="Ask a question...">
+        <button id="assistant-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <audio id="adhan-player" src="/audio/adhan.mp3" preload="auto"></audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+  <script src="common.js"></script>
+  <script src="push-client.js"></script>
+  <script src="login.js"></script>
+  <script src="prayer-time.js"></script>
+</body>
+</html>
