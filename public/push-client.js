@@ -1,108 +1,95 @@
 // public/push-client.js
+// UMD-style wrapper to avoid 'export' errors and expose functions globally.
 
-// Renamed to 'logPush' to avoid conflicts.
-const logPush = (msg, cls = '') => {
-  const el = document.getElementById('log');
-  if (el) {
-    const p = document.createElement('div');
-    if (cls) p.className = cls;
-    p.textContent = `[Push] ${msg}`;
-    el.prepend(p);
-  }
-  console.log(`[Push] ${msg}`);
-};
-
-// This relies on getCookie() being loaded from admin.js, which is already on the page.
-function getLocalCookie(name) {
-  const parts = document.cookie.split(';').map(s => s.trim());
-  for (const p of parts) if (p.startsWith(name + '=')) return decodeURIComponent(p.slice(name.length + 1));
-  return null;
-}
-
-async function sendSubscriptionToServer(subscription) {
-  const csrfToken = getLocalCookie('XSRF-TOKEN');
-  if (!csrfToken) {
-    throw new Error('CSRF token not found. Cannot send subscription.');
+(function () {
+  function logPush(msg, level = 'log') {
+    const fn = console[level] || console.log;
+    fn(`[push] ${msg}`);
   }
 
-  const response = await fetch('/api/subscribe', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRF-Token': csrfToken,
-    },
-    credentials: 'include', // ESSENTIAL for sending the session cookie
-    body: JSON.stringify(subscription),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ msg: response.statusText }));
-    throw new Error(`Save subscription failed: ${errorData.msg || 'Unknown error'}`);
+  // Base64URL → Uint8Array for PushManager.subscribe()
+  function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const raw = atob(base64);
+    return Uint8Array.from([...raw].map(c => c.charCodeAt(0)));
   }
-  return response.json();
-}
 
-async function initPushNotifications() {
-  if (!('serviceWorker' in navigator && 'PushManager' in window)) {
-    logPush('Push messaging is not supported', 'warn');
-    return;
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/([$()*+./?[\\\]^{|}])/g, '\\$1') + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
   }
-  
-  const registration = await navigator.serviceWorker.ready;
-  let subscription = await registration.pushManager.getSubscription();
 
-  if (subscription === null) {
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      logPush('Notification permission was not granted.', 'warn');
+  async function sendSubscriptionToServer(subscription, preferences = null) {
+    const csrf = getCookie('XSRF-TOKEN'); // header name can be any case; server reads x-csrf-token
+    const body = preferences ? { subscription, preferences } : { subscription };
+
+    const res = await fetch('/api/notifications/subscribe', {
+      method: 'POST',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      throw new Error(`Subscribe failed: ${res.status} ${txt}`);
+    }
+  }
+
+  async function initPushNotifications(preferences = null) {
+    if (!('serviceWorker' in navigator && 'PushManager' in window)) {
+      logPush('Push messaging is not supported', 'warn');
       return;
     }
+    const registration = await navigator.serviceWorker.ready;
 
-    const response = await fetch('/api/notifications/vapid-public-key');
-    const vapidPublicKey = await response.text();
-    
-    subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: vapidPublicKey,
+    let sub = await registration.pushManager.getSubscription();
+    if (!sub) {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        logPush('Notifications permission not granted.', 'warn');
+        return;
+      }
+      const res = await fetch('/api/notifications/vapid-public-key', { credentials: 'include' });
+      const vapidPublicKey = (await res.text()).trim();
+
+      sub = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+
+      logPush('New subscription created. Sending to server...');
+      await sendSubscriptionToServer(sub, preferences);
+      logPush('Subscription saved.');
+    } else {
+      logPush('Existing subscription found. Syncing to server...');
+      await sendSubscriptionToServer(sub, preferences);
+    }
+  }
+
+  async function unsubscribePush() {
+    const registration = await navigator.serviceWorker.ready;
+    const sub = await registration.pushManager.getSubscription();
+    if (!sub) return;
+
+    const csrf = getCookie('XSRF-TOKEN');
+    await fetch('/api/notifications/unsubscribe', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...(csrf ? { 'X-CSRF-Token': csrf } : {}) },
+      body: JSON.stringify({ endpoint: sub.endpoint }),
     });
-    
-    logPush('New subscription created. Sending to server...');
-    await sendSubscriptionToServer(subscription);
-  } else {
-    logPush('User is already subscribed. Syncing with server...');
-    // Good practice to re-sync on every load to catch potential server-side changes.
-    await sendSubscriptionToServer(subscription);
-  }
-}
 
-async function unsubscribeFromPush() {
-  const registration = await navigator.serviceWorker.ready;
-  const subscription = await registration.pushManager.getSubscription();
-
-  if (!subscription) {
-    return { ok: true, message: 'User was not subscribed.' };
-  }
-  
-  const csrfToken = getLocalCookie('XSRF-TOKEN');
-  if (!csrfToken) {
-    throw new Error('CSRF token not found. Cannot unsubscribe.');
+    await sub.unsubscribe();
+    logPush('Unsubscribed.');
   }
 
-  await fetch('/api/unsubscribe', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 
-        'Content-Type': 'application/json', 
-        'X-CSRF-Token': csrfToken 
-    },
-    body: JSON.stringify({ endpoint: subscription.endpoint }),
-  });
-
-  await subscription.unsubscribe();
-  logPush('Successfully unsubscribed.', 'ok');
-  return { ok: true, message: 'Successfully unsubscribed.' };
-}
-
-// Expose functions to be called from admin.js
-window.initPushNotifications = initPushNotifications;
-window.unsubscribeFromPush = unsubscribeFromPush;
+  // Expose for other pages if needed.
+  // The login script looks for `window.initPushNotifications` directly for back-compat.
+  window.initPushNotifications = initPushNotifications;
+  window.PushClient = { initPushNotifications, unsubscribePush };
+})();

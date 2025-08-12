@@ -1,92 +1,98 @@
-// translator-backend/workers/notificationWorker.js
+'use strict';
+
+// Always load .env from project root (works no matter where you run from)
+const path = require('path');
+const dotenvPath = path.resolve(__dirname, '..', '.env');
+require('dotenv').config({ path: dotenvPath });
 
 const { Worker } = require('bullmq');
-const mongoose = require('mongoose');
 const webPush = require('web-push');
-const { env } = require('../config');
-const PushSubscription = require('../models/PushSubscription');
-const logger = require('../utils/logger');
+const mongoose = require('mongoose');
 
-// ----- Web Push (VAPID) -----
-const contact = (env.VAPID_EMAIL && env.VAPID_EMAIL.startsWith('mailto:'))
-  ? env.VAPID_EMAIL
-  : `mailto:${env.VAPID_EMAIL || 'admin@localhost'}`;
+// Build REDIS_URL from host/port if needed
+const REDIS_URL =
+  process.env.REDIS_URL ||
+  (process.env.REDIS_HOST && process.env.REDIS_PORT
+    ? `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`
+    : 'redis://127.0.0.1:6379');
 
-webPush.setVapidDetails(contact, env.VAPID_PUBLIC_KEY, env.VAPID_PRIVATE_KEY);
+const QUEUE_NAME = process.env.NOTIFICATION_QUEUE_NAME || 'notifications';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/translator-backend';
 
-// ----- Redis connection (BullMQ) -----
-const connection = {
-  host: env.REDIS_HOST,
-  port: Number(env.REDIS_PORT),
-};
-if (env.REDIS_PASSWORD) connection.password = env.REDIS_PASSWORD;
-if (String(env.REDIS_TLS || '').toLowerCase() === 'true') connection.tls = {};
-
-// ----- Start Worker after Mongo connects -----
-async function start() {
-  try {
-    logger.info('📬 Notification worker starting...');
-    await mongoose.connect(env.MONGO_URI, { dbName: env.DB_NAME });
-    logger.info('📦 Notification Worker connected to MongoDB.');
-
-    const worker = new Worker(
-      'notifications',
-      async (job) => {
-        const { subscription, payload } = job.data;
-        const body = typeof payload === 'string' ? payload : JSON.stringify(payload);
-
-        try {
-          await webPush.sendNotification(
-            { endpoint: subscription.endpoint, keys: subscription.keys },
-            body
-          );
-          logger.info(`✅ Pushed to ${subscription.endpoint}`);
-        } catch (error) {
-          // 410/404 = subscription no longer valid; remove from DB
-          if (error.statusCode === 410 || error.statusCode === 404) {
-            logger.warn(`Subscription gone, deleting: ${subscription.endpoint}`);
-            try {
-              await PushSubscription.deleteOne({ endpoint: subscription.endpoint });
-            } catch (delErr) {
-              logger.error('Delete subscription failed', {
-                endpoint: subscription.endpoint,
-                error: delErr.message,
-              });
-            }
-            // Don’t throw; job can complete even if delete failed
-          } else {
-            logger.error('Push failed', {
-              endpoint: subscription.endpoint,
-              error: error.message,
-            });
-            throw error; // Let BullMQ retry according to your config
-          }
-        }
-      },
-      { connection, concurrency: 10 }
-    );
-
-    worker.on('completed', (job) => logger.info(`Job ${job.id} completed`));
-    worker.on('failed', (job, err) =>
-      logger.error(`Job ${job?.id} failed: ${err.message}`)
-    );
-
-    // Graceful shutdown
-    const shutdown = async () => {
-      try {
-        await worker.close();
-      } catch {}
-      try {
-        await mongoose.connection.close();
-      } catch {}
-      process.exit(0);
-    };
-    process.on('SIGINT', shutdown);
-    process.on('SIGTERM', shutdown);
-  } catch (err) {
-    logger.error('Notification Worker failed to start', { error: err.message });
-    process.exit(1);
-  }
+// Fail fast if VAPID keys are missing
+if (!process.env.VAPID_PUBLIC_KEY || !process.env.VAPID_PRIVATE_KEY) {
+  console.error(
+    'VAPID keys missing. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY ' +
+    `(loaded .env from: ${dotenvPath}).`
+  );
+  process.exit(1);
 }
 
-start();
+process.on('unhandledRejection', (err) => { console.error('unhandledRejection:', err); process.exit(1); });
+process.on('uncaughtException',  (err) => { console.error('uncaughtException:',  err); process.exit(1); });
+
+function nowStr() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
+function log(level, msg, extra = {}) {
+  const base = { service: 'translator-backend', timestamp: nowStr() };
+  console[level](`${level}: ${msg}`, { ...base, ...extra });
+}
+
+async function connectMongo() {
+  if (mongoose.connection.readyState === 1) return;
+  await mongoose.connect(MONGO_URI);
+  log('info', '📦 Notification Worker connected to MongoDB.', { mongo: MONGO_URI });
+}
+
+function pushSubsCollection() {
+  return mongoose.connection.db.collection('pushsubscriptions');
+}
+
+webPush.setVapidDetails(
+  process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
+  process.env.VAPID_PUBLIC_KEY,
+  process.env.VAPID_PRIVATE_KEY
+);
+
+(async () => {
+  log('info', '📬 Notification worker starting...', {
+    dotenv: dotenvPath,
+    queue: QUEUE_NAME,
+    redis: REDIS_URL
+  });
+
+  await connectMongo();
+
+  const worker = new Worker(
+    QUEUE_NAME,
+    async (job) => {
+      if (job.name !== 'send-push') return;
+
+      const { subscription, payload, options } = job.data || {};
+      const endpoint = subscription?.endpoint;
+
+      try {
+        await webPush.sendNotification(subscription, JSON.stringify(payload), options?.webPush);
+        log('info', `Job ${job.id} completed`);
+      } catch (err) {
+        const statusCode = err?.statusCode;
+        // Clean up dead subscriptions (Gone/Not Found)
+        if (statusCode === 404 || statusCode === 410) {
+          log('warn', 'Subscription gone, deleting', { endpoint });
+          try {
+            await pushSubsCollection().deleteOne({ endpoint }, { maxTimeMS: 30000 });
+          } catch (delErr) {
+            log('error', 'Delete subscription failed', { endpoint, error: delErr.message });
+          }
+          return; // handled; do not retry
+        }
+        // Let BullMQ retry transient errors (Phase 2 adds attempts/backoff on .add())
+        throw err;
+      }
+    },
+    { connection: { url: REDIS_URL }, concurrency: 10 }
+  );
+
+  worker.on('ready',     () => log('info', `🔔 BullMQ Worker ready on "${QUEUE_NAME}"`));
+  worker.on('failed',    (job, err) => log('error', 'Job failed', { id: job?.id, error: err?.message }));
+  worker.on('completed', (job)      => log('info', 'Job completed', { id: job?.id }));
+})();

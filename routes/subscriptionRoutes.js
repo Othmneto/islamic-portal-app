@@ -1,103 +1,190 @@
-// routes/subscriptionRoutes.js
+// translator-backend/routes/subscriptionRoutes.js
 const express = require('express');
 const router = express.Router();
-const { requireSession } = require('../middleware/authMiddleware');
-const { verifyCsrf } = require('../middleware/csrfMiddleware');
+
 const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/User');
-const { queueTestNotification, queueTestPrayerNotification } = require('../services/notificationQueue');
-const logger = require('../utils/logger');
+const { attachUser, requireSession } = require('../middleware/authMiddleware');
+const { verifyCsrf } = require('../middleware/csrfMiddleware');
 
-// POST /api/notifications/subscribe - Main endpoint to subscribe a user
-router.post('/subscribe', requireSession, verifyCsrf, async (req, res) => {
-  // The subscription object may be nested inside a 'subscription' key from the client
-  const sub = req.body.subscription || req.body;
-  const { endpoint, keys } = sub;
-
-  if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
-    return res.status(400).json({ success: false, message: 'Invalid subscription object.' });
+// Support either services/queues export styles transparently
+let notifModule;
+try {
+  notifModule = require('../queues/notificationQueue');
+} catch {
+  try {
+    notifModule = require('../services/notificationQueue');
+  } catch {
+    notifModule = {};
   }
+}
+async function enqueuePush(sub, payload, opts = {}) {
+  if (typeof notifModule.addPushJob === 'function') {
+    return notifModule.addPushJob({ subscription: sub, payload }, opts);
+  }
+  if (notifModule.notificationQueue?.add) {
+    return notifModule.notificationQueue.add('send-push', { subscription: sub, payload }, opts);
+  }
+  throw new Error('Push queue module not available');
+}
+
+// Always attach user if present (JWT or session), but don't force auth.
+router.use(attachUser);
+
+/** Public: VAPID key */
+router.get('/vapid-public-key', (_req, res) => {
+  const pk = (process.env.VAPID_PUBLIC_KEY || '').trim();
+  if (!pk) {
+    console.error('VAPID_PUBLIC_KEY is not set in environment variables.');
+    return res.status(500).send('VAPID public key not configured.');
+  }
+  res.type('text').send(pk);
+});
+
+/**
+ * Subscribe (anonymous allowed; CSRF protected for cookie-based flows)
+ * - Upserts by unique endpoint
+ * - Stores tz per-subscription (IANA string)
+ * - If user is logged-in, optionally updates their preferences and location
+ */
+router.post('/subscribe', verifyCsrf, async (req, res) => {
+  // ==================================================================
+  // --- TEMPORARY DEBUGGING BLOCK (REMOVE AFTER DIAGNOSIS) -----------
+  // This will tell us if the server recognized your session for THIS request.
+  // ==================================================================
+  if (!req.user) {
+    console.error('[DEBUG] /subscribe hit but req.user is MISSING');
+    console.error('[DEBUG] sessionID:', req.sessionID);
+    console.error('[DEBUG] req.session:', req.session);
+    return res.status(401).json({
+      error: 'Server failed to identify your session for this /subscribe request.',
+      sessionExists: !!req.session,
+      sessionID: req.sessionID || null,
+      userIdInSession: req.session ? (req.session.userId || null) : null,
+      sawCookiesHeader: typeof req.headers?.cookie === 'string',
+    });
+  }
+  // ==================================================================
+  // --- END TEMPORARY DEBUGGING BLOCK --------------------------------
+  // ==================================================================
 
   try {
-    // 1. Save or update the push subscription endpoint and keys
+    const sub = req.body.subscription || req.body;
+    const { endpoint, keys } = sub || {};
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return res.status(400).json({ success: false, message: 'Invalid subscription object.' });
+    }
+
+    const tz = (req.body.tz || 'UTC').trim();
+    const preferences = req.body.preferences || null; // { method, madhab, perPrayer }
+    const location = req.body.location || null;       // { lat, lon, city, country }
+
+    const userId = req.user?.id || null;
+
+    // Upsert subscription document
+    const now = new Date();
     await PushSubscription.updateOne(
       { endpoint },
-      { userId: req.user.id, endpoint, keys },
-      { upsert: true }
+      {
+        $set: { userId, endpoint, keys, tz, updatedAt: now },
+        $setOnInsert: { createdAt: now },
+      },
+      { upsert: true, setDefaultsOnInsert: true }
     );
 
-    // 2. Save the user's notification preferences and location if provided
-    const updates = {};
-    if (req.body.preferences && req.body.preferences.perPrayer) {
-      updates['notificationPreferences.prayerReminders'] = req.body.preferences.perPrayer;
-    }
-    if (req.body.location) {
-      updates.location = req.body.location;
+    // If authenticated, update user profile (best-effort)
+    if (userId) {
+      const setOps = {};
+      if (preferences) {
+        if (typeof preferences.method !== 'undefined') {
+          setOps['preferences.calculationMethod'] = preferences.method;
+        }
+        if (typeof preferences.madhab !== 'undefined') {
+          setOps['preferences.madhab'] = preferences.madhab;
+        }
+        if (preferences.perPrayer && typeof preferences.perPrayer === 'object') {
+          setOps['notificationPreferences.prayerReminders'] = preferences.perPrayer;
+        }
+      }
+      if (location && Number.isFinite(location.lat) && Number.isFinite(location.lon)) {
+        setOps['location'] = {
+          lat: Number(location.lat),
+          lon: Number(location.lon),
+          city: location.city || '',
+          country: location.country || '',
+        };
+      }
+      if (Object.keys(setOps).length) {
+        await User.updateOne({ _id: userId }, { $set: setOps });
+      }
     }
 
-    if (Object.keys(updates).length > 0) {
-      await User.findByIdAndUpdate(req.user.id, { $set: updates });
-    }
-
-    logger.info(`Subscription and preferences upserted for user ${req.user.id}`);
-    res.status(201).json({ success: true, message: 'Subscription and preferences updated.' });
-
-  } catch (error) {
-    logger.error('Failed to save push subscription or preferences:', error);
-    res.status(500).json({ success: false, message: 'Failed to save subscription.' });
+    return res.status(201).json({ success: true, message: 'Subscription saved.' });
+  } catch (e) {
+    console.error('Failed to save subscription:', e);
+    return res.status(500).json({ success: false, message: 'Failed to save subscription.' });
   }
 });
 
-
-// POST /api/notifications/unsubscribe - Remove a subscription
-router.post('/unsubscribe', requireSession, verifyCsrf, async (req, res) => {
-  const { endpoint } = req.body;
-  if (!endpoint) {
-    return res.status(400).json({ success: false, message: 'Endpoint is required.' });
-  }
+/**
+ * Unsubscribe (anonymous allowed; CSRF protected)
+ * - If a user is logged in, scope deletion by userId+endpoint for safety
+ */
+router.post('/unsubscribe', verifyCsrf, async (req, res) => {
   try {
-    await PushSubscription.deleteOne({ userId: req.user.id, endpoint });
-    logger.info(`Subscription removed for user ${req.user.id}`);
-    res.status(200).json({ success: true, message: 'Unsubscribed successfully.' });
-  } catch (error) {
-    logger.error('Failed to unsubscribe:', error);
-    res.status(500).json({ success: false, message: 'Failed to unsubscribe.' });
+    const { endpoint } = req.body || {};
+    if (!endpoint) {
+      return res.status(400).json({ success: false, message: 'Endpoint is required.' });
+    }
+
+    const query = { endpoint };
+    if (req.user?.id) query.userId = req.user.id;
+
+    const result = await PushSubscription.deleteOne(query);
+    return res.json({ success: true, deleted: result.deletedCount });
+  } catch (e) {
+    console.error('Failed to unsubscribe:', e);
+    return res.status(500).json({ success: false, message: 'Failed to unsubscribe.' });
   }
 });
 
-
-// GET /api/notifications/vapid-public-key - Provide the public VAPID key to the client
-router.get('/vapid-public-key', (req, res) => {
-  if (!process.env.VAPID_PUBLIC_KEY) {
-    logger.error('VAPID_PUBLIC_KEY is not set in the environment variables.');
-    return res.status(500).send('VAPID public key not configured on the server.');
+/** Debug list (requires session) */
+router.get('/list', requireSession, async (req, res) => {
+  try {
+    const subs = await PushSubscription
+      .find({ userId: req.user.id })
+      .select('endpoint keys.p256dh keys.auth tz createdAt updatedAt -_id');
+    res.json({ subscriptions: subs });
+  } catch (err) {
+    console.error('Failed to fetch subscriptions', err);
+    res.status(500).json({ error: 'Failed to fetch subscriptions' });
   }
-  res.send(process.env.VAPID_PUBLIC_KEY);
 });
 
-// --- Test Routes ---
-
-// POST /api/notifications/test - Send a generic test notification
+/** Test push (requires session + CSRF) */
 router.post('/test', requireSession, verifyCsrf, async (req, res) => {
-    try {
-        await queueTestNotification(req.user.id);
-        res.status(202).json({ success: true, message: 'Test notification queued.' });
-    } catch (error) {
-        logger.error(`Failed to queue test notification for user ${req.user.id}:`, error);
-        res.status(500).json({ success: false, error: 'Could not queue test notification.' });
+  try {
+    const subs = await PushSubscription.find({ userId: req.user.id }).lean();
+    if (!subs.length) {
+      return res.status(404).json({ error: 'No subscriptions found for the current user.' });
     }
-});
 
-// POST /api/notifications/test-prayer - Send a test for the next prayer
-router.post('/test-prayer', requireSession, verifyCsrf, async (req, res) => {
-    try {
-        const result = await queueTestPrayerNotification(req.user.id);
-        res.status(202).json({ success: true, msg: result.message });
-    } catch (error) {
-        logger.error(`Failed to queue test prayer notification for user ${req.user.id}:`, error);
-        res.status(500).json({ success: false, error: 'Could not queue test prayer notification.' });
-    }
-});
+    const payload = {
+      title: 'Test Notification ✅',
+      body: `This is a test notification sent at ${new Date().toLocaleTimeString()}.`,
+      tag: 'test-push',
+      data: { url: '/prayer-time.html' },
+    };
 
+    await Promise.all(
+      subs.map((sub) => enqueuePush(sub, payload, { removeOnComplete: true, removeOnFail: true }))
+    );
+
+    res.json({ success: true, count: subs.length });
+  } catch (e) {
+    console.error('Failed to queue test push:', e);
+    res.status(500).json({ error: 'Failed to queue test push' });
+  }
+});
 
 module.exports = router;

@@ -1,42 +1,45 @@
 // translator-backend/config/index.js
 
-const dotenv = require('dotenv');
 const { z } = require('zod');
+const dotenv = require('dotenv');
 
 // Load environment variables from .env file
 dotenv.config();
 
 // Define the schema for your environment variables
 const envSchema = z.object({
-  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  NODE_ENV: z.string().default('development'),
   PORT: z.coerce.number().default(3000),
-  MONGO_URI: z.string().min(1, { message: 'MONGO_URI is required.' }),
-  DB_NAME: z.string().min(1, { message: 'DB_NAME is required.' }),
-  JWT_SECRET: z.string().min(1, { message: 'JWT_SECRET is required.' }),
-  GOLD_API_KEY: z.string().min(1, { message: 'GOLD_API_KEY is required.' }),
-  EXCHANGE_RATE_API_KEY: z.string().min(1, { message: 'EXCHANGE_RATE_API_KEY is required.' }),
-  GEOCODING_API_KEY: z.string().min(1, { message: 'GEOCODING_API_KEY is required.' }),
-  VAPID_PUBLIC_KEY: z.string().min(1),
-  VAPID_PRIVATE_KEY: z.string().min(1),
-  REDIS_HOST: z.string().default('127.0.0.1'),
-  REDIS_PORT: z.coerce.number().default(6379),
-  // Add other keys like for OpenAI, Pinecone etc. as needed
-  // OPENAI_API_KEY: z.string().min(1),
+  MONGO_URI: z.string(),
+  DB_NAME: z.string(),
+  CLIENT_ORIGIN: z.string().optional(),
+
+  // --- THIS IS THE FIX ---
+  // Add the session secret to the schema so the app can load it
+  SESSION_SECRET: z.string(),
+  // ---------------------
+
+  JWT_SECRET: z.string().optional(),
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().optional(),
+
+  // Redis (optional, for BullMQ)
+  REDIS_HOST: z.string().optional(),
+  REDIS_PORT: z.coerce.number().optional(),
+  REDIS_URL: z.string().optional(),
+  NOTIFICATION_QUEUE_NAME: z.string().optional(),
+
+  // AI model endpoint (optional)
+  KAABAH_AI_API_URL: z.string().url().optional(),
 });
 
-// Parse and validate the environment variables
-const parsedEnv = envSchema.safeParse(process.env);
-
-if (!parsedEnv.success) {
-  console.error(
-    '❌ Invalid environment variables:',
-    parsedEnv.error.flatten().fieldErrors,
-  );
-  // Exit the process with an error code
+let env;
+try {
+  env = envSchema.parse(process.env);
+} catch (error) {
+  console.error('❌ Invalid environment variables:', error.format());
   process.exit(1);
 }
 
-// Export the validated and typed environment variables
-module.exports = {
-  env: parsedEnv.data,
-};
+module.exports = { env };
