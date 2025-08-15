@@ -1,4 +1,5 @@
 // translator-backend/routes/subscriptionRoutes.js
+
 const express = require('express');
 const router = express.Router();
 
@@ -6,8 +7,10 @@ const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/User');
 const { attachUser, requireSession } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
+const { env } = require('../config');
+const { validate, z } = require('../middleware/validate');
 
-// Support either services/queues export styles transparently
+// ---------- Queue integration (backward compatible) ----------
 let notifModule;
 try {
   notifModule = require('../queues/notificationQueue');
@@ -18,100 +21,153 @@ try {
     notifModule = {};
   }
 }
-async function enqueuePush(sub, payload, opts = {}) {
-  if (typeof notifModule.addPushJob === 'function') {
-    return notifModule.addPushJob({ subscription: sub, payload }, opts);
+
+async function enqueuePush({ subscriptionDoc, payload, opts = {} }) {
+  if (notifModule?.notificationQueue?.add) {
+    if (subscriptionDoc?._id) {
+      return notifModule.notificationQueue.add(
+        'send-push',
+        { subscriptionId: subscriptionDoc._id, payload },
+        { removeOnComplete: true, removeOnFail: true, ...opts }
+      );
+    }
+    return notifModule.notificationQueue.add(
+      'send-push',
+      { subscription: subscriptionDoc, payload },
+      { removeOnComplete: true, removeOnFail: true, ...opts }
+    );
   }
-  if (notifModule.notificationQueue?.add) {
-    return notifModule.notificationQueue.add('send-push', { subscription: sub, payload }, opts);
+  if (typeof notifModule.addPushJob === 'function') {
+    return notifModule.addPushJob(
+      { subscription: subscriptionDoc, payload },
+      { removeOnComplete: true, removeOnFail: true, ...opts }
+    );
   }
   throw new Error('Push queue module not available');
 }
 
-// Always attach user if present (JWT or session), but don't force auth.
+// ---------- Validation Schemas (Zod) ----------
+const subscriptionShape = z.object({
+  endpoint: z.string().url('Invalid endpoint URL'),
+  keys: z.object({
+    p256dh: z.string().min(1, 'Missing p256dh'),
+    auth: z.string().min(1, 'Missing auth'),
+  }),
+});
+
+const perPrayerShape = z.object({
+  fajr: z.boolean().optional(),
+  dhuhr: z.boolean().optional(),
+  asr: z.boolean().optional(),
+  maghrib: z.boolean().optional(),
+  isha: z.boolean().optional(),
+}).optional();
+
+const preferencesShape = z.object({
+  method: z.string().optional(),
+  madhab: z.string().optional(),
+  perPrayer: perPrayerShape,
+}).optional();
+
+const locationShape = z.object({
+  lat: z.coerce.number(),
+  lon: z.coerce.number(),
+  city: z.string().optional(),
+  country: z.string().optional(),
+}).partial().optional();
+
+const subscribeBodySchema = z.object({
+  // Accept either {subscription: {...}} or direct {endpoint, keys}
+  subscription: subscriptionShape.optional(),
+  endpoint: z.string().url().optional(),
+  keys: subscriptionShape.shape.keys.optional(),
+  tz: z.string().optional(),
+  preferences: preferencesShape,
+  location: locationShape,
+}).superRefine((data, ctx) => {
+  const hasNested = !!data.subscription;
+  const hasDirect = !!(data.endpoint && data.keys);
+  if (!hasNested && !hasDirect) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Provide either "subscription" or "endpoint"+"keys".',
+      path: ['subscription'],
+    });
+  }
+});
+
+const subscribeSchema = z.object({ body: subscribeBodySchema });
+
+const unsubscribeSchema = z.object({
+  body: z.object({
+    endpoint: z.string().url('Valid endpoint is required'),
+  }),
+});
+
+// ---------- Middleware ----------
 router.use(attachUser);
 
-/** Public: VAPID key */
+// ---------- Routes ----------
+
+/** GET /api/subscription/vapid-public-key (public) */
 router.get('/vapid-public-key', (_req, res) => {
-  const pk = (process.env.VAPID_PUBLIC_KEY || '').trim();
-  if (!pk) {
-    console.error('VAPID_PUBLIC_KEY is not set in environment variables.');
-    return res.status(500).send('VAPID public key not configured.');
-  }
+  const pk = (env.VAPID_PUBLIC_KEY || '').trim();
+  if (!pk) return res.status(500).send('VAPID public key not configured.');
   res.type('text').send(pk);
 });
 
 /**
- * Subscribe (anonymous allowed; CSRF protected for cookie-based flows)
- * - Upserts by unique endpoint
- * - Stores tz per-subscription (IANA string)
- * - If user is logged-in, optionally updates their preferences and location
+ * POST /api/subscription/subscribe
+ * Anonymous allowed; CSRF-protected for cookie flows.
+ * Upserts by endpoint; updates user prefs/location when authenticated.
  */
-router.post('/subscribe', verifyCsrf, async (req, res) => {
-  // ==================================================================
-  // --- TEMPORARY DEBUGGING BLOCK (REMOVE AFTER DIAGNOSIS) -----------
-  // This will tell us if the server recognized your session for THIS request.
-  // ==================================================================
-  if (!req.user) {
-    console.error('[DEBUG] /subscribe hit but req.user is MISSING');
-    console.error('[DEBUG] sessionID:', req.sessionID);
-    console.error('[DEBUG] req.session:', req.session);
-    return res.status(401).json({
-      error: 'Server failed to identify your session for this /subscribe request.',
-      sessionExists: !!req.session,
-      sessionID: req.sessionID || null,
-      userIdInSession: req.session ? (req.session.userId || null) : null,
-      sawCookiesHeader: typeof req.headers?.cookie === 'string',
-    });
-  }
-  // ==================================================================
-  // --- END TEMPORARY DEBUGGING BLOCK --------------------------------
-  // ==================================================================
-
+router.post('/subscribe', verifyCsrf, validate(subscribeSchema), async (req, res) => {
   try {
-    const sub = req.body.subscription || req.body;
-    const { endpoint, keys } = sub || {};
-    if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      return res.status(400).json({ success: false, message: 'Invalid subscription object.' });
-    }
+    const body = req.body;
+    const sub = body.subscription || { endpoint: body.endpoint, keys: body.keys };
 
-    const tz = (req.body.tz || 'UTC').trim();
-    const preferences = req.body.preferences || null; // { method, madhab, perPrayer }
-    const location = req.body.location || null;       // { lat, lon, city, country }
-
+    const tz = typeof body.tz === 'string' ? body.tz.trim() : 'UTC';
+    const preferences = body.preferences || null;
+    const location = body.location || null;
     const userId = req.user?.id || null;
 
-    // Upsert subscription document
     const now = new Date();
     await PushSubscription.updateOne(
-      { endpoint },
-      {
-        $set: { userId, endpoint, keys, tz, updatedAt: now },
-        $setOnInsert: { createdAt: now },
-      },
+      { endpoint: sub.endpoint },
+      { $set: { userId, endpoint: sub.endpoint, keys: sub.keys, tz, updatedAt: now },
+        $setOnInsert: { createdAt: now } },
       { upsert: true, setDefaultsOnInsert: true }
     );
 
-    // If authenticated, update user profile (best-effort)
     if (userId) {
       const setOps = {};
-      if (preferences) {
+      if (preferences && typeof preferences === 'object') {
         if (typeof preferences.method !== 'undefined') {
-          setOps['preferences.calculationMethod'] = preferences.method;
+          setOps['preferences.calculationMethod'] = String(preferences.method);
         }
         if (typeof preferences.madhab !== 'undefined') {
-          setOps['preferences.madhab'] = preferences.madhab;
+          setOps['preferences.madhab'] = String(preferences.madhab);
         }
         if (preferences.perPrayer && typeof preferences.perPrayer === 'object') {
-          setOps['notificationPreferences.prayerReminders'] = preferences.perPrayer;
+          setOps['notificationPreferences.prayerReminders'] = {
+            ...(preferences.perPrayer.fajr !== undefined ? { fajr: !!preferences.perPrayer.fajr } : {}),
+            ...(preferences.perPrayer.dhuhr !== undefined ? { dhuhr: !!preferences.perPrayer.dhuhr } : {}),
+            ...(preferences.perPrayer.asr !== undefined ? { asr: !!preferences.perPrayer.asr } : {}),
+            ...(preferences.perPrayer.maghrib !== undefined ? { maghrib: !!preferences.perPrayer.maghrib } : {}),
+            ...(preferences.perPrayer.isha !== undefined ? { isha: !!preferences.perPrayer.isha } : {}),
+          };
         }
       }
-      if (location && Number.isFinite(location.lat) && Number.isFinite(location.lon)) {
+      if (
+        location &&
+        Number.isFinite(Number(location.lat)) &&
+        Number.isFinite(Number(location.lon))
+      ) {
         setOps['location'] = {
           lat: Number(location.lat),
           lon: Number(location.lon),
-          city: location.city || '',
-          country: location.country || '',
+          city: typeof location.city === 'string' ? location.city : '',
+          country: typeof location.country === 'string' ? location.country : '',
         };
       }
       if (Object.keys(setOps).length) {
@@ -126,43 +182,41 @@ router.post('/subscribe', verifyCsrf, async (req, res) => {
   }
 });
 
-/**
- * Unsubscribe (anonymous allowed; CSRF protected)
- * - If a user is logged in, scope deletion by userId+endpoint for safety
- */
-router.post('/unsubscribe', verifyCsrf, async (req, res) => {
+/** POST /api/subscription/unsubscribe (anonymous allowed; CSRF) */
+router.post('/unsubscribe', verifyCsrf, validate(unsubscribeSchema), async (req, res) => {
   try {
-    const { endpoint } = req.body || {};
-    if (!endpoint) {
-      return res.status(400).json({ success: false, message: 'Endpoint is required.' });
-    }
+    const { endpoint } = req.body;
 
     const query = { endpoint };
     if (req.user?.id) query.userId = req.user.id;
 
     const result = await PushSubscription.deleteOne(query);
-    return res.json({ success: true, deleted: result.deletedCount });
+    return res.json({ success: true, deleted: result.deletedCount || 0 });
   } catch (e) {
     console.error('Failed to unsubscribe:', e);
     return res.status(500).json({ success: false, message: 'Failed to unsubscribe.' });
   }
 });
 
-/** Debug list (requires session) */
+/** GET /api/subscription/list (requires session) */
 router.get('/list', requireSession, async (req, res) => {
   try {
     const subs = await PushSubscription
       .find({ userId: req.user.id })
-      .select('endpoint keys.p256dh keys.auth tz createdAt updatedAt -_id');
-    res.json({ subscriptions: subs });
+      .select('endpoint keys.p256dh keys.auth tz createdAt updatedAt');
+    return res.json({ subscriptions: subs });
   } catch (err) {
     console.error('Failed to fetch subscriptions', err);
-    res.status(500).json({ error: 'Failed to fetch subscriptions' });
+    return res.status(500).json({ error: 'Failed to fetch subscriptions' });
   }
 });
 
-/** Test push (requires session + CSRF) */
-router.post('/test', requireSession, verifyCsrf, async (req, res) => {
+/**
+ * POST /api/subscription/test
+ * Alias: POST /api/subscription/test-push
+ * Uses Promise.allSettled so one enqueue failure doesn’t block others.
+ */
+async function handleTestPush(req, res) {
   try {
     const subs = await PushSubscription.find({ userId: req.user.id }).lean();
     if (!subs.length) {
@@ -176,15 +230,32 @@ router.post('/test', requireSession, verifyCsrf, async (req, res) => {
       data: { url: '/prayer-time.html' },
     };
 
-    await Promise.all(
-      subs.map((sub) => enqueuePush(sub, payload, { removeOnComplete: true, removeOnFail: true }))
+    const results = await Promise.allSettled(
+      subs.map((sub) =>
+        enqueuePush({
+          subscriptionDoc: sub,
+          payload,
+          opts: { removeOnComplete: true, removeOnFail: true },
+        })
+      )
     );
 
-    res.json({ success: true, count: subs.length });
+    const succeeded = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.length - succeeded;
+    if (failed) {
+      results
+        .filter((r) => r.status === 'rejected')
+        .forEach((r) => console.error('Failed to enqueue test push:', r.reason));
+    }
+
+    return res.json({ success: failed === 0, enqueued: succeeded, failed });
   } catch (e) {
     console.error('Failed to queue test push:', e);
-    res.status(500).json({ error: 'Failed to queue test push' });
+    return res.status(500).json({ error: 'Failed to queue test push' });
   }
-});
+}
+
+router.post('/test', requireSession, verifyCsrf, handleTestPush);
+router.post('/test-push', requireSession, verifyCsrf, handleTestPush); // alias/back-compat
 
 module.exports = router;

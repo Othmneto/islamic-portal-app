@@ -2,94 +2,133 @@
 
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const User = require('../models/User');
 const { attachUser } = require('../middleware/authMiddleware');
+const { CSRF_COOKIE_NAME } = require('../middleware/csrfMiddleware'); // single source of truth
+const { logger } = require('../config/logger');
+const { env } = require('../config');
+const { validate, z } = require('../middleware/validate'); // Zod-based validation middleware
 
 const router = express.Router();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret';
-const CSRF_COOKIE = 'XSRF-TOKEN';
+// Use validated secret from ./config (no weak fallback)
+const JWT_SECRET = env.JWT_SECRET;
 
-// POST /api/auth/login-cookie
-// - Verifies credentials
-// - Returns a JWT for Bearer flows
-// - Also sets req.session.userId for cookie/session flows
-router.post('/login-cookie', async (req, res) => {
+// ---------- Helpers ----------
+
+/** Clear a cookie with and without explicit domain (covers both cases) */
+function clearCookieEverywhere(res, name) {
+  const base = {
+    path: '/',
+    sameSite: 'Lax',
+    secure: env.NODE_ENV === 'production',
+  };
+  res.clearCookie(name, base);
+  if (env.COOKIE_DOMAIN) {
+    res.clearCookie(name, { ...base, domain: env.COOKIE_DOMAIN });
+  }
+}
+
+// ---------- Schemas ----------
+
+const loginSchema = z.object({
+  body: z.object({
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(1, 'Password is required'),
+  }),
+});
+
+// ---------- Handlers ----------
+
+/**
+ * Shared login handler for both /login and /login-cookie
+ * - Verifies credentials
+ * - Prevents session fixation via req.session.regenerate
+ * - Sets session user & userId for cookie/session flows
+ * - Issues a JWT for Bearer flows (mobile/3rd-party). Browsers should ignore it.
+ */
+async function handleLogin(req, res) {
   try {
-    const { email, password } = req.body || {};
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required.' });
-    }
+    const { email, password } = req.body; // already validated by zod middleware
 
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Create JWT for Bearer auth (SPA/API calls)
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+    // Create JWT for Bearer clients
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
 
-    // Set session for cookie-based flows
-    req.session.userId = user._id;
+    // Regenerate to prevent session fixation
+    req.session.regenerate((err) => {
+      if (err) {
+        logger.error('Session regeneration error:', err);
+        return res.status(500).json({ message: 'Could not log you in. Please try again.' });
+      }
 
-    // (Optional) set/refresh CSRF token cookie for double-submit CSRF on cookie-based requests
-    const csrf = crypto.randomBytes(24).toString('hex');
-    res.cookie(CSRF_COOKIE, csrf, {
-      httpOnly: false,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      path: '/',
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+      // Persist minimal user info server-side
+      req.session.userId = user._id;
+      req.session.user = {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      };
 
-    return res.json({
-      _id: user._id,
-      email: user.email,
-      username: user.username,
-      token, // client can store and send as Authorization: Bearer <token>
+      return res.status(200).json({
+        message: 'Login successful',
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+        },
+        // IMPORTANT: Web SPA should ignore this and rely on the HttpOnly session cookie.
+        token,
+      });
     });
   } catch (error) {
-    console.error('Login error:', error?.message || error);
+    logger.error('Login error:', error);
     return res.status(500).json({ message: 'Server error during login' });
   }
-});
+}
 
-// POST /api/auth/logout-cookie
-// - Destroys the session and clears cookies
-router.post('/logout-cookie', (req, res) => {
-  try {
-    req.session.destroy((err) => {
-      if (err) {
-        return res.status(500).json({ message: 'Could not log out.' });
-      }
-      // Clear the express-session cookie (named "sid" in server.js)
-      res.clearCookie('sid', { path: '/' });
-      // Clear CSRF cookie
-      res.clearCookie(CSRF_COOKIE, { path: '/' });
-      return res.status(200).json({ message: 'Logged out successfully.' });
-    });
-  } catch {
+// ---------- Routes ----------
+
+// Preferred modern path (mounted at /api/auth-cookie)
+router.post('/login', validate(loginSchema), handleLogin);
+
+// Legacy/back-compat path (mounted at /api/auth)
+router.post('/login-cookie', validate(loginSchema), handleLogin);
+
+// Logout (preferred modern path)
+router.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      logger.error('Session destruction error:', err);
+      return res.status(500).json({ message: 'Could not log you out. Please try again.' });
+    }
+    // Clear session cookie (matches name in server.js: 'sid')
+    clearCookieEverywhere(res, 'sid');
+    // Clear CSRF cookie set by csrfMiddleware
+    clearCookieEverywhere(res, CSRF_COOKIE_NAME);
     return res.status(200).json({ message: 'Logged out successfully.' });
-  }
-});
-
-// GET /api/auth/csrf
-// - Issues/rotates the XSRF-TOKEN cookie (handy for first load or refresh)
-router.get('/csrf', (_req, res) => {
-  const csrf = crypto.randomBytes(24).toString('hex');
-  res.cookie(CSRF_COOKIE, csrf, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'Lax',
-    path: '/',
-    maxAge: 24 * 60 * 60 * 1000,
   });
-  res.json({ ok: true, csrfToken: csrf });
 });
 
-// GET /api/auth/me
-// - Works with either Bearer JWT or session via attachUser
+// Legacy/back-compat logout path
+router.post('/logout-cookie', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      logger.error('Session destruction error:', err);
+      return res.status(500).json({ message: 'Could not log you out. Please try again.' });
+    }
+    clearCookieEverywhere(res, 'sid');
+    clearCookieEverywhere(res, CSRF_COOKIE_NAME);
+    return res.status(200).json({ message: 'Logged out successfully.' });
+  });
+});
+
+// Me (works with either Bearer JWT or session via attachUser)
 router.get('/me', attachUser, async (req, res) => {
   if (!req.user) return res.status(401).json({ message: 'Not authenticated' });
   return res.json(req.user);

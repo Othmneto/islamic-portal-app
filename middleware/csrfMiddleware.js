@@ -1,53 +1,121 @@
-// middleware/csrfMiddleware.js
+// translator-backend/middleware/csrfMiddleware.js
+
 const crypto = require('crypto');
+const { env } = require('../config');
 
-const CSRF_COOKIE = 'XSRF-TOKEN';
-const CSRF_HEADER = 'x-csrf-token';
+// Single source of truth
+const CSRF_COOKIE_NAME = 'XSRF-TOKEN';
+// Accept common header aliases
+const CSRF_HEADER_NAMES = ['x-csrf-token', 'x-xsrf-token'];
 
-function makeToken() {
-  return crypto.randomBytes(32).toString('base64url');
+/**
+ * Cookie opts for the readable CSRF token cookie (double-submit pattern).
+ * NOTE: httpOnly must be false so frontend can read & send as a header.
+ */
+function cookieOptions() {
+  const opts = {
+    httpOnly: false,
+    secure: env.NODE_ENV === 'production',
+    sameSite: 'Lax',
+    path: '/',
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  };
+  if (env.COOKIE_DOMAIN) opts.domain = env.COOKIE_DOMAIN;
+  return opts;
 }
 
-function setCsrfCookie(res, token) {
-  const isSecure = process.env.NODE_ENV === 'production';
-  res.setHeader('Set-Cookie', [
-    `${CSRF_COOKIE}=${token}; Path=/; SameSite=Lax; ${isSecure ? 'Secure; ' : ''}Max-Age=86400`,
-  ]);
-}
-
-// Issue a CSRF cookie on any request (safe & additive)
-function issueCsrfToken(req, res, next) {
-  const cookieHeader = req.headers.cookie || '';
-  if (!cookieHeader.includes(`${CSRF_COOKIE}=`)) {
-    const token = makeToken();
-    setCsrfCookie(res, token);
-    res.locals.csrfToken = token;
+/**
+ * Ensure a per-session CSRF secret exists.
+ * Stored server-side and never exposed directly.
+ */
+function ensureCsrfSecret(req) {
+  if (!req.session) {
+    throw new Error('Session is required for CSRF protection. Ensure express-session is configured.');
   }
-  next();
+  if (!req.session.csrfSecret) {
+    req.session.csrfSecret = crypto.randomBytes(32).toString('hex');
+  }
+  return req.session.csrfSecret;
 }
 
-// Explicit endpoint to fetch a fresh token/cookie
-function getCsrfToken(_req, res) {
-  const token = makeToken();
-  setCsrfCookie(res, token);
-  res.status(200).json({ csrfToken: token });
+/**
+ * Derive the public CSRF token sent to the browser (header & cookie) from the secret.
+ * Using a stable label binds the token to the session secret without exposing it.
+ */
+function deriveToken(secret) {
+  return crypto.createHmac('sha256', secret).update('auth-token').digest('hex');
 }
 
-// Optional standalone verifier (same logic as in authMiddleware.verifyCsrf)
+/**
+ * Middleware: ensure a CSRF cookie exists for every request.
+ * - Derives a token from the session-held secret and sets it as a readable cookie.
+ * - Also places the token in res.locals.csrfToken for templates if desired.
+ */
+function issueCsrfToken(req, res, next) {
+  try {
+    const secret = ensureCsrfSecret(req);
+    const token = deriveToken(secret);
+    // Always refresh cookie (cheap + avoids stale tokens after secret rotation)
+    res.cookie(CSRF_COOKIE_NAME, token, cookieOptions());
+    res.locals.csrfToken = token;
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+/**
+ * Handler: returns the current CSRF token and (re)sets the cookie.
+ * Frontend can call /api/csrf-token before state-changing requests.
+ */
+function getCsrfToken(req, res) {
+  const secret = ensureCsrfSecret(req);
+  const token = deriveToken(secret);
+  res.cookie(CSRF_COOKIE_NAME, token, cookieOptions());
+  res.status(200).json({ ok: true, csrfToken: token });
+}
+
+/**
+ * Middleware: verify CSRF for state-changing requests (double-submit with HMAC).
+ * - Skips verification for Bearer JWT API clients.
+ * - Allows bypass in non-production if ALLOW_NO_CSRF=true (useful for local E2E).
+ * - Compares the header token against the HMAC derived from the session secret,
+ *   and also ensures the cookie carries the same token.
+ */
 function verifyCsrf(req, res, next) {
+  // Skip for Bearer clients (mobile/3rd-party) — they should use Authorization header
   const authHeader = req.headers.authorization || '';
   if (/^Bearer\s+/i.test(authHeader)) return next();
-  if (process.env.ALLOW_NO_CSRF === 'true') return next();
 
-  const headerToken = req.headers[CSRF_HEADER];
-  const cookieHeader = req.headers.cookie || '';
-  const cookieMatch = cookieHeader.match(new RegExp(`${CSRF_COOKIE}=([^;]+)`));
-  const cookieToken = cookieMatch ? cookieMatch[1] : null;
+  // Allow opt-out only in non-production (e.g., local E2E)
+  if (env.ALLOW_NO_CSRF === 'true' && env.NODE_ENV !== 'production') return next();
 
-  if (!headerToken || !cookieToken || headerToken !== cookieToken) {
-    return res.status(403).json({ error: 'Invalid CSRF token' });
+  const secret = req.session?.csrfSecret;
+  if (!secret) {
+    return res.status(403).json({ success: false, error: 'CSRF token missing' });
   }
-  next();
+
+  // Accept either x-csrf-token or x-xsrf-token
+  const headerToken = CSRF_HEADER_NAMES.map((h) => req.get(h)).find(Boolean);
+  const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
+
+  if (!headerToken || !cookieToken) {
+    return res.status(403).json({ success: false, error: 'CSRF token missing' });
+  }
+
+  const expectedToken = deriveToken(secret);
+
+  // Require header to match derived token and cookie to carry the same token
+  if (headerToken !== expectedToken || cookieToken !== expectedToken) {
+    return res.status(403).json({ success: false, error: 'Invalid CSRF token' });
+  }
+
+  return next();
 }
 
-module.exports = { issueCsrfToken, getCsrfToken, verifyCsrf };
+module.exports = {
+  CSRF_COOKIE_NAME,
+  issueCsrfToken,
+  getCsrfToken,
+  verifyCsrf,
+};
