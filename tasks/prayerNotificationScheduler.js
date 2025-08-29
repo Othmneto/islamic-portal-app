@@ -1,59 +1,72 @@
 // translator-backend/tasks/prayerNotificationScheduler.js
-const cron = require('node-cron');
-const mongoose = require('mongoose');
-const adhan = require('adhan');
-const moment = require('moment-timezone'); // timezone + formatting
-const User = require('../models/User');
-const PushSubscription = require('../models/PushSubscription');
-const { notificationQueue } = require('../queues/notificationQueue');
-const logger = require('../utils/logger');
-const { env } = require('../config');
+"use strict";
+
+/* ------------------------------------------------------------------
+   Prayer Notification Scheduler
+   - Schedules a push job per subscription/prayer/day (de-duplicated)
+   - Reads per-prayer prefs from sub.preferences.perPrayer (correct)
+   - Falls back to subscription.location when user.location is absent
+------------------------------------------------------------------- */
+
+const cron = require("node-cron");
+const mongoose = require("mongoose");
+const adhan = require("adhan");
+const moment = require("moment-timezone");
+
+const PushSubscription = require("../models/PushSubscription");
+const { notificationQueue } = require("../queues/notificationQueue");
+const logger = require("../utils/logger");
+const { env } = require("../config");
 
 /* ---------------------------------------------
    Helpers
 ----------------------------------------------*/
 
-/** Resolve calculation params incl. 'auto' using timezone hints */
-function resolveParams(method = 'MuslimWorldLeague', madhab = 'shafii', tz = 'UTC') {
+function resolveParams(
+  method = "MuslimWorldLeague",
+  madhab = "shafii",
+  tz = "UTC"
+) {
   let m = method;
   let md = madhab;
 
   if (!adhan.CalculationMethod[m]) {
-    // 'auto' or unknown → infer from timezone
-    if (/Africa\/Cairo|Egypt/i.test(tz)) m = 'Egyptian';
-    else if (/Asia\/Dubai|Dubai/i.test(tz)) m = 'Dubai';
-    else if (/Asia\/(Karachi|Kolkata|Dhaka)|Pakistan|India|Bangladesh/i.test(tz)) m = 'Karachi';
-    else if (/America\/|Canada|USA|US|CA/i.test(tz)) m = 'NorthAmerica';
-    else m = 'MuslimWorldLeague';
+    if (/Africa\/Cairo|Egypt/i.test(tz)) m = "Egyptian";
+    else if (/Asia\/Dubai|Dubai/i.test(tz)) m = "Dubai";
+    else if (/Asia\/(Karachi|Kolkata|Dhaka)|Pakistan|India|Bangladesh/i.test(tz)) m = "Karachi";
+    else if (/America\/|Canada|USA|US|CA/i.test(tz)) m = "NorthAmerica";
+    else m = "MuslimWorldLeague";
   }
 
-  if (md === 'auto' || (md !== 'hanafi' && md !== 'shafii')) {
-    md = /Asia\/(Karachi|Kolkata|Dhaka)|Pakistan|India|Bangladesh/i.test(tz) ? 'hanafi' : 'shafii';
+  if (md === "auto" || (md !== "hanafi" && md !== "shafii")) {
+    md = /Asia\/(Karachi|Kolkata|Dhaka)|Pakistan|India|Bangladesh/i.test(tz) ? "hanafi" : "shafii";
   }
 
   const params = adhan.CalculationMethod[m]?.() || adhan.CalculationMethod.MuslimWorldLeague();
-  params.madhab = md === 'hanafi' ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi;
+  params.madhab = md === "hanafi" ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi;
+
   return params;
 }
 
-/**
- * Calculate prayer times for a location in a specific timezone
- * Returns JS Date objects (server timezone) for each prayer on the user's local date.
- */
-const getPrayerTimesForLocation = (lat, lon, tz = 'UTC', method = 'MuslimWorldLeague', madhab = 'shafii') => {
+function getPrayerTimesForLocation(
+  lat,
+  lon,
+  tz = "UTC",
+  method = "MuslimWorldLeague",
+  madhab = "shafii"
+) {
   const latitude = parseFloat(lat);
   const longitude = parseFloat(lon);
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    throw new Error('Invalid coordinates');
+    throw new Error("Invalid coordinates");
   }
 
-  // Anchor to the user's current date/time in their timezone
-  const userDate = moment.tz(tz).toDate();
+  const userLocalDate = moment.tz(tz).toDate();
 
   const coordinates = new adhan.Coordinates(latitude, longitude);
   const params = resolveParams(method, madhab, tz);
+  const pt = new adhan.PrayerTimes(coordinates, userLocalDate, params);
 
-  const pt = new adhan.PrayerTimes(coordinates, userDate, params);
   return {
     fajr: pt.fajr,
     dhuhr: pt.dhuhr,
@@ -61,11 +74,10 @@ const getPrayerTimesForLocation = (lat, lon, tz = 'UTC', method = 'MuslimWorldLe
     maghrib: pt.maghrib,
     isha: pt.isha,
   };
-};
+}
 
-/** Build a unique jobId per subscription/prayer/day to prevent duplicates */
 function buildJobId(sub, prayerName, prayerTime, tz) {
-  const dayKey = moment(prayerTime).tz(tz).format('YYYY-MM-DD');
+  const dayKey = moment(prayerTime).tz(tz).format("YYYY-MM-DD");
   return `push-${sub._id}-${prayerName}-${dayKey}`;
 }
 
@@ -74,111 +86,117 @@ function buildJobId(sub, prayerName, prayerTime, tz) {
 ----------------------------------------------*/
 
 const scheduleAllPrayerNotifications = async () => {
-  logger.info('Scheduler running: Looking for users with subscriptions...');
+  logger.info("[Scheduler] Scanning push subscriptions...");
+
   try {
-    const usersWithSubs = await PushSubscription.distinct('userId');
-    const users = await User.find({
-      _id: { $in: usersWithSubs },
-      'location.lat': { $exists: true },
-      'location.lon': { $exists: true },
+    const subscriptions = await PushSubscription.find({
+      $and: [
+        {
+          $or: [
+            { "subscription.endpoint": { $exists: true, $ne: null } },
+            { "endpoint": { $exists: true, $ne: null } }
+          ]
+        },
+        { "location.lat": { $exists: true, $ne: null } },
+        { "location.lon": { $exists: true, $ne: null } },
+        { "preferences.enabled": { $ne: false } },
+      ]
     }).lean();
 
-    logger.info(`Found ${users.length} user(s) with location and subscriptions to schedule.`);
+    if (!subscriptions.length) {
+      logger.info("[Scheduler] No valid subscriptions found to schedule for.");
+      return;
+    }
 
-    for (const user of users) {
-      const subscriptions = await PushSubscription.find({ userId: user._id }).lean();
-      if (!subscriptions.length) continue;
+    logger.info(`[Scheduler] Found ${subscriptions.length} subscriptions with valid data.`);
 
-      // User-level preferences (with graceful defaults/auto)
-      const userMethod = user.preferences?.calculationMethod || 'MuslimWorldLeague';
-      const userMadhab = user.preferences?.madhab || 'shafii';
+    let totalScheduled = 0;
 
-      let scheduledCount = 0;
+    for (const sub of subscriptions) {
+      const perPrayer = sub.preferences?.perPrayer || {};
+      const tz = sub.tz || "UTC";
 
-      // Schedule per subscription so each device's timezone is respected
-      for (const sub of subscriptions) {
-        const tz = sub.tz || 'UTC';
-        let prayerTimes;
-        try {
-          prayerTimes = getPrayerTimesForLocation(
-            user.location.lat,
-            user.location.lon,
-            tz,
-            userMethod,
-            userMadhab
-          );
-        } catch (e) {
-          logger.warn(`Skip scheduling for user ${user._id} sub ${sub._id}: ${e.message}`);
-          continue;
-        }
+      const method = sub.preferences?.method || "MuslimWorldLeague";
+      const madhab = sub.preferences?.madhab || "shafii";
+      const loc = sub.location;
 
-        const reminders = user.notificationPreferences?.prayerReminders || {};
-        for (const prayerName of Object.keys(prayerTimes)) {
-          if (!reminders[prayerName]) continue;
-
-          const prayerTime = new Date(prayerTimes[prayerName]);
-          const now = new Date();
-          const delay = prayerTime.getTime() - now.getTime();
-          if (delay <= 0) continue; // only future prayers
-
-          const payload = {
-            title: `🕌 ${prayerName.charAt(0).toUpperCase() + prayerName.slice(1)} Prayer Time`,
-            body: `It's time for the ${prayerName} prayer.`,
-            tag: `prayer-${prayerName}-${moment(prayerTime).tz(tz).format('YYYY-MM-DD')}`, // sticky per day
-            requireInteraction: true,
-            data: { url: '/prayer-time.html' },
-          };
-
-          const jobId = buildJobId(sub, prayerName, prayerTime, tz);
-          await notificationQueue.add(
-            'send-push',
-            { subscription: sub, payload },
-            {
-              delay,
-              jobId, // de-dup per sub/prayer/day
-              removeOnComplete: true,
-              removeOnFail: true,
-            }
-          );
-          scheduledCount++;
-        }
+      let times;
+      try {
+        times = getPrayerTimesForLocation(
+          loc.lat,
+          loc.lon,
+          tz,
+          method,
+          madhab
+        );
+      } catch (e) {
+        logger.warn(`[Scheduler] Skip sub ${sub._id}: ${e.message}`);
+        continue;
       }
 
-      if (scheduledCount > 0) {
-        logger.info(`Scheduled ${scheduledCount} prayer alert(s) for user ${user._id}`);
+      const wpSub = sub.subscription;
+
+      for (const [prayerName, prayerTime] of Object.entries(times)) {
+        if (!perPrayer[prayerName]) continue;
+
+        const delay = new Date(prayerTime).getTime() - Date.now();
+        if (delay <= 0) continue;
+
+        const payload = {
+          title: `🕌 ${prayerName.charAt(0).toUpperCase() + prayerName.slice(1)} Prayer Time`,
+          body: `It's time for the ${prayerName} prayer.`,
+          tag: `prayer-${prayerName}-${moment(prayerTime).tz(tz).format("YYYY-MM-DD")}`,
+          requireInteraction: true,
+          data: { url: "/prayer-time.html" },
+          audioFile: "/audio/adhan.mp3",
+        };
+
+        const jobId = buildJobId(sub, prayerName, prayerTime, tz);
+
+        await notificationQueue.add(
+          "send-push",
+          { subscription: wpSub, payload },
+          {
+            delay,
+            jobId,
+            removeOnComplete: true,
+            removeOnFail: true,
+          }
+        );
+
+        totalScheduled++;
       }
     }
-  } catch (error) {
-    logger.error('Error in prayer notification scheduler:', error);
+
+    logger.info(`[Scheduler] Scheduled ${totalScheduled} prayer alert(s) across ${subscriptions.length} subscription(s).`);
+  } catch (err) {
+    logger.error("[Scheduler] Error while scheduling prayer notifications:", err);
   }
 };
 
 /* ---------------------------------------------
-   Bootstrap
+   Bootstrap (when running the scheduler process)
 ----------------------------------------------*/
 
 const initializeScheduler = async () => {
   try {
-    await mongoose.connect(env.MONGO_URI, { dbName: env.DB_NAME });
-    logger.info('✅ Prayer Scheduler connected to MongoDB.');
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(env.MONGO_URI, { dbName: env.DB_NAME });
+      logger.info("✅ Prayer Scheduler connected to MongoDB.");
+    }
 
-    // Run daily shortly after midnight UTC (schedules next day per-user TZ properly)
-    cron.schedule('1 0 * * *', scheduleAllPrayerNotifications, { timezone: 'UTC' });
+    cron.schedule("1 0 * * *", scheduleAllPrayerNotifications, { timezone: "UTC" });
+    cron.schedule("0 */6 * * *", scheduleAllPrayerNotifications);
 
-    // Also run every 6 hours to catch new users or preference changes
-    cron.schedule('0 */6 * * *', scheduleAllPrayerNotifications);
+    logger.info("⏰ Prayer notification scheduler started.");
 
-    logger.info('⏰ Prayer notification scheduler started.');
-
-    // Prime once on startup (allow server to warm up)
-    setTimeout(scheduleAllPrayerNotifications, 15000);
-  } catch (error) {
-    logger.error('❌ Failed to initialize prayer scheduler:', error);
+    setTimeout(scheduleAllPrayerNotifications, 15_000);
+  } catch (err) {
+    logger.error("❌ Failed to initialize prayer scheduler:", err);
     process.exit(1);
   }
 };
 
-// Start if invoked directly
 if (require.main === module) {
   initializeScheduler();
 }

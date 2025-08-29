@@ -4,8 +4,8 @@
 /**
  * BullMQ Web Push worker (production-ready)
  * - Back-compat for job payloads:
- *      { subscription, payload, options }           // inline (legacy)
- *      { subscriptionId, payload }                  // DB lookup (modern)
+ * { subscription, payload, options }           // inline (legacy)
+ * { subscriptionId, payload }                  // DB lookup (modern)
  * - Cleans up dead subscriptions (404/410)
  * - Optional logger/model/redis configs (defensive fallbacks)
  * - Graceful shutdown for SIGINT/SIGTERM + fatal errors

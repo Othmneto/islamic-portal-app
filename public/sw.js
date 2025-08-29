@@ -1,49 +1,93 @@
-// public/sw.js
+/* ------------------------------------------------------------------
+   Service Worker for Prayer Times
+   - Shows notifications on push
+   - Broadcasts PLAY_ADHAN to open pages so they can play audio
+   - Focuses or opens page on notification click
+------------------------------------------------------------------- */
 
-// Ensure new SW takes control immediately after install
-self.addEventListener('install', () => self.skipWaiting());
-self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
-
-self.addEventListener('push', (event) => {
-  let payload;
-  try {
-    payload = event.data.json();
-  } catch (e) {
-    try {
-      payload = { body: event.data && event.data.text ? event.data.text() : '' };
-    } catch {
-      payload = {};
-    }
-  }
-
-  const title = payload.title || 'Islamic Portal';
-  const options = {
-    body: payload.body || '',
-    icon: payload.icon || '/favicon.ico',
-    badge: payload.badge || '/favicon.ico',
-    data: payload.data || { url: '/prayer-time.html' },
-    tag: payload.tag || 'default-tag',
-    requireInteraction: payload.requireInteraction === true,
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
 });
 
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  const urlToOpen = event.notification?.data?.url || '/prayer-time.html';
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      for (const client of clientList) {
-        // Compare only the pathname so query/hash differences don't prevent focus
-        const clientUrl = new URL(client.url);
-        const targetUrl = new URL(urlToOpen, self.location.origin);
-        if (clientUrl.pathname === targetUrl.pathname && 'focus' in client) {
-          return client.focus();
-        }
+// Utility: safe JSON parse of push payload
+async function parsePushData(event) {
+  if (!event.data) return {};
+  try {
+    return await event.data.json();
+  } catch {
+    // fallback: plain text
+    try {
+      const txt = await event.data.text();
+      return { body: txt };
+    } catch {
+      return {};
+    }
+  }
+}
+
+self.addEventListener("push", (event) => {
+  event.waitUntil((async () => {
+    const payload = await parsePushData(event);
+    const title = payload.title || "Prayer Reminder";
+    const options = {
+      body: payload.body || "",
+      icon: payload.icon || "/favicon.ico",
+      badge: payload.badge || "/favicon.ico",
+      data: payload.data || { url: "/prayer-time.html" },
+      tag: payload.tag || "prayer",
+      renotify: !!payload.renotify,
+      // Custom sounds are not supported in Web Push notifications.
+      // We'll play audio inside the page via a postMessage.
+    };
+
+    // Show notification
+    await self.registration.showNotification(title, options);
+
+    // Also tell open clients to play Adhan unless silenced
+    if (!payload.silent) {
+      const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of clientsList) {
+        try {
+          c.postMessage({
+            type: "PLAY_ADHAN",
+            audioFile: payload.audioFile || "/audio/adhan.mp3",
+          });
+        } catch {}
       }
-      if (clients.openWindow) return clients.openWindow(urlToOpen);
-    })
-  );
+    }
+  })());
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification?.data?.url || "/prayer-time.html";
+
+  event.waitUntil((async () => {
+    const allClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const targetUrl = new URL(urlToOpen, self.location.origin).href;
+
+    // Try to focus an existing tab with the same path
+    for (const client of allClients) {
+      const clientUrl = new URL(client.url, self.location.origin).href;
+      if (clientUrl === targetUrl && "focus" in client) {
+        // As a fallback, ask it to play on click too
+        try { client.postMessage({ type: "PLAY_ADHAN", audioFile: "/audio/adhan.mp3" }); } catch {}
+        return client.focus();
+      }
+    }
+
+    // Otherwise open a new tab
+    if (self.clients.openWindow) {
+      return self.clients.openWindow(urlToOpen);
+    }
+  })());
+});
+
+// (Optional) Basic fetch passthrough; customize if you add caching later
+self.addEventListener("fetch", () => {
+  // no-op: network handled by the page
 });

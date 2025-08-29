@@ -1,25 +1,44 @@
+<!-- translator-backend/public/prayer-time.html -->
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Prayer Times - Islamic Portal</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="prayer-time.css">
+
+  <meta name="theme-color" content="#0d6efd" />
   <link rel="manifest" href="prayer-time.json">
+
+  <!-- Icons / Fonts -->
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/images/icon-192.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="prayer-time.css">
+
+  <!-- Adhan.js for local fallback + monthly view -->
   <script src="https://cdn.jsdelivr.net/npm/adhan@4/dist/Adhan.js"></script>
 </head>
 <body>
-  <div class="container">
-    <div class="language-switcher">
-      <select id="language-selector">
-        <option value="en">English</option>
-        <option value="ar">العربية</option>
-        <option value="fr">Français</option>
-        <option value="hi">हिन्दी</option>
-      </select>
+  <noscript>
+    <div style="padding:1rem;background:#fee2e2;color:#991b1b;text-align:center">
+      JavaScript is required to view prayer times.
     </div>
+  </noscript>
 
+  <!-- Language Switcher -->
+  <div class="language-switcher">
+    <select id="language-selector" aria-label="Language">
+      <option value="en">English</option>
+      <option value="ar">العربية</option>
+      <option value="fr">Français</option>
+      <option value="hi">हिन्दी</option>
+    </select>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
     <header class="page-header">
       <h1><i class="fa-solid fa-clock"></i> Prayer Times</h1>
       <p>
@@ -32,32 +51,57 @@
       </p>
     </header>
 
+    <!-- Location Search -->
     <div class="location-search-container">
-      <input type="text" id="location-search-input" data-i18n-placeholder="search_placeholder" placeholder="Type at least 2 letters...">
-      <div id="search-results"></div>
+      <label for="location-search-input" class="sr-only">Search location</label>
+      <input
+        type="text"
+        id="location-search-input"
+        data-i18n-placeholder="search_placeholder"
+        placeholder="Type at least 2 letters..."
+        autocomplete="off"
+        aria-autocomplete="list"
+        aria-controls="search-results"
+      />
+      <div id="search-results" role="listbox" aria-label="Location search results"></div>
     </div>
 
+    <!-- Loading -->
     <div id="loading-message"><p>Fetching prayer times...</p></div>
 
+    <!-- Main Content -->
     <div id="prayer-times-content" style="display:none;">
-        <div class="next-prayer-info">
-            <h2><span id="next-prayer-name">--:--</span> in</h2>
-            <p id="countdown-timer">--:--:--</p>
-        </div>
-
-      <div class="prayer-times-grid">
-        <div id="fajr-card" class="prayer-card" data-key="fajr"><h3>Fajr</h3><p id="fajr-time">--:--</p></div>
-        <div id="dhuhr-card" class="prayer-card" data-key="dhuhr"><h3>Dhuhr</h3><p id="dhuhr-time">--:--</p></div>
-        <div id="asr-card" class="prayer-card" data-key="asr"><h3>Asr</h3><p id="asr-time">--:--</p></div>
-        <div id="maghrib-card" class="prayer-card" data-key="maghrib"><h3>Maghrib</h3><p id="maghrib-time">--:--</p></div>
-        <div id="isha-card" class="prayer-card" data-key="isha"><h3>Isha</h3><p id="isha-time">--:--</p></div>
+      <!-- Next Prayer / Countdown -->
+      <div class="next-prayer-info">
+        <h2><span id="next-prayer-name">--:--</span> in</h2>
+        <p id="countdown-timer">--:--:--</p>
       </div>
 
-      <div class="settings-panel">
-        <h3>Settings</h3>
+      <!-- Times Grid -->
+      <div class="prayer-times-grid">
+        <div id="fajr-card" class="prayer-card" data-key="fajr">
+          <h3>Fajr</h3><p id="fajr-time">--:--</p>
+        </div>
+        <div id="dhuhr-card" class="prayer-card" data-key="dhuhr">
+          <h3>Dhuhr</h3><p id="dhuhr-time">--:--</p>
+        </div>
+        <div id="asr-card" class="prayer-card" data-key="asr">
+          <h3>Asr</h3><p id="asr-time">--:--</p>
+        </div>
+        <div id="maghrib-card" class="prayer-card" data-key="maghrib">
+          <h3>Maghrib</h3><p id="maghrib-time">--:--</p>
+        </div>
+        <div id="isha-card" class="prayer-card" data-key="isha">
+          <h3>Isha</h3><p id="isha-time">--:--</p>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-panel" aria-labelledby="settings-title">
+        <h3 id="settings-title">Settings</h3>
         <div class="settings-grid">
           <div class="settings-group">
-            <label>Calculation Method</label>
+            <label for="calculation-method-select">Calculation Method</label>
             <select id="calculation-method-select">
               <option value="auto">Auto (recommended)</option>
               <option value="MuslimWorldLeague">Muslim World League</option>
@@ -68,25 +112,33 @@
               <option value="UmmAlQura">Umm al-Qura (KSA)</option>
             </select>
           </div>
+
           <div class="settings-group">
-            <label>Asr Method</label>
+            <label for="madhab-select">Asr Method (Madhab)</label>
             <select id="madhab-select">
               <option value="auto">Auto (by country)</option>
               <option value="shafii">Shafi'i</option>
               <option value="hanafi">Hanafi</option>
             </select>
           </div>
+
           <div class="settings-group toggle-group">
-            <i class="fa-solid fa-hourglass-start"></i>
-            <label class="theme-switch"><input type="checkbox" id="clock-format-toggle" /></label>
-            <span>24-Hour Clock</span>
+            <i class="fa-solid fa-hourglass-start" aria-hidden="true"></i>
+            <label class="theme-switch">
+              <input type="checkbox" id="clock-format-toggle" />
+              <span>24-Hour Clock</span>
+            </label>
           </div>
+
           <div class="settings-group toggle-group">
-            <i class="fa-solid fa-bell"></i>
-            <label class="theme-switch"><input type="checkbox" id="notification-toggle" /></label>
-            <span>Enable Notifications</span>
+            <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            <label class="theme-switch">
+              <input type="checkbox" id="notification-toggle" />
+              <span>Enable Notifications</span>
+            </label>
           </div>
         </div>
+
         <div style="margin-top:1rem">
           <h4 style="margin:.5rem 0">Per-Prayer Alerts</h4>
           <div class="pill-toggle-grid">
@@ -99,47 +151,69 @@
         </div>
       </div>
 
+      <!-- Audio / Test -->
       <div class="adhan-toggle-container">
-        <i class="fa-solid fa-volume-high"></i>
-        <label class="theme-switch"><input type="checkbox" id="adhan-audio-toggle" /></label>
-        <span>Play Adhan Audio</span>
-        <button id="test-notification-btn" style="margin-left:10px" class="btn"><i class="fa-solid fa-bell"></i> Test Notification</button>
-        <button id="test-prayer-notification-btn" style="margin-left:10px" class="btn"><i class="fa-solid fa-mosque"></i> Test Prayer Alert</button>
+        <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+        <label class="theme-switch">
+          <input type="checkbox" id="adhan-audio-toggle" />
+          <span>Play Adhan Audio</span>
+        </label>
+
+        <button id="test-notification-btn" class="btn" type="button" title="Queue a generic push notification">
+          <i class="fa-solid fa-bell"></i> Test Notification
+        </button>
+        <button id="test-prayer-notification-btn" class="btn" type="button" title="Queue a prayer push notification">
+          <i class="fa-solid fa-mosque"></i> Test Prayer Alert
+        </button>
       </div>
 
+      <!-- Location / Date -->
       <div class="location-info">
         <p>Today's Date: <span id="gregorian-date"></span></p>
         <p>Hijri Date: <span id="hijri-date"></span></p>
         <p>Location: <span id="location-display"></span></p>
       </div>
 
-      <button id="view-monthly-btn" class="btn">View Monthly Times</button>
+      <button id="view-monthly-btn" class="btn" type="button">View Monthly Times</button>
     </div>
   </div>
 
-  <div id="monthly-view-modal" class="modal-overlay"></div>
+  <!-- Monthly Modal -->
+  <div id="monthly-view-modal" class="modal-overlay" aria-hidden="true"></div>
 
-  <button id="open-assistant-btn" class="floating-btn" title="AI Assistant"><i class="fa-solid fa-robot"></i></button>
-  <div id="assistant-modal" class="modal-overlay">
-    <div class="modal-content assistant-modal-content">
+  <!-- Floating Assistant -->
+  <button id="open-assistant-btn" class="floating-btn" title="AI Assistant">
+    <i class="fa-solid fa-robot"></i>
+  </button>
+  <div id="assistant-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-content assistant-modal-content" role="dialog" aria-modal="true" aria-labelledby="assistant-title">
       <div class="modal-header">
-        <h3>AI Assistant</h3>
-        <button id="close-assistant-btn" class="modal-close-btn">&times;</button>
+        <h3 id="assistant-title">AI Assistant</h3>
+        <button id="close-assistant-btn" class="modal-close-btn" aria-label="Close">&times;</button>
       </div>
       <div id="assistant-chat-window" class="assistant-chat-window">
-        <div class="message assistant">Hello! Ask me about prayer times, Zakat, date conversions, or your translation history.</div>
+        <div class="message assistant">
+          Hello! Ask me about prayer times, Zakat, date conversions, or your translation history.
+        </div>
       </div>
       <div class="assistant-input-area">
+        <label for="assistant-input" class="sr-only">Ask a question</label>
         <input type="text" id="assistant-input" placeholder="Ask a question...">
-        <button id="assistant-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+        <button id="assistant-send-btn" type="button"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     </div>
   </div>
 
+  <!-- Hidden screen-reader class -->
+  <style>
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+
+  <!-- Audio element used by the page when playing Adhan -->
   <audio id="adhan-player" src="/audio/adhan.mp3" preload="auto"></audio>
 
+  <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
-  <script src="push-client.js"></script>
   <script src="prayer-time.js"></script>
 </body>
 </html>
