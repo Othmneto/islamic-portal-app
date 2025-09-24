@@ -5,7 +5,7 @@ const router = express.Router();
 
 const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/User');
-const { attachUser, requireSession } = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/auth');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const { env } = require('../config');
 const { validate, z } = require('../middleware/validate');
@@ -105,7 +105,8 @@ const unsubscribeSchema = z.object({
 });
 
 // ---------- Middleware ----------
-router.use(attachUser);
+// ✅ SECURITY FIX: Use JWT-based auth middleware for consistent security
+// Note: Individual routes will use authMiddleware as needed
 
 // ---------- Routes ----------
 
@@ -125,6 +126,11 @@ router.post('/subscribe', verifyCsrf, validate(subscribeSchema), async (req, res
   try {
     const body = req.body;
     const sub = body.subscription || { endpoint: body.endpoint, keys: body.keys };
+
+    // Validate endpoint is present and not null
+    if (!sub.endpoint || typeof sub.endpoint !== 'string' || sub.endpoint.trim() === '') {
+      return res.status(400).json({ success: false, message: 'Valid endpoint is required.' });
+    }
 
     const tz = typeof body.tz === 'string' ? body.tz.trim() : 'UTC';
     const preferences = body.preferences || null;
@@ -178,6 +184,15 @@ router.post('/subscribe', verifyCsrf, validate(subscribeSchema), async (req, res
     return res.status(201).json({ success: true, message: 'Subscription saved.' });
   } catch (e) {
     console.error('Failed to save subscription:', e);
+    
+    // Handle specific MongoDB errors
+    if (e.code === 11000) {
+      return res.status(409).json({ 
+        success: false, 
+        message: 'Subscription already exists. Please try refreshing the page.' 
+      });
+    }
+    
     return res.status(500).json({ success: false, message: 'Failed to save subscription.' });
   }
 });
@@ -198,8 +213,8 @@ router.post('/unsubscribe', verifyCsrf, validate(unsubscribeSchema), async (req,
   }
 });
 
-/** GET /api/subscription/list (requires session) */
-router.get('/list', requireSession, async (req, res) => {
+/** GET /api/subscription/list (requires JWT auth) */
+router.get('/list', authMiddleware, async (req, res) => {
   try {
     const subs = await PushSubscription
       .find({ userId: req.user.id })
@@ -255,7 +270,7 @@ async function handleTestPush(req, res) {
   }
 }
 
-router.post('/test', requireSession, verifyCsrf, handleTestPush);
-router.post('/test-push', requireSession, verifyCsrf, handleTestPush); // alias/back-compat
+router.post('/test', authMiddleware, verifyCsrf, handleTestPush);
+router.post('/test-push', authMiddleware, verifyCsrf, handleTestPush); // alias/back-compat
 
 module.exports = router;

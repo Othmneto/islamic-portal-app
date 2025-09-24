@@ -3,8 +3,47 @@
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('notification-settings-form');
     const messageDiv = document.getElementById('settings-message');
-    // Ensure you are storing the auth token in localStorage upon login
-    const token = localStorage.getItem('authToken');
+    // Get token from multiple possible sources (consistent with other pages)
+    const token = localStorage.getItem('authToken') || 
+                  localStorage.getItem('token') || 
+                  localStorage.getItem('jwt') || 
+                  localStorage.getItem('access_token');
+
+    // ------------------------------- Logout Functionality -------------------------------
+    // Logout button
+    document.getElementById('logout-btn')?.addEventListener('click', async (event) => {
+        event.preventDefault();
+        
+        // Show confirmation dialog
+        if (confirm('Are you sure you want to logout?')) {
+            // Show loading state
+            const logoutBtn = document.getElementById('logout-btn');
+            const originalText = logoutBtn.innerHTML;
+            logoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging out...';
+            logoutBtn.disabled = true;
+            
+            try {
+                // Call enhanced logout function
+                const success = await logout();
+                
+                if (success) {
+                    // Show success message
+                    alert('You have been logged out successfully.');
+                    
+                    // Redirect to home page
+                    window.location.href = 'index.html';
+                } else {
+                    // Show error message but still redirect
+                    alert('Logout completed with some issues. You have been redirected.');
+                    window.location.href = 'index.html';
+                }
+            } catch (error) {
+                console.error('Logout error:', error);
+                alert('Logout completed with errors. You have been redirected.');
+                window.location.href = 'index.html';
+            }
+        }
+    });
 
     const showMessage = (text, type) => {
         messageDiv.textContent = text;

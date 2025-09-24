@@ -3,8 +3,9 @@
 const jwt = require('jsonwebtoken');
 const cookie = require('cookie');
 const User = require('../models/User');
+const { env } = require('../config'); // Use centralized config
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret';
+const JWT_SECRET = process.env.JWT_SECRET || env.JWT_SECRET;
 
 /**
  * Resolve the current user from the request.
@@ -18,7 +19,7 @@ async function getUserFromRequest(req) {
     try {
       const token = auth.split(' ')[1];
       const decoded = jwt.verify(token, JWT_SECRET);
-      const userId = decoded.id || decoded.sub;
+      const userId = decoded.id || decoded.sub || decoded.user?.id;
       if (userId) {
         const user = await User.findById(userId).select('-password');
         if (user) {
@@ -56,9 +57,6 @@ async function attachUser(req, _res, next) {
     const user = await getUserFromRequest(req);
     if (user) {
       req.user = user;
-      console.log(`[Auth Middleware] User attached via ${req._authSource}: ${user._id}`);
-    } else {
-      console.log('[Auth Middleware] No user attached to this request.');
     }
   } catch (e) {
     console.error('[Auth Middleware] attachUser error:', e.message);

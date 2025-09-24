@@ -3,9 +3,10 @@
 
 /**
  * BullMQ Web Push worker (production-ready)
+ * - Payloads are now always objects → we always JSON.stringify(payload)
  * - Back-compat for job payloads:
- *      { subscription, payload, options }           // inline (legacy)
- *      { subscriptionId, payload }                  // DB lookup (modern)
+ *   { subscription, payload, options }           // inline
+ *   { subscriptionId, payload }                  // DB lookup
  * - Cleans up dead subscriptions (404/410)
  * - Optional logger/model/redis configs (defensive fallbacks)
  * - Graceful shutdown for SIGINT/SIGTERM + fatal errors
@@ -31,12 +32,19 @@ try {
   PushSubscription = require('../models/PushSubscription');
 } catch { /* optional */ }
 
-// ----- Redis connection (prefer ../config/redis, else REDIS_URL) -----
+// ----- Redis connection (prefer exported connection, then ../config/redis, else REDIS_URL) -----
 let redisConnection;
 try {
-  const redisExport = require('../config/redis');
-  redisConnection = redisExport?.connection || redisExport;
+  // If queues/notificationQueue exports a connection, prefer it
+  const qq = require('../queues/notificationQueue');
+  if (qq?.connection) redisConnection = qq.connection;
 } catch { /* optional */ }
+if (!redisConnection) {
+  try {
+    const redisExport = require('../config/redis');
+    redisConnection = redisExport?.connection || redisExport;
+  } catch { /* optional */ }
+}
 if (!redisConnection) {
   const REDIS_URL =
     env.REDIS_URL ||
@@ -62,7 +70,6 @@ if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
   logger.error('VAPID keys missing. Set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY.');
   process.exit(1);
 }
-
 webpush.setVapidDetails(
   env.VAPID_SUBJECT || `mailto:${env.VAPID_EMAIL || 'admin@example.com'}`,
   env.VAPID_PUBLIC_KEY,
@@ -72,7 +79,7 @@ webpush.setVapidDetails(
 // ----- Helpers -----
 function nowStr() { return new Date().toISOString().replace('T', ' ').slice(0, 19); }
 
-// ✅ Updated to use Pino’s object+message pattern
+// Pino-style object+message pattern
 function log(level, msg, extra = {}) {
   const base = { service: 'notification-worker', ts: nowStr() };
   const logObject = { ...base, ...extra };
@@ -83,14 +90,46 @@ function log(level, msg, extra = {}) {
   }
 }
 
+// Normalize DB doc → Web Push subscription shape
+function normalizeSubscription(doc) {
+  if (!doc) return null;
+  // Newer shape: { subscription: { endpoint, keys: { p256dh, auth }, expirationTime? } }
+  if (doc.subscription?.endpoint) {
+    return {
+      endpoint: doc.subscription.endpoint,
+      expirationTime: doc.subscription.expirationTime ?? null,
+      keys: {
+        p256dh: doc.subscription.keys?.p256dh,
+        auth: doc.subscription.keys?.auth,
+      },
+    };
+  }
+  // Legacy: top-level fields
+  if (doc.endpoint && doc.keys?.p256dh && doc.keys?.auth) {
+    return {
+      endpoint: doc.endpoint,
+      expirationTime: doc.expirationTime ?? null,
+      keys: {
+        p256dh: doc.keys.p256dh,
+        auth: doc.keys.auth,
+      },
+    };
+  }
+  // If already looks like a web-push subscription, pass through
+  if (doc.endpoint && doc.keys) return doc;
+  return null;
+}
+
 function pushSubsRawCollection() {
   return mongoose.connection.db.collection('pushsubscriptions');
 }
+
 async function ensureMongoConnected() {
   if (mongoose.connection.readyState === 1) return;
   await mongoose.connect(env.MONGO_URI, { dbName: env.DB_NAME });
   log('info', '📦 Connected to MongoDB.', { mongo: env.MONGO_URI, db: env.DB_NAME });
 }
+
 async function resolveSubscription(jobData) {
   if (jobData?.subscription) return { subscription: jobData.subscription, mode: 'inline' };
   const id = jobData?.subscriptionId;
@@ -106,6 +145,7 @@ async function resolveSubscription(jobData) {
   }
   return { subscription: null, mode: 'none' };
 }
+
 async function deleteSubscription({ id, endpoint }) {
   try {
     if (id) {
@@ -118,9 +158,18 @@ async function deleteSubscription({ id, endpoint }) {
     }
     if (endpoint) {
       if (PushSubscription) {
-        await PushSubscription.deleteOne({ endpoint });
+        // Support nested shape
+        const res = await PushSubscription.deleteOne({
+          $or: [{ endpoint }, { 'subscription.endpoint': endpoint }],
+        });
+        if (!res?.deletedCount) {
+          // fall back to raw collection
+          await pushSubsRawCollection().deleteOne({ endpoint }, { maxTimeMS: 30000 });
+          await pushSubsRawCollection().deleteOne({ 'subscription.endpoint': endpoint }, { maxTimeMS: 30000 });
+        }
       } else {
         await pushSubsRawCollection().deleteOne({ endpoint }, { maxTimeMS: 30000 });
+        await pushSubsRawCollection().deleteOne({ 'subscription.endpoint': endpoint }, { maxTimeMS: 30000 });
       }
     }
   } catch (err) {
@@ -128,7 +177,7 @@ async function deleteSubscription({ id, endpoint }) {
   }
 }
 
-// Classify fatal vs transient: treat most 4xx (except 408/429) as fatal
+// Classify fatal vs transient: treat most 4xx (except 408/429/404/410) as fatal
 function isFatal(err) {
   const sc = err?.statusCode;
   if (typeof sc === 'number') {
@@ -199,18 +248,25 @@ if (HEALTH_PORT > 0) {
       if (job.name !== 'send-push') return;
 
       const { payload, options } = job.data || {};
-      const { subscription, mode, id } = await resolveSubscription(job.data);
+      const { subscription: subDoc, mode, id } = await resolveSubscription(job.data);
 
-      if (!subscription) {
-        // No subscription to push to — treat as a no-op completion
+      if (!subDoc) {
         log('warn', 'No subscription found for job; skipping', { jobId: job.id, mode, id });
         return;
       }
 
-      const endpoint = subscription?.endpoint;
+      const webPushSub = normalizeSubscription(subDoc);
+      if (!webPushSub?.endpoint || !webPushSub?.keys?.p256dh || !webPushSub?.keys?.auth) {
+        log('error', 'Invalid subscription shape; skipping', { jobId: job.id, mode, id });
+        try { job.discard(); } catch {}
+        return;
+      }
+
+      const endpoint = webPushSub.endpoint;
       try {
-        await webpush.sendNotification(subscription, JSON.stringify(payload), options?.webPush);
-        log('info', 'Push sent', { jobId: job.id });
+        // Payload is always an object now → always stringify
+        await webpush.sendNotification(webPushSub, JSON.stringify(payload), options?.webPush);
+        log('info', 'Push sent', { jobId: job.id, endpoint });
       } catch (err) {
         const status = err?.statusCode;
 
@@ -221,7 +277,7 @@ if (HEALTH_PORT > 0) {
           return; // handled; don't retry
         }
 
-        // Non-retryable: mark as discarded and optionally mirror to DLQ
+        // Non-retryable: discard and optionally mirror to DLQ
         if (isFatal(err)) {
           try { job.discard(); } catch { /* best effort */ }
           if (ENABLE_DLQ && dlq) {
@@ -247,3 +303,5 @@ if (HEALTH_PORT > 0) {
   worker.on('failed',    (job, err) => { lastEventAt = Date.now(); log('error', 'Job failed', { id: job?.id, error: err?.message }); });
   worker.on('completed', (job)      => { lastEventAt = Date.now(); log('info', 'Job completed', { id: job?.id }); });
 })();
+
+module.exports = worker;

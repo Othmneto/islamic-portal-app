@@ -58,8 +58,10 @@ function issueCsrfToken(req, res, next) {
     // Always refresh cookie (cheap + avoids stale tokens after secret rotation)
     res.cookie(CSRF_COOKIE_NAME, token, cookieOptions());
     res.locals.csrfToken = token;
+    console.log('🍪 CSRF token issued:', token.substring(0, 10) + '...');
     next();
   } catch (err) {
+    console.error('❌ CSRF token issue error:', err);
     next(err);
   }
 }
@@ -83,15 +85,27 @@ function getCsrfToken(req, res) {
  *   and also ensures the cookie carries the same token.
  */
 function verifyCsrf(req, res, next) {
+  console.log('🔍 CSRF verification for:', req.path);
+  console.log('🔍 Request headers:', req.headers);
+  console.log('🔍 Request cookies:', req.cookies);
+  console.log('🔍 Request session:', req.session);
+  
   // Skip for Bearer clients (mobile/3rd-party) — they should use Authorization header
   const authHeader = req.headers.authorization || '';
-  if (/^Bearer\s+/i.test(authHeader)) return next();
+  if (/^Bearer\s+/i.test(authHeader)) {
+    console.log('⏭️ Skipping CSRF for Bearer token');
+    return next();
+  }
 
   // Allow opt-out only in non-production (e.g., local E2E)
-  if (env.ALLOW_NO_CSRF === 'true' && env.NODE_ENV !== 'production') return next();
+  if (env.ALLOW_NO_CSRF === 'true' && env.NODE_ENV !== 'production') {
+    console.log('⏭️ Skipping CSRF (ALLOW_NO_CSRF=true)');
+    return next();
+  }
 
   const secret = req.session?.csrfSecret;
   if (!secret) {
+    console.log('❌ No CSRF secret in session');
     return res.status(403).json({ success: false, error: 'CSRF token missing' });
   }
 
@@ -99,7 +113,10 @@ function verifyCsrf(req, res, next) {
   const headerToken = CSRF_HEADER_NAMES.map((h) => req.get(h)).find(Boolean);
   const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
 
+  console.log('🔐 CSRF tokens - Header:', headerToken ? headerToken.substring(0, 10) + '...' : 'None', 'Cookie:', cookieToken ? cookieToken.substring(0, 10) + '...' : 'None');
+
   if (!headerToken || !cookieToken) {
+    console.log('❌ Missing CSRF tokens');
     return res.status(403).json({ success: false, error: 'CSRF token missing' });
   }
 
@@ -107,9 +124,11 @@ function verifyCsrf(req, res, next) {
 
   // Require header to match derived token and cookie to carry the same token
   if (headerToken !== expectedToken || cookieToken !== expectedToken) {
+    console.log('❌ CSRF token mismatch');
     return res.status(403).json({ success: false, error: 'Invalid CSRF token' });
   }
 
+  console.log('✅ CSRF verification passed');
   return next();
 }
 

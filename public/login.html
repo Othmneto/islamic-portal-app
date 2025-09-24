@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Login - Islamic Portal</title>
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -84,6 +87,49 @@
         .auth-container p a:hover {
             text-decoration: underline;
         }
+
+        /* --- OAuth divider & provider buttons --- */
+        .oauth-divider {
+            display: flex;
+            align-items: center;
+            margin: 18px 0;
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        .oauth-divider::before,
+        .oauth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+            margin: 0 10px;
+        }
+        .social-login-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+            text-decoration: none;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.02s ease;
+            margin-top: 10px;
+        }
+        .social-login-button:hover {
+            background: rgba(0,0,0,0.04);
+            border-color: var(--accent-color);
+        }
+        .social-login-button:active {
+            transform: translateY(1px);
+        }
+        .google-btn { /* reserved for provider-specific tweaks if needed */ }
+        .microsoft-btn { /* reserved for provider-specific tweaks if needed */ }
     </style>
 </head>
 <body>
@@ -124,12 +170,35 @@
                 <button type="submit">Login</button>
                 <div id="login-message" class="error-message"></div>
             </form>
+            
+            <div style="text-align: center; margin-top: 15px;">
+                <a href="forgot-password.html" style="color: var(--accent-color); text-decoration: none; font-size: 14px;">
+                    Forgot your password?
+                </a>
+            </div>
+
+            <!-- OAuth Error Messages -->
+            <div id="oauth-error-message" class="error-message" style="display: none;">
+                <button onclick="clearOAuthError()" style="float: right; background: none; border: none; color: inherit; cursor: pointer; font-size: 16px;">×</button>
+            </div>
+
+            <div class="oauth-divider">or</div>
+
+            <!-- Google OAuth button -->
+            <a href="/api/auth/google" class="social-login-button google-btn" aria-label="Sign in with Google">
+              <i class="fab fa-google"></i> Sign in with Google
+            </a>
+
+            <!-- Microsoft OAuth button -->
+            <a href="/api/auth/microsoft" class="social-login-button microsoft-btn" aria-label="Sign in with Microsoft">
+              <i class="fab fa-microsoft"></i> Sign in with Microsoft
+            </a>
+
             <p>Don't have an account? <a href="register.html">Register here</a></p>
-            <p><a href="#">Forgot Password?</a> (Coming Soon)</p>
         </section>
     </main>
 
-    <script src="common.js"></script>
-    <script src="login.js"></script>
+    <script src="common.js?v=20250924"></script>
+    <script src="login.js?v=20250924"></script>
 </body>
 </html>

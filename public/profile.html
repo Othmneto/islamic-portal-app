@@ -1,33 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Profile</title>
-    <link rel="stylesheet" href="main.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Profile & Prayer Dashboard</title>
+
+  <!-- Icons / Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="profile.css">
+  <link rel="stylesheet" href="gamification.css">
 </head>
 <body>
-    <header>
-        </header>
-    <main class="container">
-        <h2>My Profile</h2>
+  <div class="container">
+    <!-- Header -->
+    <header class="page-header">
+      <h1><i class="fa-solid fa-chart-line"></i> My Prayer Dashboard</h1>
+      <div class="header-actions">
+        <a href="/prayer-time.html" class="btn btn-secondary">← Back to Prayer Times</a>
+        <button id="logout-btn" class="btn btn-danger" style="margin-left: 10px;">
+          <i class="fa-solid fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
 
-        <section id="location-settings">
-            <h3>Prayer Time Location</h3>
-            <p>Your currently saved location is: <strong id="current-location">Not set</strong></p>
-            <div class="form-group">
-                <label for="city-search">Search for your city:</label>
-                <input type="text" id="city-search" placeholder="e.g., Cairo, Egypt">
-                <button id="search-button">Search</button>
-            </div>
-            <div id="search-results"></div>
-            <div id="profile-message"></div>
-        </section>
+    <main class="dashboard-content">
+      
+      <!-- ===== Prayer Dashboard: Enhanced Stats ===== -->
+      <section class="stats-section">
+        <div class="stat-card today-progress">
+          <div class="stat-icon">📅</div>
+          <h3>Today's Progress</h3>
+          <p class="stat-value" id="todays-progress">0 / 5</p>
+          <p class="stat-subtitle">Prayers completed today</p>
+        </div>
+        
+        <div class="stat-card fajr-streak">
+          <div class="stat-icon">🌅</div>
+          <h3>Fajr Streak</h3>
+          <p class="stat-value" id="fajr-streak">0 days</p>
+          <p class="stat-subtitle">Consecutive Fajr prayers</p>
+        </div>
+        
+        <div class="stat-card consistency">
+          <div class="stat-icon">📊</div>
+          <h3>Monthly Consistency</h3>
+          <p class="stat-value" id="monthly-consistency">--%</p>
+          <p class="stat-subtitle">Prayer completion rate</p>
+        </div>
+        
+        <div class="stat-card weekly-progress">
+          <div class="stat-icon">📈</div>
+          <h3>Weekly Progress</h3>
+          <p class="stat-value" id="weekly-progress">--%</p>
+          <p class="stat-subtitle">7-day rolling average</p>
+        </div>
+        
+        <div class="stat-card best-prayer">
+          <div class="stat-icon">⭐</div>
+          <h3>Best Prayer</h3>
+          <p class="stat-value" id="best-prayer">--</p>
+          <p class="stat-subtitle">Most consistent prayer</p>
+        </div>
+        
+        <div class="stat-card prayer-streak">
+          <div class="stat-icon">🔥</div>
+          <h3>Prayer Streak</h3>
+          <p class="stat-value" id="prayer-streak">0 days</p>
+          <p class="stat-subtitle">Longest consecutive days</p>
+        </div>
+      </section>
 
+      <!-- ===== Prayer Dashboard: Gamification ===== -->
+      <section class="gamification-section" id="gamification-section">
+        <!-- Gamification content will be populated by JavaScript -->
+      </section>
+
+      <!-- ===== Prayer Dashboard: Calendar ===== -->
+      <section class="calendar-section">
+        <div class="calendar-header">
+          <button id="prev-month-btn" type="button" title="Previous month">
+            <i class="fa-solid fa-chevron-left" aria-hidden="true"></i>
+          </button>
+          <h2 id="calendar-month-year">September 2025</h2>
+          <div class="calendar-actions">
+            <button id="refresh-dashboard-btn" type="button" title="Refresh dashboard data">
+              <i class="fa-solid fa-refresh" aria-hidden="true"></i>
+            </button>
+            <button id="next-month-btn" type="button" title="Next month">
+              <i class="fa-solid fa-chevron-right" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+        <div id="prayer-calendar" class="calendar-grid"></div>
+      </section>
+
+      <!-- ===== Existing Profile Info ===== -->
+      <section class="profile-info">
+        <h2>User Profile</h2>
+        <p><strong>Email:</strong> <span id="user-email"></span></p>
+        <p><strong>Username:</strong> <span id="user-username"></span></p>
+      </section>
+
+      <!-- ===== Existing Saved Locations UI ===== -->
+      <section class="saved-locations-container">
+        <h2><i class="fas fa-map-marker-alt" aria-hidden="true"></i> My Saved Locations</h2>
+
+        <div id="saved-locations-list" class="locations-list">
+          <p>Loading saved locations...</p>
+        </div>
+
+        <hr>
+
+        <h3><i class="fas fa-plus-circle" aria-hidden="true"></i> Add a New Location</h3>
+        <form id="add-location-form" class="location-form">
+          <div class="form-group">
+            <label for="location-label">Label (e.g., Home, Work)</label>
+            <input type="text" id="location-label" required>
+          </div>
+          <div class="form-group">
+            <label for="location-search">Search for Address</label>
+            <input type="text" id="location-search" placeholder="Type to search for a place...">
+            <div id="location-search-results"></div>
+          </div>
+
+          <input type="hidden" id="location-lat">
+          <input type="hidden" id="location-lon">
+          <input type="hidden" id="location-tz">
+          <input type="hidden" id="location-address">
+
+          <button type="submit" class="btn">Save Location</button>
+        </form>
+      </section>
+
+      <p style="margin-top:1.5rem">
         <a href="settings.html">Manage Notification Toggles</a>
+      </p>
     </main>
-    <footer>
-        </footer>
-    <script src="profile.js"></script>
-</body>
+  </div>
+
+  <footer></footer>
+
+  <!-- Scripts -->
+    <script type="module" src="profile.js"></script>
+  </body>
 </html>

@@ -1,5 +1,12 @@
 // script.js (Final Version with Infinite Scroll and Multi-language Output)
 
+// XSS protection function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Element References ---
     const fromLang = document.getElementById("fromLang"),
@@ -106,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
             selectedToLanguages.forEach(lang => {
                 const tag = document.createElement('span');
                 tag.className = 'language-tag';
-                tag.innerHTML = `${lang} <button type="button" class="remove-tag" data-lang="${lang}">&times;</button>`;
+                tag.innerHTML = escapeHtml(lang) + ' <button type="button" class="remove-tag" data-lang="' + escapeHtml(lang) + '">&times;</button>';
                 toLanguagesDisplay.appendChild(tag);
             });
         }
@@ -117,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toLangDropdown.innerHTML = '';
         allLanguages.forEach(lang => {
             const label = document.createElement('label');
-            label.innerHTML = `<input type="checkbox" value="${lang}" ${selectedToLanguages.has(lang) ? 'checked' : ''}> ${lang}`;
+            label.innerHTML = '<input type="checkbox" value="' + escapeHtml(lang) + '" ' + (selectedToLanguages.has(lang) ? 'checked' : '') + '> ' + escapeHtml(lang);
             toLangDropdown.appendChild(label);
         });
     }
@@ -273,7 +280,7 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPage = result.page;
         } catch (err) {
             showNotification(err.message, 'error');
-            historyList.innerHTML = `<p style="color: var(--danger-color); text-align: center;">${err.message}</p>`;
+            historyList.innerHTML = '<p style="color: var(--danger-color); text-align: center;">' + escapeHtml(err.message) + '</p>';
         } finally {
             isLoadingHistory = false;
         }

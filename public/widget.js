@@ -1,3 +1,10 @@
+// XSS protection function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const headerEl = document.getElementById('widget-header');
     const bodyEl = document.getElementById('widget-body');
@@ -43,6 +50,6 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .catch(error => {
             console.error('Widget Error:', error);
-            bodyEl.innerHTML = `<p>${error.message}</p>`;
+            bodyEl.innerHTML = '<p>' + escapeHtml(error.message) + '</p>';
         });
 });

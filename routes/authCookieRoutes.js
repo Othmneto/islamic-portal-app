@@ -3,8 +3,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { attachUser } = require('../middleware/authMiddleware');
-const { CSRF_COOKIE_NAME } = require('../middleware/csrfMiddleware'); // single source of truth
+const authMiddleware = require('../middleware/auth');
+const { CSRF_COOKIE_NAME, verifyCsrf } = require('../middleware/csrfMiddleware'); // single source of truth
 const { logger } = require('../config/logger');
 const { env } = require('../config');
 const { validate, z } = require('../middleware/validate'); // Zod-based validation middleware
@@ -95,7 +95,7 @@ async function handleLogin(req, res) {
 // ---------- Routes ----------
 
 // Preferred modern path (mounted at /api/auth-cookie)
-router.post('/login', validate(loginSchema), handleLogin);
+router.post('/login', verifyCsrf, validate(loginSchema), handleLogin);
 
 // Legacy/back-compat path (mounted at /api/auth)
 router.post('/login-cookie', validate(loginSchema), handleLogin);
@@ -128,9 +128,8 @@ router.post('/logout-cookie', (req, res) => {
   });
 });
 
-// Me (works with either Bearer JWT or session via attachUser)
-router.get('/me', attachUser, async (req, res) => {
-  if (!req.user) return res.status(401).json({ message: 'Not authenticated' });
+// Me (requires JWT auth)
+router.get('/me', authMiddleware, async (req, res) => {
   return res.json(req.user);
 });
 

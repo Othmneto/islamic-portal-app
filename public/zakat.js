@@ -1,5 +1,12 @@
 // zakat.js (Updated with manual price entry fallback)
 
+// XSS protection function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Element References ---
     const nisabStandardSelect = document.getElementById('nisab-standard');
@@ -150,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (netWealth >= nisabValue) {
             zakatDue = netWealth * zakatRate;
-            finalZakatBox.innerHTML = `Zakat Due: <span class="result-value"><strong>${zakatDue.toFixed(2)}</strong> <span>${selectedCurrency}</span></span>`;
+            finalZakatBox.innerHTML = 'Zakat Due: <span class="result-value"><strong>' + escapeHtml(zakatDue.toFixed(2)) + '</strong> <span>' + escapeHtml(selectedCurrency) + '</span></span>';
         } else {
             finalZakatBox.innerHTML = `Your wealth is below the Nisab threshold.<br>No Zakat is due.`;
         }

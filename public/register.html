@@ -86,6 +86,55 @@
         .auth-container p a:hover {
             text-decoration: underline;
         }
+
+        /* --- OAuth divider & provider buttons --- */
+        .oauth-divider {
+            display: flex;
+            align-items: center;
+            margin: 18px 0;
+            color: var(--text-color);
+            opacity: 0.8;
+            font-size: 14px;
+        }
+        .oauth-divider::before,
+        .oauth-divider::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+            margin: 0 10px;
+        }
+        .google-btn,
+        .microsoft-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--input-bg-color);
+            color: var(--text-color);
+            font-size: 16px;
+            text-decoration: none;
+            transition: background 0.2s ease, border-color 0.2s ease, transform 0.02s ease;
+            margin-top: 10px;
+        }
+        .google-btn:hover,
+        .microsoft-btn:hover {
+            background: rgba(0,0,0,0.04);
+            border-color: var(--accent-color);
+        }
+        .google-btn:active,
+        .microsoft-btn:active {
+            transform: translateY(1px);
+        }
+        .google-btn img {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
     </style>
 </head>
 <body>
@@ -120,8 +169,8 @@
                     <input type="email" id="register-email" name="email" required>
                 </div>
                 <div class="input-group">
-                    <label for="register-username">Username (Optional):</label>
-                    <input type="text" id="register-username" name="username">
+                    <label for="register-username">Username:</label>
+                    <input type="text" id="register-username" name="username" required>
                 </div>
                 <div class="input-group">
                     <label for="register-password">Password:</label>
@@ -134,9 +183,25 @@
                 <button type="submit">Register</button>
                 <div id="register-message" class="error-message"></div>
             </form>
+
+            <div class="oauth-divider">or</div>
+
+            <!-- Google OAuth button (existing) -->
+            <a href="http://localhost:3000/api/auth/google" class="google-btn" aria-label="Sign in with Google">
+              <img src="/path/to/your/google-logo.svg" alt="Google logo">
+              Sign in with Google
+            </a>
+
+            <!-- Microsoft OAuth button (NEW) -->
+            <a href="http://localhost:3000/api/auth/microsoft" class="microsoft-btn" aria-label="Sign in with Microsoft">
+              Sign in with Microsoft
+            </a>
+
             <p>Already have an account? <a href="login.html">Login here</a></p>
         </section>
     </main>
+
+    <!-- Real-time Service -->
 
     <script src="common.js"></script>
     <script src="register.js"></script>

@@ -1,3 +1,10 @@
+// XSS protection function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     // --- Element References ---
     const tabs = document.querySelectorAll('.tab-button');
@@ -193,7 +200,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const source = document.querySelector('.tab-button.active').dataset.tab.includes('hadith') ? 'hadith' : 'quran';
         const contentArea = source === 'quran' ? quranContentArea : hadithContentArea;
 
-        contentArea.innerHTML = `<p>Searching for "${query}"...</p>`;
+        contentArea.innerHTML = '<p>Searching for "' + escapeHtml(query) + '"...</p>';
         const results = await apiFetch(`/api/explorer/search?q=${encodeURIComponent(query)}&type=${type}&source=${source}`);
 
         if (source === 'quran') {

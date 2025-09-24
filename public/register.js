@@ -40,16 +40,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json(); // Get the response from the server
 
                 if (response.ok) {
-                    displayMessage(data.msg + '. Redirecting to login...', true);
-                    // Store the token securely using a common function (we'll add this next)
-                    // This token isn't strictly needed on register, but good to have if we auto-login
-                    if (data.token) {
-                        localStorage.setItem('token', data.token); // Store token in browser's local storage
+                    if (data.requiresVerification) {
+                        // Show email verification message
+                        displayMessage('Registration successful! Please check your email to verify your account before logging in.', true);
+                        // Add a resend verification button
+                        addResendVerificationButton(email);
+                    } else {
+                        displayMessage(data.msg + '. Redirecting to login...', true);
+                        // Store the token securely using a common function (we'll add this next)
+                        // This token isn't strictly needed on register, but good to have if we auto-login
+                        if (data.token) {
+                            localStorage.setItem('token', data.token); // Store token in browser's local storage
+                        }
+                        // Redirect to the login page or a success page after a short delay
+                        setTimeout(() => {
+                            window.location.href = 'login.html'; // Go to login page
+                        }, 2000); // 2-second delay
                     }
-                    // Redirect to the login page or a success page after a short delay
-                    setTimeout(() => {
-                        window.location.href = 'login.html'; // Go to login page
-                    }, 2000); // 2-second delay
                 } else {
                     // Handle errors from the backend (e.g., email already exists, validation errors)
                     const errorMessage = data.errors ? data.errors.map(err => err.msg).join(', ') : (data.msg || 'Registration failed.');
@@ -60,5 +67,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayMessage('An unexpected error occurred. Please try again later.');
             }
         });
+    }
+
+    // Function to add resend verification button
+    function addResendVerificationButton(email) {
+        const existingButton = document.getElementById('resend-verification-btn');
+        if (existingButton) return; // Don't add if already exists
+
+        const resendButton = document.createElement('button');
+        resendButton.id = 'resend-verification-btn';
+        resendButton.textContent = 'Resend Verification Email';
+        resendButton.className = 'btn btn-secondary';
+        resendButton.style.marginTop = '10px';
+        
+        resendButton.addEventListener('click', async () => {
+            resendButton.textContent = 'Sending...';
+            resendButton.disabled = true;
+            
+            try {
+                const response = await fetch('/api/auth/resend-verification', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email }),
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    displayMessage('Verification email sent successfully! Please check your inbox.', true);
+                } else {
+                    displayMessage(data.msg || 'Failed to send verification email');
+                }
+            } catch (error) {
+                console.error('Error resending verification:', error);
+                displayMessage('Failed to send verification email. Please try again.');
+            } finally {
+                resendButton.textContent = 'Resend Verification Email';
+                resendButton.disabled = false;
+            }
+        });
+
+        registerForm.appendChild(resendButton);
     }
 });

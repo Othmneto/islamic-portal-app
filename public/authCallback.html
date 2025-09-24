@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authenticating...</title>
+</head>
+<body>
+    <p>Please wait while we sign you in...</p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Get the token from the URL
+            const params = new URLSearchParams(window.location.search);
+            const token = params.get('token');
+
+            if (token) {
+                // 2. Clear any old tokens and save the new one
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('jwt');
+                localStorage.removeItem('access_token');
+                localStorage.setItem('token', token);
+                console.log('🔑 OAuth Callback: New token stored:', token.substring(0, 50) + '...');
+
+                // 3. Check if user has a username
+                try {
+                    const response = await fetch('/api/auth/me', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const userData = await response.json();
+                        
+                        // Check if user has a username
+                        if (!userData.username) {
+                            // Redirect to username setup page
+                            window.location.href = '/setup-username.html';
+                        } else {
+                            // Redirect to the main page
+                            window.location.href = '/index.html';
+                        }
+                    } else {
+                        console.error('Failed to fetch user data');
+                        window.location.href = '/login.html?error=auth_failed';
+                    }
+                } catch (error) {
+                    console.error('Error checking user data:', error);
+                    window.location.href = '/login.html?error=auth_failed';
+                }
+            } else {
+                // Handle the error case
+                console.error('Authentication failed: No token provided.');
+                window.location.href = '/login.html?error=oauth_auth_failed';
+            }
+        });
+    </script>
+    <!-- Real-time Service -->
+
+</body>
+</html>

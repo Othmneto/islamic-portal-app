@@ -4,13 +4,73 @@
 
 // Function to get the stored JWT token
 function getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem('authToken') || 
+           localStorage.getItem('token') || 
+           localStorage.getItem('jwt') || 
+           localStorage.getItem('access_token');
 }
 
 // Function to remove the stored JWT token (for logout)
 function removeToken() {
+    localStorage.removeItem('authToken');
     localStorage.removeItem('token');
+    localStorage.removeItem('jwt');
+    localStorage.removeItem('access_token');
     // Clear any specific user data from local storage if applicable
+    localStorage.removeItem('userData');
+    localStorage.removeItem('userPreferences');
+    localStorage.removeItem('savedLocations');
+}
+
+// Enhanced logout function with API call
+async function logout() {
+    try {
+        const token = getToken();
+        
+        if (token) {
+            // Call logout API to log the event server-side
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Logout API call successful');
+                } else if (response.status === 401) {
+                    console.log('ℹ️ Token already expired, proceeding with client-side logout');
+                } else {
+                    console.warn('⚠️ Logout API call failed, but continuing with client-side logout');
+                }
+            } catch (apiError) {
+                console.warn('⚠️ Logout API call failed:', apiError.message);
+                // Continue with client-side logout even if API fails
+            }
+        }
+        
+        // Clear all client-side data
+        removeToken();
+        
+        // Clear any session storage
+        sessionStorage.clear();
+        
+        // Clear any cookies (if any)
+        document.cookie.split(";").forEach(function(c) { 
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        });
+        
+        console.log('🔓 Logout completed successfully');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Logout error:', error);
+        // Even if there's an error, clear local data
+        removeToken();
+        return false;
+    }
 }
 
 // Function to check if a user is logged in (by checking for a token)
@@ -44,11 +104,39 @@ function updateNavBar() {
         authLinksContainer.appendChild(logoutLink);
 
         // Add event listener for logout
-        logoutLink.addEventListener('click', (event) => {
+        logoutLink.addEventListener('click', async (event) => {
             event.preventDefault();
-            removeToken();
-            alert('You have been logged out.');
-            window.location.href = 'index.html'; // Redirect to home page
+            
+            // Show confirmation dialog
+            if (confirm('Are you sure you want to logout?')) {
+                // Show loading state
+                logoutLink.textContent = 'Logging out...';
+                logoutLink.style.pointerEvents = 'none';
+                
+                try {
+                    // Call enhanced logout function
+                    const success = await logout();
+                    
+                    if (success) {
+                        // Show success message
+                        alert('You have been logged out successfully.');
+                        
+                        // Redirect to home page
+                        window.location.href = 'index.html';
+                    } else {
+                        // This should rarely happen now since we handle errors gracefully
+                        console.warn('Logout completed with some issues, but data was cleared');
+                        alert('You have been logged out. Redirecting...');
+                        window.location.href = 'index.html';
+                    }
+                } catch (error) {
+                    console.error('Logout error:', error);
+                    // Even if there's an error, clear local data and redirect
+                    removeToken();
+                    alert('You have been logged out. Redirecting...');
+                    window.location.href = 'index.html';
+                }
+            }
         });
     } else {
         // If not logged in, show Register and Login links
