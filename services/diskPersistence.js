@@ -264,6 +264,10 @@ class DiskPersistence {
 
   async writeToFile(filePath, data) {
     try {
+      // Ensure directory exists
+      const dir = path.dirname(filePath);
+      await fs.mkdir(dir, { recursive: true });
+      
       const jsonData = JSON.stringify(data, null, 2);
       await fs.writeFile(filePath, jsonData, 'utf8');
       return true;
