@@ -1,0 +1,85 @@
+{
+  "value": {
+    "id": "notifications_1759172935439_x14hesdfh",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "_id": "68dad89d1a7c87e868371e7e",
+        "userId": "6888c9391815657294913e8d",
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/co2-e6S1YV8:APA91bEn-aolljF8pOCKsNubmZRkXI-PO7Yoh8y5ezr1_wpgGsozJV_3lExDOVme8PlMi64-StjX7i698j0E38yNS1BgjS2m8NVMGLeaL5plP4Gd3wKFCkk2WukyeGbh3cQ4HC7tvFcV",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BLNleVa6aLItDogpOZg47KsRHv2MFo0yawDMzWP7mxlrq5SuinygmPnJboQ1OP-V6Xlj_FudhBk3dhxtWKro4uk",
+            "auth": "b8-ZPRKj5V7_OTCV6GL6Gg"
+          }
+        },
+        "tz": "Asia/Dubai",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "location": {
+          "lat": 25.264284687463388,
+          "lon": 55.32177129759813,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
+        "createdAt": "2025-09-29T19:06:05.923Z",
+        "updatedAt": "2025-09-29T19:06:05.923Z",
+        "__v": 0
+      },
+      "payload": {
+        "title": "🧪 Test Prayer Notification",
+        "body": "This is a test notification to verify the system is working!",
+        "icon": "/icons/icon-192x192.png",
+        "badge": "/icons/badge-72x72.png",
+        "data": {
+          "url": "/prayer-time.html",
+          "type": "test",
+          "timestamp": "2025-09-29T19:08:55.439Z"
+        }
+      }
+    },
+    "options": {
+      "concurrency": 5,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 2000
+      },
+      "delay": 0
+    },
+    "timestamp": 1759172935439,
+    "status": "completed",
+    "attempts": 1,
+    "maxAttempts": 3,
+    "createdAt": "2025-09-29T19:08:55.439Z",
+    "processedAt": "2025-09-29T19:08:56.363Z",
+    "finishedAt": 1759172936363,
+    "failedReason": null,
+    "result": {
+      "success": true
+    }
+  },
+  "timestamp": 1759172936363,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1759172935439_x14hesdfh"
+}

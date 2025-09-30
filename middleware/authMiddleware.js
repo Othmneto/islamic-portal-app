@@ -57,6 +57,14 @@ async function attachUser(req, _res, next) {
     const user = await getUserFromRequest(req);
     if (user) {
       req.user = user;
+      console.log('[Auth Middleware] User attached:', {
+        userId: user._id,
+        email: user.email,
+        authSource: req._authSource,
+        path: req.path
+      });
+    } else {
+      console.log('[Auth Middleware] No user found for path:', req.path);
     }
   } catch (e) {
     console.error('[Auth Middleware] attachUser error:', e.message);

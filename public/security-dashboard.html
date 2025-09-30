@@ -7,6 +7,11 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Security Dashboard - Islamic Portal</title>
+    <!-- Chart.js for interactive visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome for enhanced icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom Date Range Picker (no jQuery dependency) -->
     <style>
         * {
             margin: 0;
@@ -262,6 +267,490 @@
         .chart-container {
             height: 300px;
             margin: 20px 0;
+            position: relative;
+        }
+
+        /* Enhanced Controls */
+        .controls-enhanced {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            align-items: end;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 150px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .filter-group select, .filter-group input {
+            padding: 8px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+
+        .filter-group select:focus, .filter-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .multi-select {
+            min-height: 40px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .multi-select option {
+            padding: 8px 12px;
+        }
+
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .quick-filter-btn {
+            padding: 6px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 20px;
+            background: white;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .quick-filter-btn:hover, .quick-filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        /* Real-time Indicators */
+        .realtime-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .live-dot {
+            width: 10px;
+            height: 10px;
+            background: #27ae60;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .event-counter {
+            background: #667eea;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        /* Enhanced Cards */
+        .card-enhanced {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .card-enhanced:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            color: #2c3e50;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .card-action-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 6px;
+            background: #f8f9fa;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-action-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .collapsible-content {
+            max-height: 1000px;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .collapsible-content.collapsed {
+            max-height: 0;
+        }
+
+        /* Chart Containers */
+        .chart-wrapper {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+
+        .chart-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.8rem;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+
+        /* Enhanced Tables */
+        .table-enhanced {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .table-enhanced th, .table-enhanced td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e6ed;
+        }
+
+        .table-enhanced th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #2c3e50;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .table-enhanced tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .sortable {
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sortable:hover {
+            background: #e9ecef;
+        }
+
+        .sort-indicator {
+            margin-left: 5px;
+            font-size: 0.8rem;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .pagination-btn {
+            padding: 8px 12px;
+            border: 1px solid #e0e6ed;
+            background: white;
+            color: #6c757d;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .pagination-btn:hover:not(:disabled) {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .pagination-info {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e6ed;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6c757d;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #e74c3c;
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Dark Theme */
+        .dark-theme {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #ecf0f1;
+        }
+
+        .dark-theme .card-enhanced,
+        .dark-theme .controls-enhanced {
+            background: rgba(44, 62, 80, 0.95);
+            color: #ecf0f1;
+        }
+
+        .dark-theme .card-title,
+        .dark-theme .modal-title {
+            color: #ecf0f1;
+        }
+
+        .dark-theme .table-enhanced th {
+            background: #34495e;
+            color: #ecf0f1;
+        }
+
+        .dark-theme .table-enhanced tbody tr:hover {
+            background: #34495e;
+        }
+
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: #27ae60;
+        }
+
+        .notification.error {
+            background: #e74c3c;
+        }
+
+        .notification.warning {
+            background: #f39c12;
+        }
+
+        .notification.info {
+            background: #3498db;
+        }
+
+        /* Custom Date Range Picker */
+        .date-range-container {
+            display: flex;
+            gap: 10px;
+            align-items: end;
+        }
+
+        .date-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .date-input-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .date-input {
+            padding: 8px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            transition: border-color 0.3s ease;
+            min-width: 150px;
+        }
+
+        .date-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .custom-range-btn {
+            padding: 8px 12px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            background: white;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+            white-space: nowrap;
+        }
+
+        .custom-range-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .custom-range-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
         }
 
         @media (max-width: 768px) {
@@ -280,47 +769,356 @@
             }
         }
     </style>
+  <!-- Include global navbar CSS -->
+  <link rel="stylesheet" href="/css/global-navbar.css">
+  
+  <style>
+    /* Add top padding to account for fixed navbar */
+    .page-content {
+      padding-top: 70px; /* Height of navbar */
+    }
+  </style>
 </head>
 <body>
+  <!-- Global Navbar -->
+  <header class="global-navbar">
+    <nav class="navbar-container">
+      <!-- Logo Section -->
+      <div class="navbar-brand">
+        <a href="/" class="brand-logo">
+          <i class="fas fa-mosque brand-icon"></i>
+          <span class="brand-text">Islamic Portal</span>
+        </a>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="navbar-nav">
+        <ul class="nav-menu">
+          <!-- Core Features -->
+          <li class="nav-item">
+            <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+              <i class="fas fa-language"></i>
+              <span class="nav-text">Translator</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+              <i class="fas fa-mosque"></i>
+              <span class="nav-text">Prayer Times</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+              <i class="fas fa-compass"></i>
+              <span class="nav-text">Qibla</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+              <i class="fas fa-moon"></i>
+              <span class="nav-text">Moon</span>
+            </a>
+          </li>
+
+          <!-- Islamic Content -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+              <i class="fas fa-book-open"></i>
+              <span class="nav-text">Content</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/explorer.html" class="dropdown-link">
+                <i class="fas fa-search"></i> Quran Explorer
+              </a></li>
+              <li><a href="/duas.html" class="dropdown-link">
+                <i class="fas fa-hands-praying"></i> Daily Duas
+              </a></li>
+              <li><a href="/names.html" class="dropdown-link">
+                <i class="fas fa-star"></i> 99 Names
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Tools -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+              <i class="fas fa-tools"></i>
+              <span class="nav-text">Tools</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/zakat.html" class="dropdown-link">
+                <i class="fas fa-coins"></i> Zakat Calculator
+              </a></li>
+              <li><a href="/converter.html" class="dropdown-link">
+                <i class="fas fa-calendar-alt"></i> Date Converter
+              </a></li>
+              <li><a href="/calendar.html" class="dropdown-link">
+                <i class="fas fa-calendar"></i> Islamic Calendar
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Analytics & History -->
+          <li class="nav-item">
+            <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span class="nav-text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+              <i class="fas fa-history"></i>
+              <span class="nav-text">History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="navbar-controls">
+        <!-- Search -->
+        <div class="search-container">
+          <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="search-dropdown" id="search-dropdown">
+            <input type="text" placeholder="Search..." class="search-input" id="global-search">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification-container">
+          <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No new notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="user-menu-container">
+          <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+            <div class="user-avatar" id="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="user-name">Guest</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-avatar-large" id="user-avatar-large">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-details">
+                <div class="user-name-large" id="user-name-large">Guest User</div>
+                <div class="user-email" id="user-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <ul class="user-menu-list">
+              <li><a href="/profile.html" class="user-menu-link">
+                <i class="fas fa-user"></i> Profile
+              </a></li>
+              <li><a href="/settings.html" class="user-menu-link">
+                <i class="fas fa-cog"></i> Settings
+              </a></li>
+              <li><a href="/security-dashboard.html" class="user-menu-link">
+                <i class="fas fa-shield-alt"></i> Security
+              </a></li>
+              <li class="user-menu-divider"></li>
+              <li><a href="/login.html" class="user-menu-link" id="login-link">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </a></li>
+              <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+          <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+            <i class="fas fa-sun theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon-dark"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <div class="mobile-nav-brand">
+            <i class="fas fa-mosque"></i>
+            <span>Islamic Portal</span>
+          </div>
+          <button class="mobile-nav-close" id="mobile-nav-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-nav-body">
+          <!-- Mobile navigation will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </header>
+
     <div class="container">
         <div class="header">
             <h1>🛡️ Security Dashboard</h1>
             <p>Real-time security monitoring and threat analysis</p>
         </div>
 
-        <div class="controls">
-            <div class="control-group">
-                <label for="timeframe">Time Frame</label>
-                <select id="timeframe">
-                    <option value="1h">Last Hour</option>
-                    <option value="24h" selected>Last 24 Hours</option>
-                    <option value="7d">Last 7 Days</option>
-                    <option value="30d">Last 30 Days</option>
-                </select>
+        <!-- Theme Toggle -->
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Theme">
+            <i class="fas fa-moon" id="theme-icon"></i>
+        </button>
+
+        <!-- Enhanced Controls -->
+        <div class="controls-enhanced">
+            <!-- Real-time Indicator -->
+            <div class="realtime-indicator">
+                <div class="live-dot"></div>
+                <span>Live Updates</span>
+                <div class="event-counter" id="eventCounter">0</div>
+                <button class="btn btn-secondary" onclick="toggleAutoRefresh()" id="autoRefreshBtn">
+                    <i class="fas fa-pause"></i> Auto Refresh
+                </button>
             </div>
-            <div class="control-group">
-                <label for="eventType">Event Type</label>
-                <select id="eventType">
-                    <option value="">All Events</option>
-                    <option value="LOGIN_FAILED">Login Failed</option>
-                    <option value="RATE_LIMIT_EXCEEDED">Rate Limit</option>
-                    <option value="CSRF_VIOLATION">CSRF Violation</option>
-                    <option value="XSS_ATTEMPT">XSS Attempt</option>
-                    <option value="SQL_INJECTION_ATTEMPT">SQL Injection</option>
-                </select>
+
+            <!-- Quick Filters -->
+            <div class="quick-filters">
+                <button class="quick-filter-btn active" onclick="applyQuickFilter('all')">All Events</button>
+                <button class="quick-filter-btn" onclick="applyQuickFilter('critical')">Critical</button>
+                <button class="quick-filter-btn" onclick="applyQuickFilter('auth')">Authentication</button>
+                <button class="quick-filter-btn" onclick="applyQuickFilter('translation')">Translation</button>
+                <button class="quick-filter-btn" onclick="applyQuickFilter('security')">Security</button>
+                <button class="quick-filter-btn" onclick="applyQuickFilter('lastHour')">Last Hour</button>
             </div>
-            <div class="control-group">
-                <label for="severity">Severity</label>
-                <select id="severity">
-                    <option value="">All Severities</option>
-                    <option value="CRITICAL">Critical</option>
-                    <option value="HIGH">High</option>
-                    <option value="MEDIUM">Medium</option>
-                    <option value="LOW">Low</option>
-                </select>
+
+            <!-- Advanced Filters -->
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="timeframe">Time Frame</label>
+                    <select id="timeframe" onchange="handleTimeframeChange()">
+                        <option value="1h">Last Hour</option>
+                        <option value="24h" selected>Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="date-range-container" id="customDateRange" style="display: none;">
+                    <div class="date-input-group">
+                        <label for="startDate">Start Date</label>
+                        <input type="datetime-local" id="startDate" class="date-input">
+                    </div>
+                    <div class="date-input-group">
+                        <label for="endDate">End Date</label>
+                        <input type="datetime-local" id="endDate" class="date-input">
+                    </div>
+                    <button class="custom-range-btn" onclick="applyCustomRange()">
+                        <i class="fas fa-check"></i> Apply
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <label for="eventType">Event Type</label>
+                    <select id="eventType" multiple class="multi-select">
+                        <option value="AUTH_LOGIN">Login Success</option>
+                        <option value="AUTH_LOGOUT">Logout</option>
+                        <option value="AUTH_FAILED_LOGIN">Login Failed</option>
+                        <option value="AUTH_ACCOUNT_LOCKED">Account Locked</option>
+                        <option value="TRANSLATION_REQUEST">Translation Request</option>
+                        <option value="TRANSLATION_SUCCESS">Translation Success</option>
+                        <option value="TRANSLATION_FAILED">Translation Failed</option>
+                        <option value="TRANSLATION_CACHED">Translation Cached</option>
+                        <option value="DATA_READ">Data Read</option>
+                        <option value="DATA_WRITE">Data Write</option>
+                        <option value="DATA_DELETE">Data Delete</option>
+                        <option value="SECURITY_VIOLATION">Security Violation</option>
+                        <option value="RATE_LIMIT_EXCEEDED">Rate Limit</option>
+                        <option value="SUSPICIOUS_ACTIVITY">Suspicious Activity</option>
+                        <option value="UNAUTHORIZED_ACCESS">Unauthorized Access</option>
+                        <option value="CSRF_ATTEMPT">CSRF Attempt</option>
+                        <option value="SYSTEM_START">System Start</option>
+                        <option value="SYSTEM_SHUTDOWN">System Shutdown</option>
+                        <option value="USER_CREATED">User Created</option>
+                        <option value="USER_UPDATED">User Updated</option>
+                        <option value="USER_DELETED">User Deleted</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="severity">Severity</label>
+                    <select id="severity" multiple class="multi-select">
+                        <option value="error">Error</option>
+                        <option value="warning">Warning</option>
+                        <option value="info">Info</option>
+                        <option value="debug">Debug</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="category">Category</label>
+                    <select id="category" multiple class="multi-select">
+                        <option value="authentication">Authentication</option>
+                        <option value="translation">Translation</option>
+                        <option value="data_access">Data Access</option>
+                        <option value="security">Security</option>
+                        <option value="system">System</option>
+                        <option value="user_management">User Management</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="userId">User ID</label>
+                    <input type="text" id="userId" placeholder="Enter user ID">
+                </div>
+                <div class="filter-group">
+                    <label for="searchText">Search</label>
+                    <input type="text" id="searchText" placeholder="Search events...">
+                </div>
             </div>
-            <div class="control-group">
-                <button class="btn btn-primary" onclick="refreshDashboard()">🔄 Refresh</button>
+
+            <!-- Action Buttons -->
+            <div class="filter-row">
+                <div class="filter-group">
+                    <button class="btn btn-primary" onclick="refreshDashboard()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-secondary" onclick="exportAuditLogs()">
+                        <i class="fas fa-download"></i> Export Logs
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <button class="btn btn-secondary" onclick="saveFilterPreset()">
+                        <i class="fas fa-save"></i> Save Preset
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -331,41 +1129,647 @@
         <div id="error" class="error" style="display: none;"></div>
 
         <div id="dashboard" style="display: none;">
+            <!-- Charts Section -->
             <div class="dashboard-grid">
-                <div class="card">
-                    <h3>📊 Overview</h3>
-                    <div id="overview-stats"></div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">📈 Event Trends</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('trends')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="trends-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="trends-content">
+                        <div class="chart-wrapper">
+                            <canvas id="trendsChart"></canvas>
+                        </div>
+                    </div>
                 </div>
-                <div class="card">
-                    <h3>🚨 Risk Analysis</h3>
-                    <div id="risk-stats"></div>
-                </div>
-                <div class="card">
-                    <h3>🌍 Geographic</h3>
-                    <div id="geo-stats"></div>
-                </div>
-                <div class="card">
-                    <h3>⏰ Activity Timeline</h3>
-                    <div id="timeline-stats"></div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">🥧 Event Distribution</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('distribution')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="distribution-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="distribution-content">
+                        <div class="chart-wrapper">
+                            <canvas id="distributionChart"></canvas>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div class="events-table">
-                <h3>🔍 Recent Security Events</h3>
-                <div id="events-table"></div>
+            <!-- Statistics Cards -->
+            <div class="dashboard-grid">
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">📊 Overview</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('overview')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="overview-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="overview-content">
+                        <div id="overview-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">🚨 Risk Analysis</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('risk')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="risk-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="risk-content">
+                        <div id="risk-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">🔐 Authentication</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('auth')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="auth-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="auth-content">
+                        <div id="auth-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">🌐 Translation Activity</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('translation')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="translation-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="translation-content">
+                        <div id="translation-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">💾 Data Access</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('data')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="data-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="data-content">
+                        <div id="data-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">⚡ System Health</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('system')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="system-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="system-content">
+                        <div id="system-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">👥 User Activity</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('user')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="user-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="user-content">
+                        <div id="user-stats"></div>
+                    </div>
+                </div>
+                <div class="card-enhanced">
+                    <div class="card-header">
+                        <h3 class="card-title">🔒 Security Events</h3>
+                        <div class="card-actions">
+                            <button class="card-action-btn" onclick="toggleCardCollapse('security')" title="Collapse">
+                                <i class="fas fa-chevron-up" id="security-icon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="collapsible-content" id="security-content">
+                        <div id="security-stats"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Events Table -->
+            <div class="card-enhanced">
+                <div class="card-header">
+                    <h3 class="card-title">🔍 Recent Audit Events</h3>
+                    <div class="card-actions">
+                        <button class="card-action-btn" onclick="toggleCardCollapse('events')" title="Collapse">
+                            <i class="fas fa-chevron-up" id="events-icon"></i>
+                        </button>
+                        <button class="card-action-btn" onclick="refreshEvents()" title="Refresh Events">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="collapsible-content" id="events-content">
+                    <div id="events-table"></div>
+                    <div class="pagination" id="pagination"></div>
+                </div>
+            </div>
+
+            <!-- Performance Metrics -->
+            <div class="card-enhanced">
+                <div class="card-header">
+                    <h3 class="card-title">📈 Performance Metrics</h3>
+                    <div class="card-actions">
+                        <button class="card-action-btn" onclick="toggleCardCollapse('performance')" title="Collapse">
+                            <i class="fas fa-chevron-up" id="performance-icon"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="collapsible-content" id="performance-content">
+                    <div id="performance-metrics"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Event Details Modal -->
+        <div id="eventModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title">Event Details</h3>
+                    <button class="modal-close" onclick="closeEventModal()">&times;</button>
+                </div>
+                <div id="eventModalContent"></div>
             </div>
         </div>
     </div>
 
     <script>
         let currentData = null;
+        let charts = {};
+        let autoRefreshInterval = null;
+        let isAutoRefreshEnabled = true;
+        let currentPage = 1;
+        let pageSize = 20;
+        let sortColumn = 'timestamp';
+        let sortDirection = 'desc';
+        let filteredEvents = [];
+
+        // Theme Management
+        function toggleTheme() {
+            console.log('🎨 [Theme] toggleTheme() called');
+            const body = document.body;
+            const themeIcon = document.getElementById('theme-icon');
+            
+            if (body.classList.contains('dark-theme')) {
+                console.log('🎨 [Theme] Switching to light theme');
+                body.classList.remove('dark-theme');
+                themeIcon.className = 'fas fa-moon';
+                localStorage.setItem('theme', 'light');
+                console.log('🎨 [Theme] Light theme applied');
+            } else {
+                console.log('🎨 [Theme] Switching to dark theme');
+                body.classList.add('dark-theme');
+                themeIcon.className = 'fas fa-sun';
+                localStorage.setItem('theme', 'dark');
+                console.log('🎨 [Theme] Dark theme applied');
+            }
+        }
+
+        // Initialize theme from localStorage
+        function initializeTheme() {
+            console.log('🎨 [Theme] initializeTheme() called');
+            const savedTheme = localStorage.getItem('theme');
+            console.log('🎨 [Theme] Saved theme:', savedTheme);
+            if (savedTheme === 'dark') {
+                console.log('🎨 [Theme] Applying dark theme from localStorage');
+                document.body.classList.add('dark-theme');
+                document.getElementById('theme-icon').className = 'fas fa-sun';
+                console.log('🎨 [Theme] Dark theme initialized');
+            } else {
+                console.log('🎨 [Theme] Using default light theme');
+            }
+        }
+
+        // Auto Refresh Management
+        function toggleAutoRefresh() {
+            console.log('🔄 [AutoRefresh] toggleAutoRefresh() called, current state:', isAutoRefreshEnabled);
+            const btn = document.getElementById('autoRefreshBtn');
+            const icon = btn.querySelector('i');
+            
+            if (isAutoRefreshEnabled) {
+                console.log('🔄 [AutoRefresh] Disabling auto refresh');
+                clearInterval(autoRefreshInterval);
+                isAutoRefreshEnabled = false;
+                icon.className = 'fas fa-play';
+                btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+                showNotification('Auto refresh disabled', 'info');
+                console.log('🔄 [AutoRefresh] Auto refresh disabled');
+            } else {
+                console.log('🔄 [AutoRefresh] Enabling auto refresh');
+                autoRefreshInterval = setInterval(refreshDashboard, 30000);
+                isAutoRefreshEnabled = true;
+                icon.className = 'fas fa-pause';
+                btn.innerHTML = '<i class="fas fa-pause"></i> Auto Refresh';
+                showNotification('Auto refresh enabled', 'success');
+                console.log('🔄 [AutoRefresh] Auto refresh enabled with 30s interval');
+            }
+        }
+
+        // Quick Filter Functions
+        function applyQuickFilter(filterType) {
+            console.log('🔍 [QuickFilter] applyQuickFilter() called with filterType:', filterType);
+            
+            // Remove active class from all buttons
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
+            console.log('🔍 [QuickFilter] Removed active class from all buttons');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            console.log('🔍 [QuickFilter] Added active class to clicked button');
+            
+            // Apply filters based on type
+            switch(filterType) {
+                case 'all':
+                    console.log('🔍 [QuickFilter] Applying "all" filter - clearing all filters');
+                    clearFilters();
+                    break;
+                case 'critical':
+                    console.log('🔍 [QuickFilter] Applying "critical" filter - setting severity to error');
+                    document.getElementById('severity').value = ['error'];
+                    break;
+                case 'auth':
+                    console.log('🔍 [QuickFilter] Applying "auth" filter - setting auth event types');
+                    document.getElementById('eventType').value = ['AUTH_LOGIN', 'AUTH_LOGOUT', 'AUTH_FAILED_LOGIN', 'AUTH_ACCOUNT_LOCKED'];
+                    break;
+                case 'translation':
+                    console.log('🔍 [QuickFilter] Applying "translation" filter - setting translation event types');
+                    document.getElementById('eventType').value = ['TRANSLATION_REQUEST', 'TRANSLATION_SUCCESS', 'TRANSLATION_FAILED', 'TRANSLATION_CACHED'];
+                    break;
+                case 'security':
+                    console.log('🔍 [QuickFilter] Applying "security" filter - setting security event types');
+                    document.getElementById('eventType').value = ['SECURITY_VIOLATION', 'RATE_LIMIT_EXCEEDED', 'SUSPICIOUS_ACTIVITY', 'UNAUTHORIZED_ACCESS', 'CSRF_ATTEMPT'];
+                    break;
+                case 'lastHour':
+                    console.log('🔍 [QuickFilter] Applying "lastHour" filter - setting timeframe to 1h');
+                    document.getElementById('timeframe').value = '1h';
+                    break;
+                default:
+                    console.log('🔍 [QuickFilter] Unknown filter type:', filterType);
+            }
+            
+            console.log('🔍 [QuickFilter] Refreshing dashboard with new filters');
+            refreshDashboard();
+        }
+
+        // Clear all filters
+        function clearFilters() {
+            console.log('🧹 [ClearFilters] clearFilters() called');
+            
+            document.getElementById('timeframe').value = '24h';
+            document.getElementById('eventType').value = [];
+            document.getElementById('severity').value = [];
+            document.getElementById('category').value = [];
+            document.getElementById('userId').value = '';
+            document.getElementById('searchText').value = '';
+            console.log('🧹 [ClearFilters] Reset all filter inputs to default values');
+            
+            // Clear custom date range
+            window.customDateRange = null;
+            console.log('🧹 [ClearFilters] Cleared custom date range');
+            
+            // Reset quick filter buttons
+            document.querySelectorAll('.quick-filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.quick-filter-btn').classList.add('active');
+            console.log('🧹 [ClearFilters] Reset quick filter buttons - first button active');
+            
+            console.log('🧹 [ClearFilters] Refreshing dashboard with cleared filters');
+            refreshDashboard();
+        }
+
+        // Save filter preset
+        function saveFilterPreset() {
+            const preset = {
+                timeframe: document.getElementById('timeframe').value,
+                eventType: Array.from(document.getElementById('eventType').selectedOptions).map(o => o.value),
+                severity: Array.from(document.getElementById('severity').selectedOptions).map(o => o.value),
+                category: Array.from(document.getElementById('category').selectedOptions).map(o => o.value),
+                userId: document.getElementById('userId').value,
+                searchText: document.getElementById('searchText').value
+            };
+            
+            localStorage.setItem('filterPreset', JSON.stringify(preset));
+            showNotification('Filter preset saved', 'success');
+        }
+
+        // Load filter preset
+        function loadFilterPreset() {
+            const preset = localStorage.getItem('filterPreset');
+            if (preset) {
+                const data = JSON.parse(preset);
+                document.getElementById('timeframe').value = data.timeframe || '24h';
+                document.getElementById('eventType').value = data.eventType || [];
+                document.getElementById('severity').value = data.severity || [];
+                document.getElementById('category').value = data.category || [];
+                document.getElementById('userId').value = data.userId || '';
+                document.getElementById('searchText').value = data.searchText || '';
+            }
+        }
+
+        // Card Collapse Functions
+        function toggleCardCollapse(cardId) {
+            const content = document.getElementById(cardId + '-content');
+            const icon = document.getElementById(cardId + '-icon');
+            
+            if (content.classList.contains('collapsed')) {
+                content.classList.remove('collapsed');
+                icon.className = 'fas fa-chevron-up';
+            } else {
+                content.classList.add('collapsed');
+                icon.className = 'fas fa-chevron-down';
+            }
+        }
+
+        // Notification System
+        function showNotification(message, type = 'info') {
+            console.log(`🔔 [Notification] showNotification() called - Type: ${type}, Message: ${message}`);
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            console.log('🔔 [Notification] Notification element created and added to DOM');
+            
+            setTimeout(() => notification.classList.add('show'), 100);
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                    console.log('🔔 [Notification] Notification removed from DOM');
+                }, 300);
+            }, 3000);
+        }
+
+        // Event Details Modal
+        function showEventModal(event) {
+            console.log('📋 [EventModal] showEventModal() called with event:', event);
+            const modal = document.getElementById('eventModal');
+            const content = document.getElementById('eventModalContent');
+            console.log('📋 [EventModal] Modal element found:', modal);
+            console.log('📋 [EventModal] Content element found:', content);
+            
+            content.innerHTML = `
+                <div class="stat-item">
+                    <span class="stat-label">Event Type</span>
+                    <span class="stat-value">${event.actionType || 'N/A'}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Timestamp</span>
+                    <span class="stat-value">${new Date(event.timestamp).toLocaleString()}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Severity</span>
+                    <span class="stat-value">${event.severity || 'N/A'}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Category</span>
+                    <span class="stat-value">${event.category || 'N/A'}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">User ID</span>
+                    <span class="stat-value">${event.userId || 'Anonymous'}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">IP Address</span>
+                    <span class="stat-value">${event.ipAddress || 'N/A'}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Risk Score</span>
+                    <span class="stat-value">${event.riskScore || 0}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Details</span>
+                    <span class="stat-value">${JSON.stringify(event.details || {}, null, 2)}</span>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        function closeEventModal() {
+            console.log('📋 [EventModal] closeEventModal() called');
+            document.getElementById('eventModal').style.display = 'none';
+            console.log('📋 [EventModal] Modal hidden');
+        }
+
+        // Chart Management
+        function createTrendsChart() {
+            console.log('📊 [Charts] createTrendsChart() called');
+            const ctx = document.getElementById('trendsChart').getContext('2d');
+            console.log('📊 [Charts] Trends chart context:', ctx);
+            
+            if (charts.trends) {
+                console.log('📊 [Charts] Destroying existing trends chart');
+                charts.trends.destroy();
+            }
+            
+            // Generate sample trend data
+            const labels = [];
+            const data = [];
+            const now = new Date();
+            
+            for (let i = 23; i >= 0; i--) {
+                const time = new Date(now.getTime() - i * 60 * 60 * 1000);
+                labels.push(time.getHours() + ':00');
+                data.push(Math.floor(Math.random() * 100) + 10);
+            }
+            
+            charts.trends = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Events per Hour',
+                        data: data,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function createDistributionChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            
+            if (charts.distribution) {
+                charts.distribution.destroy();
+            }
+            
+            const stats = currentData?.auditStats || {};
+            const eventTypes = stats.by_action_type || {};
+            
+            const labels = Object.keys(eventTypes).slice(0, 8);
+            const data = Object.values(eventTypes).slice(0, 8);
+            const colors = [
+                '#667eea', '#f39c12', '#e74c3c', '#27ae60',
+                '#3498db', '#9b59b6', '#1abc9c', '#e67e22'
+            ];
+            
+            charts.distribution = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Enhanced Table Functions
+        function sortTable(column) {
+            if (sortColumn === column) {
+                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                sortColumn = column;
+                sortDirection = 'asc';
+            }
+            
+            filteredEvents.sort((a, b) => {
+                let aVal = a[column] || '';
+                let bVal = b[column] || '';
+                
+                if (column === 'timestamp') {
+                    aVal = new Date(aVal);
+                    bVal = new Date(bVal);
+                }
+                
+                if (sortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+            
+            renderEventsTable();
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(filteredEvents.length / pageSize);
+            const pagination = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = `
+                <button class="pagination-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+            `;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === currentPage || i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                    html += `
+                        <button class="pagination-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">
+                            ${i}
+                        </button>
+                    `;
+                } else if (i === currentPage - 3 || i === currentPage + 3) {
+                    html += '<span class="pagination-info">...</span>';
+                }
+            }
+            
+            html += `
+                <button class="pagination-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            `;
+            
+            html += `
+                <div class="pagination-info">
+                    Showing ${(currentPage - 1) * pageSize + 1}-${Math.min(currentPage * pageSize, filteredEvents.length)} of ${filteredEvents.length} events
+                </div>
+            `;
+            
+            pagination.innerHTML = html;
+        }
+
+        function changePage(page) {
+            const totalPages = Math.ceil(filteredEvents.length / pageSize);
+            if (page >= 1 && page <= totalPages) {
+                currentPage = page;
+                renderEventsTable();
+                renderPagination();
+            }
+        }
+
+        // Refresh Events
+        function refreshEvents() {
+            renderEventsTable();
+            renderPagination();
+        }
 
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 [Init] DOMContentLoaded event fired - Initializing Security Dashboard');
+            
+            // Initialize theme
+            console.log('🚀 [Init] Initializing theme...');
+            initializeTheme();
+            
+            // Load saved filter preset
+            console.log('🚀 [Init] Loading saved filter preset...');
+            loadFilterPreset();
+            
             // Force cache-busting by adding timestamp to URL
+            console.log('🚀 [Init] Setting up cache-busting...');
             const urlParams = new URLSearchParams(window.location.search);
             const currentTime = Date.now();
             const randomId = Math.random().toString(36).substring(7);
+            console.log('🚀 [Init] Cache buster:', currentTime, 'Random ID:', randomId);
             urlParams.set('v', currentTime);
             urlParams.set('r', randomId);
             window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
@@ -373,16 +1777,130 @@
             // Add cache-busting to all API calls
             window.CACHE_BUSTER = currentTime;
             window.RANDOM_ID = randomId;
+            console.log('🚀 [Init] Cache-busting variables set');
             
             // Force refresh with no-cache headers
+            console.log('🚀 [Init] Starting initial dashboard refresh...');
             refreshDashboard();
             
             // Auto-refresh every 30 seconds
-            setInterval(refreshDashboard, 30000);
+            console.log('🚀 [Init] Setting up auto-refresh every 30 seconds...');
+            autoRefreshInterval = setInterval(refreshDashboard, 30000);
+            isAutoRefreshEnabled = true;
+            console.log('🚀 [Init] Auto-refresh enabled');
+            
+            // Initialize event counter
+            console.log('🚀 [Init] Initializing event counter...');
+            updateEventCounter(0);
+            
+            // Add search functionality
+            console.log('🚀 [Init] Setting up search functionality...');
+            document.getElementById('searchText').addEventListener('input', function() {
+                const searchTerm = this.value.toLowerCase();
+                console.log('🔍 [Search] Search input changed:', searchTerm);
+                if (searchTerm.length >= 2 || searchTerm.length === 0) {
+                    console.log('🔍 [Search] Applying search filter...');
+                    applySearchFilter(searchTerm);
+                }
+            });
+            console.log('🚀 [Init] Search functionality initialized');
         });
+
+        // Search functionality
+        function applySearchFilter(searchTerm) {
+            console.log('🔍 [Search] applySearchFilter() called with searchTerm:', searchTerm);
+            if (!currentData?.auditLogs?.events) {
+                console.log('🔍 [Search] No audit logs events available, skipping search');
+                return;
+            }
+            
+            console.log('🔍 [Search] Filtering events from', currentData.auditLogs.events.length, 'total events');
+            filteredEvents = currentData.auditLogs.events.filter(event => {
+                const searchableText = [
+                    event.actionType,
+                    event.severity,
+                    event.category,
+                    event.userId,
+                    event.ipAddress,
+                    JSON.stringify(event.details || {})
+                ].join(' ').toLowerCase();
+                
+                return searchableText.includes(searchTerm);
+            });
+            
+            console.log('🔍 [Search] Filtered to', filteredEvents.length, 'events matching search term');
+            currentPage = 1;
+            renderEventsTable();
+            renderPagination();
+            console.log('🔍 [Search] Search filter applied and table updated');
+        }
+
+        // Update event counter
+        function updateEventCounter(count) {
+            console.log('📊 [EventCounter] updateEventCounter() called with count:', count);
+            const counter = document.getElementById('eventCounter');
+            counter.textContent = count;
+            console.log('📊 [EventCounter] Event counter updated to:', count);
+        }
+
+        // Handle timeframe change
+        function handleTimeframeChange() {
+            const timeframe = document.getElementById('timeframe').value;
+            console.log('📅 [Timeframe] handleTimeframeChange() called with timeframe:', timeframe);
+            const customRange = document.getElementById('customDateRange');
+            
+            if (timeframe === 'custom') {
+                console.log('📅 [Timeframe] Custom range selected, showing date inputs');
+                customRange.style.display = 'flex';
+                // Set default dates (last 24 hours)
+                const now = new Date();
+                const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                
+                document.getElementById('startDate').value = yesterday.toISOString().slice(0, 16);
+                document.getElementById('endDate').value = now.toISOString().slice(0, 16);
+                console.log('📅 [Timeframe] Default dates set - Start:', yesterday.toISOString().slice(0, 16), 'End:', now.toISOString().slice(0, 16));
+            } else {
+                console.log('📅 [Timeframe] Predefined timeframe selected, hiding custom range');
+                customRange.style.display = 'none';
+                console.log('📅 [Timeframe] Refreshing dashboard with new timeframe');
+                refreshDashboard();
+            }
+        }
+
+        // Apply custom date range
+        function applyCustomRange() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            console.log('📅 [CustomRange] applyCustomRange() called - Start:', startDate, 'End:', endDate);
+            
+            if (!startDate || !endDate) {
+                console.log('📅 [CustomRange] Validation failed - missing dates');
+                showNotification('Please select both start and end dates', 'warning');
+                return;
+            }
+            
+            if (new Date(startDate) >= new Date(endDate)) {
+                console.log('📅 [CustomRange] Validation failed - start date >= end date');
+                showNotification('Start date must be before end date', 'warning');
+                return;
+            }
+            
+            // Update the refresh function to use custom dates
+            window.customDateRange = {
+                start: startDate,
+                end: endDate
+            };
+            console.log('📅 [CustomRange] Custom date range set:', window.customDateRange);
+            
+            console.log('📅 [CustomRange] Refreshing dashboard with custom date range');
+            refreshDashboard();
+            showNotification('Custom date range applied', 'success');
+            console.log('📅 [CustomRange] Custom date range applied successfully');
+        }
 
         // Refresh dashboard data
         async function refreshDashboard() {
+            console.log('🔄 [RefreshDashboard] refreshDashboard() called');
             showLoading(true);
             hideError();
 
@@ -390,40 +1908,84 @@
                 const timeframe = document.getElementById('timeframe').value;
                 const eventType = document.getElementById('eventType').value;
                 const severity = document.getElementById('severity').value;
+                const category = document.getElementById('category').value;
+                const userId = document.getElementById('userId').value;
+                
+                console.log('🔄 [RefreshDashboard] Filter values:', {
+                    timeframe,
+                    eventType,
+                    severity,
+                    category,
+                    userId
+                });
 
-                // Fetch dashboard data with cache-busting
+                // Calculate date range
+                const endDate = calculateEndDate(timeframe);
+                const startDate = calculateStartDate(timeframe);
+                console.log('🔄 [RefreshDashboard] Date range:', { startDate, endDate });
+
+                // Fetch audit statistics
                 const cacheBuster = window.CACHE_BUSTER || Date.now();
                 const randomId = window.RANDOM_ID || Math.random().toString(36).substring(7);
-                const dashboardResponse = await fetch(`/api/security/dashboard?timeframe=${timeframe}&v=${cacheBuster}&r=${randomId}`, {
+                console.log('🔄 [RefreshDashboard] Cache buster:', cacheBuster, 'Random ID:', randomId);
+                
+                console.log('🔄 [RefreshDashboard] Fetching audit statistics...');
+                const auditStatsResponse = await fetch(`/api/enhanced-translation/audit-stats?startDate=${startDate}&endDate=${endDate}&v=${cacheBuster}&r=${randomId}`, {
                     headers: {
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
                         'Expires': '0'
                     }
                 });
-                const dashboardData = await dashboardResponse.json();
+                console.log('🔄 [RefreshDashboard] Audit stats response status:', auditStatsResponse.status);
+                const auditStats = await auditStatsResponse.json();
+                console.log('🔄 [RefreshDashboard] Audit stats data:', auditStats);
 
-                if (!dashboardData.success) {
-                    throw new Error(dashboardResponse.error || 'Failed to load dashboard data');
-                }
-
-                // Fetch events data with cache-busting
-                const eventsResponse = await fetch(`/api/security/events?timeframe=${timeframe}&eventType=${eventType}&severity=${severity}&v=${cacheBuster}&r=${randomId}`, {
+                // Fetch enhanced translation service health
+                console.log('🔄 [RefreshDashboard] Fetching health status...');
+                const healthResponse = await fetch(`/api/enhanced-translation/health?v=${cacheBuster}&r=${randomId}`, {
                     headers: {
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
                         'Expires': '0'
                     }
                 });
-                const eventsData = await eventsResponse.json();
+                console.log('🔄 [RefreshDashboard] Health response status:', healthResponse.status);
+                const healthData = await healthResponse.json();
+                console.log('🔄 [RefreshDashboard] Health data:', healthData);
 
-                if (!eventsData.success) {
-                    throw new Error(eventsData.error || 'Failed to load events data');
+                // Fetch audit logs (if userId is provided)
+                let auditLogs = { events: [] };
+                if (userId) {
+                    console.log('🔄 [RefreshDashboard] Fetching audit logs for userId:', userId);
+                    const auditLogsResponse = await fetch(`/api/enhanced-translation/audit-logs/${userId}?startDate=${startDate}&endDate=${endDate}&v=${cacheBuster}&r=${randomId}`, {
+                        headers: {
+                            'Cache-Control': 'no-cache, no-store, must-revalidate',
+                            'Pragma': 'no-cache',
+                            'Expires': '0'
+                        }
+                    });
+                    console.log('🔄 [RefreshDashboard] Audit logs response status:', auditLogsResponse.status);
+                    const logsData = await auditLogsResponse.json();
+                    console.log('🔄 [RefreshDashboard] Audit logs data:', logsData);
+                    if (logsData.success) {
+                        auditLogs = { events: logsData.data };
+                        console.log('🔄 [RefreshDashboard] Audit logs events count:', logsData.data?.length || 0);
+                    }
+                } else {
+                    console.log('🔄 [RefreshDashboard] No userId provided, skipping audit logs fetch');
                 }
 
-                currentData = { dashboard: dashboardData.data, events: eventsData.data };
+                currentData = { 
+                    auditStats: auditStats.data || {}, 
+                    health: healthData,
+                    auditLogs: auditLogs
+                };
+                console.log('🔄 [RefreshDashboard] Current data set:', currentData);
+                console.log('🔄 [RefreshDashboard] Rendering dashboard...');
                 renderDashboard();
                 showLoading(false);
+                console.log('🔄 [RefreshDashboard] Dashboard refresh completed successfully');
 
             } catch (error) {
                 console.error('Error refreshing dashboard:', error);
@@ -432,28 +1994,104 @@
             }
         }
 
+        // Calculate start date based on timeframe
+        function calculateStartDate(timeframe) {
+            console.log('📅 [DateCalc] calculateStartDate() called with timeframe:', timeframe);
+            
+            // Check if custom date range is set
+            if (window.customDateRange) {
+                console.log('📅 [DateCalc] Using custom date range start:', window.customDateRange.start);
+                return window.customDateRange.start;
+            }
+            
+            const now = new Date();
+            let startDate;
+            
+            switch (timeframe) {
+                case '1h':
+                    startDate = new Date(now.getTime() - 60 * 60 * 1000);
+                    break;
+                case '24h':
+                    startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                case '7d':
+                    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    break;
+                case '30d':
+                    startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    break;
+                case 'custom':
+                    // This should not happen as custom range is handled above
+                    startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    break;
+                default:
+                    startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            }
+            
+            const result = startDate.toISOString();
+            console.log('📅 [DateCalc] Calculated start date:', result);
+            return result;
+        }
+
+        // Calculate end date based on timeframe
+        function calculateEndDate(timeframe) {
+            console.log('📅 [DateCalc] calculateEndDate() called with timeframe:', timeframe);
+            
+            // Check if custom date range is set
+            if (window.customDateRange) {
+                console.log('📅 [DateCalc] Using custom date range end:', window.customDateRange.end);
+                return window.customDateRange.end;
+            }
+            
+            const result = new Date().toISOString();
+            console.log('📅 [DateCalc] Calculated end date:', result);
+            return result;
+        }
+
         // Render dashboard
         function renderDashboard() {
-            if (!currentData) return;
+            console.log('🎨 [RenderDashboard] renderDashboard() called');
+            if (!currentData) {
+                console.log('🎨 [RenderDashboard] No current data available, skipping render');
+                return;
+            }
+            console.log('🎨 [RenderDashboard] Rendering dashboard with data:', currentData);
 
+            // Update event counter
+            const eventCount = currentData.auditLogs?.events?.length || 0;
+            updateEventCounter(eventCount);
+
+            // Render statistics
             renderOverviewStats();
             renderRiskStats();
+            renderAuthStats();
+            renderTranslationStats();
+            renderDataStats();
+            renderSystemStats();
+            renderUserStats();
+            renderSecurityStats();
+            renderPerformanceMetrics();
+
+            // Render charts
+            createTrendsChart();
+            createDistributionChart();
+
+            // Render events table
+            filteredEvents = currentData.auditLogs?.events || [];
             renderEventsTable();
+            renderPagination();
         }
 
         // Render overview statistics
         function renderOverviewStats() {
             try {
-                const stats = currentData.dashboard;
+                const stats = currentData.auditStats;
                 const container = document.getElementById('overview-stats');
                 
-                // Safely handle undefined properties with additional null checks
-                const totalEvents = stats?.totalEvents || 0;
-                const highRiskEvents = (stats?.bySeverity?.HIGH || 0) + (stats?.bySeverity?.CRITICAL || 0);
-                const uniqueIPs = stats?.topIPs ? Object.keys(stats.topIPs).length : 0;
-                const topEventType = (stats?.topEventTypes && Array.isArray(stats.topEventTypes) && stats.topEventTypes.length > 0) 
-                    ? stats.topEventTypes[0]?._id || 'N/A' 
-                    : 'N/A';
+                const totalEvents = stats?.total_events || 0;
+                const highRiskEvents = stats?.high_risk_events || 0;
+                const securityAlerts = stats?.security_alerts || 0;
+                const topEventType = stats?.by_action_type ? Object.keys(stats.by_action_type)[0] || 'N/A' : 'N/A';
             
                 container.innerHTML = `
                     <div class="stat-item">
@@ -465,8 +2103,8 @@
                         <span class="stat-value high">${highRiskEvents}</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Unique IPs</span>
-                        <span class="stat-value">${uniqueIPs}</span>
+                        <span class="stat-label">Security Alerts</span>
+                        <span class="stat-value high">${securityAlerts}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Top Event Type</span>
@@ -483,32 +2121,32 @@
         // Render risk statistics
         function renderRiskStats() {
             try {
-                const stats = currentData.dashboard;
+                const stats = currentData.auditStats;
                 const container = document.getElementById('risk-stats');
                 
                 const severityCounts = {
-                    CRITICAL: stats?.bySeverity?.CRITICAL || 0,
-                    HIGH: stats?.bySeverity?.HIGH || 0,
-                    MEDIUM: stats?.bySeverity?.MEDIUM || 0,
-                    LOW: stats?.bySeverity?.LOW || 0
+                    error: stats?.by_severity?.error || 0,
+                    warning: stats?.by_severity?.warning || 0,
+                    info: stats?.by_severity?.info || 0,
+                    debug: stats?.by_severity?.debug || 0
                 };
 
                 container.innerHTML = `
                     <div class="stat-item">
-                        <span class="stat-label">Critical</span>
-                        <span class="stat-value high">${severityCounts.CRITICAL}</span>
+                        <span class="stat-label">Error</span>
+                        <span class="stat-value high">${severityCounts.error}</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">High</span>
-                        <span class="stat-value high">${severityCounts.HIGH}</span>
+                        <span class="stat-label">Warning</span>
+                        <span class="stat-value high">${severityCounts.warning}</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Medium</span>
-                        <span class="stat-value medium">${severityCounts.MEDIUM}</span>
+                        <span class="stat-label">Info</span>
+                        <span class="stat-value medium">${severityCounts.info}</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Low</span>
-                        <span class="stat-value low">${severityCounts.LOW}</span>
+                        <span class="stat-label">Debug</span>
+                        <span class="stat-value low">${severityCounts.debug}</span>
                     </div>
                 `;
             } catch (error) {
@@ -518,39 +2156,300 @@
             }
         }
 
+        // Render authentication statistics
+        function renderAuthStats() {
+            try {
+                const stats = currentData.auditStats;
+                const container = document.getElementById('auth-stats');
+                
+                const authStats = {
+                    logins: stats?.by_action_type?.['AUTH_LOGIN'] || 0,
+                    logouts: stats?.by_action_type?.['AUTH_LOGOUT'] || 0,
+                    failedLogins: stats?.by_action_type?.['AUTH_FAILED_LOGIN'] || 0,
+                    lockedAccounts: stats?.by_action_type?.['AUTH_ACCOUNT_LOCKED'] || 0
+                };
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Successful Logins</span>
+                        <span class="stat-value low">${authStats.logins}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Logouts</span>
+                        <span class="stat-value low">${authStats.logouts}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Failed Logins</span>
+                        <span class="stat-value high">${authStats.failedLogins}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Locked Accounts</span>
+                        <span class="stat-value high">${authStats.lockedAccounts}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering auth stats:', error);
+                const container = document.getElementById('auth-stats');
+                container.innerHTML = '<p>Error loading auth statistics</p>';
+            }
+        }
+
+        // Render translation statistics
+        function renderTranslationStats() {
+            try {
+                const stats = currentData.auditStats;
+                const container = document.getElementById('translation-stats');
+                
+                const translationStats = {
+                    requests: stats?.by_action_type?.['TRANSLATION_REQUEST'] || 0,
+                    successes: stats?.by_action_type?.['TRANSLATION_SUCCESS'] || 0,
+                    failures: stats?.by_action_type?.['TRANSLATION_FAILED'] || 0,
+                    cached: stats?.by_action_type?.['TRANSLATION_CACHED'] || 0
+                };
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Translation Requests</span>
+                        <span class="stat-value">${translationStats.requests}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Successful</span>
+                        <span class="stat-value low">${translationStats.successes}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Failed</span>
+                        <span class="stat-value high">${translationStats.failures}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Cached</span>
+                        <span class="stat-value medium">${translationStats.cached}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering translation stats:', error);
+                const container = document.getElementById('translation-stats');
+                container.innerHTML = '<p>Error loading translation statistics</p>';
+            }
+        }
+
+        // Render data access statistics
+        function renderDataStats() {
+            try {
+                const stats = currentData.auditStats;
+                const container = document.getElementById('data-stats');
+                
+                const dataStats = {
+                    reads: stats?.by_action_type?.['DATA_READ'] || 0,
+                    writes: stats?.by_action_type?.['DATA_WRITE'] || 0,
+                    deletes: stats?.by_action_type?.['DATA_DELETE'] || 0,
+                    exports: stats?.by_action_type?.['DATA_EXPORT'] || 0
+                };
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Data Reads</span>
+                        <span class="stat-value">${dataStats.reads}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Data Writes</span>
+                        <span class="stat-value medium">${dataStats.writes}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Data Deletes</span>
+                        <span class="stat-value high">${dataStats.deletes}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Data Exports</span>
+                        <span class="stat-value high">${dataStats.exports}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering data stats:', error);
+                const container = document.getElementById('data-stats');
+                container.innerHTML = '<p>Error loading data statistics</p>';
+            }
+        }
+
+        // Render system statistics
+        function renderSystemStats() {
+            try {
+                const health = currentData.health;
+                const container = document.getElementById('system-stats');
+                
+                const systemStatus = health?.status || 'unknown';
+                const services = health?.services || {};
+                const activeServices = Object.values(services).filter(s => s?.status === 'active' || s?.status === 'healthy').length;
+                const totalServices = Object.keys(services).length;
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">System Status</span>
+                        <span class="stat-value ${systemStatus === 'healthy' ? 'low' : 'high'}">${systemStatus}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Active Services</span>
+                        <span class="stat-value">${activeServices}/${totalServices}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Cache Status</span>
+                        <span class="stat-value ${services?.cache?.status === 'active' ? 'low' : 'high'}">${services?.cache?.status || 'unknown'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Database Status</span>
+                        <span class="stat-value ${services?.database?.status === 'healthy' ? 'low' : 'high'}">${services?.database?.status || 'unknown'}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering system stats:', error);
+                const container = document.getElementById('system-stats');
+                container.innerHTML = '<p>Error loading system statistics</p>';
+            }
+        }
+
+        // Render user statistics
+        function renderUserStats() {
+            try {
+                const stats = currentData.auditStats;
+                const container = document.getElementById('user-stats');
+                
+                const userStats = {
+                    created: stats?.by_action_type?.['USER_CREATED'] || 0,
+                    updated: stats?.by_action_type?.['USER_UPDATED'] || 0,
+                    deleted: stats?.by_action_type?.['USER_DELETED'] || 0,
+                    suspended: stats?.by_action_type?.['USER_SUSPENDED'] || 0
+                };
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Users Created</span>
+                        <span class="stat-value low">${userStats.created}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Users Updated</span>
+                        <span class="stat-value medium">${userStats.updated}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Users Deleted</span>
+                        <span class="stat-value high">${userStats.deleted}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Users Suspended</span>
+                        <span class="stat-value high">${userStats.suspended}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering user stats:', error);
+                const container = document.getElementById('user-stats');
+                container.innerHTML = '<p>Error loading user statistics</p>';
+            }
+        }
+
+        // Render security statistics
+        function renderSecurityStats() {
+            try {
+                const stats = currentData.auditStats;
+                const container = document.getElementById('security-stats');
+                
+                const securityStats = {
+                    violations: stats?.by_action_type?.['SECURITY_VIOLATION'] || 0,
+                    rateLimits: stats?.by_action_type?.['RATE_LIMIT_EXCEEDED'] || 0,
+                    suspicious: stats?.by_action_type?.['SUSPICIOUS_ACTIVITY'] || 0,
+                    unauthorized: stats?.by_action_type?.['UNAUTHORIZED_ACCESS'] || 0
+                };
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Security Violations</span>
+                        <span class="stat-value high">${securityStats.violations}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Rate Limit Exceeded</span>
+                        <span class="stat-value high">${securityStats.rateLimits}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Suspicious Activity</span>
+                        <span class="stat-value high">${securityStats.suspicious}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Unauthorized Access</span>
+                        <span class="stat-value high">${securityStats.unauthorized}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering security stats:', error);
+                const container = document.getElementById('security-stats');
+                container.innerHTML = '<p>Error loading security statistics</p>';
+            }
+        }
+
         // Render events table
         function renderEventsTable() {
-            const events = currentData.events.events;
             const container = document.getElementById('events-table');
             
-            if (events.length === 0) {
-                container.innerHTML = '<p>No security events found for the selected criteria.</p>';
+            if (!filteredEvents || filteredEvents.length === 0) {
+                container.innerHTML = '<p>No audit events found for the selected criteria. Enter a User ID to view specific user events.</p>';
                 return;
             }
 
+            // Get paginated events
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
             const tableHTML = `
-                <table>
+                <table class="table-enhanced">
                     <thead>
                         <tr>
-                            <th>Time</th>
-                            <th>Event Type</th>
-                            <th>Severity</th>
-                            <th>IP Address</th>
-                            <th>User</th>
-                            <th>Description</th>
-                            <th>Risk Score</th>
+                            <th class="sortable" onclick="sortTable('timestamp')">
+                                Time
+                                <span class="sort-indicator">${sortColumn === 'timestamp' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th class="sortable" onclick="sortTable('actionType')">
+                                Event Type
+                                <span class="sort-indicator">${sortColumn === 'actionType' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th class="sortable" onclick="sortTable('severity')">
+                                Severity
+                                <span class="sort-indicator">${sortColumn === 'severity' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th class="sortable" onclick="sortTable('category')">
+                                Category
+                                <span class="sort-indicator">${sortColumn === 'category' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th class="sortable" onclick="sortTable('ipAddress')">
+                                IP Address
+                                <span class="sort-indicator">${sortColumn === 'ipAddress' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th class="sortable" onclick="sortTable('userId')">
+                                User
+                                <span class="sort-indicator">${sortColumn === 'userId' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th class="sortable" onclick="sortTable('riskScore')">
+                                Risk Score
+                                <span class="sort-indicator">${sortColumn === 'riskScore' ? (sortDirection === 'asc' ? '↑' : '↓') : ''}</span>
+                            </th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${events.map(event => `
-                            <tr>
+                        ${paginatedEvents.map(event => `
+                            <tr onclick="showEventModal(${JSON.stringify(event).replace(/"/g, '&quot;')})" style="cursor: pointer;">
                                 <td>${new Date(event.timestamp).toLocaleString()}</td>
-                                <td>${event.eventType}</td>
-                                <td><span class="severity-badge severity-${event.severity.toLowerCase()}">${event.severity}</span></td>
-                                <td>${event.ipAddress}</td>
-                                <td>${event.userId?.email || 'Anonymous'}</td>
-                                <td>${event.description || 'N/A'}</td>
-                                <td>${event.riskScore}</td>
+                                <td>${event.actionType || 'N/A'}</td>
+                                <td><span class="severity-badge severity-${(event.severity || 'info').toLowerCase()}">${event.severity || 'N/A'}</span></td>
+                                <td>${event.category || 'N/A'}</td>
+                                <td>${event.ipAddress || 'N/A'}</td>
+                                <td>${event.userId || 'Anonymous'}</td>
+                                <td>
+                                    <span class="stat-value ${(event.riskScore || 0) > 70 ? 'high' : (event.riskScore || 0) > 30 ? 'medium' : 'low'}">
+                                        ${event.riskScore || 0}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="card-action-btn" onclick="event.stopPropagation(); showEventModal(${JSON.stringify(event).replace(/"/g, '&quot;')})" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
                             </tr>
                         `).join('')}
                     </tbody>
@@ -558,6 +2457,79 @@
             `;
 
             container.innerHTML = tableHTML;
+        }
+
+        // Render performance metrics
+        function renderPerformanceMetrics() {
+            try {
+                const health = currentData.health;
+                const container = document.getElementById('performance-metrics');
+                
+                const performance = health?.performance || {};
+                const cache = performance?.cache || {};
+                const database = performance?.database || {};
+
+                container.innerHTML = `
+                    <div class="stat-item">
+                        <span class="stat-label">Cache Hit Rate</span>
+                        <span class="stat-value">${cache.l1HitRate ? cache.l1HitRate.toFixed(2) + '%' : 'N/A'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">L1 Cache Size</span>
+                        <span class="stat-value">${cache.l1Size || 0}/${cache.l1MaxSize || 0}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Database Collections</span>
+                        <span class="stat-value">${database.collections || 'N/A'}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Database Objects</span>
+                        <span class="stat-value">${database.objects ? database.objects.toLocaleString() : 'N/A'}</span>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error rendering performance metrics:', error);
+                const container = document.getElementById('performance-metrics');
+                container.innerHTML = '<p>Error loading performance metrics</p>';
+            }
+        }
+
+        // Export audit logs
+        function exportAuditLogs() {
+            try {
+                const events = currentData.auditLogs.events;
+                if (!events || events.length === 0) {
+                    alert('No audit logs to export');
+                    return;
+                }
+
+                const csvContent = [
+                    ['Timestamp', 'Event Type', 'Severity', 'Category', 'User ID', 'IP Address', 'Risk Score', 'Details'],
+                    ...events.map(event => [
+                        new Date(event.timestamp).toISOString(),
+                        event.actionType,
+                        event.severity,
+                        event.category,
+                        event.userId || 'Anonymous',
+                        event.ipAddress || 'N/A',
+                        event.riskScore || 0,
+                        JSON.stringify(event.details || {})
+                    ])
+                ].map(row => row.map(field => `"${field}"`).join(',')).join('\n');
+
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+            } catch (error) {
+                console.error('Error exporting audit logs:', error);
+                alert('Failed to export audit logs: ' + error.message);
+            }
         }
 
         // Show loading state
@@ -603,5 +2575,19 @@
     
     <!-- Real-time Service -->
 
+
+  <!-- Global Navbar JavaScript -->
+  <script src="/js/global-navbar.js"></script>
+  
+  <script>
+    // Initialize navbar when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.GlobalNavbar) {
+        window.globalNavbar = new window.GlobalNavbar();
+      }
+    });
+  </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
 </body>
 </html>

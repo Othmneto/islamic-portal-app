@@ -1,278 +1,312 @@
-/* ------------------------------------------------------------------
-   translator-backend/public/sw.js
+// Service Worker for Islamic Portal PWA
+const CACHE_NAME = 'islamic-portal-v1.0.0';
+const STATIC_CACHE = 'static-v1.0.0';
+const DYNAMIC_CACHE = 'dynamic-v1.0.0';
 
-   Service Worker for Prayer Times
-   - Shows notifications on push
-   - ✅ Handles interactive notification actions ('snooze', 'mark_prayed')
-   - ✅ On 'mark_prayed', opens/focuses page and signals it to log the prayer
-   - Broadcasts PLAY_ADHAN to open pages so they can play audio
-   - Focuses or opens page on notification click
-------------------------------------------------------------------- */
+// Files to cache for offline functionality
+const STATIC_FILES = [
+  '/',
+  '/index.html',
+  '/login.html',
+  '/translator/text-translator.html',
+  '/account-management.html',
+  '/profile-management.html',
+  '/privacy-settings.html',
+  '/mfa-setup.html',
+  '/manifest.json',
+  '/css/styles.css',
+  '/js/app.js',
+  '/icons/icon-192x192.png',
+  '/icons/icon-512x512.png',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/webfonts/fa-solid-900.woff2'
+];
 
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil(self.clients.claim());
-});
-
-// Handle messages from main thread for real-time updates
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'REALTIME_HEARTBEAT') {
-    console.log('📡 Service worker received heartbeat:', event.data);
-    
-    // Broadcast to all clients
-    event.waitUntil(
-      self.clients.matchAll().then(clients => {
-        clients.forEach(client => {
-          client.postMessage({
-            type: 'REALTIME_UPDATE',
-            timestamp: Date.now(),
-            source: 'service-worker'
-          });
-        });
+// Install event - cache static files
+self.addEventListener('install', event => {
+  console.log('🔧 [Service Worker] Installing...');
+  
+  event.waitUntil(
+    caches.open(STATIC_CACHE)
+      .then(cache => {
+        console.log('📦 [Service Worker] Caching static files...');
+        return cache.addAll(STATIC_FILES);
       })
+      .then(() => {
+        console.log('✅ [Service Worker] Static files cached successfully');
+        return self.skipWaiting();
+      })
+      .catch(error => {
+        console.error('❌ [Service Worker] Error caching static files:', error);
+      })
+  );
+});
+
+// Activate event - clean up old caches
+self.addEventListener('activate', event => {
+  console.log('🚀 [Service Worker] Activating...');
+  
+  event.waitUntil(
+    caches.keys()
+      .then(cacheNames => {
+        return Promise.all(
+          cacheNames.map(cacheName => {
+            if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
+              console.log('🗑️ [Service Worker] Deleting old cache:', cacheName);
+              return caches.delete(cacheName);
+            }
+          })
+        );
+      })
+      .then(() => {
+        console.log('✅ [Service Worker] Old caches cleaned up');
+        return self.clients.claim();
+      })
+  );
+});
+
+// Fetch event - serve cached content when offline
+self.addEventListener('fetch', event => {
+  const { request } = event;
+  const url = new URL(request.url);
+  
+  // Skip non-GET requests
+  if (request.method !== 'GET') {
+    return;
+  }
+  
+  // Skip chrome-extension and other non-http requests
+  if (!url.protocol.startsWith('http')) {
+    return;
+  }
+  
+  event.respondWith(
+    caches.match(request)
+      .then(cachedResponse => {
+        // Return cached version if available
+        if (cachedResponse) {
+          console.log('📦 [Service Worker] Serving from cache:', request.url);
+          return cachedResponse;
+        }
+        
+        // Otherwise, fetch from network
+        return fetch(request)
+          .then(response => {
+            // Don't cache if not a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            
+            // Clone the response
+            const responseToCache = response.clone();
+            
+            // Cache dynamic content
+            caches.open(DYNAMIC_CACHE)
+              .then(cache => {
+                cache.put(request, responseToCache);
+              });
+            
+            return response;
+          })
+          .catch(error => {
+            console.log('🌐 [Service Worker] Network error, serving offline page:', error);
+            
+            // Return offline page for navigation requests
+            if (request.destination === 'document') {
+              return caches.match('/index.html');
+            }
+            
+            // Return cached version of the same file if available
+            return caches.match(request);
+          });
+      })
+  );
+});
+
+// Background sync for offline actions
+self.addEventListener('sync', event => {
+  console.log('🔄 [Service Worker] Background sync:', event.tag);
+  
+  if (event.tag === 'translation-sync') {
+    event.waitUntil(syncTranslations());
+  } else if (event.tag === 'prayer-log-sync') {
+    event.waitUntil(syncPrayerLogs());
+  }
+});
+
+// Push notifications
+self.addEventListener('push', event => {
+  console.log('📱 [Service Worker] Push notification received');
+  
+  const options = {
+    body: event.data ? event.data.text() : 'New notification from Islamic Portal',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-72x72.png',
+    vibrate: [200, 100, 200],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: 1
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'Open App',
+        icon: '/icons/icon-72x72.png'
+      },
+      {
+        action: 'close',
+        title: 'Close',
+        icon: '/icons/icon-72x72.png'
+      }
+    ]
+  };
+  
+  event.waitUntil(
+    self.registration.showNotification('Islamic Portal', options)
+  );
+});
+
+// Notification click handler
+self.addEventListener('notificationclick', event => {
+  console.log('👆 [Service Worker] Notification clicked:', event.action);
+  
+  event.notification.close();
+  
+  if (event.action === 'explore') {
+    event.waitUntil(
+      clients.openWindow('/')
     );
   }
 });
 
-// Utility: safe JSON parse of push payload
-async function parsePushData(event) {
-  if (!event.data) return {};
+// Message handler for communication with main thread
+self.addEventListener('message', event => {
+  console.log('💬 [Service Worker] Message received:', event.data);
+  
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'CACHE_URLS') {
+    const urlsToCache = event.data.urls;
+    event.waitUntil(
+      caches.open(DYNAMIC_CACHE)
+        .then(cache => {
+          return cache.addAll(urlsToCache);
+        })
+    );
+  }
+});
+
+// Helper functions
+async function syncTranslations() {
+  console.log('🔄 [Service Worker] Syncing translations...');
+  
   try {
-    return await event.data.json();
-  } catch {
-    // fallback: plain text
-    try {
-      const txt = await event.data.text();
-      return { body: txt };
-    } catch {
-      return {};
+    // Get offline translations from IndexedDB
+    const offlineTranslations = await getOfflineTranslations();
+    
+    for (const translation of offlineTranslations) {
+      try {
+        const response = await fetch('/api/translation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${translation.token}`
+          },
+          body: JSON.stringify(translation.data)
+        });
+        
+        if (response.ok) {
+          // Remove from offline storage
+          await removeOfflineTranslation(translation.id);
+          console.log('✅ [Service Worker] Translation synced:', translation.id);
+        }
+      } catch (error) {
+        console.error('❌ [Service Worker] Error syncing translation:', error);
+      }
     }
+  } catch (error) {
+    console.error('❌ [Service Worker] Error in syncTranslations:', error);
   }
 }
 
-self.addEventListener("push", (event) => {
-  event.waitUntil((async () => {
-    const payload = await parsePushData(event);
-    const title = payload.title || "Prayer Reminder";
-    const options = {
-      body: payload.body || "",
-      icon: payload.icon || "/favicon.ico",
-      badge: payload.badge || "/favicon.ico",
-      data: payload.data || { url: "/prayer-time.html" }, // may contain { url, prayer }
-      tag: payload.tag || "prayer",
-      renotify: !!payload.renotify,
-      actions: payload.actions || [], // include action buttons from payload
-      requireInteraction: true, // Keep notification visible until user interacts
-      // Note: custom sounds aren't supported in Web Push. We broadcast to pages instead.
-    };
-
-    // Show notification (this works even when browser is closed)
-    await self.registration.showNotification(title, options);
-
-    // Also tell open clients to play Adhan unless silenced
-    if (!payload.silent) {
-      const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      for (const c of clientsList) {
-        try {
-          c.postMessage({
-            type: "PLAY_ADHAN",
-            audioFile: payload.audioFile || "/audio/adhan.mp3",
-          });
-        } catch {}
-      }
-    }
-  })());
-});
-
-self.addEventListener("notificationclick", (event) => {
-  const notification = event.notification;
-  const action = event.action;
-  const data = notification.data || {};
-  const prayer = data.prayer || "prayer";
-
-  notification.close();
-
-  event.waitUntil((async () => {
-    // --- ACTION: Snooze ---
-    if (action === "snooze") {
-      const snoozeTitle = `Snooze: ${notification.title || "Prayer Reminder"}`;
-      const snoozeOptions = {
-        body: "Reminder will be sent in 5 minutes.",
-        tag: `snooze_${prayer}`,
-      };
-
+async function syncPrayerLogs() {
+  console.log('🔄 [Service Worker] Syncing prayer logs...');
+  
+  try {
+    // Get offline prayer logs from IndexedDB
+    const offlinePrayerLogs = await getOfflinePrayerLogs();
+    
+    for (const log of offlinePrayerLogs) {
       try {
-        const subscription = await self.registration.pushManager.getSubscription();
-        if (subscription) {
-          await fetch("/api/notifications/snooze", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              originalPayload: {
-                title: notification.title,
-                body: notification.body,
-                icon: notification.icon,
-                tag: prayer,
-                requireInteraction: true,
-                data: notification.data,
-                actions: notification.actions,
-              },
-              endpoint: subscription.endpoint,
-            }),
-          });
+        const response = await fetch('/api/prayer-log', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${log.token}`
+          },
+          body: JSON.stringify(log.data)
+        });
+        
+        if (response.ok) {
+          // Remove from offline storage
+          await removeOfflinePrayerLog(log.id);
+          console.log('✅ [Service Worker] Prayer log synced:', log.id);
         }
-      } catch {}
-
-      // Confirm snooze
-      return self.registration.showNotification(snoozeTitle, snoozeOptions);
-    }
-
-    // --- ACTION: Mark as prayed ---
-    if (action === "mark_prayed" && prayer) {
-      try { console.log(`User marked '${prayer}' as prayed.`); } catch {}
-
-      // We open/focus the page and either:
-      //  - send a message to it to log the prayer, or
-      //  - open the page with ?log=<prayer> so the page can log on load.
-      const baseUrl = "/prayer-time.html";
-      const urlWithParam = new URL(`${baseUrl}?log=${encodeURIComponent(prayer)}`, self.location.origin).href;
-
-      const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-
-      // If a prayer-time page is already open, focus it and send a message.
-      for (const client of clientList) {
-        // Compare path (ignore querystring)
-        const clientUrl = new URL(client.url, self.location.origin);
-        const baseOnly = new URL(baseUrl, self.location.origin);
-        if (clientUrl.href.split("?")[0] === baseOnly.href && "focus" in client) {
-          try {
-            client.postMessage({ type: "LOG_PRAYER", prayer });
-          } catch {}
-          return client.focus();
-        }
-      }
-
-      // Otherwise, open a new tab with a hint param
-      if (self.clients.openWindow) {
-        await self.clients.openWindow(urlWithParam);
-      }
-
-      // Enhanced confirmation notification
-      return self.registration.showNotification("✅ Prayer Marked", {
-        body: `Great job! You've completed ${prayer} prayer. May Allah accept it.`,
-        icon: "/images/actions/check.svg",
-        badge: "/images/achievements/achievement-badge.png",
-        tag: "mark_prayed_confirmation",
-        data: { url: "/profile.html", category: "achievement" }
-      });
-    }
-
-    // --- ACTION: View Qibla ---
-    if (action === "view_qibla") {
-      const qiblaUrl = "/qibla.html";
-      const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-
-      for (const client of clientList) {
-        const clientUrl = new URL(client.url, self.location.origin);
-        if (clientUrl.pathname === qiblaUrl && "focus" in client) {
-          return client.focus();
-        }
-      }
-
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(qiblaUrl);
+      } catch (error) {
+        console.error('❌ [Service Worker] Error syncing prayer log:', error);
       }
     }
+  } catch (error) {
+    console.error('❌ [Service Worker] Error in syncPrayerLogs:', error);
+  }
+}
 
-    // --- ACTION: View Prayer Times ---
-    if (action === "view_times") {
-      const timesUrl = "/prayer-time.html";
-      const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+// IndexedDB helper functions (simplified)
+async function getOfflineTranslations() {
+  // This would interact with IndexedDB
+  // For now, return empty array
+  return [];
+}
 
-      for (const client of clientList) {
-        const clientUrl = new URL(client.url, self.location.origin);
-        if (clientUrl.pathname === timesUrl && "focus" in client) {
-          return client.focus();
-        }
-      }
+async function removeOfflineTranslation(id) {
+  // This would remove from IndexedDB
+  console.log('🗑️ [Service Worker] Removing offline translation:', id);
+}
 
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(timesUrl);
-      }
-    }
+async function getOfflinePrayerLogs() {
+  // This would interact with IndexedDB
+  // For now, return empty array
+  return [];
+}
 
-    // --- ACTION: View Profile ---
-    if (action === "view_profile") {
-      const profileUrl = "/profile.html";
-      const clientList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+async function removeOfflinePrayerLog(id) {
+  // This would remove from IndexedDB
+  console.log('🗑️ [Service Worker] Removing offline prayer log:', id);
+}
 
-      for (const client of clientList) {
-        const clientUrl = new URL(client.url, self.location.origin);
-        if (clientUrl.pathname === profileUrl && "focus" in client) {
-          return client.focus();
-        }
-      }
-
-      if (self.clients.openWindow) {
-        return self.clients.openWindow(profileUrl);
-      }
-    }
-
-    // --- ACTION: Prepare for Prayer ---
-    if (action === "prepare") {
-      return self.registration.showNotification("🧘 Prepare for Prayer", {
-        body: "Take a moment to prepare your heart and mind for prayer. Find a quiet space and focus on your connection with Allah.",
-        icon: "/images/actions/prepare.svg",
-        tag: "prepare_reminder",
-        data: { url: "/prayer-time.html" }
-      });
-    }
-
-    // --- DEFAULT CLICK: open/focus app (or provided URL) ---
-    const urlToOpen = data.url || "/prayer-time.html";
-    const allClients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    const targetUrl = new URL(urlToOpen, self.location.origin).href;
-
-    // Check if prayer-time page is already open
-    for (const client of allClients) {
-      const clientUrl = new URL(client.url, self.location.origin).href;
-      if (clientUrl === targetUrl && "focus" in client) {
-        // Page is open, focus it and play adhan
-        try { 
-          client.postMessage({ 
-            type: "PLAY_ADHAN", 
-            audioFile: data.audioFile || "/audio/adhan.mp3",
-            fromNotification: true 
-          }); 
-        } catch {}
-        return client.focus();
-      }
-    }
-
-    // Page is not open, open it and play adhan
-    if (self.clients.openWindow) {
-      const newWindow = await self.clients.openWindow(urlToOpen);
-      if (newWindow) {
-        // Wait a moment for the page to load, then play adhan
-        setTimeout(() => {
-          try {
-            newWindow.postMessage({ 
-              type: "PLAY_ADHAN", 
-              audioFile: data.audioFile || "/audio/adhan.mp3",
-              fromNotification: true 
-            });
-          } catch {}
-        }, 1000);
-      }
-      return newWindow;
-    }
-  })());
+// Periodic background sync (if supported)
+self.addEventListener('periodicsync', event => {
+  console.log('⏰ [Service Worker] Periodic sync:', event.tag);
+  
+  if (event.tag === 'content-sync') {
+    event.waitUntil(syncContent());
+  }
 });
 
-// (Optional) Basic fetch passthrough; customize if you add caching later
-self.addEventListener("fetch", () => {
-  // no-op: network handled by the page
-});
+async function syncContent() {
+  console.log('🔄 [Service Worker] Syncing content...');
+  
+  try {
+    // Sync translations
+    await syncTranslations();
+    
+    // Sync prayer logs
+    await syncPrayerLogs();
+    
+    console.log('✅ [Service Worker] Content sync completed');
+  } catch (error) {
+    console.error('❌ [Service Worker] Error in content sync:', error);
+  }
+}

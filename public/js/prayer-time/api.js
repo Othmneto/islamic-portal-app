@@ -13,6 +13,7 @@ export class PrayerTimesAPI {
   // Get authentication token from various sources
   getAuthToken() {
     return (
+      localStorage.getItem("accessToken") ||
       localStorage.getItem("authToken") ||
       localStorage.getItem("token") ||
       localStorage.getItem("jwt") ||

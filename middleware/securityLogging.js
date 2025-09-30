@@ -3,18 +3,54 @@ const { securityMonitor } = require('../services/securityMonitor');
 
 // Extract client information
 const extractClientInfo = (req) => {
-  const ip = req.ip || 
-            req.connection.remoteAddress || 
-            req.socket.remoteAddress ||
-            (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
-            req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
-            'unknown';
+  // Enhanced IP extraction with better error handling
+  let ip = 'unknown';
+  
+  try {
+    // Try multiple sources for IP address
+    if (req.ip) {
+      ip = req.ip;
+    } else if (req.connection && req.connection.remoteAddress) {
+      ip = req.connection.remoteAddress;
+    } else if (req.socket && req.socket.remoteAddress) {
+      ip = req.socket.remoteAddress;
+    } else if (req.connection && req.connection.socket && req.connection.socket.remoteAddress) {
+      ip = req.connection.socket.remoteAddress;
+    } else if (req.headers['x-forwarded-for']) {
+      // Handle comma-separated list of IPs
+      const forwardedIps = req.headers['x-forwarded-for'].split(',');
+      ip = forwardedIps[0].trim();
+    } else if (req.headers['x-real-ip']) {
+      ip = req.headers['x-real-ip'];
+    } else if (req.headers['x-client-ip']) {
+      ip = req.headers['x-client-ip'];
+    } else if (req.headers['cf-connecting-ip']) {
+      ip = req.headers['cf-connecting-ip'];
+    }
+    
+    // Clean up IP address (remove IPv6 prefix if present)
+    if (ip && ip.startsWith('::ffff:')) {
+      ip = ip.substring(7);
+    }
+    
+    // Validate IP format
+    if (ip && ip !== 'unknown' && !isValidIP(ip)) {
+      console.warn('⚠️ Invalid IP address detected:', ip);
+      ip = 'unknown';
+    }
+  } catch (error) {
+    console.error('❌ Error extracting IP address:', error.message);
+    ip = 'unknown';
+  }
 
   const userAgent = req.get('User-Agent') || 'unknown';
+  const referer = req.get('Referer') || 'unknown';
   
   return {
-    ipAddress: ip,
+    ip: ip, // Fixed: Changed from ipAddress to ip for consistency
+    ipAddress: ip, // Keep both for backward compatibility
     userAgent: userAgent,
+    referer: referer,
     location: req.location || null, // If geolocation middleware is used
     requestDetails: {
       method: req.method,
@@ -29,6 +65,19 @@ const extractClientInfo = (req) => {
       query: req.query
     }
   };
+};
+
+// Helper function to validate IP address
+const isValidIP = (ip) => {
+  if (!ip || typeof ip !== 'string') return false;
+  
+  // IPv4 regex
+  const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+  
+  // IPv6 regex (simplified)
+  const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
+  
+  return ipv4Regex.test(ip) || ipv6Regex.test(ip) || ip === 'localhost' || ip === '127.0.0.1';
 };
 
 // Sanitize request body to remove sensitive data
@@ -87,12 +136,17 @@ const logAuthEvent = async (eventType, req, additionalData = {}) => {
     const eventData = {
       eventType,
       userId: req.user?.id || null,
-      ...clientInfo,
+      ip: clientInfo.ip,
+      ipAddress: clientInfo.ipAddress,
+      userAgent: clientInfo.userAgent,
+      referer: clientInfo.referer,
+      location: clientInfo.location,
       description: getEventDescription(eventType, additionalData),
       metadata: {
         ...additionalData,
         sessionId: req.sessionID,
-        authProvider: req.user?.authProvider || 'local'
+        authProvider: req.user?.authProvider || 'local',
+        requestDetails: clientInfo.requestDetails
       }
     };
 
@@ -110,12 +164,17 @@ const logSecurityViolation = async (violationType, req, details = {}) => {
     const eventData = {
       eventType: violationType,
       userId: req.user?.id || null,
-      ...clientInfo,
+      ip: clientInfo.ip,
+      ipAddress: clientInfo.ipAddress,
+      userAgent: clientInfo.userAgent,
+      referer: clientInfo.referer,
+      location: clientInfo.location,
       description: getViolationDescription(violationType, details),
       metadata: {
         ...details,
         sessionId: req.sessionID,
-        violationDetails: details
+        violationDetails: details,
+        requestDetails: clientInfo.requestDetails
       }
     };
 
@@ -209,6 +268,55 @@ const logSQLInjectionAttempt = async (req, query, field) => {
   });
 };
 
+// Safe logging functions that can be called without request object
+const safeLogAuthEvent = async (eventType, data = {}) => {
+  try {
+    const eventData = {
+      eventType,
+      userId: data.userId || null,
+      ip: data.ip || 'unknown',
+      ipAddress: data.ipAddress || data.ip || 'unknown',
+      userAgent: data.userAgent || 'unknown',
+      referer: data.referer || 'unknown',
+      location: data.location || null,
+      description: getEventDescription(eventType, data),
+      metadata: {
+        ...data,
+        sessionId: data.sessionId || null,
+        authProvider: data.authProvider || 'local'
+      }
+    };
+
+    await securityMonitor.logEvent(eventData);
+  } catch (error) {
+    console.error('❌ Failed to log auth event:', error);
+  }
+};
+
+const safeLogSecurityViolation = async (violationType, data = {}) => {
+  try {
+    const eventData = {
+      eventType: violationType,
+      userId: data.userId || null,
+      ip: data.ip || 'unknown',
+      ipAddress: data.ipAddress || data.ip || 'unknown',
+      userAgent: data.userAgent || 'unknown',
+      referer: data.referer || 'unknown',
+      location: data.location || null,
+      description: getViolationDescription(violationType, data),
+      metadata: {
+        ...data,
+        sessionId: data.sessionId || null,
+        violationDetails: data
+      }
+    };
+
+    await securityMonitor.logEvent(eventData);
+  } catch (error) {
+    console.error('❌ Failed to log security violation:', error);
+  }
+};
+
 module.exports = {
   securityLogger,
   logAuthEvent,
@@ -217,5 +325,7 @@ module.exports = {
   logCSRFViolation,
   logXSSAttempt,
   logSQLInjectionAttempt,
-  extractClientInfo
+  extractClientInfo,
+  safeLogAuthEvent,
+  safeLogSecurityViolation
 };

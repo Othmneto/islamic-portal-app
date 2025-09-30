@@ -23,7 +23,7 @@ const TokenBlacklistSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    index: { expireAfterSeconds: 0 } // TTL index for automatic cleanup
+    expires: 0 // TTL index for automatic cleanup
   }
 }, {
   timestamps: true,

@@ -6,9 +6,10 @@
 ------------------------------------------------------------------- */
 
 export class PrayerTimesSettings {
-  constructor(core) {
+  constructor(core, api) {
     console.log("[Settings] Initializing PrayerTimesSettings");
     this.core = core;
+    this.api = api;
     this.onClockFormatChange = null;
     this.onMethodChange = null;
     this.onMadhabChange = null;
@@ -96,6 +97,7 @@ export class PrayerTimesSettings {
       this.core.state.settings.calculationMethod = this.core.el.methodSel.value;
       this.save();
       this.onMethodChange?.();
+      this.updateServerNotificationPreferences();
     });
 
     // Madhab
@@ -103,6 +105,7 @@ export class PrayerTimesSettings {
       this.core.state.settings.madhab = this.core.el.madhabSel.value;
       this.save();
       this.onMadhabChange?.();
+      this.updateServerNotificationPreferences();
     });
 
     // Reminder minutes
@@ -114,6 +117,11 @@ export class PrayerTimesSettings {
       // Also update user notification preferences on server
       this.updateServerNotificationPreferences();
     });
+
+    // Notification toggle (if it exists in settings)
+    this.core.el.notifToggle?.addEventListener("change", () => {
+      this.updateServerNotificationPreferences();
+    });
   }
 
   // Update server notification preferences
@@ -121,13 +129,17 @@ export class PrayerTimesSettings {
     try {
       console.log("[Settings] Updating server notification preferences");
       
+      const token = this.api?.getAuthToken();
+      if (!token) {
+        console.warn("[Settings] No auth token available, skipping server update");
+        return;
+      }
+      
       const response = await fetch("/api/user/notification-preferences", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          ...(this.core.api?.getAuthToken() && { 
-            Authorization: `Bearer ${this.core.api.getAuthToken()}` 
-          }),
+          "Authorization": `Bearer ${token}`,
           ...(this.core.api?.getCsrf() && { 
             "X-CSRF-Token": this.core.api.getCsrf() 
           }),
@@ -137,7 +149,14 @@ export class PrayerTimesSettings {
           reminderMinutes: this.core.state.settings.reminderMinutes,
           calculationMethod: this.core.state.settings.calculationMethod,
           madhab: this.core.state.settings.madhab,
-          timezone: this.core.state.tz
+          timezone: this.core.state.tz,
+          prayerReminders: {
+            fajr: true,
+            dhuhr: true,
+            asr: true,
+            maghrib: true,
+            isha: true
+          }
         }),
       });
 
@@ -145,6 +164,16 @@ export class PrayerTimesSettings {
         console.log("[Settings] Server notification preferences updated successfully");
       } else {
         console.warn("[Settings] Failed to update server notification preferences:", response.status);
+        if (response.status === 401) {
+          console.warn("[Settings] Authentication failed, user may need to re-login");
+        }
+        // Try to get error details
+        try {
+          const errorData = await response.json();
+          console.warn("[Settings] Error details:", errorData);
+        } catch (e) {
+          console.warn("[Settings] Could not parse error response");
+        }
       }
     } catch (error) {
       console.warn("[Settings] Failed to update server notification preferences:", error);

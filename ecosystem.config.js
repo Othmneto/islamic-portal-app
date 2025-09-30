@@ -21,31 +21,11 @@ module.exports = {
         // JWT_SECRET has been removed to prevent overrides.
         NODE_ENV: 'production',
         PORT: process.env.PORT || 3000,
-        REDIS_URL: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
-        ALLOW_NO_REDIS: process.env.ALLOW_NO_REDIS || 'false',
+        // Redis removed - using in-memory solution with NVMe persistence
       },
     },
 
-    // Notification Worker
-    {
-      name: 'Notification Worker',
-      script: path.join(root, 'workers', 'notificationWorker.js'),
-      // ... (rest of the file is the same)
-      cwd: root,
-      exec_mode: 'fork',
-      instances: 1,
-      watch: false,
-      autorestart: true,
-      max_restarts: 50,
-      exp_backoff_restart_delay: 5000,
-      env_file: path.join(root, '.env'),
-      env: {
-        NODE_ENV: 'production',
-        REDIS_URL: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
-        NOTIFICATION_QUEUE_NAME: process.env.NOTIFICATION_QUEUE_NAME || 'notifications',
-        VAPID_SUBJECT: process.env.VAPID_SUBJECT || 'mailto:admin@example.com',
-      },
-    },
+    // Notification Worker removed - using in-memory queues integrated in main server
 
     // Prayer Scheduler
     {
@@ -62,7 +42,7 @@ module.exports = {
       env_file: path.join(root, '.env'),
       env: {
         NODE_ENV: 'production',
-        REDIS_URL: process.env.REDIS_URL || 'redis://127.0.0.1:6379',
+        // Redis removed - using in-memory solution with NVMe persistence
         NOTIFICATION_QUEUE_NAME: process.env.NOTIFICATION_QUEUE_NAME || 'notifications',
       },
     },

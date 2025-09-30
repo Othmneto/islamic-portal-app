@@ -1394,7 +1394,7 @@
           body: JSON.stringify({ prayer: "next", tz: state.tz }),
         });
         if (r.status === 404) {
-          r = await fetch("/api/notifications/test-prayer-notification", {
+          r = await fetch("/api/notifications/test-prayer", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

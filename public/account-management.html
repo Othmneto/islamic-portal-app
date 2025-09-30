@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Management - Islamic Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-navbar.css">
+    <!-- CSS is embedded in the page -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            padding-top: 80px; /* Account for fixed navbar */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+        
+        .account-management {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .account-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .account-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .account-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .account-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .account-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .google-icon { background: linear-gradient(135deg, #4285f4, #34a853); }
+        .microsoft-icon { background: linear-gradient(135deg, #00a4ef, #0078d4); }
+        .email-icon { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .security-icon { background: linear-gradient(135deg, #f093fb, #f5576c); }
+
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .card-subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin: 0.5rem 0 0 0;
+        }
+
+        .account-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-connected {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .status-disconnected {
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .account-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .security-settings {
+            margin-top: 2rem;
+        }
+
+        .security-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .security-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .security-icon-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .security-details h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1rem;
+        }
+
+        .security-details p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(30px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+
+        @media (max-width: 768px) {
+            .account-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .account-actions {
+                flex-direction: column;
+            }
+            
+            .security-item {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Navbar -->
+    <header class="global-navbar">
+        <nav class="navbar-container">
+            <!-- Logo Section -->
+            <div class="navbar-brand">
+                <a href="/" class="brand-logo">
+                    <i class="fas fa-mosque brand-icon"></i>
+                    <span class="brand-text">Islamic Portal</span>
+                </a>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="navbar-nav">
+                <ul class="nav-menu">
+                    <!-- Core Features -->
+                    <li class="nav-item">
+                        <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+                            <i class="fas fa-language"></i>
+                            <span class="nav-text">Translator</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+                            <i class="fas fa-mosque"></i>
+                            <span class="nav-text">Prayer Times</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+                            <i class="fas fa-compass"></i>
+                            <span class="nav-text">Qibla</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+                            <i class="fas fa-moon"></i>
+                            <span class="nav-text">Moon</span>
+                        </a>
+                    </li>
+
+                    <!-- Islamic Content -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+                            <i class="fas fa-book-open"></i>
+                            <span class="nav-text">Content</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/explorer.html" class="dropdown-link">
+                                <i class="fas fa-search"></i> Quran Explorer
+                            </a></li>
+                            <li><a href="/duas.html" class="dropdown-link">
+                                <i class="fas fa-hands-praying"></i> Daily Duas
+                            </a></li>
+                            <li><a href="/names.html" class="dropdown-link">
+                                <i class="fas fa-star"></i> 99 Names
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Tools -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+                            <i class="fas fa-tools"></i>
+                            <span class="nav-text">Tools</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/zakat.html" class="dropdown-link">
+                                <i class="fas fa-coins"></i> Zakat Calculator
+                            </a></li>
+                            <li><a href="/converter.html" class="dropdown-link">
+                                <i class="fas fa-calendar-alt"></i> Date Converter
+                            </a></li>
+                            <li><a href="/calendar.html" class="dropdown-link">
+                                <i class="fas fa-calendar"></i> Islamic Calendar
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Analytics & History -->
+                    <li class="nav-item">
+                        <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+                            <i class="fas fa-history"></i>
+                            <span class="nav-text">History</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="navbar-controls">
+                <!-- Search -->
+                <div class="search-container">
+                    <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="search-dropdown">
+                        <input type="text" placeholder="Search..." class="search-input" id="global-search">
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="notification-container">
+                    <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">
+                            <h4>Notifications</h4>
+                            <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+                        </div>
+                        <div class="notification-list" id="notification-list">
+                            <div class="notification-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu-container">
+                    <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="user-name">Guest</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="user-info">
+                            <div class="user-avatar-large" id="user-avatar-large">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name-large" id="user-name-large">Guest User</div>
+                                <div class="user-email" id="user-email">guest@example.com</div>
+                            </div>
+                        </div>
+                        <div class="user-menu-divider"></div>
+                        <ul class="user-menu-list">
+                            <li><a href="/profile.html" class="user-menu-link">
+                                <i class="fas fa-user"></i> Profile
+                            </a></li>
+                            <li><a href="/account-management.html" class="user-menu-link">
+                                <i class="fas fa-user-cog"></i> Account Management
+                            </a></li>
+                            <li><a href="/security-dashboard.html" class="user-menu-link">
+                                <i class="fas fa-shield-alt"></i> Security
+                            </a></li>
+                            <li class="user-menu-divider"></li>
+                            <li><a href="/login.html" class="user-menu-link" id="login-link">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a></li>
+                            <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+                        <i class="fas fa-sun theme-icon-light"></i>
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Overlay -->
+        <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+            <div class="mobile-nav-content">
+                <div class="mobile-nav-header">
+                    <div class="mobile-nav-brand">
+                        <i class="fas fa-mosque"></i>
+                        <span>Islamic Portal</span>
+                    </div>
+                    <button class="mobile-nav-close" id="mobile-nav-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mobile-nav-body">
+                    <!-- Mobile navigation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="account-management">
+        <div class="account-header">
+            <h1><i class="fas fa-user-cog"></i> Account Management</h1>
+            <p>Manage your account settings, linked services, and security preferences</p>
+            
+            <!-- Quick Access Links -->
+            <div class="quick-access-links" style="margin-top: 20px; display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;">
+                <a href="/profile-management.html" class="quick-link-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-user"></i> Profile
+                </a>
+                <a href="/privacy-settings.html" class="quick-link-btn" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-shield-alt"></i> Privacy
+                </a>
+                <a href="/remember-me-settings.html" class="quick-link-btn" style="background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-memory"></i> Remember Me
+                </a>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading account information...</p>
+        </div>
+
+        <div class="account-grid" id="accountGrid" style="display: none;">
+            <!-- Email Account Card -->
+            <div class="account-card">
+                <div class="card-header">
+                    <div class="card-icon email-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div>
+                        <h3 class="card-title">Email Account</h3>
+                        <p class="card-subtitle">Primary authentication method</p>
+                    </div>
+                </div>
+                <div class="account-status">
+                    <span class="status-badge status-connected" id="emailStatus">Connected</span>
+                </div>
+                <div class="account-actions">
+                    <button class="btn btn-secondary" onclick="changePassword()">
+                        <i class="fas fa-key"></i> Change Password
+                    </button>
+                </div>
+            </div>
+
+            <!-- Google Account Card -->
+            <div class="account-card">
+                <div class="card-header">
+                    <div class="card-icon google-icon">
+                        <i class="fab fa-google"></i>
+                    </div>
+                    <div>
+                        <h3 class="card-title">Google Account</h3>
+                        <p class="card-subtitle">Sign in with Google</p>
+                    </div>
+                </div>
+                <div class="account-status">
+                    <span class="status-badge" id="googleStatus">Not Connected</span>
+                </div>
+                <div class="account-actions">
+                    <button class="btn btn-primary" id="googleBtn" onclick="toggleGoogleAccount()">
+                        <i class="fab fa-google"></i> Connect Google
+                    </button>
+                </div>
+            </div>
+
+            <!-- Microsoft Account Card -->
+            <div class="account-card">
+                <div class="card-header">
+                    <div class="card-icon microsoft-icon">
+                        <i class="fab fa-microsoft"></i>
+                    </div>
+                    <div>
+                        <h3 class="card-title">Microsoft Account</h3>
+                        <p class="card-subtitle">Sign in with Microsoft</p>
+                    </div>
+                </div>
+                <div class="account-status">
+                    <span class="status-badge" id="microsoftStatus">Not Connected</span>
+                </div>
+                <div class="account-actions">
+                    <button class="btn btn-primary" id="microsoftBtn" onclick="toggleMicrosoftAccount()">
+                        <i class="fab fa-microsoft"></i> Connect Microsoft
+                    </button>
+                </div>
+            </div>
+
+            <!-- Security Settings Card -->
+            <div class="account-card">
+                <div class="card-header">
+                    <div class="card-icon security-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div>
+                        <h3 class="card-title">Security Settings</h3>
+                        <p class="card-subtitle">Manage your security preferences</p>
+                    </div>
+                </div>
+                <div class="security-settings">
+                    <div class="security-item">
+                        <div class="security-info">
+                            <div class="security-icon-small">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <div class="security-details">
+                                <h4>Two-Factor Authentication</h4>
+                                <p>Add an extra layer of security</p>
+                                <span class="status-badge status-disconnected" id="mfaStatus">Disabled</span>
+                            </div>
+                        </div>
+                        <div class="toggle-switch" id="mfaToggle" onclick="toggleMFA()"></div>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <div class="security-icon-small">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="security-details">
+                                <h4>Email Notifications</h4>
+                                <p>Receive security alerts via email</p>
+                            </div>
+                        </div>
+                        <div class="toggle-switch active" id="emailToggle" onclick="toggleEmailNotifications()"></div>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <div class="security-icon-small">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div class="security-details">
+                                <h4>Email MFA</h4>
+                                <p>Two-factor authentication via email</p>
+                                <span class="status-badge status-disconnected" id="emailMfaStatus">Disabled</span>
+                            </div>
+                        </div>
+                        <div class="toggle-switch" id="emailMfaToggle" onclick="toggleEmailMFA()"></div>
+                    </div>
+                    <div class="security-item">
+                        <div class="security-info">
+                            <div class="security-icon-small">
+                                <i class="fas fa-fingerprint"></i>
+                            </div>
+                            <div class="security-details">
+                                <h4>Biometric Login</h4>
+                                <p>Use fingerprint or face recognition</p>
+                            </div>
+                        </div>
+                        <div class="toggle-switch" id="biometricToggle" onclick="toggleBiometric()"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="account-actions" style="justify-content: center; margin-top: 2rem;">
+            <button class="btn btn-primary" onclick="refreshAccountData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button class="btn btn-secondary" onclick="exportAccountData()">
+                <i class="fas fa-download"></i> Export Data
+            </button>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        let accountData = {};
+
+        // Token validation and refresh function
+        async function validateToken() {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.log('❌ [Account Management] No token found');
+                return false;
+            }
+
+            try {
+                // Try to decode the token to check if it's expired
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const currentTime = Math.floor(Date.now() / 1000);
+                
+                if (payload.exp < currentTime) {
+                    console.log('❌ [Account Management] Token expired');
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userData');
+                    return false;
+                }
+                
+                console.log('✅ [Account Management] Token is valid');
+                return true;
+            } catch (error) {
+                console.error('❌ [Account Management] Token validation error:', error);
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('userData');
+                return false;
+            }
+        }
+
+        // Helper function to make API calls with token validation
+        async function makeAuthenticatedRequest(url, options = {}) {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                throw new Error('No authentication token found');
+            }
+
+            const defaultOptions = {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                }
+            };
+
+            const mergedOptions = { ...defaultOptions, ...options };
+            if (mergedOptions.headers) {
+                mergedOptions.headers = { ...defaultOptions.headers, ...mergedOptions.headers };
+            }
+
+            const response = await fetch(url, mergedOptions);
+            
+            // Check if token is invalid/expired
+            if (response.status === 401) {
+                const errorData = await response.json();
+                if (errorData.msg === 'Token is not valid') {
+                    console.log('🔄 [Account Management] Token expired during API call');
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('userData');
+                    showNotification('Session expired. Please log in again.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/login.html';
+                    }, 2000);
+                    throw new Error('Token expired');
+                }
+            }
+            
+            return response;
+        }
+
+        // Initialize account management
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('👤 [Account Management] Page loaded, initializing...');
+            
+            // Check if user is authenticated and token is valid
+            const isTokenValid = await validateToken();
+            
+            if (!isTokenValid) {
+                console.log('❌ [Account Management] Invalid or expired token, redirecting to login');
+                showNotification('Please log in to access your account', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
+                return;
+            }
+            
+            console.log('✅ [Account Management] User authenticated, loading data...');
+            loadAccountData();
+            setupEventListeners();
+        });
+
+        // Setup event listeners for all buttons
+        function setupEventListeners() {
+            console.log('🔧 [Account Management] Setting up event listeners...');
+            
+            // Change Password button
+            const changePasswordBtn = document.querySelector('button[onclick="changePassword()"]');
+            if (changePasswordBtn) {
+                console.log('🔧 [Account Management] Setting up change password button');
+                changePasswordBtn.removeAttribute('onclick');
+                changePasswordBtn.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Change password button clicked');
+                    changePassword();
+                });
+            }
+
+            // Google account button
+            const googleBtn = document.getElementById('googleBtn');
+            if (googleBtn) {
+                console.log('🔧 [Account Management] Setting up Google button');
+                googleBtn.removeAttribute('onclick');
+                googleBtn.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Google button clicked');
+                    toggleGoogleAccount();
+                });
+            }
+
+            // Microsoft account button
+            const microsoftBtn = document.getElementById('microsoftBtn');
+            if (microsoftBtn) {
+                console.log('🔧 [Account Management] Setting up Microsoft button');
+                microsoftBtn.removeAttribute('onclick');
+                microsoftBtn.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Microsoft button clicked');
+                    toggleMicrosoftAccount();
+                });
+            }
+
+            // MFA toggle
+            const mfaToggle = document.getElementById('mfaToggle');
+            if (mfaToggle) {
+                console.log('🔧 [Account Management] Setting up MFA toggle');
+                mfaToggle.removeAttribute('onclick');
+                mfaToggle.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] MFA toggle clicked');
+                    toggleMFA();
+                });
+            }
+
+            // Email notifications toggle
+            const emailToggle = document.getElementById('emailToggle');
+            if (emailToggle) {
+                console.log('🔧 [Account Management] Setting up email toggle');
+                emailToggle.removeAttribute('onclick');
+                emailToggle.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Email toggle clicked');
+                    toggleEmailNotifications();
+                });
+            }
+
+            // Biometric toggle
+            const biometricToggle = document.getElementById('biometricToggle');
+            if (biometricToggle) {
+                console.log('🔧 [Account Management] Setting up biometric toggle');
+                biometricToggle.removeAttribute('onclick');
+                biometricToggle.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Biometric toggle clicked');
+                    toggleBiometric();
+                });
+            }
+
+            // Email MFA toggle
+            const emailMfaToggle = document.getElementById('emailMfaToggle');
+            if (emailMfaToggle) {
+                console.log('🔧 [Account Management] Setting up Email MFA toggle');
+                emailMfaToggle.removeAttribute('onclick');
+                emailMfaToggle.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Email MFA toggle clicked');
+                    toggleEmailMFA();
+                });
+            }
+
+            // Refresh button
+            const refreshBtn = document.querySelector('button[onclick="refreshAccountData()"]');
+            if (refreshBtn) {
+                console.log('🔧 [Account Management] Setting up refresh button');
+                refreshBtn.removeAttribute('onclick');
+                refreshBtn.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Refresh button clicked');
+                    refreshAccountData();
+                });
+            }
+
+            // Export data button
+            const exportBtn = document.querySelector('button[onclick="exportAccountData()"]');
+            if (exportBtn) {
+                console.log('🔧 [Account Management] Setting up export button');
+                exportBtn.removeAttribute('onclick');
+                exportBtn.addEventListener('click', function(e) {
+                    console.log('🔧 [Account Management] Export button clicked');
+                    exportAccountData();
+                });
+            }
+
+            console.log('✅ [Account Management] All event listeners set up');
+        }
+
+        // Load account data from API
+        async function loadAccountData() {
+            try {
+                showLoading(true);
+                
+                const response = await makeAuthenticatedRequest('/api/user/account-info', {
+                    method: 'GET'
+                });
+
+                if (response.ok) {
+                    accountData = await response.json();
+                    console.log('✅ [Account Management] Account data loaded:', accountData);
+                    updateAccountUI();
+                } else {
+                    const errorData = await response.json();
+                    console.error('❌ [Account Management] Account data loading failed:', errorData);
+                    throw new Error(errorData.error || 'Failed to load account data');
+                }
+            } catch (error) {
+                console.error('Error loading account data:', error);
+                if (error.message !== 'Token expired') {
+                    showNotification('Failed to load account data', 'error');
+                }
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Update UI based on account data
+        function updateAccountUI() {
+            // Update email status
+            const emailStatus = document.getElementById('emailStatus');
+            emailStatus.textContent = accountData.email ? 'Connected' : 'Not Connected';
+            emailStatus.className = accountData.email ? 'status-badge status-connected' : 'status-badge status-disconnected';
+
+            // Update Google status
+            const googleStatus = document.getElementById('googleStatus');
+            const googleBtn = document.getElementById('googleBtn');
+            if (accountData.googleId) {
+                googleStatus.textContent = 'Connected';
+                googleStatus.className = 'status-badge status-connected';
+                googleBtn.innerHTML = '<i class="fas fa-unlink"></i> Disconnect Google';
+                googleBtn.className = 'btn btn-danger';
+            } else {
+                googleStatus.textContent = 'Not Connected';
+                googleStatus.className = 'status-badge status-disconnected';
+                googleBtn.innerHTML = '<i class="fab fa-google"></i> Connect Google';
+                googleBtn.className = 'btn btn-primary';
+            }
+
+            // Update Microsoft status
+            const microsoftStatus = document.getElementById('microsoftStatus');
+            const microsoftBtn = document.getElementById('microsoftBtn');
+            if (accountData.microsoftId) {
+                microsoftStatus.textContent = 'Connected';
+                microsoftStatus.className = 'status-badge status-connected';
+                microsoftBtn.innerHTML = '<i class="fas fa-unlink"></i> Disconnect Microsoft';
+                microsoftBtn.className = 'btn btn-danger';
+            } else {
+                microsoftStatus.textContent = 'Not Connected';
+                microsoftStatus.className = 'status-badge status-disconnected';
+                microsoftBtn.innerHTML = '<i class="fab fa-microsoft"></i> Connect Microsoft';
+                microsoftBtn.className = 'btn btn-primary';
+            }
+
+            // Update security settings
+            updateSecuritySettings();
+        }
+
+        // Update security settings UI
+        function updateSecuritySettings() {
+            console.log('🔧 [Account Management] Updating security settings with data:', {
+                mfaEnabled: accountData.mfaEnabled,
+                emailMfaEnabled: accountData.emailMfaEnabled,
+                twoFactorEnabled: accountData.twoFactorEnabled,
+                emailNotifications: accountData.emailNotifications,
+                biometricEnabled: accountData.biometricEnabled
+            });
+
+            const mfaToggle = document.getElementById('mfaToggle');
+            const emailToggle = document.getElementById('emailToggle');
+            const emailMfaToggle = document.getElementById('emailMfaToggle');
+            const biometricToggle = document.getElementById('biometricToggle');
+
+            // Update MFA toggle (TOTP)
+            if (accountData.mfaEnabled || accountData.twoFactorEnabled) {
+                mfaToggle.classList.add('active');
+                console.log('✅ [Account Management] MFA (TOTP) is enabled');
+            } else {
+                mfaToggle.classList.remove('active');
+                console.log('❌ [Account Management] MFA (TOTP) is disabled');
+            }
+
+            // Update Email MFA toggle (separate from email notifications)
+            if (accountData.emailMfaEnabled) {
+                emailMfaToggle.classList.add('active');
+                console.log('✅ [Account Management] Email MFA is enabled');
+            } else {
+                emailMfaToggle.classList.remove('active');
+                console.log('❌ [Account Management] Email MFA is disabled');
+            }
+
+            // Update Email Notifications toggle (separate from Email MFA)
+            if (accountData.emailNotifications) {
+                emailToggle.classList.add('active');
+                console.log('✅ [Account Management] Email notifications are enabled');
+            } else {
+                emailToggle.classList.remove('active');
+                console.log('❌ [Account Management] Email notifications are disabled');
+            }
+
+            // Update biometric toggle
+            if (accountData.biometricEnabled) {
+                biometricToggle.classList.add('active');
+                console.log('✅ [Account Management] Biometric auth is enabled');
+            } else {
+                biometricToggle.classList.remove('active');
+                console.log('❌ [Account Management] Biometric auth is disabled');
+            }
+
+            // Update MFA status display (status badges)
+            updateMFAStatusDisplay();
+        }
+
+        // Update MFA status display
+        function updateMFAStatusDisplay() {
+            const mfaStatus = document.getElementById('mfaStatus');
+            const emailMfaStatus = document.getElementById('emailMfaStatus');
+            const mfaToggle = document.getElementById('mfaToggle');
+            const emailMfaToggle = document.getElementById('emailMfaToggle');
+            
+            if (mfaStatus) {
+                if (accountData.mfaEnabled || accountData.twoFactorEnabled) {
+                    mfaStatus.textContent = 'Enabled';
+                    mfaStatus.className = 'status-badge status-connected';
+                } else {
+                    mfaStatus.textContent = 'Disabled';
+                    mfaStatus.className = 'status-badge status-disconnected';
+                }
+            }
+
+            if (emailMfaStatus) {
+                if (accountData.emailMfaEnabled) {
+                    emailMfaStatus.textContent = 'Enabled';
+                    emailMfaStatus.className = 'status-badge status-connected';
+                } else {
+                    emailMfaStatus.textContent = 'Disabled';
+                    emailMfaStatus.className = 'status-badge status-disconnected';
+                }
+            }
+
+            // Update toggle switches
+            if (mfaToggle) {
+                if (accountData.mfaEnabled || accountData.twoFactorEnabled) {
+                    mfaToggle.classList.add('active');
+                } else {
+                    mfaToggle.classList.remove('active');
+                }
+            }
+
+            if (emailMfaToggle) {
+                if (accountData.emailMfaEnabled) {
+                    emailMfaToggle.classList.add('active');
+                } else {
+                    emailMfaToggle.classList.remove('active');
+                }
+            }
+        }
+
+        // Toggle Google account connection
+        async function toggleGoogleAccount() {
+            try {
+                if (accountData.googleId) {
+                    // Disconnect Google
+                    const response = await fetch('/api/auth/unlink-google', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        accountData.googleId = null;
+                        updateAccountUI();
+                        showNotification('Google account disconnected successfully', 'success');
+                    } else {
+                        throw new Error('Failed to disconnect Google account');
+                    }
+                } else {
+                    // Connect Google
+                    window.location.href = '/api/auth/google';
+                }
+            } catch (error) {
+                console.error('Error toggling Google account:', error);
+                showNotification('Failed to toggle Google account', 'error');
+            }
+        }
+
+        // Toggle Microsoft account connection
+        async function toggleMicrosoftAccount() {
+            try {
+                if (accountData.microsoftId) {
+                    // Disconnect Microsoft
+                    const response = await fetch('/api/auth/unlink-microsoft', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        accountData.microsoftId = null;
+                        updateAccountUI();
+                        showNotification('Microsoft account disconnected successfully', 'success');
+                    } else {
+                        throw new Error('Failed to disconnect Microsoft account');
+                    }
+                } else {
+                    // Connect Microsoft
+                    window.location.href = '/api/auth/microsoft';
+                }
+            } catch (error) {
+                console.error('Error toggling Microsoft account:', error);
+                showNotification('Failed to toggle Microsoft account', 'error');
+            }
+        }
+
+        // Toggle MFA
+        async function toggleMFA() {
+            const mfaToggle = document.getElementById('mfaToggle');
+            const isActive = mfaToggle.classList.contains('active');
+
+            try {
+                if (isActive) {
+                    // Disable MFA
+                    const response = await fetch('/api/mfa/totp/disable', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        mfaToggle.classList.remove('active');
+                        accountData.mfaEnabled = false;
+                        showNotification('Two-factor authentication disabled', 'success');
+                    } else {
+                        throw new Error('Failed to disable MFA');
+                    }
+                } else {
+                    // Enable MFA - redirect to setup page
+                    window.location.href = '/mfa-setup.html';
+                }
+            } catch (error) {
+                console.error('Error toggling MFA:', error);
+                showNotification('Failed to toggle MFA', 'error');
+            }
+        }
+
+        // Toggle email notifications
+        async function toggleEmailNotifications() {
+            const emailToggle = document.getElementById('emailToggle');
+            const isActive = emailToggle.classList.contains('active');
+
+            try {
+                const response = await fetch('/api/user/email-notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ enabled: !isActive })
+                });
+
+                if (response.ok) {
+                    emailToggle.classList.toggle('active');
+                    accountData.emailNotifications = !isActive;
+                    showNotification(`Email notifications ${!isActive ? 'enabled' : 'disabled'}`, 'success');
+                } else {
+                    throw new Error('Failed to toggle email notifications');
+                }
+            } catch (error) {
+                console.error('Error toggling email notifications:', error);
+                showNotification('Failed to toggle email notifications', 'error');
+            }
+        }
+
+        // Toggle biometric authentication
+        async function toggleBiometric() {
+            console.log('🔐 [Account Management] toggleBiometric called');
+            const biometricToggle = document.getElementById('biometricToggle');
+            const isActive = biometricToggle.classList.contains('active');
+            
+            console.log('🔐 [Account Management] Biometric currently active:', isActive);
+            console.log('🔐 [Account Management] Account data:', accountData);
+
+            try {
+                if (isActive) {
+                    // Disable biometric
+                    const response = await fetch('/api/auth/disable-biometric', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        biometricToggle.classList.remove('active');
+                        accountData.biometricEnabled = false;
+                        showNotification('Biometric authentication disabled', 'success');
+                    } else {
+                        throw new Error('Failed to disable biometric authentication');
+                    }
+                } else {
+                    // Enable biometric
+                    console.log('🔐 [Account Management] Starting biometric enable process...');
+                    console.log('🔐 [Account Management] Account data:', accountData);
+                    
+                    if ('navigator' in window && 'credentials' in navigator) {
+                        try {
+                            console.log('🔐 [Account Management] WebAuthn API available, checking support...');
+                            // Check if WebAuthn is supported
+                            const isWebAuthnSupported = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+                            console.log('🔐 [Account Management] WebAuthn supported:', isWebAuthnSupported);
+                            
+                            // For OAuth users, enable biometric without WebAuthn regardless of support
+                            if (accountData.authProvider && accountData.authProvider !== 'local') {
+                                console.log('🔐 [Account Management] OAuth user detected, enabling biometric without WebAuthn');
+                                console.log('🔐 [Account Management] Auth provider:', accountData.authProvider);
+                                
+                                const response = await fetch('/api/auth/enable-biometric', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                    },
+                                    body: JSON.stringify({ 
+                                        type: 'oauth-based',
+                                        verified: true 
+                                    })
+                                });
+
+                                console.log('🔐 [Account Management] Biometric enable response status:', response.status);
+                                console.log('🔐 [Account Management] Biometric enable response ok:', response.ok);
+
+                                if (response.ok) {
+                                    const result = await response.json();
+                                    console.log('🔐 [Account Management] Biometric enable result:', result);
+                                    biometricToggle.classList.add('active');
+                                    accountData.biometricEnabled = true;
+                                    showNotification('Biometric authentication enabled (OAuth-based)', 'success');
+                                    console.log('🔐 [Account Management] Biometric enabled successfully');
+                                } else {
+                                    const errorData = await response.json();
+                                    console.error('🔐 [Account Management] Biometric enable error:', errorData);
+                                    throw new Error(errorData.error || 'Failed to enable biometric authentication');
+                                }
+                                return;
+                            } else if (!isWebAuthnSupported) {
+                                console.log('🔐 [Account Management] WebAuthn not supported, using password verification for local users');
+                                // For local users without WebAuthn, use password verification
+                                const password = prompt('Enter your password to enable biometric authentication:');
+                                if (!password) {
+                                    showNotification('Password required for biometric authentication', 'error');
+                                    return;
+                                }
+
+                                // Verify password with server
+                                const verifyResponse = await fetch('/api/auth/verify-password', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                    },
+                                    body: JSON.stringify({ password })
+                                });
+
+                                if (!verifyResponse.ok) {
+                                    const errorData = await verifyResponse.json();
+                                    throw new Error(errorData.error || 'Invalid password');
+                                }
+
+                                // Enable biometric with password verification
+                                const response = await fetch('/api/auth/enable-biometric', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                    },
+                                    body: JSON.stringify({ 
+                                        type: 'password-based',
+                                        verified: true 
+                                    })
+                                });
+
+                                if (response.ok) {
+                                    biometricToggle.classList.add('active');
+                                    accountData.biometricEnabled = true;
+                                    showNotification('Biometric authentication enabled (Password-based)', 'success');
+                                } else {
+                                    const errorData = await response.json();
+                                    throw new Error(errorData.error || 'Failed to enable biometric authentication');
+                                }
+                                return;
+                            }
+
+                            // Use WebAuthn for devices with fingerprint readers
+                            const credential = await navigator.credentials.create({
+                                publicKey: {
+                                    challenge: new Uint8Array(32),
+                                    rp: { name: 'Islamic Portal' },
+                                    user: {
+                                        id: new Uint8Array(16),
+                                        name: accountData.email,
+                                        displayName: accountData.username
+                                    },
+                                    pubKeyCredParams: [
+                                        { type: 'public-key', alg: -7 },  // ES256
+                                        { type: 'public-key', alg: -257 } // RS256
+                                    ],
+                                    authenticatorSelection: {
+                                        authenticatorAttachment: 'platform'
+                                    }
+                                }
+                            });
+
+                            const response = await fetch('/api/auth/enable-biometric', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                                },
+                                body: JSON.stringify({ credential: credential })
+                            });
+
+                            if (response.ok) {
+                                biometricToggle.classList.add('active');
+                                accountData.biometricEnabled = true;
+                                showNotification('Biometric authentication enabled', 'success');
+                            } else {
+                                throw new Error('Failed to enable biometric authentication');
+                            }
+                        } catch (error) {
+                            showNotification('Biometric authentication not supported on this device', 'error');
+                        }
+                    } else {
+                        showNotification('Biometric authentication not supported', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling biometric authentication:', error);
+                showNotification('Failed to toggle biometric authentication', 'error');
+            }
+        }
+
+        // Toggle Email MFA
+        async function toggleEmailMFA() {
+            console.log('🔧 [Account Management] Email MFA toggle clicked');
+            const emailMfaToggle = document.getElementById('emailMfaToggle');
+            const isActive = emailMfaToggle.classList.contains('active');
+
+            try {
+                if (isActive) {
+                    // Disable Email MFA
+                    console.log('🔧 [Account Management] Disabling Email MFA...');
+                    const response = await fetch('/api/mfa/email/disable', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        console.log('✅ [Account Management] Email MFA disabled successfully');
+                        emailMfaToggle.classList.remove('active');
+                        accountData.emailMfaEnabled = false;
+                        updateMFAStatusDisplay();
+                        showNotification('Email MFA disabled successfully', 'success');
+                    } else {
+                        throw new Error('Failed to disable Email MFA');
+                    }
+                } else {
+                    // Enable Email MFA - redirect to MFA setup
+                    console.log('🔧 [Account Management] Redirecting to MFA setup for Email MFA...');
+                    window.location.href = '/mfa-setup.html';
+                }
+            } catch (error) {
+                console.error('❌ [Account Management] Error toggling Email MFA:', error);
+                showNotification('Error toggling Email MFA', 'error');
+            }
+        }
+
+        // Change password
+        function changePassword() {
+            const newPassword = prompt('Enter new password:');
+            if (newPassword && newPassword.length >= 12) {
+                // Implement password change logic
+                showNotification('Password change functionality coming soon', 'success');
+            } else if (newPassword) {
+                showNotification('Password must be at least 12 characters long', 'error');
+            }
+        }
+
+        // Refresh account data
+        function refreshAccountData() {
+            loadAccountData();
+        }
+
+        // Export account data
+        function exportAccountData() {
+            const dataStr = JSON.stringify(accountData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'account-data.json';
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('Account data exported successfully', 'success');
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('accountGrid').style.display = show ? 'none' : 'grid';
+        }
+
+        // Show notification
+        // Refresh account data
+        async function refreshAccountData() {
+            console.log('🔄 [Account Management] Refreshing account data...');
+            await loadAccountData();
+            showNotification('Account data refreshed', 'success');
+        }
+
+        // Export account data
+        function exportAccountData() {
+            console.log('📤 [Account Management] Exporting account data...');
+            try {
+                const dataToExport = {
+                    ...accountData,
+                    exportDate: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                const dataStr = JSON.stringify(dataToExport, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `account-data-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                
+                showNotification('Account data exported successfully', 'success');
+            } catch (error) {
+                console.error('Error exporting account data:', error);
+                showNotification('Failed to export account data', 'error');
+            }
+        }
+
+        // Change password
+        async function changePassword() {
+            console.log('🔑 [Account Management] Change password requested');
+            const newPassword = prompt('Enter new password:');
+            if (!newPassword) return;
+            
+            const confirmPassword = prompt('Confirm new password:');
+            if (newPassword !== confirmPassword) {
+                showNotification('Passwords do not match', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/user/change-password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ newPassword })
+                });
+                
+                if (response.ok) {
+                    showNotification('Password changed successfully', 'success');
+                } else {
+                    throw new Error('Failed to change password');
+                }
+            } catch (error) {
+                console.error('Error changing password:', error);
+                showNotification('Failed to change password', 'error');
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+    
+    <!-- Global Navbar JavaScript -->
+    <script src="/js/global-navbar.js"></script>
+</body>
+</html>

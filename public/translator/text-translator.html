@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Translator - AI-Powered Translation</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Ultra-Enhanced Design System -->
+    <link rel="stylesheet" href="css/design-tokens.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/enhanced-components.css">
+    <link rel="stylesheet" href="css/text-translator.css">
+    <link rel="stylesheet" href="css/realtime-translation.css">
+    <link rel="stylesheet" href="css/alternatives.css">
+    <link rel="stylesheet" href="css/phase3-features.css">
+    <link rel="stylesheet" href="css/accessibility.css">
+    <link rel="stylesheet" href="css/voice-input.css">
+    
+    <!-- Include global navbar CSS -->
+    <link rel="stylesheet" href="/css/global-navbar.css">
+    
+    <style>
+        /* Add top padding to account for fixed navbar */
+        .page-content {
+            padding-top: 70px; /* Height of navbar */
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Navbar -->
+    <header class="global-navbar">
+        <nav class="navbar-container">
+            <!-- Logo Section -->
+            <div class="navbar-brand">
+                <a href="/" class="brand-logo">
+                    <i class="fas fa-mosque brand-icon"></i>
+                    <span class="brand-text">Islamic Portal</span>
+                </a>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="navbar-nav">
+                <ul class="nav-menu">
+                    <!-- Core Features -->
+                    <li class="nav-item">
+                        <a href="/translator/text-translator" class="nav-link active" data-tooltip="AI-Powered Translation">
+                            <i class="fas fa-language"></i>
+                            <span class="nav-text">Translator</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+                            <i class="fas fa-mosque"></i>
+                            <span class="nav-text">Prayer Times</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+                            <i class="fas fa-compass"></i>
+                            <span class="nav-text">Qibla</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+                            <i class="fas fa-moon"></i>
+                            <span class="nav-text">Moon</span>
+                        </a>
+                    </li>
+
+                    <!-- Islamic Content -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+                            <i class="fas fa-book-open"></i>
+                            <span class="nav-text">Content</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/explorer.html" class="dropdown-link">
+                                <i class="fas fa-search"></i> Quran Explorer
+                            </a></li>
+                            <li><a href="/duas.html" class="dropdown-link">
+                                <i class="fas fa-hands-praying"></i> Daily Duas
+                            </a></li>
+                            <li><a href="/names.html" class="dropdown-link">
+                                <i class="fas fa-star"></i> 99 Names
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Tools -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+                            <i class="fas fa-tools"></i>
+                            <span class="nav-text">Tools</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/zakat.html" class="dropdown-link">
+                                <i class="fas fa-coins"></i> Zakat Calculator
+                            </a></li>
+                            <li><a href="/converter.html" class="dropdown-link">
+                                <i class="fas fa-calendar-alt"></i> Date Converter
+                            </a></li>
+                            <li><a href="/calendar.html" class="dropdown-link">
+                                <i class="fas fa-calendar"></i> Islamic Calendar
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Analytics & History -->
+                    <li class="nav-item">
+                        <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+                            <i class="fas fa-history"></i>
+                            <span class="nav-text">History</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="navbar-controls">
+                <!-- Search -->
+                <div class="search-container">
+                    <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="search-dropdown">
+                        <input type="text" placeholder="Search..." class="search-input" id="global-search">
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="notification-container">
+                    <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">
+                            <h4>Notifications</h4>
+                            <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+                        </div>
+                        <div class="notification-list" id="notification-list">
+                            <div class="notification-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu-container">
+                    <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="user-name">Guest</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="user-info">
+                            <div class="user-avatar-large" id="user-avatar-large">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name-large" id="user-name-large">Guest User</div>
+                                <div class="user-email" id="user-email">guest@example.com</div>
+                            </div>
+                        </div>
+                        <div class="user-menu-divider"></div>
+                        <ul class="user-menu-list">
+                            <li><a href="/profile.html" class="user-menu-link">
+                                <i class="fas fa-user"></i> Profile
+                            </a></li>
+                            <li><a href="/settings.html" class="user-menu-link">
+                                <i class="fas fa-cog"></i> Settings
+                            </a></li>
+                            <li><a href="/security-dashboard.html" class="user-menu-link">
+                                <i class="fas fa-shield-alt"></i> Security
+                            </a></li>
+                            <li class="user-menu-divider"></li>
+                            <li><a href="/login.html" class="user-menu-link" id="login-link">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a></li>
+                            <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+                        <i class="fas fa-sun theme-icon-light"></i>
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Overlay -->
+        <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+            <div class="mobile-nav-content">
+                <div class="mobile-nav-header">
+                    <div class="mobile-nav-brand">
+                        <i class="fas fa-mosque"></i>
+                        <span>Islamic Portal</span>
+                    </div>
+                    <button class="mobile-nav-close" id="mobile-nav-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mobile-nav-body">
+                    <!-- Mobile navigation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Skip Links for Accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <a href="#history-panel" class="skip-link">Skip to history</a>
+    
+    <div class="page-content">
+    <div class="text-translator-container ultra-container">
+        <!-- Ultra-Enhanced Auto-save Indicator -->
+        <div class="autosave-indicator ultra-fade-in" id="autosave-indicator">
+            <i class="fas fa-save" aria-hidden="true"></i> 
+            <span>Auto-saved</span>
+            <div class="ultra-progress" style="width: 100%; height: 2px; margin-top: 4px;">
+                <div style="width: 100%; background: linear-gradient(90deg, #10b981, #06b6d4);"></div>
+            </div>
+        </div>
+
+        <!-- Ultra-Enhanced Header Section -->
+        <header class="header-section ultra-glass-card ultra-slide-down">
+            <div class="header-content">
+                <h1 class="ultra-title">
+                    <i class="fas fa-language" aria-hidden="true"></i> 
+                    Text Translator
+                </h1>
+                <p class="ultra-subtitle">AI-Powered Text Translation with Ultra-Advanced Features</p>
+                
+                <!-- Enhanced Feature Grid -->
+                <div class="ultra-feature-grid">
+                    <div class="ultra-feature-card ultra-zoom-in">
+                        <div class="feature-icon">
+                            <i class="fas fa-globe" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>15+ Languages</h3>
+                            <p>Comprehensive language support</p>
+                        </div>
+                    </div>
+                    <div class="ultra-feature-card ultra-zoom-in" style="animation-delay: 0.1s;">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Real-time</h3>
+                            <p>Instant translation processing</p>
+                        </div>
+                    </div>
+                    <div class="ultra-feature-card ultra-zoom-in" style="animation-delay: 0.2s;">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>Secure</h3>
+                            <p>End-to-end encryption</p>
+                        </div>
+                    </div>
+                    <div class="ultra-feature-card ultra-zoom-in" style="animation-delay: 0.3s;">
+                        <div class="feature-icon">
+                            <i class="fas fa-brain" aria-hidden="true"></i>
+                        </div>
+                        <div class="feature-content">
+                            <h3>AI-Powered</h3>
+                            <p>Advanced machine learning</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ultra-status online" id="status-indicator">
+                    <div class="ultra-status-dot" id="status-dot" aria-label="System status"></div>
+                    <span id="status-text">Ready to translate</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="main-content" class="main-content">
+            <!-- Translation Input Section -->
+            <section class="translation-input-section" aria-label="Translation Input">
+                <div class="control-panel ultra-control-panel ultra-slide-up">
+                    <h3><i class="fas fa-keyboard" aria-hidden="true"></i> Text Input</h3>
+                    <div class="ultra-input-features">
+                        <div class="ultra-feature-badge">
+                            <i class="fas fa-magic" aria-hidden="true"></i>
+                            <span>AI-Powered</span>
+                        </div>
+                        <div class="ultra-feature-badge">
+                            <i class="fas fa-clock" aria-hidden="true"></i>
+                            <span>Real-time</span>
+                        </div>
+                        <div class="ultra-feature-badge">
+                            <i class="fas fa-microphone" aria-hidden="true"></i>
+                            <span>Voice Input</span>
+                        </div>
+                        <div class="ultra-feature-badge">
+                            <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                            <span>Encrypted</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-input-container">
+                        <label for="source-text" class="sr-only">Enter text to translate</label>
+                        <textarea 
+                            id="source-text" 
+                            class="ultra-textarea-enhanced" 
+                            placeholder="Enter text to translate... (Supports 15+ languages with AI-powered accuracy)"
+                            rows="6" 
+                            aria-label="Enter text to translate"
+                        ></textarea>
+                        <div class="text-counter" id="text-counter">
+                            <span class="counter-label">Characters:</span>
+                            <span class="counter-value" id="counter-value">0</span>
+                        </div>
+                    </div>
+
+                    <div class="language-controls">
+                        <div class="language-selector">
+                            <label for="source-language">From Language:</label>
+                            <select id="source-language" class="select" aria-label="Select source language">
+                                <option value="auto">Auto-Detect</option>
+                                <option value="en">English</option>
+                                <option value="ar">Arabic</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="es">Spanish</option>
+                                <option value="ur">Urdu</option>
+                                <option value="hi">Hindi</option>
+                                <option value="zh">Chinese</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ko">Korean</option>
+                            </select>
+                        </div>
+
+                        <div class="language-selector">
+                            <label for="target-language">To Language:</label>
+                            <select id="target-language" class="select" aria-label="Select target language">
+                                <option value="en">English</option>
+                                <option value="ar">Arabic</option>
+                                <option value="fr">French</option>
+                                <option value="de">German</option>
+                                <option value="es">Spanish</option>
+                                <option value="ur">Urdu</option>
+                                <option value="hi">Hindi</option>
+                                <option value="zh">Chinese</option>
+                                <option value="ja">Japanese</option>
+                                <option value="ko">Korean</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Real-Time Translation Controls -->
+                    <div class="realtime-controls">
+                        <div class="realtime-toggle">
+                            <input type="checkbox" id="realtime-toggle" checked aria-label="Enable real-time translation">
+                            <label for="realtime-toggle">Live Translation</label>
+                        </div>
+                        <div class="realtime-info">
+                            <span class="realtime-status active" id="realtime-status">Active</span>
+                        </div>
+                    </div>
+
+                    <div class="translation-controls">
+                        <button id="translate-btn" class="ultra-btn-enhanced" aria-label="Translate text">
+                            <i class="fas fa-language" aria-hidden="true"></i> Translate
+                        </button>
+                        <button id="clear-text" class="ultra-btn-enhanced" style="background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);" aria-label="Clear all text">
+                            <i class="fas fa-trash" aria-hidden="true"></i> Clear
+                        </button>
+                        <button id="swap-languages" class="ultra-btn-enhanced" style="background: linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);" aria-label="Swap source and target languages">
+                            <i class="fas fa-exchange-alt" aria-hidden="true"></i> Swap
+                        </button>
+                    </div>
+
+                    <!-- Voice Input Controls -->
+                    <div class="voice-input-controls">
+                        <div class="voice-input-section">
+                            <h4><i class="fas fa-microphone" aria-hidden="true"></i> Voice Input</h4>
+                            
+                            <!-- Voice Input Button -->
+                            <button id="voice-input-btn" class="btn btn-voice" aria-label="Start voice input">
+                                <i class="fas fa-microphone" aria-hidden="true"></i>
+                                <span id="voice-listening-indicator">Voice Input</span>
+                            </button>
+                            
+                            <!-- Voice Input Status -->
+                            <div class="voice-status">
+                                <div id="voice-sound-indicator" class="voice-indicator" title="Sound detected">
+                                    <i class="fas fa-volume-up"></i>
+                                </div>
+                                <div id="voice-speech-indicator" class="voice-indicator" title="Speech detected">
+                                    <i class="fas fa-comment"></i>
+                                </div>
+                            </div>
+                            
+                            <!-- Voice Input Options -->
+                            <div class="voice-options">
+                                <label class="voice-option">
+                                    <input type="checkbox" id="voice-continuous" checked>
+                                    <span>Continuous Mode</span>
+                                </label>
+                                <label class="voice-option">
+                                    <input type="checkbox" id="voice-interim" checked>
+                                    <span>Show Interim Results</span>
+                                </label>
+                                <label class="voice-option">
+                                    <input type="checkbox" id="voice-audio-feedback" checked>
+                                    <span>Audio Feedback</span>
+                                </label>
+                            </div>
+                            
+                            <!-- Voice Transcript Display -->
+                            <div class="voice-transcript-container">
+                                <div id="voice-transcript-display" class="voice-transcript-display" aria-live="polite">
+                                    Click the microphone to start voice input...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phase 3: Advanced Features -->
+                    <div class="advanced-features">
+                        <div class="feature-group">
+                            <button id="memory-suggestions" class="btn btn-ghost" aria-label="Show memory suggestions">
+                                <i class="fas fa-brain" aria-hidden="true"></i> Memory
+                            </button>
+                            <button id="favorites-panel" class="btn btn-ghost" aria-label="Show favorites">
+                                <i class="fas fa-star" aria-hidden="true"></i> Favorites
+                            </button>
+                            <button id="search-translations" class="btn btn-ghost" aria-label="Search translations">
+                                <i class="fas fa-search" aria-hidden="true"></i> Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Ultra-Enhanced Translation Results -->
+            <section class="translation-results ultra-glass-card ultra-slide-up" aria-label="Translation Results">
+                <div class="results-header">
+                    <h3><i class="fas fa-language" aria-hidden="true"></i> Translation Results</h3>
+                    <div class="results-stats">
+                        <div class="stat ultra-zoom-in">
+                            <span class="stat-number" id="translation-count">0</span>
+                            <span class="stat-label">Translations</span>
+                        </div>
+                        <div class="stat ultra-zoom-in" style="animation-delay: 0.1s;">
+                            <span class="stat-number" id="accuracy-score">--</span>
+                            <span class="stat-label">Accuracy</span>
+                        </div>
+                        <div class="stat ultra-zoom-in" style="animation-delay: 0.2s;">
+                            <span class="stat-number" id="speed-score">--</span>
+                            <span class="stat-label">Speed (ms)</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="translation-list" role="list" aria-live="polite" class="translation-list ultra-fade-in"></div>
+            </section>
+
+            <!-- Ultra-Enhanced Translation History -->
+            <section id="history-panel" class="history-panel ultra-glass-card ultra-slide-up" aria-label="Translation History">
+                <div class="history-header">
+                    <h3><i class="fas fa-history" aria-hidden="true"></i> Translation History</h3>
+                    <div class="history-stats">
+                        <div class="stat ultra-zoom-in">
+                            <span class="stat-number" id="history-count">0</span>
+                            <span class="stat-label">Total</span>
+                        </div>
+                        <div class="stat ultra-zoom-in" style="animation-delay: 0.1s;">
+                            <span class="stat-number" id="today-count">0</span>
+                            <span class="stat-label">Today</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-search">
+                    <input type="text" id="history-search" class="input" placeholder="Search translation history..." aria-label="Search translation history">
+                    <button class="btn btn-secondary" id="search-btn" aria-label="Search">
+                        <i class="fas fa-search" aria-hidden="true"></i>
+                    </button>
+                </div>
+
+                <div class="history-list" id="history-list" role="list">
+                    <div class="empty-state">
+                        <i class="fas fa-history" aria-hidden="true"></i>
+                        <h4>No history yet</h4>
+                        <p>Your translations will be saved here</p>
+                    </div>
+                </div>
+
+                <div class="history-actions">
+                    <button class="btn btn-primary" id="export-pdf" aria-label="Export as PDF">
+                        <i class="fas fa-file-pdf" aria-hidden="true"></i> Export PDF
+                    </button>
+                    <button class="btn btn-primary" id="export-txt" aria-label="Export as TXT">
+                        <i class="fas fa-file-alt" aria-hidden="true"></i> Export TXT
+                    </button>
+                    <button class="btn btn-primary" id="export-word" aria-label="Export as Word">
+                        <i class="fas fa-file-word" aria-hidden="true"></i> Export Word
+                    </button>
+                    <button class="btn btn-danger" id="clear-history" aria-label="Clear all history">
+                        <i class="fas fa-trash" aria-hidden="true"></i> Clear History
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" id="loading-spinner">
+            <div class="spinner"></div>
+            <div>Processing translation...</div>
+        </div>
+
+
+        <!-- Toast Region -->
+        <div id="toast-region" role="status" aria-live="polite"></div>
+    </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/text-translator.js"></script>
+    
+    <!-- Global Navbar JavaScript -->
+    <script src="/js/global-navbar.js"></script>
+    
+    <script>
+        // Initialize navbar when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.GlobalNavbar) {
+                window.globalNavbar = new window.GlobalNavbar();
+            }
+        });
+    </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
+</body>
+</html>

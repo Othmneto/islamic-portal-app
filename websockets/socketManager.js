@@ -1,12 +1,16 @@
 // translator-backend/websockets/socketManager.js
 
 const logger = require('../utils/logger');
+const RealTimeTranslationManager = require('./realTimeTranslationManager');
 
 /**
  * Manages all WebSocket connections and events.
  * @param {object} io - The Socket.IO server instance.
  */
 module.exports = (io) => {
+  // Initialize Real-Time Translation Manager
+  const realTimeTranslationManager = new RealTimeTranslationManager(io);
+
   // This event fires whenever a new client connects
   io.on('connection', (socket) => {
     logger.info(`New client connected: ${socket.id}`);
@@ -21,9 +25,29 @@ module.exports = (io) => {
       }
     });
 
+    // Real-time translation events
+    socket.on('joinConversation', (data) => {
+      realTimeTranslationManager.initializeConversation(data.conversationId, data.sessionId);
+      socket.join(data.conversationId);
+      logger.info(`Socket ${socket.id} joined conversation: ${data.conversationId}`);
+    });
+
+    socket.on('realTimeTranslation', (data) => {
+      realTimeTranslationManager.handleRealTimeTranslation(socket, data);
+    });
+
+    socket.on('userTyping', (data) => {
+      realTimeTranslationManager.handleTypingIndicator(socket, data);
+    });
+
+    socket.on('updateContext', (data) => {
+      realTimeTranslationManager.updateConversationContext(data);
+    });
+
     // This event fires when a client disconnects
     socket.on('disconnect', () => {
       logger.info(`Client disconnected: ${socket.id}`);
+      realTimeTranslationManager.handleDisconnection(socket);
     });
   });
 
@@ -40,5 +64,33 @@ module.exports = (io) => {
     if (io && translationId) {
       io.to(translationId).emit('translation_progress', progress);
     }
+  };
+
+  /**
+   * Emits a real-time translation result to a conversation.
+   * @param {string} conversationId - The ID of the conversation.
+   * @param {object} translationData - The translation data to broadcast.
+   */
+  io.emitRealTimeTranslation = (conversationId, translationData) => {
+    if (io && conversationId) {
+      io.to(conversationId).emit('translationResult', translationData);
+    }
+  };
+
+  /**
+   * Gets conversation statistics.
+   * @param {string} conversationId - The ID of the conversation.
+   * @returns {object|null} Conversation statistics or null if not found.
+   */
+  io.getConversationStats = (conversationId) => {
+    return realTimeTranslationManager.getConversationStats(conversationId);
+  };
+
+  /**
+   * Gets all active conversations.
+   * @returns {Array} Array of active conversations.
+   */
+  io.getAllConversations = () => {
+    return realTimeTranslationManager.getAllConversations();
   };
 };

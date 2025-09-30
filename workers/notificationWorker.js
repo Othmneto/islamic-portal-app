@@ -15,7 +15,7 @@
  */
 
 const http = require('http');
-const { Worker, Queue } = require('bullmq');
+const { InMemoryNotificationQueueService } = require('../services/inMemoryNotificationQueue');
 const mongoose = require('mongoose');
 const webpush = require('web-push');
 const { env } = require('../config');
@@ -32,25 +32,8 @@ try {
   PushSubscription = require('../models/PushSubscription');
 } catch { /* optional */ }
 
-// ----- Redis connection (prefer exported connection, then ../config/redis, else REDIS_URL) -----
-let redisConnection;
-try {
-  // If queues/notificationQueue exports a connection, prefer it
-  const qq = require('../queues/notificationQueue');
-  if (qq?.connection) redisConnection = qq.connection;
-} catch { /* optional */ }
-if (!redisConnection) {
-  try {
-    const redisExport = require('../config/redis');
-    redisConnection = redisExport?.connection || redisExport;
-  } catch { /* optional */ }
-}
-if (!redisConnection) {
-  const REDIS_URL =
-    env.REDIS_URL ||
-    (env.REDIS_HOST && env.REDIS_PORT ? `redis://${env.REDIS_HOST}:${env.REDIS_PORT}` : 'redis://127.0.0.1:6379');
-  redisConnection = { url: REDIS_URL };
-}
+// ----- In-Memory Queue Connection -----
+// Using in-memory notification queue with NVMe persistence
 
 // ----- Queue / Concurrency (exported for optional centralization) -----
 const QUEUE_NAME = env.NOTIFICATION_QUEUE_NAME || 'notifications';
@@ -61,9 +44,9 @@ module.exports.config = { QUEUE_NAME, CONCURRENCY };
 const ENABLE_DLQ = String(env.ENABLE_DLQ || '').toLowerCase() === 'true';
 const HEALTH_PORT = Number(env.WORKER_HEALTH_PORT || 0);
 
-// Prepare DLQ if enabled
+// Prepare DLQ if enabled (using in-memory queue)
 const DLQ_NAME = `${QUEUE_NAME}-dlq`;
-const dlq = ENABLE_DLQ ? new Queue(DLQ_NAME, { connection: redisConnection }) : null;
+const dlq = ENABLE_DLQ ? new InMemoryNotificationQueueService() : null;
 
 // ----- VAPID keys (fail fast) -----
 if (!env.VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
@@ -236,7 +219,7 @@ if (HEALTH_PORT > 0) {
 (async () => {
   log('info', '📬 Notification worker starting…', {
     queue: QUEUE_NAME,
-    redis: redisConnection?.url || '[custom connection]',
+    storage: 'in-memory with NVMe persistence',
     dlq: ENABLE_DLQ ? DLQ_NAME : '(disabled)',
   });
 
@@ -294,7 +277,7 @@ if (HEALTH_PORT > 0) {
       }
     },
     {
-      connection: redisConnection,
+      // Using in-memory queue with NVMe persistence
       concurrency: CONCURRENCY,
     }
   );

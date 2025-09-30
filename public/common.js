@@ -4,6 +4,11 @@
 
 // Function to get the stored JWT token
 function getToken() {
+    // Use token manager if available, otherwise fallback to old method
+    if (window.tokenManager && window.tokenManager.isAuthenticated()) {
+        return window.tokenManager.getAccessToken();
+    }
+    
     return localStorage.getItem('authToken') || 
            localStorage.getItem('token') || 
            localStorage.getItem('jwt') || 
@@ -12,10 +17,18 @@ function getToken() {
 
 // Function to remove the stored JWT token (for logout)
 function removeToken() {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('token');
-    localStorage.removeItem('jwt');
-    localStorage.removeItem('access_token');
+    // Use token manager if available
+    if (window.tokenManager) {
+        window.tokenManager.clearTokens();
+    } else {
+        // Fallback to old method
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refreshToken');
+    }
+    
     // Clear any specific user data from local storage if applicable
     localStorage.removeItem('userData');
     localStorage.removeItem('userPreferences');
@@ -25,6 +38,13 @@ function removeToken() {
 // Enhanced logout function with API call
 async function logout() {
     try {
+        // Use token manager if available
+        if (window.tokenManager) {
+            await window.tokenManager.logout();
+            return true;
+        }
+        
+        // Fallback to old method
         const token = getToken();
         
         if (token) {
@@ -162,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (currentTheme) {
         document.documentElement.setAttribute('data-theme', currentTheme);
-        if (currentTheme === 'dark') {
+        if (currentTheme === 'dark' && themeSwitch) {
             themeSwitch.checked = true;
         }
     }

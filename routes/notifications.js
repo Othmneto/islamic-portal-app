@@ -16,6 +16,7 @@ const webPush = require("web-push");
 const { z } = require("zod");
 
 const PushSubscription = require("../models/PushSubscription");
+const User = require("../models/User");
 const logger = require("../utils/logger");
 const { env } = require("../config");
 const { sendNotification } = require("../services/notificationService"); // Delayed queue-based send for snooze
@@ -83,6 +84,18 @@ const UnsubscribeBodySchema = z.object({
 
 const router = express.Router();
 
+// ---- DEBUG: queue stats ----
+router.get('/debug/queue-stats', async (req, res) => {
+  try {
+    const qmod = require('../services/inMemoryNotificationQueue');
+    const q = qmod && qmod.getNotificationQueueService && qmod.getNotificationQueueService();
+    if (!q) return res.status(503).json({ error: 'queue-unavailable' });
+    return res.json({ ok: true, stats: q.getStats(), waiting: q.getJobs('waiting'), delayed: q.getJobs('delayed') });
+  } catch (e) {
+    return res.status(500).json({ error: 'debug-failed', message: e.message });
+  }
+});
+
 /** Public: return VAPID public key as plain text */
 router.get("/vapid-public-key", (_req, res) => {
   if (!env.VAPID_PUBLIC_KEY) return res.status(500).json({ error: "VAPID public key not configured" });
@@ -103,27 +116,39 @@ router.post("/subscribe", async (req, res) => {
       hasLoc: !!raw?.location,
     });
 
+    // Debug authentication
+    console.log("[/api/notifications/subscribe] auth debug:", {
+      hasUser: !!req.user,
+      userId: req.user?._id || req.user?.id,
+      authSource: req._authSource,
+      authHeader: req.headers.authorization ? 'present' : 'missing',
+      sessionId: req.session?.id || 'no-session'
+    });
+
     const body = SubscribeBodySchema.parse(req.body);
 
     const userId = req.user?._id || req.user?.id || null;
     const s = body.subscription;
 
-    const doc = await PushSubscription.findOneAndUpdate(
-      { "subscription.endpoint": s.endpoint }, // find by nested endpoint
-      {
-        $set: {
-          userId,
-          subscription: s, // store the whole object
-          tz: body.tz,
-          preferences: body.preferences || undefined,
-          location: body.location || undefined,
-          ua: req.headers["user-agent"] || "",
-          updatedAt: new Date(),
-        },
-        $setOnInsert: { createdAt: new Date() },
-      },
-      { upsert: true, new: true }
-    ).lean();
+    // Clean up any existing records with null endpoints globally
+    await PushSubscription.deleteMany({ 
+      "subscription.endpoint": { $in: [null, ""] } 
+    });
+
+    // Delete any existing subscription for this user first
+    await PushSubscription.deleteMany({ userId });
+
+    // Create a new subscription
+    const doc = await PushSubscription.create({
+      userId,
+      subscription: s,
+      tz: body.tz,
+      preferences: body.preferences || undefined,
+      location: body.location || undefined,
+      ua: req.headers["user-agent"] || "",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     return res.status(200).json({ ok: true, id: doc._id });
   } catch (e) {
@@ -132,7 +157,65 @@ router.post("/subscribe", async (req, res) => {
       return res.status(400).json({ error: "ValidationError", details: e.errors });
     }
     console.error("[subscribe] UnexpectedError:", e);
-    return res.status(500).json({ error: "UnexpectedError" });
+    console.error("[subscribe] Error stack:", e.stack);
+    return res.status(500).json({ error: "UnexpectedError", message: e.message });
+  }
+});
+
+// Unsubscribe endpoint - delete user's subscription
+router.post("/unsubscribe", async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Delete all subscriptions for this user
+    const result = await PushSubscription.deleteMany({ userId });
+    
+    console.log(`[unsubscribe] Deleted ${result.deletedCount} subscriptions for user ${userId}`);
+    
+    return res.status(200).json({ 
+      ok: true, 
+      deletedCount: result.deletedCount,
+      message: "Successfully unsubscribed from notifications" 
+    });
+  } catch (e) {
+    console.error("[unsubscribe] UnexpectedError:", e);
+    return res.status(500).json({ error: "UnexpectedError", message: e.message });
+  }
+});
+
+/** Get notification status for current user */
+router.get("/status", async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const subscriptions = await PushSubscription.find({ userId }).lean();
+    const user = await User.findById(userId).select('email notificationPreferences').lean();
+
+    return res.status(200).json({
+      user: {
+        email: user?.email,
+        id: userId
+      },
+      subscriptions: subscriptions.map(sub => ({
+        id: sub._id,
+        endpoint: sub.subscription?.endpoint,
+        tz: sub.tz,
+        preferences: sub.preferences,
+        location: sub.location,
+        createdAt: sub.createdAt,
+        updatedAt: sub.updatedAt
+      })),
+      preferences: user?.notificationPreferences || {}
+    });
+  } catch (error) {
+    console.error("[status] Error:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -182,7 +265,11 @@ async function sendToSubscription(subDoc, payload) {
     if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) {
       throw new Error("Invalid subscription in DB");
     }
-    await webPush.sendNotification(sub, JSON.stringify(payload), { TTL: 60 });
+    await webPush.sendNotification(
+      sub,
+      JSON.stringify(payload),
+      { TTL: 10, urgency: 'high' }
+    );
     return { ok: true };
   } catch (err) {
     const status = err?.statusCode;
@@ -273,7 +360,7 @@ router.post("/test-prayer", async (req, res) => {
  */
 router.post("/snooze", async (req, res) => {
   try {
-    const { originalPayload, endpoint } = req.body;
+    const { originalPayload, endpoint, delaySeconds } = req.body;
     if (!originalPayload || !endpoint) {
       return res.status(400).json({ error: "Missing payload or endpoint." });
     }
@@ -289,15 +376,77 @@ router.post("/snooze", async (req, res) => {
       title: (originalPayload.title || "").replace(/^Snooze:\s*/i, ""),
     };
 
-    const FIVE_MINUTES_IN_MS = 5 * 60 * 1000;
+    // Allow custom delay for testing; default to 5 minutes
+    const delayMs = Number.isFinite(delaySeconds) ? Math.max(0, delaySeconds * 1000) : (5 * 60 * 1000);
 
-    await sendNotification(subscription, payloadToResend, FIVE_MINUTES_IN_MS);
+    // Fast-path: deliver via precise timer without queue to avoid latency
+    setTimeout(async () => {
+      try {
+        await sendToSubscription(subscription, payloadToResend);
+        logger.info("[notifications] Snooze delivered via direct timer", { endpoint: endpoint?.slice(0, 32) + '...' });
+      } catch (e) {
+        logger.error("[notifications] Snooze direct delivery failed:", e);
+      }
+    }, delayMs);
 
-    res.status(200).json({ ok: true, message: "Snooze job scheduled." });
+    res.status(200).json({ ok: true, message: "Snooze job scheduled (direct timer).", delayMs });
   } catch (e) {
     logger.error("[notifications] /snooze error:", e);
     return res.status(500).json({ error: "UnexpectedError" });
   }
 });
 
+// Test endpoint for immediate notification testing
+router.post("/test-immediate", async (req, res) => {
+  try {
+    // Debug authentication
+    console.log("[test-immediate] Auth debug:", {
+      hasUser: !!req.user,
+      userId: req.user?._id || req.user?.id,
+      authSource: req._authSource,
+      authHeader: req.headers.authorization ? 'present' : 'missing',
+      sessionId: req.session?.id || 'no-session'
+    });
+
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      console.log("[test-immediate] No user found, returning 401");
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Get user's subscription
+    const subscription = await PushSubscription.findOne({ userId }).lean();
+    if (!subscription) {
+      return res.status(404).json({ error: "No subscription found for user" });
+    }
+
+    // Create test notification payload
+    const testPayload = {
+      title: "🧪 Test Prayer Notification",
+      body: "This is a test notification to verify the system is working!",
+      icon: "/icons/icon-192x192.png",
+      badge: "/icons/badge-72x72.png",
+      data: {
+        url: "/prayer-time.html",
+        type: "test",
+        timestamp: new Date().toISOString()
+      }
+    };
+
+    // Send immediate notification
+    await sendNotification(subscription, testPayload);
+
+    res.status(200).json({ 
+      ok: true, 
+      message: "Test notification sent immediately",
+      payload: testPayload
+    });
+  } catch (e) {
+    logger.error("[notifications] /test-immediate error:", e);
+    return res.status(500).json({ error: "UnexpectedError", message: e.message });
+  }
+});
+
 module.exports = router;
+ 
+// NOTE: debug route is defined earlier to ensure it's registered before export

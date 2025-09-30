@@ -10,40 +10,80 @@ const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const { env } = require('../config');
 const { validate, z } = require('../middleware/validate');
 
-// ---------- Queue integration (backward compatible) ----------
+// Web push for direct notifications
+const webPush = require('web-push');
+
+// Configure web-push with VAPID keys
+webPush.setVapidDetails(
+  env.VAPID_SUBJECT || 'mailto:admin@islamic-portal.com',
+  env.VAPID_PUBLIC_KEY,
+  env.VAPID_PRIVATE_KEY
+);
+
+// ---------- In-Memory Queue Integration ----------
 let notifModule;
 try {
-  notifModule = require('../queues/notificationQueue');
-} catch {
-  try {
-    notifModule = require('../services/notificationQueue');
-  } catch {
-    notifModule = {};
-  }
+  // Use the new in-memory notification queue with NVMe persistence
+  notifModule = require('../services/inMemoryNotificationQueue');
+  console.log('[subscriptionRoutes] Using in-memory notification queue with NVMe persistence');
+} catch (err) {
+  console.error('[subscriptionRoutes] In-memory notification queue failed:', err.message);
+  notifModule = {};
 }
 
 async function enqueuePush({ subscriptionDoc, payload, opts = {} }) {
-  if (notifModule?.notificationQueue?.add) {
+  if (notifModule?.addPushJob) {
+    // Use the new in-memory queue
     if (subscriptionDoc?._id) {
-      return notifModule.notificationQueue.add(
-        'send-push',
+      return notifModule.addPushJob(
         { subscriptionId: subscriptionDoc._id, payload },
         { removeOnComplete: true, removeOnFail: true, ...opts }
       );
     }
-    return notifModule.notificationQueue.add(
-      'send-push',
-      { subscription: subscriptionDoc, payload },
-      { removeOnComplete: true, removeOnFail: true, ...opts }
-    );
-  }
-  if (typeof notifModule.addPushJob === 'function') {
     return notifModule.addPushJob(
       { subscription: subscriptionDoc, payload },
       { removeOnComplete: true, removeOnFail: true, ...opts }
     );
   }
-  throw new Error('Push queue module not available');
+  
+  // Fallback: Send notification directly if no queue is available
+  console.warn('[subscriptionRoutes] No notification queue available, sending directly');
+  return sendToSubscription(subscriptionDoc, payload);
+}
+
+/** Convert subscription document to web-push format */
+function toWebPushSubscription(doc) {
+  if (!doc?.subscription) {
+    throw new Error("Invalid subscription document");
+  }
+  return {
+    endpoint: doc.subscription.endpoint,
+    keys: {
+      p256dh: doc.subscription.keys?.p256dh,
+      auth: doc.subscription.keys?.auth,
+    },
+  };
+}
+
+/** Send payload to one subscription immediately via web-push; prune if gone */
+async function sendToSubscription(subDoc, payload) {
+  try {
+    const sub = toWebPushSubscription(subDoc);
+    if (!sub.endpoint || !sub.keys?.p256dh || !sub.keys?.auth) {
+      throw new Error("Invalid subscription in DB");
+    }
+    await webPush.sendNotification(sub, JSON.stringify(payload), { TTL: 60 });
+    return { ok: true };
+  } catch (err) {
+    const status = err?.statusCode;
+    if (status === 404 || status === 410) {
+      await PushSubscription.deleteOne({ _id: subDoc._id }).catch(() => {});
+      console.info(`[subscriptionRoutes] Pruned expired endpoint: ${subDoc._id}`);
+    } else {
+      console.warn("[subscriptionRoutes] send error:", status, err?.body || err?.message || err);
+    }
+    return { ok: false, status };
+  }
 }
 
 // ---------- Validation Schemas (Zod) ----------

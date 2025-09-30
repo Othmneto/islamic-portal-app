@@ -32,23 +32,46 @@ const sendEmail = async (options) => {
         },
       });
     } else {
-      console.log('📧 Using development email configuration');
-      // Development - use Mailtrap or similar test service
-      transporter = nodemailer.createTransport({
-        host: env.EMAIL_HOST || 'smtp.mailtrap.io',
-        port: env.EMAIL_PORT || 2525,
-        auth: {
-          user: env.EMAIL_USER || 'your-mailtrap-user',
-          pass: env.EMAIL_PASS || 'your-mailtrap-pass',
-        },
-      });
+      // Check if Gmail App Password is configured in environment
+      const gmailAppPassword = env.EMAIL_PASS;
+      
+      if (!gmailAppPassword || gmailAppPassword === 'YOUR_ACTUAL_APP_PASSWORD_HERE') {
+        console.log('📧 Gmail App Password not configured, using console mode for development');
+        // Development - use console logging for testing
+        transporter = {
+          sendMail: async (mailOptions) => {
+            console.log('📧 [DEV EMAIL] ===========================================');
+            console.log('📧 [DEV EMAIL] TO:', mailOptions.to);
+            console.log('📧 [DEV EMAIL] SUBJECT:', mailOptions.subject);
+            console.log('📧 [DEV EMAIL] HTML CONTENT:');
+            console.log(mailOptions.html);
+            console.log('📧 [DEV EMAIL] ===========================================');
+            return { messageId: 'dev-' + Date.now() };
+          }
+        };
+      } else {
+        console.log('📧 Using Gmail SMTP with environment variables');
+        // Development - use Gmail SMTP to send real emails
+        transporter = nodemailer.createTransport({
+          host: env.EMAIL_HOST || 'smtp.gmail.com',
+          port: env.EMAIL_PORT || 587,
+          secure: env.EMAIL_SECURE === 'true',
+          auth: {
+            user: env.EMAIL_USER || 'ahmedothmanofff@gmail.com',
+            pass: gmailAppPassword
+          },
+          tls: {
+            rejectUnauthorized: false
+          }
+        });
+      }
     }
     
     console.log('📧 Transporter created with config:', {
-      host: transporter.options.host,
-      port: transporter.options.port,
-      secure: transporter.options.secure,
-      hasAuth: !!transporter.options.auth.user
+      host: transporter.options?.host || 'development-mode',
+      port: transporter.options?.port || 'N/A',
+      secure: transporter.options?.secure || 'N/A',
+      hasAuth: !!transporter.options?.auth?.user
     });
 
     // Email options

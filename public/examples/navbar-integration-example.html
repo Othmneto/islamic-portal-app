@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Navbar Integration Example</title>
+    
+    <!-- Include Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Include global navbar integration script -->
+    <script src="/js/navbar-integration.js"></script>
+    
+    <style>
+        /* Basic page styles */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8fafc;
+            color: #1f2937;
+        }
+        
+        /* Add top padding to account for fixed navbar */
+        .page-content {
+            padding-top: 70px; /* Height of navbar */
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .hero {
+            text-align: center;
+            padding: 4rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-bottom: 3rem;
+            border-radius: 1rem;
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e5e7eb;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: #3b82f6;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: #1f2937;
+        }
+        
+        .feature-description {
+            color: #6b7280;
+            line-height: 1.6;
+        }
+        
+        .code-example {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+        }
+        
+        .code-example pre {
+            margin: 0;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .highlight {
+            background: #fef3c7;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+        }
+        
+        /* Dark mode support */
+        body.dark-mode {
+            background: #111827;
+            color: #f9fafb;
+        }
+        
+        body.dark-mode .feature-card {
+            background: #1f2937;
+            border-color: #374151;
+        }
+        
+        body.dark-mode .feature-title {
+            color: #f9fafb;
+        }
+        
+        body.dark-mode .feature-description {
+            color: #d1d5db;
+        }
+    </style>
+</head>
+<body>
+    <!-- The global navbar will be automatically inserted here by the integration script -->
+    
+    <div class="page-content">
+        <div class="container">
+            <div class="hero">
+                <h1>Global Navbar Integration</h1>
+                <p>This page demonstrates how to integrate the global navbar into any page with just one script tag.</p>
+            </div>
+            
+            <div class="features">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <h3 class="feature-title">Easy Integration</h3>
+                    <p class="feature-description">
+                        Simply include the integration script and the global navbar will be automatically added to your page.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Responsive Design</h3>
+                    <p class="feature-description">
+                        The navbar automatically adapts to different screen sizes with a mobile-friendly hamburger menu.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <h3 class="feature-title">Theme Support</h3>
+                    <p class="feature-description">
+                        Built-in dark/light theme support that automatically syncs with your page's theme.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 class="feature-title">Global Search</h3>
+                    <p class="feature-description">
+                        Integrated search functionality that searches across all content types in your application.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 class="feature-title">Notifications</h3>
+                    <p class="feature-description">
+                        Real-time notification system with badge counts and dropdown notifications.
+                    </p>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3 class="feature-title">User Menu</h3>
+                    <p class="feature-description">
+                        Complete user management with authentication, profile access, and logout functionality.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="code-example">
+                <h3 style="margin-top: 0; color: #f9fafb;">How to Integrate</h3>
+                <p style="color: #d1d5db; margin-bottom: 1rem;">Add this single script tag to any HTML page:</p>
+                <pre><code>&lt;!-- Include Font Awesome for icons --&gt;
+&lt;link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"&gt;
+
+&lt;!-- Include global navbar integration script --&gt;
+&lt;script src="/js/navbar-integration.js"&gt;&lt;/script&gt;
+
+&lt;!-- Add top padding to account for fixed navbar --&gt;
+&lt;style&gt;
+    .page-content {
+        padding-top: 70px; /* Height of navbar */
+    }
+&lt;/style&gt;</code></pre>
+            </div>
+            
+            <div class="code-example">
+                <h3 style="margin-top: 0; color: #f9fafb;">Advanced Integration</h3>
+                <p style="color: #d1d5db; margin-bottom: 1rem;">For more control, you can use the JavaScript API:</p>
+                <pre><code>// Wait for navbar to be ready
+document.addEventListener('DOMContentLoaded', () => {
+    if (window.globalNavbar) {
+        // Access navbar instance
+        console.log('Navbar is ready:', window.globalNavbar);
+        
+        // Listen for theme changes
+        document.body.addEventListener('classChange', (e) => {
+            if (e.detail.classList.contains('dark-mode')) {
+                console.log('Theme changed to dark mode');
+            }
+        });
+    }
+});</code></pre>
+            </div>
+            
+            <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #f3f4f6; border-radius: 1rem;">
+                <h3 style="margin-top: 0; color: #1f2937;">Try the Features</h3>
+                <p style="color: #6b7280; margin-bottom: 1.5rem;">
+                    Test the navbar features by clicking on the various elements in the top navigation.
+                </p>
+                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="window.globalNavbar?.toggleSearch()" style="padding: 0.5rem 1rem; background: #3b82f6; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fas fa-search"></i> Test Search
+                    </button>
+                    <button onclick="window.globalNavbar?.toggleNotifications()" style="padding: 0.5rem 1rem; background: #10b981; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fas fa-bell"></i> Test Notifications
+                    </button>
+                    <button onclick="window.globalNavbar?.toggleUserMenu()" style="padding: 0.5rem 1rem; background: #8b5cf6; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fas fa-user"></i> Test User Menu
+                    </button>
+                    <button onclick="window.globalNavbar?.toggleTheme()" style="padding: 0.5rem 1rem; background: #f59e0b; color: white; border: none; border-radius: 0.5rem; cursor: pointer;">
+                        <i class="fas fa-palette"></i> Toggle Theme
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Example of how to interact with the navbar
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 [Example] Page loaded with global navbar integration');
+            
+            // Listen for navbar events
+            if (window.globalNavbar) {
+                console.log('✅ [Example] Global navbar is available');
+            } else {
+                console.log('⏳ [Example] Waiting for global navbar to load...');
+                
+                // Wait for navbar to be ready
+                const checkNavbar = setInterval(() => {
+                    if (window.globalNavbar) {
+                        console.log('✅ [Example] Global navbar is now available');
+                        clearInterval(checkNavbar);
+                    }
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

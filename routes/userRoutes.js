@@ -103,34 +103,7 @@ const savedLocationParamSchema = z.object({
  * GET /api/user/profile
  * Returns minimal profile info for the authenticated user.
  */
-router.get("/profile", authMiddleware, async (req, res) => {
-  try {
-    console.log('🔍 Profile endpoint: Request user from middleware:', {
-      userId: req.user.id,
-      email: req.user.email,
-      username: req.user.username,
-      authProvider: req.user.authProvider
-    });
-    
-    // req.user is set by auth middleware; fetch latest to be safe
-    const user = await User.findById(req.user.id).select("_id email username").lean();
-    if (!user) {
-      console.error('❌ Profile endpoint: User not found for ID:', req.user.id);
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-    
-    console.log('✅ Profile endpoint: Returning user data:', {
-      userId: user._id,
-      email: user.email,
-      username: user.username
-    });
-    
-    return res.json(user);
-  } catch (error) {
-    console.error('❌ Profile endpoint: Error reading profile:', error);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-});
+// Profile route moved to profileRoutes.js for comprehensive profile management
 
 /**
  * PUT /api/user/location

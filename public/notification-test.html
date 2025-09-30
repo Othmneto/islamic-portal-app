@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test - Islamic Portal</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .status {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left-color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+        }
+        .warning {
+            border-left-color: #ff9800;
+            background: rgba(255, 152, 0, 0.2);
+        }
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #4CAF50;
+        }
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔔 Prayer Notification Test</h1>
+        
+        <div id="status" class="status">
+            <strong>Status:</strong> <span id="statusText">Checking notification support...</span>
+        </div>
+
+        <div class="step">
+            <h3>Step 1: Check Browser Support</h3>
+            <p>First, let's check if your browser supports notifications and service workers.</p>
+            <button onclick="checkSupport()">Check Support</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Request Permission</h3>
+            <p>Request permission to show notifications.</p>
+            <button onclick="requestPermission()" id="permissionBtn" disabled>Request Permission</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Register Service Worker</h3>
+            <p>Register the service worker for push notifications.</p>
+            <button onclick="registerServiceWorker()" id="swBtn" disabled>Register Service Worker</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 4: Subscribe to Push Notifications</h3>
+            <p>Subscribe to push notifications using VAPID keys.</p>
+            <button onclick="subscribeToPush()" id="pushBtn" disabled>Subscribe to Push</button>
+        </div>
+
+        <div class="step">
+            <h3>Step 5: Test Notifications</h3>
+            <p>Send test notifications to verify everything is working.</p>
+            <button onclick="sendTestNotification()" id="testBtn" disabled>Send Test Notification</button>
+            <button onclick="sendPrayerTest()" id="prayerTestBtn" disabled>Send Prayer Test</button>
+        </div>
+
+        <div class="step">
+            <h3>Debug Log</h3>
+            <div id="log" class="log">Starting notification test...\n</div>
+        </div>
+    </div>
+
+    <script>
+        let swRegistration = null;
+        let pushSubscription = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logDiv.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function enableButton(buttonId) {
+            document.getElementById(buttonId).disabled = false;
+        }
+
+        async function checkSupport() {
+            log('Checking browser support...');
+            
+            if (!('Notification' in window)) {
+                log('❌ This browser does not support notifications', 'error');
+                updateStatus('Browser does not support notifications', 'error');
+                return false;
+            }
+            
+            if (!('serviceWorker' in navigator)) {
+                log('❌ This browser does not support service workers', 'error');
+                updateStatus('Browser does not support service workers', 'error');
+                return false;
+            }
+            
+            if (!('PushManager' in window)) {
+                log('❌ This browser does not support push notifications', 'error');
+                updateStatus('Browser does not support push notifications', 'error');
+                return false;
+            }
+            
+            log('✅ Browser supports all required features', 'success');
+            updateStatus('Browser support verified', 'success');
+            enableButton('permissionBtn');
+            return true;
+        }
+
+        async function requestPermission() {
+            log('Requesting notification permission...');
+            
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    log('✅ Notification permission granted', 'success');
+                    updateStatus('Notification permission granted', 'success');
+                    enableButton('swBtn');
+                } else if (permission === 'denied') {
+                    log('❌ Notification permission denied', 'error');
+                    updateStatus('Notification permission denied', 'error');
+                } else {
+                    log('⚠️ Notification permission dismissed', 'warning');
+                    updateStatus('Notification permission dismissed', 'warning');
+                }
+            } catch (error) {
+                log(`❌ Error requesting permission: ${error.message}`, 'error');
+                updateStatus('Error requesting permission', 'error');
+            }
+        }
+
+        async function registerServiceWorker() {
+            log('Registering service worker...');
+            
+            try {
+                swRegistration = await navigator.serviceWorker.register('/sw.js');
+                log('✅ Service worker registered successfully', 'success');
+                
+                await navigator.serviceWorker.ready;
+                log('✅ Service worker is ready', 'success');
+                
+                updateStatus('Service worker registered', 'success');
+                enableButton('pushBtn');
+            } catch (error) {
+                log(`❌ Error registering service worker: ${error.message}`, 'error');
+                updateStatus('Error registering service worker', 'error');
+            }
+        }
+
+        async function subscribeToPush() {
+            log('Subscribing to push notifications...');
+            
+            try {
+                // Get VAPID public key
+                const response = await fetch('/api/notifications/vapid-public-key');
+                if (!response.ok) {
+                    throw new Error('Failed to get VAPID public key');
+                }
+                const vapidPublicKey = await response.text();
+                log('✅ VAPID public key retrieved', 'success');
+                
+                // Convert VAPID key
+                const applicationServerKey = urlBase64ToUint8Array(vapidPublicKey);
+                
+                // Subscribe to push
+                pushSubscription = await swRegistration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: applicationServerKey
+                });
+                
+                log('✅ Push subscription created', 'success');
+                
+                // Send subscription to server
+                const token = localStorage.getItem('token');
+                const subscribeResponse = await fetch('/api/notifications/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        subscription: pushSubscription,
+                        preferences: {
+                            fajr: true,
+                            dhuhr: true,
+                            asr: true,
+                            maghrib: true,
+                            isha: true
+                        }
+                    })
+                });
+                
+                if (subscribeResponse.ok) {
+                    log('✅ Subscription saved to server', 'success');
+                    updateStatus('Push notifications enabled', 'success');
+                    enableButton('testBtn');
+                    enableButton('prayerTestBtn');
+                } else {
+                    log('⚠️ Failed to save subscription to server', 'warning');
+                    updateStatus('Push notifications enabled (local only)', 'warning');
+                    enableButton('testBtn');
+                }
+                
+            } catch (error) {
+                log(`❌ Error subscribing to push: ${error.message}`, 'error');
+                updateStatus('Error subscribing to push', 'error');
+            }
+        }
+
+        async function sendTestNotification() {
+            log('Sending test notification...');
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone })
+                });
+                
+                if (response.ok) {
+                    log('✅ Test notification sent', 'success');
+                    updateStatus('Test notification sent', 'success');
+                } else {
+                    const error = await response.json();
+                    log(`❌ Failed to send test notification: ${error.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error sending test notification: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendPrayerTest() {
+            log('Sending prayer test notification...');
+            
+            try {
+                const token = localStorage.getItem('token');
+                const response = await fetch('/api/notifications/test-prayer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(token && { 'Authorization': `Bearer ${token}` })
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ 
+                        prayer: 'next', 
+                        tz: Intl.DateTimeFormat().resolvedOptions().timeZone 
+                    })
+                });
+                
+                if (response.ok) {
+                    log('✅ Prayer test notification sent', 'success');
+                    updateStatus('Prayer test notification sent', 'success');
+                } else {
+                    const error = await response.json();
+                    log(`❌ Failed to send prayer test: ${error.error || 'Unknown error'}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error sending prayer test: ${error.message}`, 'error');
+            }
+        }
+
+        // Helper function to convert VAPID key
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/-/g, '+')
+                .replace(/_/g, '/');
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            log('Page loaded, starting notification test...');
+            checkSupport();
+        });
+    </script>
+</body>
+</html>

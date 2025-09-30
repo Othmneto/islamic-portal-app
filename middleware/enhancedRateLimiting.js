@@ -1,10 +1,6 @@
 // Enhanced Production-Grade Rate Limiting System
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
-const Redis = require('ioredis');
-
-// Redis client for distributed rate limiting
-const redis = new Redis(process.env.REDIS_URL || 'redis://127.0.0.1:6379');
+const { get, set, del } = require('../services/diskPersistence');
 
 // IP blacklist for severe violations
 const blacklistedIPs = new Set();
@@ -21,9 +17,7 @@ const getProgressiveLimit = (violationCount) => {
 const createProgressiveRateLimit = (baseConfig) => {
   return rateLimit({
     ...baseConfig,
-    store: new RedisStore({
-      sendCommand: (...args) => redis.call(...args),
-    }),
+    // Using in-memory store with NVMe persistence
     keyGenerator: (req) => {
       const ip = req.ip || req.connection.remoteAddress || 'unknown';
       const userAgent = req.get('User-Agent') || 'unknown';

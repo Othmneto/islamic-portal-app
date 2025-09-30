@@ -124,8 +124,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return m ? decodeURIComponent(m[1]) : null;
   };
 
-  // Accept multiple possible localStorage keys for auth (JWT)
+  // Use the updated getToken function from common.js that supports token manager
   const getAuthToken = () => {
+    // Use the global getToken function if available (includes token manager support)
+    if (typeof getToken === 'function') {
+      return getToken();
+    }
+    
+    // Fallback to old method if getToken not available
     const authToken = localStorage.getItem("authToken");
     const token = localStorage.getItem("token");
     const jwt = localStorage.getItem("jwt");
@@ -230,12 +236,30 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("[Profile] JWT token present:", !!token);
       }
       
+      // Try to refresh token first if token manager is available
+      if (window.tokenManager && window.tokenManager.isAuthenticated()) {
+        console.log("[Profile] Attempting token refresh...");
+        try {
+          await window.tokenManager.refreshAccessToken();
+          console.log("[Profile] Token refreshed, retrying request...");
+          // Retry the original request
+          return apiFetch(url, options);
+        } catch (refreshError) {
+          console.error("[Profile] Token refresh failed:", refreshError);
+        }
+      }
+      
       // Clear any expired tokens from localStorage
       localStorage.removeItem('authToken');
       localStorage.removeItem('token');
       localStorage.removeItem('jwt');
       localStorage.removeItem('access_token');
       localStorage.removeItem('userData');
+      
+      // Clear token manager if available
+      if (window.tokenManager) {
+        window.tokenManager.clearTokens();
+      }
       
       // Show login message and redirect after delay
       if (el.dashboardRoot && !el.dashboardRoot.querySelector(".login-needed")) {

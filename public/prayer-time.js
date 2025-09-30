@@ -124,7 +124,7 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
     const audio = new PrayerTimesAudio(core);
     const notifications = new PrayerTimesNotifications(core, api);
     const logging = new PrayerTimesLogging(core, api);
-    const settings = new PrayerTimesSettings(core);
+    const settings = new PrayerTimesSettings(core, api);
     const i18n = new PrayerTimesI18N(core);
     const uiComponents = new PrayerTimesUIComponents(core);
 

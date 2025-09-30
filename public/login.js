@@ -28,11 +28,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     messageDiv.style.color = '';
   }
 
-  // Check if user is already logged in
-  const existingToken = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
-  if (existingToken) {
-    console.log('✅ Frontend: User already logged in, redirecting to profile');
-    window.location.href = '/profile.html';
+  // Check if user is already logged in (but only if not coming from OAuth callback)
+  const existingToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
+  const isOAuthCallback = urlParams.get('token') || urlParams.get('code');
+  
+  console.log('🔍 [Login] Auth check:', {
+    existingToken: !!existingToken,
+    isOAuthCallback: !!isOAuthCallback,
+    tokenManagerAvailable: !!window.tokenManager,
+    tokenManagerAuthenticated: window.tokenManager ? window.tokenManager.isAuthenticated() : false
+  });
+  
+  if ((existingToken || (window.tokenManager && window.tokenManager.isAuthenticated())) && !isOAuthCallback) {
+    console.log('✅ Frontend: User already logged in, redirecting to home');
+    window.location.href = '/index.html';
     return;
   }
 
@@ -179,18 +188,57 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Save JWT for Bearer flows (some code reads "authToken", some reads "token")
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('token', data.token);
+      // Save tokens using the new token management system
+      if (data.token && data.refreshToken) {
+        // Use the new token manager
+        if (window.tokenManager) {
+          window.tokenManager.saveTokens(data.token, data.refreshToken);
+        } else {
+          // Fallback to old method if token manager not available
+          localStorage.setItem('accessToken', data.token);
+          localStorage.setItem('refreshToken', data.refreshToken);
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('token');
+          localStorage.removeItem('jwt');
+        }
+      } else if (data.token) {
+        // Legacy support for old API responses
+        localStorage.setItem('accessToken', data.token);
+        console.warn('[login.js] Using legacy token storage - refresh token not available');
       } else {
         console.warn('[login.js] Login succeeded but no token was returned.');
       }
 
-      setMessage('Login successful! Redirecting...', true);
+      // Save user data
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userData', JSON.stringify(data.user)); // For navbar compatibility
+      }
 
-      // Redirect to prayer times page (as per our previous flow)
-      window.location.href = '/prayer-time.html';
+      setMessage('Login successful! Loading account options...', true);
+
+      // Update navbar if it exists
+      if (window.globalNavbar) {
+        window.globalNavbar.updateAuthStatus();
+      }
+
+      // Load user's authentication methods
+      await loadUserAuthMethods(data.user.id);
+      
+      // Show account linking section
+      showAccountLinking();
+
+      // Check if user needs username setup
+      if (data.user && data.user.needsUsernameSetup) {
+        setTimeout(() => {
+          window.location.href = '/setup-username.html';
+        }, 2000);
+      } else {
+      // Redirect to home page after showing account options
+      setTimeout(() => {
+        window.location.href = '/index.html';
+      }, 1000);
+      }
     } catch (err) {
       console.error('[login.js] Network/Unexpected error:', err);
       setMessage('An error occurred. Please try again.');
@@ -260,3 +308,150 @@ function addResendVerificationButton(email) {
     loginForm.appendChild(resendButton);
   }
 }
+
+// Enhanced authentication functions
+async function loadUserAuthMethods(userId) {
+  try {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch(`/api/auth/auth-methods/${userId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      displayAuthMethods(data.authMethods);
+    }
+  } catch (error) {
+    console.error('Error loading auth methods:', error);
+  }
+}
+
+function displayAuthMethods(authMethods) {
+  const authMethodsDiv = document.getElementById('auth-methods');
+  if (!authMethodsDiv) return;
+  
+  authMethodsDiv.innerHTML = '';
+  
+  Object.entries(authMethods).forEach(([provider, isConnected]) => {
+    if (provider === 'email') return; // Skip email as it's always connected for logged-in users
+    
+    const methodDiv = document.createElement('div');
+    methodDiv.className = `auth-method ${isConnected ? 'connected' : ''}`;
+    
+    const icon = getProviderIcon(provider);
+    const name = getProviderName(provider);
+    
+    methodDiv.innerHTML = `
+      <i class="${icon}"></i>
+      <span>${name}</span>
+      ${isConnected ? '<i class="fas fa-check"></i>' : ''}
+    `;
+    
+    authMethodsDiv.appendChild(methodDiv);
+  });
+}
+
+function getProviderIcon(provider) {
+  const icons = {
+    google: 'fab fa-google',
+    microsoft: 'fab fa-microsoft',
+    facebook: 'fab fa-facebook',
+    twitter: 'fab fa-twitter',
+    tiktok: 'fab fa-tiktok'
+  };
+  return icons[provider] || 'fas fa-user';
+}
+
+function getProviderName(provider) {
+  const names = {
+    google: 'Google',
+    microsoft: 'Microsoft',
+    facebook: 'Facebook',
+    twitter: 'Twitter',
+    tiktok: 'TikTok'
+  };
+  return names[provider] || provider;
+}
+
+function showAccountLinking() {
+  const accountLinkingDiv = document.getElementById('account-linking');
+  if (accountLinkingDiv) {
+    accountLinkingDiv.style.display = 'block';
+    accountLinkingDiv.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+// Handle OAuth success
+async function handleOAuthSuccess(token, refreshToken = null) {
+  try {
+    // Decode token to get user info
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const userId = payload.user.id;
+    
+    // Store tokens using the new token management system
+    if (window.tokenManager && refreshToken) {
+      window.tokenManager.saveTokens(token, refreshToken);
+    } else {
+      // Fallback to old method
+      localStorage.setItem('authToken', token);
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+    }
+    
+    // Store user data
+    localStorage.setItem('user', JSON.stringify(payload.user));
+    localStorage.setItem('userData', JSON.stringify(payload.user)); // For navbar compatibility
+    
+    // Update navbar if it exists
+    if (window.globalNavbar) {
+      window.globalNavbar.updateAuthStatus();
+    }
+    
+    setMessage('OAuth login successful! Loading account options...', true);
+    
+    // Load user's authentication methods
+    await loadUserAuthMethods(userId);
+    
+    // Show account linking section
+    showAccountLinking();
+    
+    // Check if user needs username setup
+    if (payload.user.needsUsernameSetup) {
+      setTimeout(() => {
+        window.location.href = '/setup-username.html';
+      }, 2000);
+    } else {
+      // Redirect after showing account options
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 3000);
+    }
+  } catch (error) {
+    console.error('OAuth success handling error:', error);
+    setMessage('OAuth login successful but failed to load account options.', false);
+  }
+}
+
+// Link OAuth account
+window.linkOAuthAccount = async function(provider) {
+  const button = document.getElementById(`link-${provider}`);
+  if (!button) return;
+  
+  const originalText = button.innerHTML;
+  
+  button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Linking...';
+  button.disabled = true;
+  
+  try {
+    // Redirect to OAuth provider
+    window.location.href = `/api/auth/${provider}`;
+  } catch (error) {
+    console.error(`Error linking ${provider}:`, error);
+    button.innerHTML = originalText;
+    button.disabled = false;
+    setMessage(`Failed to link ${provider} account`, false);
+  }
+};

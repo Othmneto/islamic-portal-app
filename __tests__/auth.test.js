@@ -55,7 +55,7 @@ describe('Authentication API', () => {
             const newUser = {
                 email: 'test@example.com',
                 username: 'testuser',
-                password: 'Password123',
+                password: 'Password123!@#',
             };
 
             const res = await request(app)
@@ -63,8 +63,8 @@ describe('Authentication API', () => {
                 .send(newUser);
 
             expect(res.statusCode).toEqual(201);
-            expect(res.body).toHaveProperty('token');
-            expect(res.body.msg).toBe('Registration successful');
+            expect(res.body.msg).toBe('Registration successful! Please check your email to verify your account.');
+            expect(res.body.requiresVerification).toBe(true);
 
             const userInDb = await User.findOne({ email: 'test@example.com' });
             expect(userInDb).not.toBeNull();
@@ -72,7 +72,7 @@ describe('Authentication API', () => {
         });
 
         it('should return a 400 error if the user already exists', async () => {
-            const existingUser = new User({ email: 'existing@example.com', password: 'Password123', username: 'existinguser' });
+            const existingUser = new User({ email: 'existing@example.com', password: 'Password123!@#', username: 'existinguser' });
             await existingUser.save();
 
             const res = await request(app)
@@ -80,7 +80,7 @@ describe('Authentication API', () => {
                 .send({
                     email: 'existing@example.com',
                     username: 'anotheruser',
-                    password: 'Password456',
+                    password: 'Password456!@#',
                 });
 
             expect(res.statusCode).toEqual(400);
@@ -93,7 +93,7 @@ describe('Authentication API', () => {
                 .send({
                     email: 'not-an-email',
                     username: 'testuser',
-                    password: 'Password123',
+                    password: 'Password123!@#',
                 });
 
             expect(res.statusCode).toEqual(400);
@@ -110,7 +110,8 @@ describe('Authentication API', () => {
             const user = new User({
                 email: 'loginuser@example.com',
                 username: 'loginuser',
-                password: 'Password123',
+                password: 'Password123!@#',
+                isVerified: true, // Mark as verified for login tests
             });
             await user.save();
         });
@@ -120,7 +121,7 @@ describe('Authentication API', () => {
                 .post('/api/auth/login')
                 .send({
                     email: 'loginuser@example.com',
-                    password: 'Password123', // Correct password
+                    password: 'Password123!@#', // Correct password
                 });
 
             expect(res.statusCode).toEqual(200);
@@ -133,7 +134,7 @@ describe('Authentication API', () => {
                 .post('/api/auth/login')
                 .send({
                     email: 'nouser@example.com',
-                    password: 'Password123',
+                    password: 'Password123!@#',
                 });
 
             expect(res.statusCode).toEqual(400);
@@ -145,7 +146,7 @@ describe('Authentication API', () => {
                 .post('/api/auth/login')
                 .send({
                     email: 'loginuser@example.com',
-                    password: 'WrongPassword', // Incorrect password
+                    password: 'WrongPassword!@#', // Incorrect password
                 });
 
             expect(res.statusCode).toEqual(400);

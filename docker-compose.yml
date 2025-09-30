@@ -12,9 +12,7 @@ services:
       - NODE_ENV=development
       - MONGO_URI=mongodb://mongo:27017/translatorDB
       # --- IMPORTANT ---
-      # This now points to your host machine, where your Redis container is running
-      - REDIS_HOST=host.docker.internal
-      - REDIS_PORT=6379
+      # Redis removed - using in-memory solution with NVMe persistence
       - JWT_SECRET=your_super_strong_jwt_secret_for_dev
       - SESSION_SECRET=your_super_strong_session_secret_for_dev
       - CORS_ORIGINS=https://localhost
@@ -36,6 +34,8 @@ services:
   # MongoDB Database
   mongo:
     image: mongo:latest
+    ports:
+      - "27017:27017"
     volumes:
       - mongo-data:/data/db
 

@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two-Factor Authentication Setup - Islamic Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-navbar.css">
+    <!-- CSS is embedded in the page -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            padding-top: 80px; /* Account for fixed navbar */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+        
+        .mfa-setup {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .mfa-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .mfa-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .mfa-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            display: none;
+        }
+
+        .step.active {
+            display: block;
+        }
+
+        .step-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            line-height: 40px;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-description {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .qr-code {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .qr-code img {
+            max-width: 200px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .manual-key {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1rem 0;
+            font-family: monospace;
+            word-break: break-all;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .verification-code {
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .code-input {
+            width: 200px;
+            padding: 1rem;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .code-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(79, 172, 254, 0.4);
+        }
+
+        .backup-codes {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .backup-codes h4 {
+            margin-bottom: 1rem;
+            color: #ff6b6b;
+        }
+
+        .backup-code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem;
+            margin: 0.25rem;
+            border-radius: 5px;
+            font-family: monospace;
+            display: inline-block;
+            min-width: 100px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            transition: width 0.3s ease;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .notification.error {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .app-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .app-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .app-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .app-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .app-description {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Navbar -->
+    <header class="global-navbar">
+        <nav class="navbar-container">
+            <!-- Logo Section -->
+            <div class="navbar-brand">
+                <a href="/" class="brand-logo">
+                    <i class="fas fa-mosque brand-icon"></i>
+                    <span class="brand-text">Islamic Portal</span>
+                </a>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="navbar-nav">
+                <ul class="nav-menu">
+                    <!-- Core Features -->
+                    <li class="nav-item">
+                        <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+                            <i class="fas fa-language"></i>
+                            <span class="nav-text">Translator</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+                            <i class="fas fa-mosque"></i>
+                            <span class="nav-text">Prayer Times</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+                            <i class="fas fa-compass"></i>
+                            <span class="nav-text">Qibla</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+                            <i class="fas fa-moon"></i>
+                            <span class="nav-text">Moon</span>
+                        </a>
+                    </li>
+
+                    <!-- Islamic Content -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+                            <i class="fas fa-book-open"></i>
+                            <span class="nav-text">Content</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/explorer.html" class="dropdown-link">
+                                <i class="fas fa-search"></i> Quran Explorer
+                            </a></li>
+                            <li><a href="/duas.html" class="dropdown-link">
+                                <i class="fas fa-hands-praying"></i> Daily Duas
+                            </a></li>
+                            <li><a href="/names.html" class="dropdown-link">
+                                <i class="fas fa-star"></i> 99 Names
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Tools -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+                            <i class="fas fa-tools"></i>
+                            <span class="nav-text">Tools</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/zakat.html" class="dropdown-link">
+                                <i class="fas fa-coins"></i> Zakat Calculator
+                            </a></li>
+                            <li><a href="/converter.html" class="dropdown-link">
+                                <i class="fas fa-calendar-alt"></i> Date Converter
+                            </a></li>
+                            <li><a href="/calendar.html" class="dropdown-link">
+                                <i class="fas fa-calendar"></i> Islamic Calendar
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Analytics & History -->
+                    <li class="nav-item">
+                        <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+                            <i class="fas fa-history"></i>
+                            <span class="nav-text">History</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="navbar-controls">
+                <!-- Search -->
+                <div class="search-container">
+                    <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="search-dropdown">
+                        <input type="text" placeholder="Search..." class="search-input" id="global-search">
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="notification-container">
+                    <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">
+                            <h4>Notifications</h4>
+                            <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+                        </div>
+                        <div class="notification-list" id="notification-list">
+                            <div class="notification-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu-container">
+                    <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="user-name">Guest</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="user-info">
+                            <div class="user-avatar-large" id="user-avatar-large">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name-large" id="user-name-large">Guest User</div>
+                                <div class="user-email" id="user-email">guest@example.com</div>
+                            </div>
+                        </div>
+                        <div class="user-menu-divider"></div>
+                        <ul class="user-menu-list">
+                            <li><a href="/profile.html" class="user-menu-link">
+                                <i class="fas fa-user"></i> Profile
+                            </a></li>
+                            <li><a href="/settings.html" class="user-menu-link">
+                                <i class="fas fa-cog"></i> Settings
+                            </a></li>
+                            <li><a href="/security-dashboard.html" class="user-menu-link">
+                                <i class="fas fa-shield-alt"></i> Security
+                            </a></li>
+                            <li class="user-menu-divider"></li>
+                            <li><a href="/login.html" class="user-menu-link" id="login-link">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a></li>
+                            <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+                        <i class="fas fa-sun theme-icon-light"></i>
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Overlay -->
+        <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+            <div class="mobile-nav-content">
+                <div class="mobile-nav-header">
+                    <div class="mobile-nav-brand">
+                        <i class="fas fa-mosque"></i>
+                        <span>Islamic Portal</span>
+                    </div>
+                    <button class="mobile-nav-close" id="mobile-nav-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mobile-nav-body">
+                    <!-- Mobile navigation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="mfa-setup">
+        <div class="mfa-header">
+            <h1><i class="fas fa-shield-alt"></i> Two-Factor Authentication</h1>
+            <p>Add an extra layer of security to your account</p>
+        </div>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 33.33%"></div>
+        </div>
+
+        <!-- Step 1: Choose Method -->
+        <div class="step active" id="step1">
+            <div class="mfa-card">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <h3 class="step-title">Choose Authentication Method</h3>
+                    <p class="step-description">Select how you want to receive your verification codes</p>
+                </div>
+
+                <div class="app-list">
+                    <div class="app-item" onclick="selectMethod('totp')">
+                        <div class="app-icon"><i class="fas fa-mobile-alt"></i></div>
+                        <div class="app-name">Authenticator App</div>
+                        <div class="app-description">Use Google Authenticator, Authy, or similar apps</div>
+                    </div>
+                    <div class="app-item" onclick="selectMethod('email')">
+                        <div class="app-icon"><i class="fas fa-envelope"></i></div>
+                        <div class="app-name">Email</div>
+                        <div class="app-description">Receive codes via email</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="nextStep()" id="nextBtn1" disabled>
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Setup TOTP -->
+        <div class="step" id="step2">
+            <div class="mfa-card">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <h3 class="step-title">Setup Authenticator App</h3>
+                    <p class="step-description">Scan the QR code with your authenticator app</p>
+                </div>
+
+                <div class="loading" id="loading2">
+                    <div class="spinner"></div>
+                    <p>Generating QR code...</p>
+                </div>
+
+                <div id="totpSetup" style="display: none;">
+                    <div class="qr-code">
+                        <img id="qrCodeImage" src="" alt="QR Code">
+                    </div>
+
+                    <div class="manual-key">
+                        <p><strong>Manual Entry Key:</strong></p>
+                        <p id="manualKey"></p>
+                    </div>
+
+                    <div style="text-align: center; margin: 2rem 0;">
+                        <h4>Recommended Apps:</h4>
+                        <div class="app-list">
+                            <div class="app-item">
+                                <div class="app-icon"><i class="fab fa-google"></i></div>
+                                <div class="app-name">Google Authenticator</div>
+                            </div>
+                            <div class="app-item">
+                                <div class="app-icon"><i class="fas fa-shield-alt"></i></div>
+                                <div class="app-name">Authy</div>
+                            </div>
+                            <div class="app-item">
+                                <div class="app-icon"><i class="fas fa-mobile-alt"></i></div>
+                                <div class="app-name">Microsoft Authenticator</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 2rem;">
+                        <button class="btn btn-secondary" onclick="prevStep()">
+                            <i class="fas fa-arrow-left"></i> Back
+                        </button>
+                        <button class="btn btn-primary" onclick="nextStep()">
+                            Next <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Verify Code -->
+        <div class="step" id="step3">
+            <div class="mfa-card">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <h3 class="step-title">Verify Setup</h3>
+                    <p class="step-description">Enter the verification code from your app</p>
+                </div>
+
+                <div class="verification-code">
+                    <input type="text" class="code-input" id="verificationCode" placeholder="000000" maxlength="8">
+                    <p style="margin-top: 1rem; color: rgba(255, 255, 255, 0.7);">
+                        Enter the 6-digit or 8-digit code from your authenticator app
+                    </p>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-secondary" onclick="prevStep()">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </button>
+                    <button class="btn btn-success" onclick="verifyCode()">
+                        <i class="fas fa-check"></i> Verify & Enable
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Backup Codes -->
+        <div class="step" id="step4">
+            <div class="mfa-card">
+                <div class="step-header">
+                    <div class="step-number">4</div>
+                    <h3 class="step-title">Save Backup Codes</h3>
+                    <p class="step-description">Keep these codes safe in case you lose your device</p>
+                </div>
+
+                <div class="backup-codes">
+                    <h4><i class="fas fa-exclamation-triangle"></i> Important: Save These Codes</h4>
+                    <p>These codes can be used to access your account if you lose your authenticator device. Each code can only be used once.</p>
+                    <div id="backupCodesList"></div>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="downloadBackupCodes()">
+                        <i class="fas fa-download"></i> Download Codes
+                    </button>
+                    <button class="btn btn-success" onclick="finishSetup()">
+                        <i class="fas fa-check"></i> Finish Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Step -->
+        <div class="step" id="step5">
+            <div class="mfa-card">
+                <div class="step-header">
+                    <div class="step-number"><i class="fas fa-check"></i></div>
+                    <h3 class="step-title">Two-Factor Authentication Enabled!</h3>
+                    <p class="step-description">Your account is now protected with 2FA</p>
+                </div>
+
+                <div style="text-align: center; margin: 2rem 0;">
+                    <div style="font-size: 4rem; color: #4facfe; margin-bottom: 1rem;">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <p>You'll now be asked for a verification code when signing in from new devices.</p>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn btn-primary" onclick="goToAccountManagement()">
+                        <i class="fas fa-user-cog"></i> Account Management
+                    </button>
+                    <button class="btn btn-secondary" onclick="goHome()">
+                        <i class="fas fa-home"></i> Home
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        let currentStep = 1;
+        let selectedMethod = null;
+        let totpSecret = null;
+        let backupCodes = [];
+
+        // Initialize MFA setup
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔐 [MFA Setup] Page loaded, initializing...');
+            
+            // Check if user is authenticated
+            const authToken = localStorage.getItem('authToken');
+            console.log('🔑 [MFA Setup] Auth token check:', authToken ? 'Found' : 'Not found');
+            
+            if (!authToken) {
+                console.log('❌ [MFA Setup] No auth token, redirecting to login');
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            console.log('✅ [MFA Setup] User authenticated, page ready');
+            
+            // Test click event listeners and override onclick
+            const appItems = document.querySelectorAll('.app-item');
+            console.log('🔐 [MFA Setup] Found app items:', appItems.length);
+            appItems.forEach((item, index) => {
+                console.log(`🔐 [MFA Setup] App item ${index}:`, item);
+                
+                // Remove onclick and add event listener
+                const onclickAttr = item.getAttribute('onclick');
+                if (onclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing onclick: ${onclickAttr}`);
+                    item.removeAttribute('onclick');
+                }
+                
+                item.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] App item clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] App item onclick was:', onclickAttr);
+                    
+                    // Extract method from the original onclick
+                    if (onclickAttr && onclickAttr.includes('selectMethod')) {
+                        const methodMatch = onclickAttr.match(/selectMethod\('(\w+)'\)/);
+                        if (methodMatch) {
+                            const method = methodMatch[1];
+                            console.log('🔐 [MFA Setup] Calling selectMethod with:', method);
+                            selectMethod(method);
+                        }
+                    }
+                });
+            });
+            
+            const nextBtn = document.getElementById('nextBtn1');
+            console.log('🔐 [MFA Setup] Next button found:', nextBtn);
+            if (nextBtn) {
+                // Remove onclick and add event listener
+                const onclickAttr = nextBtn.getAttribute('onclick');
+                if (onclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing next button onclick: ${onclickAttr}`);
+                    nextBtn.removeAttribute('onclick');
+                }
+                
+                nextBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Next button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling nextStep');
+                    nextStep();
+                });
+            }
+            
+            // Setup Verify & Enable button event listener
+            const verifyBtn = document.querySelector('button[onclick="verifyCode()"]');
+            console.log('🔐 [MFA Setup] Verify button found:', verifyBtn);
+            if (verifyBtn) {
+                // Remove onclick and add event listener
+                const verifyOnclickAttr = verifyBtn.getAttribute('onclick');
+                if (verifyOnclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing verify button onclick: ${verifyOnclickAttr}`);
+                    verifyBtn.removeAttribute('onclick');
+                }
+                
+                verifyBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Verify button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling verifyCode');
+                    verifyCode();
+                });
+            }
+            
+            // Setup Back button event listener
+            const backBtn = document.querySelector('button[onclick="prevStep()"]');
+            console.log('🔐 [MFA Setup] Back button found:', backBtn);
+            if (backBtn) {
+                // Remove onclick and add event listener
+                const backOnclickAttr = backBtn.getAttribute('onclick');
+                if (backOnclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing back button onclick: ${backOnclickAttr}`);
+                    backBtn.removeAttribute('onclick');
+                }
+                
+                backBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Back button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling prevStep');
+                    prevStep();
+                });
+            }
+            
+            // Setup Download Backup Codes button event listener
+            const downloadBtn = document.querySelector('button[onclick="downloadBackupCodes()"]');
+            console.log('🔐 [MFA Setup] Download button found:', downloadBtn);
+            if (downloadBtn) {
+                const downloadOnclickAttr = downloadBtn.getAttribute('onclick');
+                if (downloadOnclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing download button onclick: ${downloadOnclickAttr}`);
+                    downloadBtn.removeAttribute('onclick');
+                }
+                
+                downloadBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Download button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling downloadBackupCodes');
+                    downloadBackupCodes();
+                });
+            }
+            
+            // Setup Finish Setup button event listener
+            const finishBtn = document.querySelector('button[onclick="finishSetup()"]');
+            console.log('🔐 [MFA Setup] Finish button found:', finishBtn);
+            if (finishBtn) {
+                const finishOnclickAttr = finishBtn.getAttribute('onclick');
+                if (finishOnclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing finish button onclick: ${finishOnclickAttr}`);
+                    finishBtn.removeAttribute('onclick');
+                }
+                
+                finishBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Finish button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling finishSetup');
+                    finishSetup();
+                });
+            }
+            
+            // Setup Account Management button event listener
+            const accountBtn = document.querySelector('button[onclick="goToAccountManagement()"]');
+            console.log('🔐 [MFA Setup] Account Management button found:', accountBtn);
+            if (accountBtn) {
+                const accountOnclickAttr = accountBtn.getAttribute('onclick');
+                if (accountOnclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing account button onclick: ${accountOnclickAttr}`);
+                    accountBtn.removeAttribute('onclick');
+                }
+                
+                accountBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Account Management button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling goToAccountManagement');
+                    goToAccountManagement();
+                });
+            }
+            
+            // Setup Home button event listener
+            const homeBtn = document.querySelector('button[onclick="goHome()"]');
+            console.log('🔐 [MFA Setup] Home button found:', homeBtn);
+            if (homeBtn) {
+                const homeOnclickAttr = homeBtn.getAttribute('onclick');
+                if (homeOnclickAttr) {
+                    console.log(`🔐 [MFA Setup] Removing home button onclick: ${homeOnclickAttr}`);
+                    homeBtn.removeAttribute('onclick');
+                }
+                
+                homeBtn.addEventListener('click', function(e) {
+                    console.log('🔐 [MFA Setup] Home button clicked via event listener:', e.target);
+                    console.log('🔐 [MFA Setup] Calling goHome');
+                    goHome();
+                });
+            }
+            
+            // Setup any remaining Next buttons
+            const nextButtons = document.querySelectorAll('button[onclick="nextStep()"]');
+            console.log('🔐 [MFA Setup] Found next buttons:', nextButtons.length);
+            nextButtons.forEach((btn, index) => {
+                if (btn.id !== 'nextBtn1') { // Skip the one we already handled
+                    const nextOnclickAttr = btn.getAttribute('onclick');
+                    if (nextOnclickAttr) {
+                        console.log(`🔐 [MFA Setup] Removing next button ${index} onclick: ${nextOnclickAttr}`);
+                        btn.removeAttribute('onclick');
+                    }
+                    
+                    btn.addEventListener('click', function(e) {
+                        console.log(`🔐 [MFA Setup] Next button ${index} clicked via event listener:`, e.target);
+                        console.log('🔐 [MFA Setup] Calling nextStep');
+                        nextStep();
+                    });
+                }
+            });
+        });
+
+        // Select authentication method
+        window.selectMethod = function(method) {
+            console.log('🔐 [MFA Setup] Method selected:', method);
+            
+            selectedMethod = method;
+            
+            // Update UI - reset all items
+            document.querySelectorAll('.app-item').forEach(item => {
+                item.style.background = 'rgba(255, 255, 255, 0.05)';
+                console.log('🔐 [MFA Setup] Reset background for:', item);
+            });
+            
+            // Find and highlight the selected item based on method
+            let selectedItem = null;
+            if (method === 'totp') {
+                selectedItem = document.querySelector('.app-item[onclick*="selectMethod(\'totp\')"]') || 
+                              document.querySelector('.app-item:first-child');
+            } else if (method === 'email') {
+                selectedItem = document.querySelector('.app-item[onclick*="selectMethod(\'email\')"]') || 
+                              document.querySelector('.app-item:nth-child(2)');
+            }
+            
+            console.log('🔐 [MFA Setup] Selected item:', selectedItem);
+            if (selectedItem) {
+                selectedItem.style.background = 'rgba(102, 126, 234, 0.2)';
+                console.log('🔐 [MFA Setup] Set selected background for:', selectedItem);
+            } else {
+                console.error('❌ [MFA Setup] Could not find selected item!');
+            }
+            
+            // Enable next button
+            const nextBtn = document.getElementById('nextBtn1');
+            console.log('🔐 [MFA Setup] Next button element:', nextBtn);
+            if (nextBtn) {
+                nextBtn.disabled = false;
+                console.log('✅ [MFA Setup] Next button enabled');
+            } else {
+                console.error('❌ [MFA Setup] Next button not found');
+            }
+        }
+
+        // Next step
+        window.nextStep = function() {
+            console.log('🔐 [MFA Setup] nextStep called');
+            console.log('🔐 [MFA Setup] Current step:', currentStep);
+            console.log('🔐 [MFA Setup] Selected method:', selectedMethod);
+            
+            if (currentStep < 5) {
+                // Hide current step
+                const currentStepElement = document.getElementById(`step${currentStep}`);
+                console.log('🔐 [MFA Setup] Current step element:', currentStepElement);
+                if (currentStepElement) {
+                    currentStepElement.classList.remove('active');
+                    console.log('🔐 [MFA Setup] Removed active class from step', currentStep);
+                }
+                
+                currentStep++;
+                console.log('🔐 [MFA Setup] Moved to step:', currentStep);
+                
+                // Show next step
+                const nextStepElement = document.getElementById(`step${currentStep}`);
+                console.log('🔐 [MFA Setup] Next step element:', nextStepElement);
+                if (nextStepElement) {
+                    nextStepElement.classList.add('active');
+                    console.log('🔐 [MFA Setup] Added active class to step', currentStep);
+                } else {
+                    console.error('❌ [MFA Setup] Next step element not found for step', currentStep);
+                }
+                
+                // Update progress bar
+                updateProgressBar();
+                
+                // Handle step-specific logic
+                if (currentStep === 2 && selectedMethod === 'totp') {
+                    console.log('🔐 [MFA Setup] Setting up TOTP');
+                    setupTOTP();
+                } else if (currentStep === 2 && selectedMethod === 'email') {
+                    console.log('🔐 [MFA Setup] Setting up Email');
+                    setupEmail();
+                }
+            } else {
+                console.log('🔐 [MFA Setup] Already at final step');
+            }
+        }
+
+        // Previous step
+        window.prevStep = function() {
+            if (currentStep > 1) {
+                // Hide current step
+                document.getElementById(`step${currentStep}`).classList.remove('active');
+                
+                currentStep--;
+                
+                // Show previous step
+                document.getElementById(`step${currentStep}`).classList.add('active');
+                
+                // Update progress bar
+                updateProgressBar();
+            }
+        }
+
+        // Update progress bar
+        function updateProgressBar() {
+            const progress = (currentStep / 5) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        // Setup TOTP
+        async function setupTOTP() {
+            try {
+                showLoading(2, true);
+                
+                const response = await fetch('/api/mfa/totp/generate', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    totpSecret = data.secret;
+                    
+                    document.getElementById('qrCodeImage').src = data.qrCodeImage;
+                    document.getElementById('manualKey').textContent = data.secret;
+                    
+                    showLoading(2, false);
+                    document.getElementById('totpSetup').style.display = 'block';
+                } else {
+                    throw new Error('Failed to generate TOTP secret');
+                }
+            } catch (error) {
+                console.error('Error setting up TOTP:', error);
+                showNotification('Failed to setup TOTP', 'error');
+                showLoading(2, false);
+            }
+        }
+
+        // Setup Email MFA
+        async function setupEmail() {
+            try {
+                const response = await fetch('/api/mfa/email/send-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📧 [MFA Setup] Email response:', data);
+                    
+                    // Show verification code in development mode
+                    if (data.code) {
+                        console.log(`🔑 [MFA Setup] VERIFICATION CODE: ${data.code}`);
+                        showNotification(`Verification code sent! Code: ${data.code}`, 'success');
+                    } else {
+                        showNotification('Verification code sent to your email! Check your inbox.', 'success');
+                    }
+                    
+                    // Skip to verification step
+                    currentStep = 3;
+                    document.getElementById('step2').classList.remove('active');
+                    document.getElementById('step3').classList.add('active');
+                    updateProgressBar();
+                } else {
+                    throw new Error('Failed to send email code');
+                }
+            } catch (error) {
+                console.error('Error setting up email MFA:', error);
+                showNotification('Failed to send verification code', 'error');
+            }
+        }
+
+        // Verify code
+        window.verifyCode = async function() {
+            console.log('🔐 [MFA Setup] verifyCode called');
+            const code = document.getElementById('verificationCode').value;
+            console.log('🔐 [MFA Setup] Code entered:', code);
+            console.log('🔐 [MFA Setup] Selected method:', selectedMethod);
+            
+            if (!code) {
+                console.log('❌ [MFA Setup] No code entered');
+                showNotification('Please enter a verification code', 'error');
+                return;
+            }
+
+            // Check if code is numeric
+            if (!/^\d+$/.test(code)) {
+                console.log('❌ [MFA Setup] Code contains non-numeric characters');
+                showNotification('Please enter a numeric code only', 'error');
+                return;
+            }
+
+            // Check code length (accept both 6 and 8 digit codes)
+            if (code.length !== 6 && code.length !== 8) {
+                console.log('❌ [MFA Setup] Invalid code length:', code.length);
+                showNotification('Please enter a 6-digit or 8-digit code', 'error');
+                return;
+            }
+
+            // If 8-digit code, try using last 6 digits
+            let codeToUse = code;
+            if (code.length === 8) {
+                console.log('🔐 [MFA Setup] 8-digit code detected, using last 6 digits');
+                codeToUse = code.substring(2); // Take last 6 digits
+                showNotification('Using last 6 digits of 8-digit code', 'info');
+            }
+
+            try {
+                const endpoint = selectedMethod === 'totp' ? '/api/mfa/totp/verify' : '/api/mfa/email/verify';
+                console.log('🔐 [MFA Setup] Using endpoint:', endpoint);
+                
+                // Prepare request body based on method
+                let requestBody;
+                if (selectedMethod === 'totp') {
+                    requestBody = { token: codeToUse };
+                    if (totpSecret) {
+                        requestBody.secret = totpSecret;
+                        console.log('🔐 [MFA Setup] Including secret for TOTP verification');
+                    }
+                } else {
+                    requestBody = { code: codeToUse };
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                console.log('🔐 [MFA Setup] Response status:', response.status);
+                console.log('🔐 [MFA Setup] Response ok:', response.ok);
+
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ [MFA Setup] Verification successful:', result);
+                    
+                    if (selectedMethod === 'totp') {
+                        // Enable TOTP
+                        await enableTOTP(code);
+                    } else {
+                        // Enable Email MFA
+                        await enableEmailMFA();
+                    }
+                } else {
+                    const error = await response.json();
+                    console.error('❌ [MFA Setup] Verification failed:', error);
+                    throw new Error(error.message || 'Invalid verification code');
+                }
+            } catch (error) {
+                console.error('❌ [MFA Setup] Error verifying code:', error);
+                showNotification(error.message || 'Failed to verify code', 'error');
+            }
+        }
+
+        // Enable TOTP
+        async function enableTOTP(code) {
+            try {
+                console.log('🔐 [MFA Setup] Enabling TOTP with code:', code);
+                console.log('🔐 [MFA Setup] Using secret:', totpSecret ? 'Available' : 'Not available');
+                
+                const response = await fetch('/api/mfa/totp/enable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    },
+                    body: JSON.stringify({ 
+                        token: code,
+                        secret: totpSecret
+                    })
+                });
+
+                if (response.ok) {
+                    // Generate backup codes
+                    await generateBackupCodes();
+                } else {
+                    throw new Error('Failed to enable TOTP');
+                }
+            } catch (error) {
+                console.error('Error enabling TOTP:', error);
+                showNotification('Failed to enable TOTP', 'error');
+            }
+        }
+
+        // Enable Email MFA
+        async function enableEmailMFA() {
+            try {
+                const response = await fetch('/api/mfa/email/enable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    showNotification('Email MFA enabled successfully', 'success');
+                    // Skip to success step
+                    currentStep = 5;
+                    document.getElementById('step3').classList.remove('active');
+                    document.getElementById('step5').classList.add('active');
+                    updateProgressBar();
+                } else {
+                    throw new Error('Failed to enable email MFA');
+                }
+            } catch (error) {
+                console.error('Error enabling email MFA:', error);
+                showNotification('Failed to enable email MFA', 'error');
+            }
+        }
+
+        // Generate backup codes
+        async function generateBackupCodes() {
+            try {
+                const response = await fetch('/api/mfa/backup-codes/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    backupCodes = data.codes;
+                    displayBackupCodes();
+                    
+                    // Move to backup codes step
+                    currentStep = 4;
+                    document.getElementById('step3').classList.remove('active');
+                    document.getElementById('step4').classList.add('active');
+                    updateProgressBar();
+                } else {
+                    throw new Error('Failed to generate backup codes');
+                }
+            } catch (error) {
+                console.error('Error generating backup codes:', error);
+                showNotification('Failed to generate backup codes', 'error');
+            }
+        }
+
+        // Display backup codes
+        function displayBackupCodes() {
+            const codesList = document.getElementById('backupCodesList');
+            codesList.innerHTML = '';
+            
+            backupCodes.forEach(code => {
+                const codeElement = document.createElement('div');
+                codeElement.className = 'backup-code';
+                codeElement.textContent = code;
+                codesList.appendChild(codeElement);
+            });
+        }
+
+        // Download backup codes
+        window.downloadBackupCodes = function() {
+            const codesText = backupCodes.join('\n');
+            const blob = new Blob([codesText], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'backup-codes.txt';
+            link.click();
+            URL.revokeObjectURL(url);
+            showNotification('Backup codes downloaded', 'success');
+        }
+
+        // Finish setup
+        window.finishSetup = function() {
+            currentStep = 5;
+            document.getElementById('step4').classList.remove('active');
+            document.getElementById('step5').classList.add('active');
+            updateProgressBar();
+        }
+
+        // Go to account management
+        window.goToAccountManagement = function() {
+            window.location.href = '/account-management.html';
+        }
+
+        // Go home
+        window.goHome = function() {
+            window.location.href = '/';
+        }
+
+        // Show/hide loading
+        function showLoading(step, show) {
+            const loading = document.getElementById(`loading${step}`);
+            if (loading) {
+                loading.style.display = show ? 'block' : 'none';
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+    <!-- Global Navbar JavaScript -->
+    <script src="/js/global-navbar.js"></script>
+</body>
+</html>

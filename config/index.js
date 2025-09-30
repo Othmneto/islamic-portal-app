@@ -25,10 +25,7 @@ const envSchema = z.object({
   VAPID_PRIVATE_KEY: z.string().optional(),
   VAPID_SUBJECT: z.string().optional(),
 
-  // Redis (optional, for BullMQ)
-  REDIS_HOST: z.string().optional(),
-  REDIS_PORT: z.coerce.number().optional(),
-  REDIS_URL: z.string().optional(),
+  // Redis removed - using in-memory solution with NVMe persistence
   NOTIFICATION_QUEUE_NAME: z.string().optional(),
 
   // AI model endpoint (optional)

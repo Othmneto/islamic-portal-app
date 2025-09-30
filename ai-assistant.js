@@ -120,7 +120,7 @@ async function handleUserQuery(question, sessionId) {
 
     // First API call to see if the model wants to use a tool
     const firstResponse = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-5',
         messages: messages,
         tools: tools,
         tool_choice: 'auto',
@@ -139,7 +139,7 @@ async function handleUserQuery(question, sessionId) {
 
         // Second API call to get a final summary from the model based on tool results
         const finalResponse = await openai.chat.completions.create({
-            model: 'gpt-4',
+            model: 'gpt-5',
             messages: messages,
         });
 

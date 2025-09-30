@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { env } = require('../config');
 const User = require('../models/User');
+const unifiedAuthService = require('../services/unifiedAuthService');
 
 const router = express.Router();
 
@@ -201,58 +202,55 @@ router.get('/callback', async (req, res) => {
     }
     
     console.log('✅ Microsoft OAuth: Email found:', email);
-    console.log('🔄 Microsoft OAuth: Creating/updating user in database');
+    console.log('🔄 Microsoft OAuth: Creating/updating user with unified service');
     
-    let user = await User.findOneAndUpdate(
-      { email },
-      {
-        $set: {
-          microsoftId: profile.sub || profile.id,
-          isVerified: true,
-          authProvider: 'microsoft',
-        },
-        $setOnInsert: {
-          email,
-          // Username will be required - user will be redirected to setup page
-        },
-      },
-      {
-        new: true,
-        upsert: true,
-        runValidators: false, // Skip validation for now, will handle username requirement separately
-        setDefaultsOnInsert: true,
-        context: 'query',
-      }
-    );
+    // Create or update user directly
+    const user = await unifiedAuthService.createOrUpdateUserFromOAuth(profile, 'microsoft', req.ip, req.get('User-Agent'));
     
     console.log('✅ Microsoft OAuth: User created/updated:', {
-      userId: user.id,
+      userId: user._id,
       email: user.email,
       username: user.username,
-      microsoftId: user.microsoftId,
       authProvider: user.authProvider
     });
     
     // Generate JWT token
-    console.log('🔄 Microsoft OAuth: Generating JWT token');
-    const payload = { user: { id: user.id } };
-    const token = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });
-    console.log('✅ Microsoft OAuth: JWT token generated for user:', user.id, 'email:', user.email);
+    const payload = { user: { id: user._id } };
     
-    // Verify the token was created correctly
-    try {
-      const decoded = jwt.verify(token, env.JWT_SECRET);
-      console.log('🔍 Microsoft OAuth: Token verification test - decoded payload:', decoded);
-    } catch (err) {
-      console.error('❌ Microsoft OAuth: Token verification failed:', err);
-    }
-    
-    // Redirect to success page
-    const redirectBase = process.env.OAUTH_REDIRECT_URL || 'http://localhost:3000/authCallback.html';
-    const redirectUrl = `${redirectBase}?token=${encodeURIComponent(token)}`;
-    
-    console.log('🎉 Microsoft OAuth: Redirecting to success:', redirectUrl);
-    res.redirect(redirectUrl);
+    jwt.sign(
+      payload,
+      env.JWT_SECRET,
+      { expiresIn: '1h' },
+      (err, token) => {
+        if (err) {
+          console.error('❌ Microsoft OAuth: Token generation failed:', err);
+          return res.status(500).json({
+            success: false,
+            error: {
+              code: 'INTERNAL_SERVER_ERROR',
+              message: 'Microsoft OAuth token generation failed'
+            }
+          });
+        }
+        
+        console.log('✅ Microsoft OAuth: JWT token generated for user:', user._id, 'email:', user.email);
+        
+        // Verify the token was created correctly
+        try {
+          const decoded = jwt.verify(token, env.JWT_SECRET);
+          console.log('🔍 Microsoft OAuth: Token verification test - decoded payload:', decoded);
+        } catch (err) {
+          console.error('❌ Microsoft OAuth: Token verification failed:', err);
+        }
+        
+        // Redirect to success page
+        const redirectBase = process.env.OAUTH_REDIRECT_URL || 'http://localhost:3000/authCallback.html';
+        const redirectUrl = `${redirectBase}?token=${encodeURIComponent(token)}`;
+        
+        console.log('🎉 Microsoft OAuth: Redirecting to success:', redirectUrl);
+        res.redirect(redirectUrl);
+      }
+    );
     
   } catch (error) {
     console.error('❌ Microsoft OAuth: Error processing callback');

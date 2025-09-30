@@ -11,6 +11,7 @@ export class PrayerTimesNotifications {
     console.log("[Notifications] Initializing PrayerTimesNotifications");
     this.core = core;
     this.api = api;
+    this.initializationComplete = false;
   }
 
   // Base64 to Uint8Array conversion
@@ -111,8 +112,16 @@ export class PrayerTimesNotifications {
 
   // Send subscription to server
   async sendSubscriptionToServer(enabled) {
+    console.log("[Notifications] Sending subscription to server, enabled:", enabled);
     const prefs = this.getPreferences(enabled);
     const token = this.api.getAuthToken();
+    
+    if (!token) {
+      console.warn("[Notifications] No auth token available for subscription");
+      throw new Error("Authentication required");
+    }
+    
+    console.log("[Notifications] Auth token available, getting CSRF...");
     const csrf =
       this.api.getCsrf() ||
       (await fetch("/api/auth/csrf", { credentials: "include" })
@@ -134,20 +143,34 @@ export class PrayerTimesNotifications {
         : null,
     };
 
+    console.log("[Notifications] Sending subscription request with body:", {
+      hasSubscription: !!body.subscription,
+      tz: body.tz,
+      preferences: body.preferences,
+      hasLocation: !!body.location
+    });
+
     const res = await fetch("/api/notifications/subscribe", {
       method: "POST",
       headers,
       credentials: "include",
       body: JSON.stringify(body),
     });
+    
+    console.log("[Notifications] Subscription response status:", res.status);
+    
     if (!res.ok) {
       let msg = `Subscribe failed (${res.status})`;
       try {
         const j = await res.json();
+        console.error("[Notifications] Subscription error response:", j);
         msg = j.error || j.message || msg;
       } catch {}
       throw new Error(msg);
     }
+    
+    const responseData = await res.json();
+    console.log("[Notifications] Subscription successful:", responseData);
 
     // Also update user notification preferences in profile
     await this.updateUserNotificationPreferences(prefs);
@@ -198,7 +221,9 @@ export class PrayerTimesNotifications {
       console.log("[Notifications] Notification permission granted");
       const reg = (await this.registerSW()) || this.core.state.swRegistration;
       if (!reg) throw new Error("Service Worker failed");
+      console.log("[Notifications] Service worker registered, ensuring subscription...");
       await this.ensureSubscribed(reg);
+      console.log("[Notifications] Subscription ensured, sending to server...");
       await this.sendSubscriptionToServer(true);
       localStorage.setItem("notificationsEnabled", "true");
       this.core.toast("Prayer notifications enabled", "success");
@@ -253,10 +278,25 @@ export class PrayerTimesNotifications {
 
   // Send test notification
   async sendTestNotification() {
+    console.log("[Notifications] Test notification requested");
+    
+    // Prevent automatic calls during initialization
+    if (!this.initializationComplete) {
+      console.warn("[Notifications] Ignoring test notification call during initialization");
+      return;
+    }
+    
     try {
       const token = this.api.getAuthToken();
+      if (!token) {
+        console.warn("[Notifications] No auth token available for test");
+        this.core.toast("Please login to test notifications", "error");
+        return;
+      }
+      
+      console.log("[Notifications] Sending test notification request...");
       const csrf = this.api.getCsrf();
-      const r = await fetch("/api/notifications/test", {
+      const r = await fetch("/api/notifications/test-immediate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -264,22 +304,32 @@ export class PrayerTimesNotifications {
           ...(csrf && { "X-CSRF-Token": csrf }),
         },
         credentials: "include",
-        body: JSON.stringify({ tz: this.core.state.tz }),
+        body: JSON.stringify({}),
       });
       const j = await r.json().catch(() => ({}));
+      console.log("[Notifications] Test notification response:", j);
       if (r.ok) this.core.toast(j.msg || "Test notification queued", "success");
       else this.core.toast(j.error || "Failed to queue test notification", "error");
-    } catch {
+    } catch (error) {
+      console.error("[Notifications] Test notification error:", error);
       this.core.toast("Failed to queue test notification", "error");
     }
   }
 
   // Send test prayer notification
   async sendTestPrayerNotification() {
+    console.log("[Notifications] Test prayer notification requested");
+    
+    // Prevent automatic calls during initialization
+    if (!this.initializationComplete) {
+      console.warn("[Notifications] Ignoring test prayer notification call during initialization");
+      return;
+    }
+    
     try {
       const token = this.api.getAuthToken();
       const csrf = this.api.getCsrf();
-      let r = await fetch("/api/notifications/test-prayer", {
+      let r = await fetch("/api/notifications/test-immediate", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -287,19 +337,8 @@ export class PrayerTimesNotifications {
           ...(csrf && { "X-CSRF-Token": csrf }),
         },
         credentials: "include",
-        body: JSON.stringify({ prayer: "next", tz: this.core.state.tz }),
+        body: JSON.stringify({}),
       });
-      if (r.status === 404) {
-        r = await fetch("/api/notifications/test-prayer-notification", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token && { Authorization: `Bearer ${token}` }),
-            ...(csrf && { "X-CSRF-Token": csrf }),
-          },
-          credentials: "include",
-        });
-      }
       const j = await r.json().catch(() => ({}));
       if (r.ok) this.core.toast(j.msg || "Prayer test queued", "success");
       else this.core.toast(j.error || "Failed to queue prayer test", "error");
@@ -310,13 +349,38 @@ export class PrayerTimesNotifications {
 
   // Setup notification event listeners
   setupEventListeners() {
+    console.log("[Notifications] Setting up event listeners...");
+    console.log("[Notifications] Notification toggle element:", this.core.el.notifToggle);
+    
     // Notification toggle
     this.core.el.notifToggle?.addEventListener("change", async (e) => {
+      console.log("[Notifications] Notification toggle changed:", e.target.checked);
       if (e.target.checked) {
+        console.log("[Notifications] Enabling notifications...");
         const ok = await this.setupNotifications();
         if (!ok) e.target.checked = false;
       } else {
+        console.log("[Notifications] Disabling notifications...");
         await this.unsubscribePush();
+      }
+      
+      // Update server notification preferences when toggle changes
+      try {
+        await this.updateUserNotificationPreferences({
+          reminderMinutes: this.core.state.settings.reminderMinutes,
+          perPrayer: {
+            fajr: !!this.core.el.alertFajr?.checked,
+            dhuhr: !!this.core.el.alertDhuhr?.checked,
+            asr: !!this.core.el.alertAsr?.checked,
+            maghrib: !!this.core.el.alertMaghrib?.checked,
+            isha: !!this.core.el.alertIsha?.checked,
+          },
+          method: this.core.state.settings.calculationMethod,
+          madhab: this.core.state.settings.madhab,
+          tz: this.core.state.tz
+        });
+      } catch (error) {
+        console.warn("[Notifications] Failed to update server preferences on toggle change:", error);
       }
     });
 
@@ -368,5 +432,9 @@ export class PrayerTimesNotifications {
     ) {
       this.setupNotifications().catch(() => {});
     }
+    
+    // Mark initialization as complete
+    this.initializationComplete = true;
+    console.log("[Notifications] Initialization completed");
   }
 }

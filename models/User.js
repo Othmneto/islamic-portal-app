@@ -40,7 +40,7 @@ const userSchema = new mongoose.Schema(
         validator: function(v) {
           if (this.authProvider !== 'local') return true;
           // Password must contain at least one uppercase, one lowercase, one number, and one special character
-          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$/.test(v);
+          return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&#]+$/.test(v);
         },
         message: 'Password must be at least 12 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
       }
@@ -56,7 +56,7 @@ const userSchema = new mongoose.Schema(
     // Provider of authentication
     authProvider: {
       type: String,
-      enum: ['local', 'google', 'facebook', 'microsoft', 'twitter', 'tiktok'],
+      enum: ['local', 'google', 'facebook', 'microsoft', 'twitter', 'tiktok', 'hybrid'],
       default: 'local'
     },
 
@@ -91,6 +91,54 @@ const userSchema = new mongoose.Schema(
     passwordResetToken: String,
     passwordResetExpires: Date,
     
+    // Profile fields
+    firstName: String,
+    lastName: String,
+    bio: String,
+    location: String,
+    avatar: String,
+    preferences: {
+      theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'light' },
+      language: { type: String, default: 'en' },
+      timezone: { type: String, default: 'UTC' },
+      dateFormat: { type: String, default: 'MM/DD/YYYY' },
+      loginNotifications: { type: Boolean, default: true }
+    },
+    
+    // Activity tracking
+    translationCount: { type: Number, default: 0 },
+    loginCount: { type: Number, default: 0 },
+    timeSpent: { type: Number, default: 0 }, // in seconds
+    favoritesCount: { type: Number, default: 0 },
+    prayerLogCount: { type: Number, default: 0 },
+    
+    // Privacy settings
+    privacySettings: {
+      analyticsEnabled: { type: Boolean, default: true },
+      translationHistoryEnabled: { type: Boolean, default: true },
+      personalizationEnabled: { type: Boolean, default: true },
+      dataRetentionPeriod: { type: String, enum: ['1', '2', '5', 'indefinite'], default: '2' },
+      marketingEmails: { type: Boolean, default: false },
+      securityAlerts: { type: Boolean, default: true },
+      thirdPartySharing: { type: Boolean, default: false },
+      researchData: { type: Boolean, default: false },
+      publicProfile: { type: Boolean, default: false }
+    },
+    
+    // Remember me settings
+    rememberMeSettings: {
+      rememberMeEnabled: { type: Boolean, default: true },
+      sessionDuration: { type: String, enum: ['1', '7', '30', '90', '365'], default: '30' },
+      autoLoginEnabled: { type: Boolean, default: false },
+      biometricLoginEnabled: { type: Boolean, default: false },
+      requireReauth: { type: Boolean, default: true },
+      loginNotifications: { type: Boolean, default: true },
+      sessionTimeout: { type: String, enum: ['15', '30', '60', '120', '0'], default: '60' },
+      offlineTranslations: { type: Boolean, default: true },
+      prayerTimesCache: { type: Boolean, default: true },
+      userPreferences: { type: Boolean, default: true }
+    },
+    
     // Security fields
     lastLogin: Date,
     lastLoginIP: String,
@@ -101,7 +149,36 @@ const userSchema = new mongoose.Schema(
     passwordHistory: [String], // Store hashed passwords for history
     twoFactorEnabled: { type: Boolean, default: false },
     twoFactorSecret: String,
-    backupCodes: [String],
+    backupCodes: [{
+        code: String,
+        used: { type: Boolean, default: false },
+        createdAt: { type: Date, default: Date.now }
+    }],
+    
+    // Biometric authentication
+    biometricEnabled: { type: Boolean, default: false },
+    biometricType: { type: String, enum: ['webauthn', 'password-based', 'oauth-based'], default: null },
+    biometricCredentials: {
+        // For WebAuthn credentials
+        id: String,
+        type: String,
+        rawId: String,
+        response: {
+            attestationObject: String,
+            clientDataJSON: String
+        },
+        // For OAuth/Password-based credentials
+        verified: Boolean,
+        enabledAt: Date
+    },
+    
+    // MFA settings
+    mfa: {
+      totpEnabled: { type: Boolean, default: false },
+      emailMfaEnabled: { type: Boolean, default: false },
+      emailMfaEmail: String,
+      emailMfaEnabledAt: Date
+    },
     securityQuestions: [{
       question: String,
       answer: String // Hashed answer
@@ -279,8 +356,38 @@ userSchema.methods.getLockoutTimeRemaining = function() {
   return Math.ceil((this.accountLockedUntil - Date.now()) / (1000 * 60));
 };
 
-// Indexes are automatically created from the schema field definitions above
-// No need for explicit index creation as they're already defined with unique/sparse options
+// Enhanced indexing for performance optimization
+// Note: email, googleId, microsoftId, facebookId, twitterId, tiktokId already have unique indexes
+// All other indexes are commented out to prevent duplicate index warnings
+// They can be re-enabled after database connection is established
+
+// userSchema.index({ username: 1 }, { sparse: true }); // Username lookup
+// userSchema.index({ authProvider: 1 }); // Filter by auth provider
+// userSchema.index({ isVerified: 1 }); // Filter verified users
+// userSchema.index({ role: 1 }); // Filter by role
+// userSchema.index({ lastLogin: -1 }); // Sort by last login
+// userSchema.index({ createdAt: -1 }); // Sort by creation date
+// userSchema.index({ updatedAt: -1 }); // Sort by update date
+// userSchema.index({ failedLoginAttempts: 1 }); // Find users with failed attempts
+// userSchema.index({ accountLockedUntil: 1 }); // Find locked accounts
+// userSchema.index({ lastLoginIP: 1 }); // Track IP addresses
+// userSchema.index({ 'loginAttempts.timestamp': -1 }); // Sort login attempts
+// userSchema.index({ 'location.city': 1 }); // Filter by city
+// userSchema.index({ 'location.country': 1 }); // Filter by country
+// userSchema.index({ 'location.lat': 1, 'location.lon': 1 }); // Geospatial queries
+// userSchema.index({ timezone: 1 }); // Filter by timezone
+// userSchema.index({ 'preferences.calculationMethod': 1 }); // Filter by calculation method
+// userSchema.index({ 'preferences.madhab': 1 }); // Filter by madhab
+// userSchema.index({ 'notificationPreferences.prayerReminders.fajr': 1 }); // Filter by notification preferences
+// userSchema.index({ email: 1, isVerified: 1 }); // Verified user lookup
+// userSchema.index({ authProvider: 1, isVerified: 1 }); // Provider and verification status
+// userSchema.index({ role: 1, isVerified: 1 }); // Role and verification status
+// userSchema.index({ lastLogin: -1, isVerified: 1 }); // Recent active users
+// userSchema.index({ createdAt: -1, role: 1 }); // Recent users by role
 
 const User = mongoose.model('User', userSchema);
+
+// Index creation is handled automatically by Mongoose
+// No manual index creation needed
+
 module.exports = User;

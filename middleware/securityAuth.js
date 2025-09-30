@@ -64,7 +64,10 @@ module.exports = async function(req, res, next) {
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         recordAuthAttempt(clientIP, false);
-        return res.status(401).json({ msg: 'No token or malformed token, authorization denied' });
+        return res.status(401).json({ 
+            msg: 'No token or malformed token, authorization denied',
+            code: 'NO_TOKEN'
+        });
     }
 
     try {
@@ -76,11 +79,24 @@ module.exports = async function(req, res, next) {
         if (isBlacklisted) {
             console.warn(`🚫 Blacklisted token used from IP: ${clientIP}`);
             recordAuthAttempt(clientIP, false);
-            return res.status(401).json({ msg: 'Token has been revoked' });
+            return res.status(401).json({ 
+                msg: 'Token has been revoked',
+                code: 'TOKEN_BLACKLISTED'
+            });
         }
 
         // Verify the token
         const decoded = jwt.verify(token, env.JWT_SECRET);
+        
+        // Check token type
+        if (decoded.type && decoded.type !== 'access') {
+            console.warn(`🚫 Invalid token type from IP: ${clientIP}`);
+            recordAuthAttempt(clientIP, false);
+            return res.status(401).json({ 
+                msg: 'Invalid token type',
+                code: 'INVALID_TOKEN_TYPE'
+            });
+        }
         
         // Extract user ID
         const userId = decoded.id || decoded.sub || decoded.user?.id;
@@ -88,7 +104,10 @@ module.exports = async function(req, res, next) {
         if (!userId) {
             console.warn(`🚫 Invalid token structure from IP: ${clientIP}`);
             recordAuthAttempt(clientIP, false);
-            return res.status(401).json({ msg: 'Invalid token structure' });
+            return res.status(401).json({ 
+                msg: 'Invalid token structure',
+                code: 'INVALID_TOKEN_STRUCTURE'
+            });
         }
 
         // Fetch user from database
@@ -96,7 +115,10 @@ module.exports = async function(req, res, next) {
         if (!user) {
             console.warn(`🚫 User not found for token from IP: ${clientIP}`);
             recordAuthAttempt(clientIP, false);
-            return res.status(401).json({ msg: 'User not found' });
+            return res.status(401).json({ 
+                msg: 'User not found',
+                code: 'USER_NOT_FOUND'
+            });
         }
 
         // Check if account is locked
@@ -105,6 +127,7 @@ module.exports = async function(req, res, next) {
             recordAuthAttempt(clientIP, false);
             return res.status(423).json({ 
                 msg: 'Account is temporarily locked due to multiple failed login attempts',
+                code: 'ACCOUNT_LOCKED',
                 lockedUntil: user.accountLockedUntil
             });
         }
@@ -115,16 +138,23 @@ module.exports = async function(req, res, next) {
             recordAuthAttempt(clientIP, false);
             return res.status(403).json({ 
                 msg: 'Please verify your email before accessing the application',
+                code: 'EMAIL_NOT_VERIFIED',
                 requiresVerification: true,
                 email: user.email
             });
         }
 
-        // Update last login info
-        await User.findByIdAndUpdate(userId, {
-            lastLogin: new Date(),
-            lastLoginIP: clientIP
-        });
+        // Update last login info (only if it's been more than 5 minutes)
+        const now = new Date();
+        const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
+        const timeSinceLastLogin = lastLogin ? now - lastLogin : Infinity;
+        
+        if (timeSinceLastLogin > 5 * 60 * 1000) { // 5 minutes
+            await User.findByIdAndUpdate(userId, {
+                lastLogin: now,
+                lastLoginIP: clientIP
+            });
+        }
 
         // Attach user to request
         req.user = user;
@@ -137,6 +167,22 @@ module.exports = async function(req, res, next) {
     } catch (err) {
         console.warn(`🚫 Token verification failed from IP: ${clientIP}`, err.message);
         recordAuthAttempt(clientIP, false);
-        res.status(401).json({ msg: 'Token is not valid' });
+        
+        // Provide more specific error messages
+        let errorCode = 'TOKEN_INVALID';
+        let errorMessage = 'Token is not valid';
+        
+        if (err.name === 'TokenExpiredError') {
+            errorCode = 'TOKEN_EXPIRED';
+            errorMessage = 'Token has expired';
+        } else if (err.name === 'JsonWebTokenError') {
+            errorCode = 'TOKEN_MALFORMED';
+            errorMessage = 'Token is malformed';
+        }
+        
+        res.status(401).json({ 
+            msg: errorMessage,
+            code: errorCode
+        });
     }
 };

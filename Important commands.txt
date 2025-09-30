@@ -1,5 +1,4 @@
 Start commands
 
 node server.js
-docker start my-redis-server
 pm2 start ecosystem.config.js

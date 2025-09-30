@@ -1,6 +1,6 @@
 // translator-backend/services/notificationService.js
 
-const { notificationQueue } = require('../queues/notificationQueue');
+const { getNotificationQueueService } = require('../queues/notificationQueue');
 const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/User');
 const logger = require('../utils/logger');
@@ -15,24 +15,31 @@ const logger = require('../utils/logger');
 const sendNotification = async (subscription, payload, delay = 0) => {
   if (!subscription || !payload) return;
 
-  const job = {
-    name: 'send-push',
-    data: {
+  try {
+    const queueService = getNotificationQueueService();
+    if (!queueService) {
+      logger?.error?.('Notification queue service not available');
+      return;
+    }
+
+    const jobData = {
       subscription: subscription.toObject ? subscription.toObject() : subscription,
       payload,
-    },
-  };
+    };
 
-  const options = {};
-  if (delay > 0) {
-    options.delay = delay;
+    const options = {};
+    if (delay > 0) {
+      options.delay = delay;
+    }
+
+    await queueService.addPushJob(jobData, options);
+    logger?.info?.(
+      `Added notification job to queue for endpoint: ${subscription?.subscription?.endpoint || 'unknown'}`,
+      { delay }
+    );
+  } catch (error) {
+    logger?.error?.('Failed to add notification job:', error);
   }
-
-  await notificationQueue.add(job.name, job.data, options);
-  logger.info(
-    `Added notification job to queue for endpoint: ${subscription?.subscription?.endpoint || 'unknown'}`,
-    { delay }
-  );
 };
 // END: New function
 
