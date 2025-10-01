@@ -26,15 +26,23 @@ class TokenManager {
             this.accessToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
             this.refreshToken = localStorage.getItem('refreshToken');
             
-            // Consider authenticated if we at least have an access token
-            this.authenticated = !!this.accessToken;
-
+            // Validate token if it exists
             if (this.accessToken) {
-                console.log('🔑 [TokenManager] Tokens loaded from storage');
-                this.updateNavbarState();
+                const tokenInfo = this.getTokenInfo();
+                if (tokenInfo && !tokenInfo.isExpired) {
+                    this.authenticated = true;
+                    console.log('🔑 [TokenManager] Valid tokens loaded from storage');
+                    this.updateNavbarState();
+                } else {
+                    console.log('⚠️ [TokenManager] Token expired or invalid, clearing');
+                    this.clearTokens();
+                }
+            } else {
+                this.authenticated = false;
             }
         } catch (error) {
             console.error('❌ [TokenManager] Error loading tokens:', error);
+            this.clearTokens();
         }
     }
 

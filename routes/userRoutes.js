@@ -49,17 +49,20 @@ const preferencesBodySchema = z
     calculationMethod: z.string().trim().min(1).optional(),
     madhab: z.string().trim().min(1).optional(),
     prayerReminders: perPrayerSchema.optional(),
+    theme: z.enum(['light', 'dark', 'auto']).optional(),
+    language: z.string().trim().min(2).max(10).optional(),
+    is24Hour: z.coerce.boolean().optional(),
+    audioEnabled: z.coerce.boolean().optional(),
+    selectedAdhanSrc: z.string().trim().optional(),
+    adhanVolume: z.coerce.number().min(0).max(1).optional(),
   })
   .superRefine((data, ctx) => {
-    if (
-      typeof data.calculationMethod === "undefined" &&
-      typeof data.madhab === "undefined" &&
-      typeof data.prayerReminders === "undefined"
-    ) {
+    const hasAnyField = Object.keys(data).some(key => data[key] !== undefined);
+    if (!hasAnyField) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: [],
-        message: "Provide at least one field: calculationMethod, madhab, or prayerReminders",
+        message: "Provide at least one field to update",
       });
     }
   });
@@ -67,6 +70,7 @@ const preferencesSchema = z.object({ body: preferencesBodySchema });
 
 // Notification preferences update
 const notificationPreferencesBodySchema = z.object({
+  enabled: z.coerce.boolean().optional(),
   reminderMinutes: z.coerce.number().min(0).max(60).optional(),
   prayerReminders: perPrayerSchema.optional(),
   calculationMethod: z.string().trim().min(1).optional(),
@@ -151,22 +155,58 @@ router.get("/preferences", authMiddleware, async (req, res) => {
 
 /**
  * PUT /api/user/preferences
- * Allows partial updates:
- *  - preferences.calculationMethod
- *  - preferences.madhab
+ * Allows partial updates for all user preferences:
+ *  - preferences.calculationMethod, preferences.madhab
+ *  - preferences.theme, preferences.language, preferences.is24Hour
+ *  - preferences.audioEnabled, preferences.selectedAdhanSrc, preferences.adhanVolume
  *  - notificationPreferences.prayerReminders (optional per-prayer toggles)
  */
 router.put("/preferences", authMiddleware, validate(preferencesSchema), async (req, res) => {
   try {
-    const { calculationMethod, madhab, prayerReminders } = req.body;
+    const { 
+      calculationMethod, 
+      madhab, 
+      prayerReminders,
+      theme,
+      language,
+      is24Hour,
+      audioEnabled,
+      selectedAdhanSrc,
+      adhanVolume
+    } = req.body;
     const $set = {};
 
+    // Prayer calculation preferences
     if (typeof calculationMethod !== "undefined") {
       $set["preferences.calculationMethod"] = calculationMethod;
     }
     if (typeof madhab !== "undefined") {
       $set["preferences.madhab"] = madhab;
     }
+
+    // UI preferences
+    if (typeof theme !== "undefined") {
+      $set["preferences.theme"] = theme;
+    }
+    if (typeof language !== "undefined") {
+      $set["preferences.language"] = language;
+    }
+    if (typeof is24Hour !== "undefined") {
+      $set["preferences.is24Hour"] = !!is24Hour;
+    }
+
+    // Audio preferences
+    if (typeof audioEnabled !== "undefined") {
+      $set["preferences.audioEnabled"] = !!audioEnabled;
+    }
+    if (typeof selectedAdhanSrc !== "undefined") {
+      $set["preferences.selectedAdhanSrc"] = selectedAdhanSrc;
+    }
+    if (typeof adhanVolume !== "undefined") {
+      $set["preferences.adhanVolume"] = Math.max(0, Math.min(1, Number(adhanVolume)));
+    }
+
+    // Prayer reminder preferences
     if (prayerReminders && typeof prayerReminders === "object") {
       $set["notificationPreferences.prayerReminders"] = {
         ...(prayerReminders.fajr !== undefined ? { fajr: !!prayerReminders.fajr } : {}),
@@ -186,14 +226,47 @@ router.put("/preferences", authMiddleware, validate(preferencesSchema), async (r
 });
 
 /**
+ * GET /api/user/notification-preferences
+ * Returns the user's notification preferences
+ */
+router.get("/notification-preferences", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("notificationPreferences preferences timezone").lean();
+    return res.json({ 
+      success: true, 
+      preferences: {
+        enabled: user?.notificationPreferences?.enabled || false,
+        reminderMinutes: user?.notificationPreferences?.reminderMinutes || 0,
+        prayerReminders: user?.notificationPreferences?.prayerReminders || {
+          fajr: true,
+          dhuhr: true,
+          asr: true,
+          maghrib: true,
+          isha: true
+        },
+        calculationMethod: user?.preferences?.calculationMethod || "auto",
+        madhab: user?.preferences?.madhab || "auto",
+        timezone: user?.timezone || "UTC"
+      }
+    });
+  } catch (error) {
+    logger.error?.("Error fetching notification preferences", error);
+    return res.status(500).json({ success: false, message: "Server Error" });
+  }
+});
+
+/**
  * PUT /api/user/notification-preferences
  * Updates notification preferences including reminderMinutes
  */
 router.put("/notification-preferences", authMiddleware, validate(notificationPreferencesSchema), async (req, res) => {
   try {
-    const { reminderMinutes, prayerReminders, calculationMethod, madhab, timezone } = req.body;
+    const { enabled, reminderMinutes, prayerReminders, calculationMethod, madhab, timezone } = req.body;
     const $set = {};
 
+    if (typeof enabled !== "undefined") {
+      $set["notificationPreferences.enabled"] = !!enabled;
+    }
     if (typeof reminderMinutes !== "undefined") {
       $set["notificationPreferences.reminderMinutes"] = reminderMinutes;
     }

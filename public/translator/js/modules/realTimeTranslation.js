@@ -316,12 +316,12 @@ export class RealTimeTranslation {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('authToken') || ''}`
                 },
                 body: JSON.stringify({
-                    text: text,
-                    fromLang: sourceLang,
-                    toLang: Array.isArray(targetLang) ? targetLang : [targetLang],
+                    sourceText: text,
+                    sourceLanguage: sourceLang,
+                    targetLanguage: Array.isArray(targetLang) ? targetLang[0] : targetLang,
                     sessionId: this.textTranslator.sessionId,
                     isPartial: isPartial
                 })
@@ -368,15 +368,14 @@ export class RealTimeTranslation {
             return;
         }
         
-        if (!result.success || !result.results || result.results.length === 0) return;
+        if (!result.success || !result.translatedText) return;
         
-        const translation = result.results[0];
         const partialData = {
             original: result.original,
-            translated: translation.translatedText,
-            fromLang: result.fromLang,
-            toLang: translation.toLanguage,
-            confidence: translation.confidence,
+            translated: result.translatedText,
+            fromLang: result.from,
+            toLang: result.to,
+            confidence: result.confidence || 0.8,
             isPartial: true,
             timestamp: new Date()
         };
@@ -414,18 +413,17 @@ export class RealTimeTranslation {
             return;
         }
         
-        if (!result.success || !result.results || result.results.length === 0) {
+        if (!result.success || !result.translatedText) {
             console.log('❌ [RealTimeTranslation] Invalid result data, returning early');
             return;
         }
         
-        const translation = result.results[0];
         const finalData = {
             original: result.original,
-            translated: translation.translatedText,
-            fromLang: result.fromLang,
-            toLang: translation.toLanguage,
-            confidence: translation.confidence,
+            translated: result.translatedText,
+            fromLang: result.from,
+            toLang: result.to,
+            confidence: result.confidence || 0.8,
             isPartial: false,
             timestamp: new Date()
         };

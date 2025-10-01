@@ -184,6 +184,7 @@ export class PrayerTimesNotifications {
       const response = await this.api.apiFetch("/api/user/notification-preferences", {
         method: "PUT",
         body: JSON.stringify({
+          enabled: prefs.enabled,
           reminderMinutes: prefs.reminderMinutes,
           prayerReminders: prefs.perPrayer,
           calculationMethod: prefs.method,
@@ -263,6 +264,26 @@ export class PrayerTimesNotifications {
   // Check notification status
   async checkNotificationStatus() {
     if (!("serviceWorker" in navigator)) return;
+    
+    // First try to load from server
+    const serverEnabled = await this.loadNotificationStateFromServer();
+    if (serverEnabled !== null) {
+      if (this.core.el.notifToggle) this.core.el.notifToggle.checked = serverEnabled;
+      if (serverEnabled) {
+        // If server says enabled, ensure we have a subscription
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            this.core.state.pushSubscription = sub;
+            this.core.state.swRegistration = reg;
+          }
+        }
+      }
+      return;
+    }
+    
+    // Fallback to local storage and service worker status
     const reg = await navigator.serviceWorker.getRegistration();
     if (!reg) {
       if (this.core.el.notifToggle) this.core.el.notifToggle.checked = false;
@@ -273,6 +294,38 @@ export class PrayerTimesNotifications {
     if (sub) {
       this.core.state.pushSubscription = sub;
       this.core.state.swRegistration = reg;
+    }
+  }
+
+  // Load notification state from server
+  async loadNotificationStateFromServer() {
+    try {
+      const token = this.api.getAuthToken();
+      if (!token) {
+        console.log("[Notifications] No auth token available, using local state");
+        return null;
+      }
+
+      const response = await fetch("/api/user/notification-preferences", {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("[Notifications] Full server response:", data);
+        const enabled = data.preferences?.enabled || false;
+        console.log("[Notifications] Loaded notification state from server:", enabled);
+        return enabled;
+      } else {
+        console.warn("[Notifications] Failed to load notification state from server:", response.status);
+        return null;
+      }
+    } catch (error) {
+      console.warn("[Notifications] Error loading notification state from server:", error);
+      return null;
     }
   }
 
@@ -355,6 +408,12 @@ export class PrayerTimesNotifications {
     // Notification toggle
     this.core.el.notifToggle?.addEventListener("change", async (e) => {
       console.log("[Notifications] Notification toggle changed:", e.target.checked);
+      console.log("[Notifications] Element found:", !!this.core.el.notifToggle);
+      console.log("[Notifications] Element ID:", this.core.el.notifToggle?.id);
+      
+      // Update core state
+      this.core.state.settings.notificationsEnabled = e.target.checked;
+      
       if (e.target.checked) {
         console.log("[Notifications] Enabling notifications...");
         const ok = await this.setupNotifications();
@@ -364,24 +423,8 @@ export class PrayerTimesNotifications {
         await this.unsubscribePush();
       }
       
-      // Update server notification preferences when toggle changes
-      try {
-        await this.updateUserNotificationPreferences({
-          reminderMinutes: this.core.state.settings.reminderMinutes,
-          perPrayer: {
-            fajr: !!this.core.el.alertFajr?.checked,
-            dhuhr: !!this.core.el.alertDhuhr?.checked,
-            asr: !!this.core.el.alertAsr?.checked,
-            maghrib: !!this.core.el.alertMaghrib?.checked,
-            isha: !!this.core.el.alertIsha?.checked,
-          },
-          method: this.core.state.settings.calculationMethod,
-          madhab: this.core.state.settings.madhab,
-          tz: this.core.state.tz
-        });
-      } catch (error) {
-        console.warn("[Notifications] Failed to update server preferences on toggle change:", error);
-      }
+      // Server preferences are already updated by the subscription system above
+      // No need for duplicate API call here
     });
 
     // Per-prayer toggles
@@ -426,11 +469,17 @@ export class PrayerTimesNotifications {
     await this.checkNotificationStatus();
     this.setupEventListeners();
 
-    if (
-      localStorage.getItem("notificationsEnabled") === "true" &&
-      Notification.permission === "granted"
-    ) {
+    // Only auto-enable notifications if:
+    // 1. Server says they're enabled (checked in checkNotificationStatus)
+    // 2. OR server state is unavailable AND localStorage says enabled AND permission is granted
+    const serverEnabled = await this.loadNotificationStateFromServer();
+    const localEnabled = localStorage.getItem("notificationsEnabled") === "true";
+    
+    if (serverEnabled === true || (serverEnabled === null && localEnabled && Notification.permission === "granted")) {
+      console.log("[Notifications] Auto-enabling notifications based on server/local state");
       this.setupNotifications().catch(() => {});
+    } else {
+      console.log("[Notifications] Not auto-enabling notifications. Server enabled:", serverEnabled, "Local enabled:", localEnabled, "Permission:", Notification.permission);
     }
     
     // Mark initialization as complete

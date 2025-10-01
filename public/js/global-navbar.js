@@ -617,7 +617,7 @@ class GlobalNavbar {
                 isAuthenticated = true;
                 console.log('🔑 [GlobalNavbar] Using token manager, token available:', !!authToken);
             } else {
-                authToken = localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
+                authToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
                 isAuthenticated = !!authToken;
                 console.log('🔑 [GlobalNavbar] Using localStorage, token available:', !!authToken);
             }
@@ -784,13 +784,37 @@ class GlobalNavbar {
      * Initialize theme
      */
     initializeTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        this.setTheme(savedTheme);
-        console.log('🎨 [GlobalNavbar] Theme initialized:', savedTheme);
+        // Use theme manager if available
+        if (window.themeManager) {
+            window.themeManager.addListener((theme) => {
+                this.updateThemeUI(theme);
+            });
+            this.updateThemeUI(window.themeManager.getCurrentTheme());
+            console.log('🎨 [GlobalNavbar] Theme initialized via ThemeManager:', window.themeManager.getCurrentTheme());
+        } else {
+            // Fallback to localStorage
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            this.setTheme(savedTheme);
+            console.log('🎨 [GlobalNavbar] Theme initialized from localStorage:', savedTheme);
+        }
     }
 
     /**
-     * Set theme
+     * Update theme UI elements
+     */
+    updateThemeUI(theme) {
+        // Update theme toggle if it exists
+        if (this.elements.themeToggle) {
+            this.elements.themeToggle.checked = theme === 'light';
+        }
+        
+        // Apply theme classes
+        document.body.className = document.body.className.replace(/light-mode|dark-mode/g, '');
+        document.body.classList.add(`${theme}-mode`);
+    }
+
+    /**
+     * Set theme (fallback method)
      */
     setTheme(theme) {
         document.body.className = document.body.className.replace(/light-mode|dark-mode/g, '');
@@ -802,18 +826,24 @@ class GlobalNavbar {
      * Update theme display
      */
     updateThemeDisplay(theme) {
-        this.setTheme(theme);
+        this.updateThemeUI(theme);
         console.log('🎨 [GlobalNavbar] Theme updated to:', theme);
     }
 
     /**
      * Toggle theme
      */
-    toggleTheme() {
-        const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        this.setTheme(newTheme);
-        console.log('🎨 [GlobalNavbar] Theme toggled to:', newTheme);
+    async toggleTheme() {
+        if (window.themeManager) {
+            await window.themeManager.toggleTheme();
+            console.log('🎨 [GlobalNavbar] Theme toggled via ThemeManager');
+        } else {
+            // Fallback to localStorage
+            const currentTheme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            this.setTheme(newTheme);
+            console.log('🎨 [GlobalNavbar] Theme toggled to:', newTheme);
+        }
     }
 
     /**
@@ -895,8 +925,8 @@ class GlobalNavbar {
             return;
         }
         
-        const authToken = localStorage.getItem('authToken');
-        const userData = localStorage.getItem('userData');
+        const authToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
+        const userData = localStorage.getItem('userData') || localStorage.getItem('user');
         
         if (authToken && userData) {
             try {
@@ -1250,7 +1280,13 @@ class GlobalNavbar {
             console.warn('⚠️ [GlobalNavbar] Logout API call failed:', error);
         } finally {
             // Clear local storage and redirect
+            localStorage.removeItem('accessToken');
             localStorage.removeItem('authToken');
+            localStorage.removeItem('token');
+            localStorage.removeItem('jwt');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            localStorage.removeItem('userData');
             this.currentUser = null;
             this.updateUserDisplay();
             window.location.href = '/';

@@ -98,11 +98,15 @@ const userSchema = new mongoose.Schema(
     location: String,
     avatar: String,
     preferences: {
-      theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'light' },
+      theme: { type: String, enum: ['light', 'dark', 'auto'], default: 'dark' },
       language: { type: String, default: 'en' },
       timezone: { type: String, default: 'UTC' },
       dateFormat: { type: String, default: 'MM/DD/YYYY' },
-      loginNotifications: { type: Boolean, default: true }
+      loginNotifications: { type: Boolean, default: true },
+      is24Hour: { type: Boolean, default: false },
+      audioEnabled: { type: Boolean, default: true },
+      selectedAdhanSrc: { type: String, default: '/audio/adhan.mp3' },
+      adhanVolume: { type: Number, default: 1.0, min: 0, max: 1 }
     },
     
     // Activity tracking
@@ -187,6 +191,7 @@ const userSchema = new mongoose.Schema(
 
     // Notifications (standardized)
     notificationPreferences: {
+      enabled: { type: Boolean, default: false },
       prayerReminders: {
         fajr: { type: Boolean, default: true },
         dhuhr: { type: Boolean, default: true },

@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="css/phase3-features.css">
     <link rel="stylesheet" href="css/accessibility.css">
     <link rel="stylesheet" href="css/voice-input.css">
+    <link rel="stylesheet" href="css/error-messages.css">
     
     <!-- Include global navbar CSS -->
     <link rel="stylesheet" href="/css/global-navbar.css">
@@ -308,6 +309,24 @@
             </div>
         </header>
 
+        <!-- Error Message Container with ARIA support -->
+        <div id="error-message" class="error-message" style="display: none;" role="alert" aria-live="assertive" aria-atomic="true">
+            <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+            <span id="error-text"></span>
+            <button type="button" class="error-close" onclick="hideError()" aria-label="Close error message">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
+        <!-- Success Message Container with ARIA support -->
+        <div id="success-message" class="success-message" style="display: none;" role="status" aria-live="polite" aria-atomic="true">
+            <i class="fas fa-check-circle" aria-hidden="true"></i>
+            <span id="success-text"></span>
+            <button type="button" class="success-close" onclick="hideSuccess()" aria-label="Close success message">
+                <i class="fas fa-times" aria-hidden="true"></i>
+            </button>
+        </div>
+
         <!-- Main Content -->
         <main id="main-content" class="main-content">
             <!-- Translation Input Section -->
@@ -381,6 +400,19 @@
                                 <option value="ko">Korean</option>
                             </select>
                         </div>
+                    </div>
+
+                    <!-- Target Text Area -->
+                    <div class="input-group">
+                        <label for="target-text">Translated Text:</label>
+                        <textarea 
+                            id="target-text" 
+                            class="ultra-textarea-enhanced" 
+                            placeholder="Translated text will appear here..." 
+                            readonly
+                            aria-label="Translated text"
+                            style="min-height: 120px; background-color: #f8fafc; border: 2px solid #e2e8f0;"
+                        ></textarea>
                     </div>
 
                     <!-- Real-Time Translation Controls -->
@@ -552,10 +584,90 @@
     </div>
 
     <!-- Scripts -->
-    <script type="module" src="js/text-translator.js"></script>
+    <script>
+        // Simple toast function
+        function toast(message, type = 'info') {
+            console.log(`[Toast ${type.toUpperCase()}] ${message}`);
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 12px 20px;
+                border-radius: 4px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                max-width: 300px;
+                word-wrap: break-word;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+            `;
+            
+            // Set background color based on type
+            switch(type) {
+                case 'success':
+                    toast.style.backgroundColor = '#10b981';
+                    break;
+                case 'error':
+                    toast.style.backgroundColor = '#ef4444';
+                    break;
+                case 'warning':
+                    toast.style.backgroundColor = '#f59e0b';
+                    break;
+                default:
+                    toast.style.backgroundColor = '#3b82f6';
+            }
+            
+            // Add to page
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 300);
+            }, 3000);
+        }
+    </script>
+    <script src="js/text-translator-simple.js"></script>
     
     <!-- Global Navbar JavaScript -->
     <script src="/js/global-navbar.js"></script>
+    
+    <!-- Global helper functions for error/success messages -->
+    <script>
+        function hideError() {
+            const errorEl = document.getElementById('error-message');
+            if (errorEl) {
+                errorEl.style.display = 'none';
+                const retryBtn = errorEl.querySelector('.error-retry-btn');
+                if (retryBtn) {
+                    retryBtn.remove();
+                }
+            }
+        }
+        
+        function hideSuccess() {
+            const successEl = document.getElementById('success-message');
+            if (successEl) {
+                successEl.style.display = 'none';
+            }
+        }
+    </script>
     
     <script>
         // Initialize navbar when page loads

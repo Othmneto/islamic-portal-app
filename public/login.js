@@ -39,10 +39,42 @@ document.addEventListener('DOMContentLoaded', async () => {
     tokenManagerAuthenticated: window.tokenManager ? window.tokenManager.isAuthenticated() : false
   });
   
-  if ((existingToken || (window.tokenManager && window.tokenManager.isAuthenticated())) && !isOAuthCallback) {
-    console.log('✅ Frontend: User already logged in, redirecting to home');
-    window.location.href = '/index.html';
-    return;
+  // Only redirect if we have a valid, non-expired token
+  if (existingToken && !isOAuthCallback) {
+    try {
+      // Check if token is expired
+      const payload = JSON.parse(atob(existingToken.split('.')[1]));
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = payload.exp && payload.exp < now;
+      
+      if (!isExpired) {
+        console.log('✅ Frontend: User already logged in with valid token, redirecting to home');
+        window.location.href = '/index.html';
+        return;
+      } else {
+        console.log('⚠️ Frontend: Token expired, clearing and staying on login page');
+        // Clear expired tokens
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('token');
+        localStorage.removeItem('jwt');
+        localStorage.removeItem('refreshToken');
+        if (window.tokenManager) {
+          window.tokenManager.clearTokens();
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ Frontend: Invalid token format, clearing and staying on login page');
+      // Clear invalid tokens
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('token');
+      localStorage.removeItem('jwt');
+      localStorage.removeItem('refreshToken');
+      if (window.tokenManager) {
+        window.tokenManager.clearTokens();
+      }
+    }
   }
 
   // Handle OAuth error messages from URL parameters
@@ -220,6 +252,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       // Update navbar if it exists
       if (window.globalNavbar) {
         window.globalNavbar.updateAuthStatus();
+      }
+      
+      // Also trigger global navbar update
+      if (window.updateNavbarState) {
+        window.updateNavbarState({
+          currentUser: data.user,
+          isAuthenticated: true
+        });
       }
 
       // Load user's authentication methods

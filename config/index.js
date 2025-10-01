@@ -30,6 +30,9 @@ const envSchema = z.object({
 
   // AI model endpoint (optional)
   KAABAH_AI_API_URL: z.string().url().optional(),
+  
+  // OpenAI API Key for translation
+  OPENAI_API_KEY: z.string().optional(),
 
   // OAuth credentials
   GOOGLE_CLIENT_ID: z.string().optional(),

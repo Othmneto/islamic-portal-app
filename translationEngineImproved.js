@@ -1,507 +1,557 @@
-// translationEngineImproved.js - Enhanced AI-Powered Translation Engine
-// Handles translation, transcription, context analysis, and text-to-speech with improved error handling
+/**
+ * Improved Translation Engine
+ * Provides robust translation functionality with error handling and fallbacks
+ */
 
-require('dotenv').config();
-const { OpenAI } = require('openai');
-const { ElevenLabsClient } = require('@elevenlabs/elevenlabs-js');
-const { Pinecone } = require('@pinecone-database/pinecone');
-const fs = require('fs');
-const { getTranslationCache } = require('./services/translationCache');
+const axios = require('axios');
+const { v4: uuidv4 } = require('uuid');
 
-// --- Initialize ALL Clients ---
-const openai = new OpenAI({ 
-    apiKey: process.env.OPENAI_API_KEY,
-    timeout: 30000, // 30 second timeout
-    maxRetries: 2
-});
-const elevenlabs = new ElevenLabsClient({ apiKey: process.env.ELEVEN_API_KEY });
-
-const pinecone = new Pinecone({ 
-    apiKey: process.env.PINECONE_API_KEY
-});
-const pineconeIndex = pinecone.index('shaikh-translator');
-
-// --- Error Handling Utilities ---
-class TranslationError extends Error {
-    constructor(message, statusCode = 500, isOperational = true) {
-        super(message);
-        this.statusCode = statusCode;
-        this.isOperational = isOperational;
-        this.name = 'TranslationError';
+class TranslationEngine {
+    constructor() {
+        this.apiKey = process.env.OPENAI_API_KEY;
+        this.baseUrl = 'https://api.openai.com/v1/chat/completions';
+        this.model = 'gpt-4o'; // Using GPT-4o for better translation quality
+        this.timeout = 30000; // 30 seconds
+        this.maxRetries = 3;
+        this.retryDelay = 1000; // 1 second
     }
-}
 
-class ValidationError extends TranslationError {
-    constructor(message) {
-        super(message, 400);
-        this.name = 'ValidationError';
-    }
-}
-
-// --- Helper Functions ---
-function getFallbackTranslation(text, fromLanguage, to) {
-    console.log(`Using fallback translation for: "${text}" from ${fromLanguage} to ${to}`);
-    
-    // Simple fallback translations for common Islamic phrases
-    const fallbackTranslations = {
-        'assalam walekum': 'Peace be upon you',
-        'assalamu alaikum': 'Peace be upon you',
-        'rahmatullah': 'Mercy of Allah',
-        'barkat': 'Blessings',
-        'blessings': 'بركات',
-        'peace be upon you': 'السلام عليكم'
-    };
-    
-    const lowerText = text.toLowerCase().trim();
-    
-    // Check for exact matches
-    if (fallbackTranslations[lowerText]) {
-        return fallbackTranslations[lowerText];
-    }
-    
-    // Check for partial matches
-    for (const [key, value] of Object.entries(fallbackTranslations)) {
-        if (lowerText.includes(key)) {
-            return text.replace(new RegExp(key, 'gi'), value);
-        }
-    }
-    
-    // If no fallback found, return original text with note
-    return `[Translation unavailable] ${text}`;
-}
-
-async function streamToBuffer(webStream) {
-    try {
-        const reader = webStream.getReader();
-        const chunks = [];
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-        }
-        return Buffer.concat(chunks);
-    } catch (error) {
-        console.error('Error converting stream to buffer:', error);
-        throw new TranslationError('Failed to process audio data');
-    }
-}
-
-// --- Enhanced Islamic Context Analysis ---
-function analyzeIslamicContext(text) {
-    const islamicKeywords = [
-        'allah', 'god', 'prayer', 'pray', 'mosque', 'islam', 'muslim', 'quran', 'koran',
-        'hadith', 'sunnah', 'prophet', 'muhammad', 'peace', 'blessing', 'blessed',
-        'ramadan', 'hajj', 'umrah', 'zakat', 'charity', 'fasting', 'fast', 'salah',
-        'dua', 'supplication', 'dhikr', 'remembrance', 'tasbih', 'subhanallah',
-        'alhamdulillah', 'allahu akbar', 'bismillah', 'inshallah', 'mashallah',
-        'barakallahu', 'jazakallahu', 'fi amanillah', 'assalamu alaikum',
-        'wa alaikum assalam', 'jazak allah', 'barak allah', 'fi aman allah'
-    ];
-
-    const arabicIslamicTerms = [
-        'الله', 'الرحمن', 'الرحيم', 'بسم الله', 'الحمد لله', 'سبحان الله',
-        'الله أكبر', 'لا إله إلا الله', 'محمد رسول الله', 'الصلاة', 'الزكاة',
-        'الصوم', 'الحج', 'القرآن', 'الحديث', 'السنة', 'الدعاء', 'الذكر',
-        'التسبيح', 'الاستغفار', 'التوبة', 'الرحمة', 'المغفرة', 'الهداية'
-    ];
-
-    const textLower = text.toLowerCase();
-    const hasEnglishIslamicTerms = islamicKeywords.some(term => textLower.includes(term));
-    const hasArabicIslamicTerms = arabicIslamicTerms.some(term => text.includes(term));
-    
-    return {
-        hasIslamicContent: hasEnglishIslamicTerms || hasArabicIslamicTerms,
-        englishTerms: islamicKeywords.filter(term => textLower.includes(term)),
-        arabicTerms: arabicIslamicTerms.filter(term => text.includes(term)),
-        confidence: hasEnglishIslamicTerms && hasArabicIslamicTerms ? 0.9 : 0.7
-    };
-}
-
-// --- Input Validation ---
-function validateTranslationInput(text, from, toLanguages, voiceId, sessionId) {
-    if (!text || typeof text !== 'string' || text.trim().length === 0) {
-        throw new ValidationError('Text is required and must be a non-empty string');
-    }
-    
-    if (text.length > 10000) {
-        throw new ValidationError('Text is too long. Maximum 10,000 characters allowed');
-    }
-    
-    if (!toLanguages || !Array.isArray(toLanguages) || toLanguages.length === 0) {
-        throw new ValidationError('Target languages must be a non-empty array');
-    }
-    
-    if (!voiceId || typeof voiceId !== 'string') {
-        throw new ValidationError('Valid voice ID is required');
-    }
-    
-    // Allow 'text-only' as a special case for text-only translation
-    if (voiceId === 'text-only') {
-        // Skip voice-related validation for text-only translation
-        return;
-    }
-    
-    if (!sessionId || typeof sessionId !== 'string') {
-        throw new ValidationError('Valid session ID is required');
-    }
-}
-
-// --- Retry Logic for API Calls ---
-async function retryApiCall(apiCall, maxRetries = 3, baseDelay = 1000) {
-    let lastError;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    /**
+     * Translate text from source language to target language
+     * @param {string} text - Text to translate
+     * @param {string} sourceLang - Source language code
+     * @param {string} targetLang - Target language code
+     * @returns {Promise<Object>} Translation result
+     */
+    async translate(text, sourceLang, targetLang) {
         try {
-            return await apiCall();
+            // Validate inputs
+            this.validateInputs(text, sourceLang, targetLang);
+
+            // Check if translation is needed
+            if (sourceLang === targetLang) {
+                return {
+                    translatedText: text,
+                    confidence: 1.0,
+                    source: 'no-translation-needed'
+                };
+            }
+
+            // Perform translation
+            const result = await this.performTranslation(text, sourceLang, targetLang);
+            
+            return {
+                translatedText: result.translatedText,
+                confidence: result.confidence || 0.9,
+                source: 'openai-gpt4o',
+                model: result.model || 'gpt-4o',
+                processingTime: result.processingTime
+            };
+
         } catch (error) {
-            lastError = error;
-            console.error(`API call attempt ${attempt} failed:`, error.message);
-            
-            if (attempt === maxRetries) {
-                break;
-            }
-            
-            // Exponential backoff
-            const delay = baseDelay * Math.pow(2, attempt - 1);
-            await new Promise(resolve => setTimeout(resolve, delay));
-        }
-    }
-    
-    throw new TranslationError(`API call failed after ${maxRetries} attempts: ${lastError.message}`);
-}
-
-// --- Enhanced Translation Function ---
-async function translateText(text, from, toLanguages, voiceId, sessionId) {
-    try {
-        // Input validation
-        validateTranslationInput(text, from, toLanguages, voiceId, sessionId);
-        
-        console.log(`Translating text: "${text.substring(0, 50)}..." from ${from} to ${toLanguages.join(', ')}`);
-        
-        // Enhanced Islamic context analysis
-        const islamicContext = analyzeIslamicContext(text);
-        console.log('Islamic context analysis:', islamicContext);
-        
-        // Get conversation memory
-        const context = await getRelevantContext(text, sessionId);
-        const fromLanguage = from === 'auto' ? 'the detected language' : from;
-        const translationResults = [];
-        
-        for (const to of toLanguages) {
-            try {
-                // Check cache first
-                const cache = getTranslationCache();
-                const cached = await cache.getTranslation(text, fromLanguage, to, sessionId);
-                
-                if (cached) {
-                    console.log(`[Cache] Using cached translation for ${to}`);
-                    translationResults.push({
-                        translatedText: cached.translatedText,
-                        audioBuffer: null, // Audio not cached
-                        toLanguage: to,
-                        context,
-                        islamicContext,
-                        confidence: cached.confidence || 0.9,
-                        model: cached.model || 'gpt-5',
-                        source: 'cache'
-                    });
-                } else {
-                    // Perform translation
-                    const result = await translateToLanguage(text, fromLanguage, to, context, islamicContext, voiceId);
-                    translationResults.push(result);
-                    
-                    // Cache the result
-                    await cache.setTranslation(text, fromLanguage, to, {
-                        translatedText: result.translatedText,
-                        confidence: result.confidence,
-                        model: result.model,
-                        timestamp: new Date().toISOString()
-                    }, sessionId);
-                }
-            } catch (error) {
-                console.error(`Translation failed for ${to}:`, error.message);
-                
-                // Add error result but don't fail the entire request
-                translationResults.push({
-                    translatedText: `[Translation error for ${to}]`,
-                    audioBuffer: null,
-                    toLanguage: to,
-                    context,
-                    islamicContext,
-                    confidence: 0,
-                    model: 'gpt-5',
-                    error: error.message
-                });
-            }
-        }
-        
-        console.log('Translation completed for', translationResults.length, 'languages');
-        return translationResults;
-        
-    } catch (error) {
-        console.error('Translation error:', error);
-        
-        if (error instanceof ValidationError) {
-            throw error;
-        }
-        
-        // Return user-friendly error without exposing internal details
-        throw new TranslationError('Translation service temporarily unavailable. Please try again later.');
-    }
-}
-
-// --- Individual Language Translation ---
-async function translateToLanguage(text, fromLanguage, to, context, islamicContext, voiceId) {
-    let prompt;
-    if (context) {
-        prompt = `Given the following conversation history as context:\n---\n${context}\n---\n\nTranslate the following text from ${fromLanguage} to ${to}. Provide a direct, accurate translation: "${text}"`;
-    } else {
-        prompt = `Translate the following text from ${fromLanguage} to ${to}. Provide a direct, accurate translation: "${text}"`;
-    }
-
-    // Add Islamic context if detected
-    if (islamicContext.hasIslamicContent) {
-        prompt += `\n\nNote: This text contains Islamic terminology. Please ensure accurate translation of Islamic terms and maintain the respectful, spiritual tone appropriate for Islamic content.`;
-    }
-
-    // Retry logic for OpenAI API with timeout
-    let translatedText;
-    try {
-        translatedText = await Promise.race([
-            retryApiCall(async () => {
-                const completion = await openai.chat.completions.create({
-                    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-                    messages: [
-                        { 
-                            role: 'system', 
-                            content: 'You are a professional translator. Provide accurate, direct translations without filtering or censoring content. Translate exactly what is given to you.' 
-                        },
-                        { role: 'user', content: prompt }
-                    ],
-                    max_tokens: 1000
-                });
-                
-                let result = completion.choices[0].message.content.replace(/"/g, '').trim();
-                
-                // Fallback if translation is empty
-                if (!result || result === '') {
-                    console.log('Empty translation, trying simpler prompt...');
-                    const simplePrompt = `Translate "${text}" to ${to}`;
-                    const simpleCompletion = await openai.chat.completions.create({
-                        model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-                        messages: [
-                            { role: 'system', content: 'You are a translator. Translate the text exactly as requested.' },
-                            { role: 'user', content: simplePrompt }
-                        ],
-                        max_tokens: 1000
-                    });
-                    result = simpleCompletion.choices[0].message.content.replace(/"/g, '').trim();
-                }
-                
-                if (!result || result === '') {
-                    result = `[Translation from ${fromLanguage}]: ${text}`;
-                }
-                
-                return result;
-            }),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Translation timeout')), 25000)
-            )
-        ]);
-    } catch (error) {
-        console.error('OpenAI API failed, using fallback translation:', error.message);
-        // Fallback translation using simple word mapping
-        translatedText = getFallbackTranslation(text, fromLanguage, to);
-    }
-    
-    // Generate audio with error handling
-    let audioBuffer = null;
-    try {
-        // Skip audio generation for text-only mode
-        if (voiceId === 'text-only') {
-            console.log(`🎵 Skipping audio generation for text-only mode`);
-        } else {
-            console.log(`🎵 Generating audio for ${to} with voice ${voiceId}`);
-            const audioResult = await elevenlabs.textToSpeech.convert(voiceId, { 
-                text: translatedText, 
-                model_id: "eleven_multilingual_v2",
-                voice_settings: {
-                    stability: 0.5,
-                    similarity_boost: 0.5,
-                    style: 0.0,
-                    use_speaker_boost: true
+            console.error('[TranslationEngine] Translation failed:', error);
+            console.error('[TranslationEngine] Error details:', {
+                message: error.message,
+                status: error.response?.status,
+                statusText: error.response?.statusText,
+                data: error.response?.data,
+                code: error.code,
+                config: {
+                    url: error.config?.url,
+                    method: error.config?.method,
+                    timeout: error.config?.timeout
                 }
             });
-            audioBuffer = await streamToBuffer(audioResult);
-            console.log(`✅ Audio generated successfully for ${to} (${audioBuffer.length} bytes)`);
+            
+            // Try fallback methods
+            return await this.tryFallbackTranslation(text, sourceLang, targetLang, error);
         }
-    } catch (audioError) {
-        console.error(`❌ Audio generation failed for ${to}:`, audioError.message);
-        console.error('Audio error details:', {
-            voiceId,
-            textLength: translatedText.length,
-            errorType: audioError.constructor.name,
-            statusCode: audioError.status || 'unknown'
-        });
-        // Don't throw here, translation can still succeed without audio
     }
-    
-    const confidence = calculateTranslationConfidence(text, translatedText, to);
-    
-    return { 
-        translatedText, 
-        audioBuffer, 
-        toLanguage: to, 
-        context,
-        islamicContext,
-        confidence,
-        model: 'gpt-5'
-    };
-}
 
-// --- Memory Management Functions ---
-async function getRelevantContext(text, sessionId) {
-    try {
-        if (!sessionId) return null;
-        
-        const queryResponse = await pineconeIndex.query({
-            vector: await generateEmbedding(text),
-            topK: 5,
-            includeMetadata: true,
-            filter: { sessionId: { $eq: sessionId } }
-        });
-        
-        if (queryResponse.matches && queryResponse.matches.length > 0) {
-            return queryResponse.matches
-                .map(match => match.metadata?.text || '')
-                .join(' ');
+    /**
+     * Validate input parameters
+     */
+    validateInputs(text, sourceLang, targetLang) {
+        if (!text || typeof text !== 'string') {
+            throw new Error('Text must be a non-empty string');
         }
-        
-        return null;
-    } catch (error) {
-        console.error('Error retrieving context:', error);
-        return null;
-    }
-}
 
-async function generateEmbedding(text) {
-    try {
-        const response = await openai.embeddings.create({
-            model: "text-embedding-3-small",
-            input: text
-        });
-        return response.data[0].embedding;
-    } catch (error) {
-        console.error('Error generating embedding:', error);
-        throw new TranslationError('Failed to generate text embedding');
-    }
-}
+        if (text.length > 5000) {
+            throw new Error('Text too long. Maximum 5000 characters allowed.');
+        }
 
-async function storeInMemory(text, translatedText, sessionId, islamicContext) {
-    try {
-        const embedding = await generateEmbedding(text);
-        const id = `translation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        if (!sourceLang || typeof sourceLang !== 'string') {
+            throw new Error('Source language is required');
+        }
+
+        if (!targetLang || typeof targetLang !== 'string') {
+            throw new Error('Target language is required');
+        }
+
+        if (sourceLang.length < 2 || sourceLang.length > 10) {
+            throw new Error('Invalid source language code');
+        }
+
+        if (targetLang.length < 2 || targetLang.length > 10) {
+            throw new Error('Invalid target language code');
+        }
+    }
+
+    /**
+     * Perform the actual translation using OpenAI GPT-4o
+     */
+    async performTranslation(text, sourceLang, targetLang) {
+        console.log('[TranslationEngine] performTranslation called with:', { text, sourceLang, targetLang });
+        console.log('[TranslationEngine] API key available:', !!this.apiKey);
+        console.log('[TranslationEngine] API key preview:', this.apiKey ? `${this.apiKey.substring(0, 10)}...` : 'null');
         
-        await pineconeIndex.upsert([{
-            id,
-            values: embedding,
-            metadata: {
-                text: text,
-                translatedText: translatedText,
-                sessionId: sessionId,
-                timestamp: new Date().toISOString(),
-                islamicContext: islamicContext
+        if (!this.apiKey) {
+            console.warn('[TranslationEngine] No API key configured, using fallback translation');
+            return this.getFallbackTranslation(text, sourceLang, targetLang);
+        }
+
+        const startTime = Date.now();
+        let lastError;
+
+        for (let attempt = 1; attempt <= this.maxRetries; attempt++) {
+            try {
+                // Get language names for better context
+                const sourceLangName = this.getLanguageName(sourceLang);
+                const targetLangName = this.getLanguageName(targetLang);
+                
+                const prompt = `Translate the following text from ${sourceLangName} to ${targetLangName}. 
+                Return only the translated text, nothing else. No explanations, no additional text, just the translation.
+
+                Text to translate: "${text}"`;
+
+                const response = await axios.post(
+                    this.baseUrl,
+                    {
+                        model: this.model,
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are a professional translator. Translate the given text accurately and naturally. Return only the translated text."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: 1000,
+                        temperature: 0.3,
+                        top_p: 1,
+                        frequency_penalty: 0,
+                        presence_penalty: 0
+                    },
+                    {
+                        timeout: this.timeout,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${this.apiKey}`,
+                            'User-Agent': 'Islamic-Portal-Translator/1.0'
+                        }
+                    }
+                );
+
+                const processingTime = Date.now() - startTime;
+
+                console.log('[TranslationEngine] OpenAI response received:', {
+                    status: response.status,
+                    hasData: !!response.data,
+                    hasChoices: !!response.data?.choices,
+                    choicesLength: response.data?.choices?.length || 0,
+                    firstChoice: response.data?.choices?.[0] || null
+                });
+
+                if (response.data && response.data.choices && response.data.choices[0]) {
+                    const translatedText = response.data.choices[0].message.content.trim();
+                    console.log('[TranslationEngine] Translation successful:', translatedText);
+                    
+                    return {
+                        translatedText: translatedText,
+                        confidence: this.calculateOpenAIConfidence(response.data),
+                        processingTime,
+                        model: this.model
+                    };
+                } else {
+                    console.error('[TranslationEngine] Invalid response format:', response.data);
+                    throw new Error('Invalid response format from OpenAI API');
+                }
+
+            } catch (error) {
+                lastError = error;
+                console.error(`[TranslationEngine] Attempt ${attempt} failed:`, error.message);
+                console.error(`[TranslationEngine] Error details:`, {
+                    status: error.response?.status,
+                    statusText: error.response?.statusText,
+                    data: error.response?.data,
+                    code: error.code
+                });
+
+                if (attempt < this.maxRetries) {
+                    await this.delay(this.retryDelay * attempt);
+                }
             }
-        }]);
-        
-        console.log('Stored translation in memory:', id);
-    } catch (error) {
-        console.error('Error storing in memory:', error);
-        // Don't throw here, translation can still succeed
-    }
-}
+        }
 
-function calculateTranslationConfidence(originalText, translatedText, targetLanguage) {
-    // Simple confidence calculation based on text length and language match
-    const lengthRatio = translatedText.length / originalText.length;
-    const baseConfidence = 0.8;
-    
-    // Adjust confidence based on length ratio
-    let confidence = baseConfidence;
-    if (lengthRatio < 0.5 || lengthRatio > 2.0) {
-        confidence -= 0.2;
+        throw lastError;
     }
-    
-    // Adjust for language-specific factors
-    if (targetLanguage === 'ar' && /[\u0600-\u06FF]/.test(translatedText)) {
-        confidence += 0.1; // Bonus for Arabic script
+
+    /**
+     * Try fallback translation methods
+     */
+    async tryFallbackTranslation(text, sourceLang, targetLang, originalError) {
+        console.log('[TranslationEngine] Trying fallback translation methods...');
+
+        // Fallback 1: Simple character substitution for common languages
+        try {
+            const fallbackResult = this.simpleFallbackTranslation(text, sourceLang, targetLang);
+            if (fallbackResult) {
+                return {
+                    translatedText: fallbackResult,
+                    confidence: 0.3,
+                    source: 'fallback-simple',
+                    model: 'character-substitution',
+                    warning: 'Using fallback translation - accuracy may be limited'
+                };
+            }
+    } catch (error) {
+            console.warn('[TranslationEngine] Simple fallback failed:', error.message);
+        }
+
+        // Fallback 2: Return original text with detailed error message
+        const errorDetails = {
+            message: originalError.message,
+            status: originalError.response?.status,
+            statusText: originalError.response?.statusText,
+            apiError: originalError.response?.data?.error?.message,
+            code: originalError.code
+        };
+        
+        return {
+            translatedText: `[Translation Error: ${errorDetails.apiError || errorDetails.message}] ${text}`,
+            confidence: 0.0,
+            source: 'error-fallback',
+            model: 'error-handler',
+            error: errorDetails.message,
+            details: errorDetails
+        };
+    }
+
+    /**
+     * Get fallback translation when API is not available
+     */
+    getFallbackTranslation(text, sourceLang, targetLang) {
+        console.log(`[TranslationEngine] Using fallback for: ${sourceLang} -> ${targetLang}`);
+        
+        // Basic fallback translations
+        const fallbackTranslations = {
+            'en-ar': {
+                'hello': 'مرحبا',
+                'world': 'عالم',
+                'thank you': 'شكرا',
+                'yes': 'نعم',
+                'no': 'لا',
+                'good': 'جيد',
+                'bad': 'سيء',
+                'welcome': 'أهلا وسهلا',
+                'good morning': 'صباح الخير',
+                'good evening': 'مساء الخير',
+                'how are you': 'كيف حالك',
+                'i am fine': 'أنا بخير',
+                'please': 'من فضلك',
+                'sorry': 'آسف',
+                'excuse me': 'اعذرني'
+            },
+            'ar-en': {
+                'مرحبا': 'hello',
+                'عالم': 'world',
+                'شكرا': 'thank you',
+                'نعم': 'yes',
+                'لا': 'no',
+                'جيد': 'good',
+                'سيء': 'bad',
+                'أهلا وسهلا': 'welcome',
+                'صباح الخير': 'good morning',
+                'مساء الخير': 'good evening',
+                'كيف حالك': 'how are you',
+                'أنا بخير': 'i am fine',
+                'من فضلك': 'please',
+                'آسف': 'sorry',
+                'اعذرني': 'excuse me'
+            }
+        };
+
+        const key = `${sourceLang}-${targetLang}`;
+        const mappings = fallbackTranslations[key];
+        
+        if (mappings) {
+            const lowerText = text.toLowerCase().trim();
+            if (mappings[lowerText]) {
+                return {
+                    translatedText: mappings[lowerText],
+                    confidence: 0.8,
+                    processingTime: 0,
+                    source: 'fallback-dictionary'
+                };
+            }
+        }
+
+        // If no specific mapping found, return a generic response
+    return { 
+            translatedText: `[${sourceLang}->${targetLang}] ${text}`,
+            confidence: 0.3,
+            processingTime: 0,
+            source: 'fallback-generic',
+            warning: 'Translation service unavailable - using fallback'
+        };
+    }
+
+    /**
+     * Simple fallback translation using basic character substitution
+     */
+    simpleFallbackTranslation(text, sourceLang, targetLang) {
+        // Enhanced fallback with more comprehensive mappings
+        const mappings = {
+            // English to Arabic
+            'en-ar': {
+                'hello': 'مرحبا',
+                'world': 'عالم',
+                'thank you': 'شكرا',
+                'yes': 'نعم',
+                'no': 'لا',
+                'good': 'جيد',
+                'bad': 'سيء',
+                'i': 'أنا',
+                'love': 'أحب',
+                'you': 'أنت',
+                'very': 'جدا',
+                'much': 'كثيرا',
+                'i love you': 'أنا أحبك',
+                'i love you very much': 'أنا أحبك جدا',
+                'how are you': 'كيف حالك',
+                'what': 'ماذا',
+                'where': 'أين',
+                'when': 'متى',
+                'why': 'لماذا',
+                'who': 'من',
+                'how': 'كيف',
+                'name': 'اسم',
+                'my name is': 'اسمي',
+                'nice to meet you': 'تشرفنا',
+                'good morning': 'صباح الخير',
+                'good evening': 'مساء الخير',
+                'good night': 'تصبح على خير',
+                'please': 'من فضلك',
+                'excuse me': 'اعذرني',
+                'sorry': 'آسف',
+                'welcome': 'أهلا وسهلا',
+                'see you later': 'أراك لاحقا',
+                'goodbye': 'وداعا'
+            },
+            // Arabic to English
+            'ar-en': {
+                'أنا': 'I',
+                'أحب': 'love',
+                'أنت': 'you',
+                'جدا': 'very',
+                'كثيرا': 'much',
+                'أنا أحبك': 'I love you',
+                'أنا أحبك جدا': 'I love you very much',
+                'كيف حالك': 'how are you',
+                'ماذا': 'what',
+                'أين': 'where',
+                'متى': 'when',
+                'لماذا': 'why',
+                'من': 'who',
+                'كيف': 'how',
+                'اسم': 'name',
+                'اسمي': 'my name is',
+                'تشرفنا': 'nice to meet you',
+                'صباح الخير': 'good morning',
+                'مساء الخير': 'good evening',
+                'تصبح على خير': 'good night',
+                'من فضلك': 'please',
+                'اعذرني': 'excuse me',
+                'آسف': 'sorry',
+                'أهلا وسهلا': 'welcome',
+                'أراك لاحقا': 'see you later',
+                'وداعا': 'goodbye',
+                'مرحبا': 'hello',
+                'عالم': 'world',
+                'شكرا': 'thank you',
+                'نعم': 'yes',
+                'لا': 'no',
+                'جيد': 'good',
+                'سيء': 'bad'
+            }
+        };
+
+        const mappingKey = `${sourceLang}-${targetLang}`;
+        const languageMappings = mappings[mappingKey];
+        
+        if (languageMappings) {
+            const lowerText = text.toLowerCase().trim();
+            if (languageMappings[lowerText]) {
+                return languageMappings[lowerText];
+            }
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get language name from language code
+     */
+    getLanguageName(langCode) {
+        const languageNames = {
+            'auto': 'auto-detect',
+            'en': 'English',
+            'ar': 'Arabic',
+            'es': 'Spanish',
+            'fr': 'French',
+            'de': 'German',
+            'it': 'Italian',
+            'pt': 'Portuguese',
+            'ru': 'Russian',
+            'zh': 'Chinese',
+            'ja': 'Japanese',
+            'ko': 'Korean',
+            'hi': 'Hindi',
+            'tr': 'Turkish',
+            'fa': 'Persian',
+            'ur': 'Urdu',
+            'bn': 'Bengali',
+            'id': 'Indonesian',
+            'ms': 'Malay',
+            'th': 'Thai',
+            'vi': 'Vietnamese'
+        };
+        return languageNames[langCode] || langCode;
+    }
+
+    /**
+     * Calculate confidence score based on OpenAI response
+     */
+    calculateOpenAIConfidence(response) {
+        // Base confidence on response quality indicators
+        let confidence = 0.9; // High base confidence for GPT-4o
+        
+        // Adjust based on response length and structure
+        if (response.usage) {
+            const promptTokens = response.usage.prompt_tokens || 0;
+            const completionTokens = response.usage.completion_tokens || 0;
+            
+            // Higher confidence for more detailed responses
+            if (completionTokens > 10) {
+                confidence = Math.min(0.95, confidence + 0.05);
+            }
+        }
+        
+        return Math.round(confidence * 100) / 100;
+    }
+
+    /**
+     * Calculate confidence score based on translation result
+     */
+    calculateConfidence(translation) {
+        let confidence = 0.9; // Base confidence
+
+        // Check for detected language confidence
+        if (translation.detectedSourceLanguage) {
+            const detectedConfidence = translation.detectedSourceLanguage.confidence || 0.8;
+            confidence = Math.min(confidence, detectedConfidence);
+        }
+
+        // Penalize if translation is identical to original
+        if (translation.translatedText === translation.originalText) {
+            confidence *= 0.5;
+        }
+
+        // Penalize very short translations
+        if (translation.translatedText.length < 3) {
+            confidence *= 0.7;
     }
     
     return Math.max(0.1, Math.min(1.0, confidence));
 }
 
-// --- Audio Transcription Function ---
-async function transcribeAudioFile(filePath, from, toLanguages, voiceId, sessionId) {
-    try {
-        console.log('Transcribing audio file:', filePath);
-        
-        if (!fs.existsSync(filePath)) {
-            throw new ValidationError('Audio file not found');
+    /**
+     * Delay execution for retry logic
+     */
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Get supported languages
+     */
+    async getSupportedLanguages() {
+        try {
+            const response = await axios.get(`${this.baseUrl}/languages`, {
+                params: { key: this.apiKey },
+                timeout: this.timeout
+            });
+
+            return response.data.data.languages || [];
+        } catch (error) {
+            console.error('[TranslationEngine] Failed to get supported languages:', error);
+            return this.getDefaultLanguages();
         }
-        
-        const transcriptionOptions = {
-            file: fs.createReadStream(filePath),
-            model: "whisper-1",
-            response_format: "verbose_json",
-        };
-        
-        if (from && from !== 'auto') {
-            const langMap = { 
-                'English': 'en', 'Arabic': 'ar', 'French': 'fr', 'German': 'de', 
-                'Urdu': 'ur', 'Spanish': 'es', 'Hindi': 'hi', 'Russian': 'ru', 
-                'Japanese': 'ja', 'Chinese': 'zh' 
-            };
-            if (langMap[from]) {
-                transcriptionOptions.language = langMap[from];
-            }
-        }
-        
-        const transcription = await retryApiCall(async () => {
-            return await openai.audio.transcriptions.create(transcriptionOptions);
-        });
-        
-        const transcribedText = transcription.text;
-        console.log('Transcription result:', transcribedText);
-        
-        if (!transcribedText || transcribedText.trim().length === 0) {
-            throw new TranslationError('No speech detected in audio file');
-        }
-        
-        // Translate the transcribed text
-        const translationResults = await translateText(transcribedText, from, toLanguages, voiceId, sessionId);
-        
+    }
+
+    /**
+     * Get default language list when API is unavailable
+     */
+    getDefaultLanguages() {
+        return [
+            { language: 'en', name: 'English' },
+            { language: 'ar', name: 'Arabic' },
+            { language: 'fr', name: 'French' },
+            { language: 'de', name: 'German' },
+            { language: 'es', name: 'Spanish' },
+            { language: 'ur', name: 'Urdu' },
+            { language: 'hi', name: 'Hindi' },
+            { language: 'zh', name: 'Chinese' },
+            { language: 'ja', name: 'Japanese' },
+            { language: 'ko', name: 'Korean' },
+            { language: 'ru', name: 'Russian' },
+            { language: 'it', name: 'Italian' },
+            { language: 'pt', name: 'Portuguese' },
+            { language: 'tr', name: 'Turkish' },
+            { language: 'fa', name: 'Persian' },
+            { language: 'bn', name: 'Bengali' },
+            { language: 'id', name: 'Indonesian' },
+            { language: 'ms', name: 'Malay' },
+            { language: 'th', name: 'Thai' },
+            { language: 'vi', name: 'Vietnamese' }
+        ];
+    }
+
+    /**
+     * Health check for translation service
+     */
+    async healthCheck() {
+        try {
+            const result = await this.translate('hello', 'en', 'ar');
         return {
-            transcription: transcribedText,
-            translations: translationResults,
-            confidence: transcription.language_confidence || 0.8
-        };
-        
+                status: 'healthy',
+                responseTime: result.processingTime,
+                confidence: result.confidence
+            };
     } catch (error) {
-        console.error('Audio transcription error:', error);
-        
-        if (error instanceof ValidationError) {
-            throw error;
+            return {
+                status: 'unhealthy',
+                error: error.message
+            };
         }
-        
-        throw new TranslationError('Audio transcription failed. Please try again.');
     }
 }
 
-// --- Export Functions ---
-module.exports = {
-    translateText,
-    transcribeAudioFile,
-    analyzeIslamicContext,
-    TranslationError,
-    ValidationError
-};
+// Create singleton instance
+const translationEngine = new TranslationEngine();
+
+// Export both the class and instance
+module.exports = translationEngine;
+module.exports.TranslationEngine = TranslationEngine;

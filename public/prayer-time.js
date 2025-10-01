@@ -210,7 +210,7 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
 
     // Initialize all modules
     console.log("[Main] Initializing all modules");
-    settings.initialize();
+    await settings.initialize();
     calculator.initialize();
     await i18n.initialize();
     await audio.initialize();

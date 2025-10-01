@@ -6,7 +6,7 @@ const InMemoryRateLimiter = require('../services/inMemoryRateLimiter');
 // Create rate limiter instances
 const generalLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window
+  max: 1000, // 1000 requests per window (more reasonable for normal usage)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false
@@ -22,7 +22,7 @@ const authLimiter = new InMemoryRateLimiter({
 
 const loginLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 3, // 3 login attempts per window
+  max: 10, // 10 login attempts per window (more reasonable)
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false
@@ -38,7 +38,7 @@ const translationLimiter = new InMemoryRateLimiter({
 
 const notificationLimiter = new InMemoryRateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  max: 10, // 10 notification requests per minute
+  max: 60, // 60 notification requests per minute (1 per second)
   message: 'Too many notification requests, please slow down.',
   standardHeaders: true,
   legacyHeaders: false

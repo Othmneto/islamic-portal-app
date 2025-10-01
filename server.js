@@ -129,12 +129,15 @@ app.use(
         "script-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
         "style-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
         "style-src-elem": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-        "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+        "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://r2cdn.perplexity.ai"],
         "img-src": ["'self'", "data:"],
         "connect-src": [
           "'self'",
           "https://kaabah-ai-model-1-0-0.onrender.com",
-          "https://nominatim.openstreetmap.org"
+          "https://nominatim.openstreetmap.org",
+          "https://cdnjs.cloudflare.com",
+          "https://fonts.googleapis.com",
+          "https://fonts.gstatic.com"
         ],
         "media-src": ["'self'"],
       },
@@ -248,6 +251,12 @@ app.use('/api/auth/microsoft', microsoftAuth);
 app.use('/api/token', apiLimiter, require('./routes/tokenRoutes')); // Token management routes
 app.use('/api/notifications', notificationLimiter, notificationsRouter);
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
+
+// Analytics routes
+app.use('/api/analytics', require('./routes/analyticsRoutes'));
+
+// User feedback routes (using analytics routes for now)
+app.use('/api/user-feedback', require('./routes/analyticsRoutes'));
 app.use('/api/names', namesRoutes);
 app.use('/api/translation', translationLimiter, translationRoutes);
 app.use('/api/text-translation', translationLimiter, textTranslationRoutes);

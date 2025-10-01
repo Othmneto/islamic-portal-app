@@ -97,7 +97,7 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
     }
 
     // Initialize all modules
-    settings.initialize();
+    await settings.initialize();
     await i18n.initialize();
     await audio.initialize();
     await notifications.initialize();

@@ -1,247 +1,299 @@
-// models/TranslationHistory.js
 const mongoose = require('mongoose');
 
 const translationHistorySchema = new mongoose.Schema({
-    userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-        required: true,
-        index: true
-    },
-    sessionId: {
-        type: String,
-        required: true,
-        index: true
-    },
-    conversationId: {
-        type: String,
-        required: true,
-        index: true
-    },
-    originalText: {
-        type: String,
-        required: true,
-        maxlength: 10000
-    },
-    translatedText: {
-        type: String,
-        required: true,
-        maxlength: 10000
-    },
-    fromLanguage: {
-        type: String,
-        required: true,
-        maxlength: 10
-    },
-    toLanguage: {
-        type: String,
-        required: true,
-        maxlength: 10
-    },
-    confidence: {
-        type: Number,
-        min: 0,
-        max: 1,
-        default: 0.9
-    },
-    islamicContext: {
-        hasIslamicContent: {
-            type: Boolean,
-            default: false
-        },
-        englishTerms: [String],
-        arabicTerms: [String],
-        confidence: {
-            type: Number,
-            min: 0,
-            max: 1,
-            default: 0.7
-        }
-    },
-    audioData: {
-        type: Buffer,
-        required: false
-    },
-    audioFormat: {
-        type: String,
-        enum: ['mp3', 'wav', 'ogg'],
-        required: false
-    },
-    model: {
-        type: String,
-        default: 'gpt-5'
-    },
-    processingTime: {
-        type: Number, // in milliseconds
-        required: false
-    },
-    isPartial: {
-        type: Boolean,
-        default: false
-    },
-    partialIndex: {
-        type: Number,
-        required: function() {
-            return this.isPartial;
-        }
-    },
-    tags: [String],
-    isFavorite: {
-        type: Boolean,
-        default: false
-    },
-    isDeleted: {
-        type: Boolean,
-        default: false
-    }
+  userId: {
+    type: String,
+    required: true,
+    index: true
+  },
+  timestamp: {
+    type: Date,
+    default: Date.now,
+    index: true
+  },
+  from: {
+    type: String,
+    required: true,
+    maxlength: 10
+  },
+  to: {
+    type: String,
+    required: true,
+    maxlength: 10
+  },
+  original: {
+    type: String,
+    required: true,
+    maxlength: 5000
+  },
+  translated: {
+    type: String,
+    maxlength: 5000
+  },
+  error: {
+    type: String,
+    maxlength: 1000
+  },
+  confidence: {
+    type: Number,
+    min: 0,
+    max: 1
+  },
+  model: {
+    type: String,
+    maxlength: 100
+  },
+  sessionId: {
+    type: String,
+    maxlength: 100,
+    index: true
+  },
+  conversationId: {
+    type: String,
+    maxlength: 100,
+    index: true
+  },
+  context: {
+    type: String,
+    maxlength: 500
+  },
+  source: {
+    type: String,
+    enum: ['api', 'web', 'mobile', 'voice'],
+    default: 'web'
+  },
+  processingTime: {
+    type: Number, // in milliseconds
+    min: 0
+  },
+  userAgent: {
+    type: String,
+    maxlength: 500
+  },
+  ipAddress: {
+    type: String,
+    maxlength: 45
+  },
+  isPartial: {
+    type: Boolean,
+    default: false
+  },
+  isFavorite: {
+    type: Boolean,
+    default: false
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false
+  },
+  deletedAt: {
+    type: Date
+  },
+  tags: [{
+    type: String,
+    maxlength: 50
+  }]
 }, {
-    timestamps: true,
-    toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+  timestamps: true,
+  collection: 'translation_history'
 });
 
 // Indexes for better query performance
-translationHistorySchema.index({ userId: 1, createdAt: -1 });
-translationHistorySchema.index({ sessionId: 1, createdAt: -1 });
-translationHistorySchema.index({ conversationId: 1, createdAt: -1 });
-translationHistorySchema.index({ fromLanguage: 1, toLanguage: 1 });
-translationHistorySchema.index({ isPartial: 1, partialIndex: 1 });
-translationHistorySchema.index({ isDeleted: 1, createdAt: -1 });
+translationHistorySchema.index({ userId: 1, timestamp: -1 });
+translationHistorySchema.index({ userId: 1, from: 1, to: 1 });
+translationHistorySchema.index({ sessionId: 1 });
+translationHistorySchema.index({ timestamp: -1 });
+translationHistorySchema.index({ error: 1 });
 
-// Text search index for searching translations
-translationHistorySchema.index({
-    originalText: 'text',
-    translatedText: 'text'
+// Virtual for success status
+translationHistorySchema.virtual('isSuccessful').get(function() {
+  return !this.error && this.translated;
 });
 
-// Virtual for formatted date
-translationHistorySchema.virtual('formattedDate').get(function() {
-    return this.createdAt.toLocaleString();
+// Virtual for duration since translation
+translationHistorySchema.virtual('durationAgo').get(function() {
+  const now = new Date();
+  const diff = now - this.timestamp;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  return 'Just now';
 });
 
-// Virtual for duration since creation
-translationHistorySchema.virtual('timeAgo').get(function() {
-    const now = new Date();
-    const diff = now - this.createdAt;
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(diff / 3600000);
-    const days = Math.floor(diff / 86400000);
-    
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-    return 'Just now';
-});
-
-// Static methods
-translationHistorySchema.statics.findByUser = function(userId, options = {}) {
-    const query = { userId, isDeleted: false };
-    
-    if (options.fromLanguage) query.fromLanguage = options.fromLanguage;
-    if (options.toLanguage) query.toLanguage = options.toLanguage;
-    if (options.sessionId) query.sessionId = options.sessionId;
-    if (options.conversationId) query.conversationId = options.conversationId;
-    if (options.isPartial !== undefined) query.isPartial = options.isPartial;
-    if (options.isFavorite !== undefined) query.isFavorite = options.isFavorite;
-    
-    return this.find(query)
-        .sort({ createdAt: -1 })
-        .limit(options.limit || 50)
-        .skip(options.skip || 0);
-};
-
-translationHistorySchema.statics.searchTranslations = function(userId, searchTerm, options = {}) {
-    const query = {
+// Static method to get user statistics
+translationHistorySchema.statics.getUserStats = async function(userId, days = 30) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  const stats = await this.aggregate([
+    {
+      $match: {
         userId,
-        isDeleted: false,
-        $text: { $search: searchTerm }
-    };
-    
-    if (options.fromLanguage) query.fromLanguage = options.fromLanguage;
-    if (options.toLanguage) query.toLanguage = options.toLanguage;
-    
-    return this.find(query, { score: { $meta: 'textScore' } })
-        .sort({ score: { $meta: 'textScore' }, createdAt: -1 })
-        .limit(options.limit || 50)
-        .skip(options.skip || 0);
-};
-
-translationHistorySchema.statics.getUserStats = function(userId) {
-    return this.aggregate([
-        { $match: { userId: mongoose.Types.ObjectId(userId), isDeleted: false } },
-        {
-            $group: {
-                _id: null,
-                totalTranslations: { $sum: 1 },
-                totalCharacters: { $sum: { $strLenCP: '$originalText' } },
-                averageConfidence: { $avg: '$confidence' },
-                languages: { $addToSet: '$fromLanguage' },
-                targetLanguages: { $addToSet: '$toLanguage' },
-                lastTranslation: { $max: '$createdAt' },
-                firstTranslation: { $min: '$createdAt' }
-            }
-        }
-    ]);
-};
-
-translationHistorySchema.statics.getConversationHistory = function(conversationId, options = {}) {
-    const query = { conversationId, isDeleted: false };
-    
-    if (options.includePartial !== false) {
-        // Include partial translations by default
-    } else {
-        query.isPartial = false;
+        timestamp: { $gte: startDate }
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalTranslations: { $sum: 1 },
+        successfulTranslations: {
+          $sum: { $cond: [{ $eq: ['$error', null] }, 1, 0] }
+        },
+        failedTranslations: {
+          $sum: { $cond: [{ $ne: ['$error', null] }, 1, 0] }
+        },
+        avgConfidence: { $avg: '$confidence' },
+        avgProcessingTime: { $avg: '$processingTime' }
+      }
     }
-    
-    return this.find(query)
-        .sort({ partialIndex: 1, createdAt: 1 })
-        .limit(options.limit || 100);
+  ]);
+  
+  return stats[0] || {
+    totalTranslations: 0,
+    successfulTranslations: 0,
+    failedTranslations: 0,
+    avgConfidence: 0,
+    avgProcessingTime: 0
+  };
 };
 
-// Instance methods
-translationHistorySchema.methods.markAsFavorite = function() {
-    this.isFavorite = true;
-    return this.save();
+// Static method to get language pair statistics
+translationHistorySchema.statics.getLanguagePairStats = async function(userId, limit = 10) {
+  return await this.aggregate([
+    {
+      $match: {
+        userId,
+        error: { $exists: false }
+      }
+    },
+    {
+      $group: {
+        _id: { from: '$from', to: '$to' },
+        count: { $sum: 1 },
+        avgConfidence: { $avg: '$confidence' }
+      }
+    },
+    {
+      $sort: { count: -1 }
+    },
+    {
+      $limit: limit
+    }
+  ]);
 };
 
-translationHistorySchema.methods.unmarkAsFavorite = function() {
-    this.isFavorite = false;
-    return this.save();
+// Static method to get daily activity
+translationHistorySchema.statics.getDailyActivity = async function(userId, days = 30) {
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - days);
+  
+  return await this.aggregate([
+    {
+      $match: {
+        userId,
+        timestamp: { $gte: startDate },
+        error: { $exists: false }
+      }
+    },
+    {
+      $group: {
+        _id: {
+          year: { $year: '$timestamp' },
+          month: { $month: '$timestamp' },
+          day: { $dayOfMonth: '$timestamp' }
+        },
+        count: { $sum: 1 }
+      }
+    },
+    {
+      $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 }
+    }
+  ]);
 };
 
-translationHistorySchema.methods.softDelete = function() {
-    this.isDeleted = true;
-    return this.save();
-};
-
-translationHistorySchema.methods.addTags = function(tags) {
-    const newTags = Array.isArray(tags) ? tags : [tags];
-    this.tags = [...new Set([...this.tags, ...newTags])];
-    return this.save();
-};
-
-translationHistorySchema.methods.removeTags = function(tags) {
-    const tagsToRemove = Array.isArray(tags) ? tags : [tags];
-    this.tags = this.tags.filter(tag => !tagsToRemove.includes(tag));
-    return this.save();
-};
-
-// Pre-save middleware
+// Pre-save middleware to clean up data
 translationHistorySchema.pre('save', function(next) {
-    // Ensure partialIndex is set for partial translations
-    if (this.isPartial && this.partialIndex === undefined) {
-        this.partialIndex = 0;
-    }
-    
-    // Truncate text if too long
-    if (this.originalText.length > 10000) {
-        this.originalText = this.originalText.substring(0, 10000);
-    }
-    if (this.translatedText.length > 10000) {
-        this.translatedText = this.translatedText.substring(0, 10000);
-    }
-    
-    next();
+  // Trim whitespace
+  if (this.original) this.original = this.original.trim();
+  if (this.translated) this.translated = this.translated.trim();
+  if (this.error) this.error = this.error.trim();
+  
+  // Ensure translated text exists for successful translations
+  if (!this.error && !this.translated) {
+    this.error = 'Translation result missing';
+  }
+  
+  next();
 });
+
+// Static method to find translations by user with options
+translationHistorySchema.statics.findByUser = async function(userId, options = {}) {
+  const {
+    limit = 20,
+    skip = 0,
+    fromLanguage,
+    toLanguage,
+    sessionId,
+    conversationId,
+    isPartial,
+    isFavorite
+  } = options;
+
+  const query = {
+    userId,
+    isDeleted: false
+  };
+
+  if (fromLanguage) query.from = fromLanguage;
+  if (toLanguage) query.to = toLanguage;
+  if (sessionId) query.sessionId = sessionId;
+  if (conversationId) query.conversationId = conversationId;
+  if (isPartial !== undefined) query.isPartial = isPartial;
+  if (isFavorite !== undefined) query.isFavorite = isFavorite;
+
+  return await this.find(query)
+    .sort({ timestamp: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+};
+
+// Instance method to mark as favorite
+translationHistorySchema.methods.markAsFavorite = function() {
+  this.isFavorite = true;
+  return this.save();
+};
+
+// Instance method to unmark as favorite
+translationHistorySchema.methods.unmarkAsFavorite = function() {
+  this.isFavorite = false;
+  return this.save();
+};
+
+// Instance method to add tags
+translationHistorySchema.methods.addTags = function(tags) {
+  if (!this.tags) this.tags = [];
+  const newTags = tags.filter(tag => !this.tags.includes(tag));
+  this.tags = [...this.tags, ...newTags];
+  return this.save();
+};
+
+// Instance method to remove tags
+translationHistorySchema.methods.removeTags = function(tags) {
+  if (!this.tags) return this.save();
+  this.tags = this.tags.filter(tag => !tags.includes(tag));
+  return this.save();
+};
+
+// Instance method to soft delete
+translationHistorySchema.methods.softDelete = function() {
+  this.isDeleted = true;
+  this.deletedAt = new Date();
+  return this.save();
+};
 
 module.exports = mongoose.model('TranslationHistory', translationHistorySchema);
