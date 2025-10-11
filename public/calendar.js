@@ -1,597 +1,353 @@
 // ==========================
-// Modern Islamic Calendar - JavaScript Integration
+// Script #1 — Theme & Toolbar Demos
+// ==========================
+// Cache the <html> element for theme toggling.
+const html = document.documentElement;
+
+// Toggle to dark theme.
+document.getElementById('theme-dark').addEventListener('click', () => {
+  html.setAttribute('data-theme','dark');
+  document.getElementById('theme-dark').classList.add('active');
+  document.getElementById('theme-light').classList.remove('active');
+});
+
+// Toggle to light theme.
+document.getElementById('theme-light').addEventListener('click', () => {
+  html.setAttribute('data-theme','light');
+  document.getElementById('theme-light').classList.add('active');
+  document.getElementById('theme-dark').classList.remove('active');
+});
+
+// Demo — open your existing event modal in integration.
+document.getElementById('add-event').addEventListener('click', () => {
+  // In your app: document.getElementById('event-modal').classList.add('open')
+  alert('Preview only: In integration, open #event-modal and use your form logic.');
+});
+
+// ==========================
+// Script #2 — Integration helpers + Modals, Occasions, OAuth, Day Modal, Reminders
 // ==========================
 
-// Prevent double initialization
-(function() {
-    if (window.__calendarInit) return;
-    window.__calendarInit = true;
+/* ==========================
+   Integration helpers — use your real data if present
+   ========================== */
 
-    // Global state
-    let currentDate = new Date();
-    let currentView = 'month';
-    let calendarEvents = window.calendarEvents || [];
-    
-    // Constants
-    const VIEWS = {
-        MONTH: 'month',
-        WEEK: 'week',
-        DAY: 'day',
-        YEAR: 'year'
-    };
+// Prefer your existing authenticatedFetch() if defined; otherwise fall back to window.fetch
+const http = typeof authenticatedFetch === 'function' ? authenticatedFetch : (url, options={}) => fetch(url, options);
 
-    const EVENT_CATEGORIES = {
-        PERSONAL: 'personal',
-        PRAYER: 'prayer',
-        ISLAMIC: 'islamic',
-        REMINDER: 'reminder',
-        HOLIDAY: 'holiday'
-    };
+// Utility: parse a date coming from different event shapes (Date, ISO string, millis)
+function toDate(x){
+  if (!x) return null;
+  try {
+    if (x instanceof Date) return x;
+    if (typeof x === 'number') return new Date(x);
+    // Some codebases store {date: 'YYYY-MM-DD', time: 'HH:mm'}
+    if (typeof x === 'object' && x.date) return new Date(`${x.date}${x.time? 'T'+x.time: ''}`);
+    return new Date(x);
+  } catch { return null; }
+}
 
-    // ==========================
-    // Utility Functions
-    // ==========================
-    
-    function toDate(x) {
-        if (!x) return null;
-        try {
-            if (x instanceof Date) return x;
-            if (typeof x === 'number') return new Date(x);
-            if (typeof x === 'object' && x.date) return new Date(`${x.date}${x.time ? 'T' + x.time : ''}`);
-            return new Date(x);
-        } catch { 
-            return null; 
-        }
+// Compare only Y/M/D (ignore time)
+function isSameDay(a, b){
+  return a && b && a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
+}
+
+// Get events for a specific day from your real state (window.calendarEvents) if available,
+// otherwise falls back to reading pills inside the clicked cell.
+function getEventsForDate(targetDate, cell){
+  const out = [];
+  const list = Array.isArray(window.calendarEvents) ? window.calendarEvents : [];
+  if (list.length){
+    for (const ev of list){
+      const start = toDate(ev.startDate || ev.start);
+      if (isSameDay(start, targetDate)) out.push(ev);
     }
+    return out;
+  }
+  // Fallback: scrape DOM pills (preview mode)
+  cell?.querySelectorAll('.events .event-pill')?.forEach((n,i)=>{
+    out.push({ id: n.getAttribute('data-id')||`preview-${i}`, title: n.textContent.trim() });
+  });
+  return out;
+}
 
-    function isSameDay(a, b) {
-        return a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+// Render a list item row for the Day modal, using your real events format when possible
+function renderDayRow(ev){
+  const id = ev.id || ev._id || ev.uuid || 'unknown';
+  const title = ev.title || ev.name || '(untitled)';
+  const li = document.createElement('li');
+  li.innerHTML = `
+    <div>
+      <div style="font-weight:700;">${title}</div>
+      <div class="meta">ID: ${id}</div>
+    </div>
+    <div>
+      <button class="btn ghost small" data-action="edit" data-id="${id}">Edit</button>
+      <button class="btn ghost small danger" data-action="delete" data-id="${id}">Delete</button>
+    </div>`;
+  return li;
+}
+
+// Optional hooks into your existing UI if present
+function openEditorForEvent(id){
+  // If your app exposes a helper, use it
+  if (typeof openEventModalWith === 'function') return openEventModalWith(id);
+  // Else, emit a custom event your code can listen for
+  window.dispatchEvent(new CustomEvent('calendar:edit', { detail: { id } }));
+}
+async function deleteEventById(id){
+  try {
+    if (typeof deleteCalendarEvent === 'function') {
+      await deleteCalendarEvent(id); // your function cleans state + persists
+    } else if (Array.isArray(window.calendarEvents)) {
+      // local state mutation fallback
+      window.calendarEvents = window.calendarEvents.filter(e => (e.id||e._id||e.uuid) !== id);
     }
+    if (typeof renderCalendarEnhanced === 'function') renderCalendarEnhanced();
+  } catch(err){ console.error('Delete failed', err); }
+}
 
-    function getHijriDate(date) {
-        // Simple Hijri date conversion (placeholder - integrate with proper hijri.js later)
-        const hijriMonths = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة',
-                           'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
-        const day = date.getDate();
-        const month = date.getMonth();
-        const hijriDay = Math.max(1, day - 10); // Rough approximation
-        const hijriMonth = hijriMonths[month] || hijriMonths[0];
-        return `${hijriDay} ${hijriMonth}`;
+// Read current visible month/year from #period-label (e.g., "October 2025")
+function monthAnchor(){
+  const label = document.getElementById('period-label')?.textContent?.trim()||'';
+  const m = new Date(label+' 01');
+  return isNaN(+m) ? new Date() : m;
+}
+
+// Infer the clicked date from data-date attribute first, else parse using period label + day number
+function inferDateFromCell(cell){
+  const ds = cell.getAttribute('data-date');
+  if (ds) return new Date(ds);
+  const base = monthAnchor();
+  const dayNum = parseInt(cell.querySelector('.g-num')?.textContent||'1',10);
+  const d = new Date(base.getFullYear(), base.getMonth(), dayNum);
+  return d;
+}
+
+/* ==========================
+   Modal utilities (open/close)
+   ========================== */
+function openModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.classList.add('open');
+  m.setAttribute('aria-hidden','false');
+}
+function closeModal(id) {
+  const m = document.getElementById(id);
+  if (!m) return;
+  m.classList.remove('open');
+  m.setAttribute('aria-hidden','true');
+}
+
+// Close when clicking backdrop or ✕ buttons (they carry data-close="<name>")
+document.addEventListener('click', (e)=>{
+  const closeId = e.target.getAttribute('data-close');
+  if (!closeId) return;
+  closeModal(closeId+'-modal');
+});
+
+/* ==========================
+   Occasions (country-specific)
+   ========================== */
+async function fetchOccasions(countryCode, year){
+  try {
+    // If your backend exists, use it; otherwise fall back to preview data
+    const url = `/api/occasions?country=${encodeURIComponent(countryCode)}&year=${encodeURIComponent(year)}`;
+    const res = await http(url, { credentials:'include' });
+    if (res && res.ok) return await res.json();
+  } catch(e){ /* ignore and fall back */ }
+  // Fallback preview
+  const fallback = {
+    AE: [
+      { date: `${year}-12-02`, label: 'UAE National Day', type: 'Public Holiday' },
+      { date: `${year}-12-01`, label: 'Commemoration Day', type: 'Public Holiday' },
+      { hijri: '1 Shawwal 1447', label: 'Eid al‑Fitr', type: 'Islamic' },
+      { hijri: '10 Dhu al‑Hijjah 1447', label: 'Eid al‑Adha', type: 'Islamic' },
+      { hijri: '12 Rabiʿ al‑Awwal 1447', label: 'Mawlid an‑Nabi', type: 'Islamic' }
+    ]
+  };
+  return fallback[countryCode] || [];
+}
+
+async function renderOccasions(country){
+  const y = document.getElementById('year-select')?.value || new Date().getFullYear();
+  const list = document.getElementById('occasions-list');
+  if (!list) return;
+  list.innerHTML = '<li><div>Loading…</div><div class="pill">Please wait</div></li>';
+  const items = await fetchOccasions(country, y);
+  list.innerHTML = '';
+  items.forEach(ev => {
+    const li = document.createElement('li');
+    const left = document.createElement('div');
+    left.innerHTML = `<div style="font-weight:700;">${ev.label}</div><div class="meta">${ev.date ? ev.date : ev.hijri} • ${ev.type||''}</div>`;
+    const right = document.createElement('div');
+    right.innerHTML = '<span class="pill">Add</span>';
+    li.append(left,right);
+    list.appendChild(li);
+  });
+}
+
+document.getElementById('country-select')?.addEventListener('change', (e)=> renderOccasions(e.target.value));
+document.getElementById('year-select')?.addEventListener('change', ()=> renderOccasions(document.getElementById('country-select')?.value||'AE'));
+
+[document.getElementById('open-occasions'), document.getElementById('quick-occasions')]
+  .filter(Boolean)
+  .forEach(btn => btn.addEventListener('click', async ()=> {
+    await renderOccasions(document.getElementById('country-select')?.value||'AE');
+    openModal('occasions-modal');
+  }));
+
+document.getElementById('add-occasions-to-calendar')?.addEventListener('click', async ()=>{
+  // In your app: transform currently rendered occasions into calendarEvents
+  alert('Preview: would add selected occasions to your calendar and re-render.');
+});
+
+/* ==========================
+   OAuth indicators — live status
+   ========================== */
+function setOAuthStatus({google, microsoft, googleEmail, msEmail}){
+  const g = document.getElementById('oauth-google-status');
+  const m = document.getElementById('oauth-microsoft-status');
+  if (g) { g.classList.toggle('connected', !!google); g.classList.toggle('disconnected', !google); g.title = google ? `Google connected${googleEmail? ' • '+googleEmail:''}` : 'Google not connected'; }
+  if (m) { m.classList.toggle('connected', !!microsoft); m.classList.toggle('disconnected', !microsoft); m.title = microsoft ? `Microsoft connected${msEmail? ' • '+msEmail:''}` : 'Microsoft not connected'; }
+}
+
+async function refreshOAuthStatus(){
+  try {
+    const res = await http('/api/auth/status', { credentials:'include' });
+    if (res && res.ok) {
+      const data = await res.json();
+      setOAuthStatus(data);
+      return;
     }
-
-    // ==========================
-    // Calendar Rendering
-    // ==========================
-    
-    function renderCalendar() {
-        const monthGrid = document.getElementById('month-grid');
-        if (!monthGrid) return;
-
-        monthGrid.innerHTML = '';
-        
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const firstDay = new Date(year, month, 1);
-        const lastDay = new Date(year, month + 1, 0);
-        const startDate = new Date(firstDay);
-        startDate.setDate(startDate.getDate() - firstDay.getDay());
-
-        // Generate 42 days (6 weeks)
-        for (let i = 0; i < 42; i++) {
-            const date = new Date(startDate);
-            date.setDate(startDate.getDate() + i);
-            const dayElement = createDayElement(date);
-            monthGrid.appendChild(dayElement);
-        }
-
-        updatePeriodLabel();
-        renderSidebar();
-    }
-
-    function createDayElement(date) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'day';
-        dayElement.dataset.date = date.toISOString().split('T')[0];
-        dayElement.setAttribute('tabindex', '0');
-        dayElement.setAttribute('role', 'gridcell');
-        dayElement.setAttribute('aria-label', `Date ${date.toLocaleDateString()}`);
-
-        // Gregorian date number
-        const gNum = document.createElement('div');
-        gNum.className = 'g-num';
-        gNum.textContent = date.getDate();
-        dayElement.appendChild(gNum);
-
-        // Hijri date
-        const hNum = document.createElement('div');
-        hNum.className = 'h-num';
-        hNum.textContent = getHijriDate(date);
-        dayElement.appendChild(hNum);
-
-        // Add today ring if it's today
-        if (isSameDay(date, new Date())) {
-            const todayRing = document.createElement('div');
-            todayRing.className = 'today-ring';
-            dayElement.appendChild(todayRing);
-        }
-
-        // Events container
-        const eventsContainer = document.createElement('div');
-        eventsContainer.className = 'events';
-
-        // Add events for this day
-        const dayEvents = calendarEvents.filter(event => {
-            const eventDate = toDate(event.startDate || event.start);
-            return isSameDay(eventDate, date);
-        });
-
-        // Create event pills
-        dayEvents.forEach(event => {
-            const eventPill = document.createElement('div');
-            eventPill.className = 'event-pill';
-            eventPill.dataset.id = event.id || event.title.toLowerCase().replace(/\s+/g, '-');
-
-            // Category indicator
-            const cat = document.createElement('span');
-            cat.className = `cat ${event.category || 'personal'}`;
-            eventPill.appendChild(cat);
-
-            // Event title
-            const title = document.createElement('strong');
-            title.textContent = event.title;
-            eventPill.appendChild(title);
-
-            eventsContainer.appendChild(eventPill);
-        });
-
-        dayElement.appendChild(eventsContainer);
-        return dayElement;
-    }
-
-    function updatePeriodLabel() {
-        const periodLabel = document.getElementById('period-label');
-        if (!periodLabel) return;
-
-        let label = '';
-        switch (currentView) {
-            case 'month':
-                label = currentDate.toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    year: 'numeric' 
-                });
-                break;
-            case 'week':
-                const weekStart = new Date(currentDate);
-                weekStart.setDate(currentDate.getDate() - currentDate.getDay());
-                const weekEnd = new Date(weekStart);
-                weekEnd.setDate(weekStart.getDate() + 6);
-                label = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
-                break;
-            case 'day':
-                label = currentDate.toLocaleDateString('en-US', { 
-                    weekday: 'long',
-                    month: 'long', 
-                    day: 'numeric',
-                    year: 'numeric'
-                });
-                break;
-            case 'year':
-                label = currentDate.getFullYear().toString();
-                break;
-        }
-        periodLabel.textContent = label;
-    }
-
-    // ==========================
-    // Sidebar Functions
-    // ==========================
-    
-    function renderSidebar() {
-        updateTodayList();
-        updatePrayerTimes();
-        updateTodayLabel();
-        updateTimezoneLabel();
-    }
-
-    function updateTodayList() {
-        const todayList = document.getElementById('today-list');
-        if (!todayList) return;
-
-        const today = new Date();
-        const todayEvents = calendarEvents.filter(event => {
-            const eventDate = toDate(event.startDate || event.start);
-            return isSameDay(eventDate, today);
-        });
-
-        todayList.innerHTML = '';
-
-        if (todayEvents.length === 0) {
-            todayList.innerHTML = '<div class="item"><div>No events today</div></div>';
-            return;
-        }
-
-        todayEvents.forEach(event => {
-            const listItem = document.createElement('div');
-            listItem.className = 'item';
-
-            const time = event.startTime ? event.startTime : 'All day';
-            const category = event.category || 'personal';
-
-            listItem.innerHTML = `
-                <div class="time">${time}</div>
-                <div>
-                    <div style="font-weight:700;">${event.title}</div>
-                    <div class="meta">${category}</div>
-                </div>
-            `;
-
-            todayList.appendChild(listItem);
-        });
-    }
-
-    function updatePrayerTimes() {
-        const prayerTimes = document.getElementById('prayer-times');
-        if (!prayerTimes) return;
-
-        // Sample prayer times (replace with actual calculation)
-        const times = {
-            'Fajr': '05:30',
-            'Sunrise': '06:45',
-            'Dhuhr': '12:15',
-            'Asr': '15:30',
-            'Maghrib': '18:20',
-            'Isha': '19:45'
-        };
-
-        Object.entries(times).forEach(([prayer, time]) => {
-            const prayerElement = prayerTimes.querySelector(`[data-prayer="${prayer.toLowerCase()}"]`);
-            if (prayerElement) {
-                const timeElement = prayerElement.querySelector('.prayer-time-value');
-                if (timeElement) {
-                    timeElement.textContent = time;
-                }
-            }
-        });
-    }
-
-    function updateTodayLabel() {
-        const todayLabel = document.getElementById('today-label');
-        if (!todayLabel) return;
-
-        const today = new Date();
-        const label = today.toLocaleDateString('en-US', { 
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric'
-        });
-
-        todayLabel.textContent = label;
-    }
-
-    function updateTimezoneLabel() {
-        const tzLabel = document.getElementById('tz-label');
-        if (!tzLabel) return;
-
-        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dubai';
-        tzLabel.textContent = timezone;
-    }
-
-    // ==========================
-    // Navigation Functions
-    // ==========================
-    
-    function navigateCalendar(direction) {
-        switch (currentView) {
-            case 'month':
-                currentDate.setMonth(currentDate.getMonth() + direction);
-                break;
-            case 'week':
-                currentDate.setDate(currentDate.getDate() + (direction * 7));
-                break;
-            case 'day':
-                currentDate.setDate(currentDate.getDate() + direction);
-                break;
-            case 'year':
-                currentDate.setFullYear(currentDate.getFullYear() + direction);
-                break;
-        }
-        renderCalendar();
-    }
-
-    function switchToView(view) {
-        currentView = view;
-        
-        // Update view buttons
-        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
-        const activeButton = document.querySelector(`[data-view="${view}"]`);
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
-
-        renderCalendar();
-    }
-
-    function goToToday() {
-        currentDate = new Date();
-        renderCalendar();
-    }
-
-    // ==========================
-    // Modal Functions
-    // ==========================
-    
-    function openModal(modalName) {
-        const modal = document.getElementById(`${modalName}-modal`);
-        if (modal) {
-            modal.classList.add('open');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            
-            // Focus management
-            const firstFocusable = modal.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
-            if (firstFocusable) {
-                firstFocusable.focus();
-            }
-        }
-    }
-
-    function closeModal(modalName) {
-        const modal = document.getElementById(`${modalName}-modal`);
-        if (modal) {
-            modal.classList.remove('open');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-        }
-    }
-
-    function openDayModal(date) {
-        const modal = document.getElementById('day-modal');
-        const dayEventsList = document.getElementById('day-events-list');
-        const dayTitle = document.getElementById('day-title');
-
-        if (modal && dayEventsList) {
-            // Update modal title
-            if (dayTitle) {
-                const fmt = new Intl.DateTimeFormat(undefined, { 
-                    weekday: 'short', 
-                    year: 'numeric', 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                dayTitle.textContent = `Events on ${fmt.format(date)}`;
-            }
-
-            // Populate day events
-            const dayEvents = calendarEvents.filter(event => {
-                const eventDate = toDate(event.startDate || event.start);
-                return isSameDay(eventDate, date);
-            });
-
-            dayEventsList.innerHTML = '';
-
-            if (dayEvents.length === 0) {
-                const li = document.createElement('li');
-                li.innerHTML = '<div>No events for this day.</div>';
-                dayEventsList.appendChild(li);
-            } else {
-                dayEvents.forEach(event => {
-                    const li = document.createElement('li');
-                    const id = event.id || event._id || event.uuid || 'unknown';
-                    const title = event.title || event.name || '(untitled)';
-                    
-                    li.innerHTML = `
-                        <div>
-                            <div style="font-weight:700;">${title}</div>
-                            <div class="meta">ID: ${id}</div>
-                        </div>
-                        <div>
-                            <button class="btn ghost small" data-action="edit" data-id="${id}">Edit</button>
-                            <button class="btn ghost small danger" data-action="delete" data-id="${id}">Delete</button>
-                        </div>
-                    `;
-                    dayEventsList.appendChild(li);
-                });
-            }
-
-            openModal('day');
-        }
-    }
-
-    // ==========================
-    // Theme Functions
-    // ==========================
-    
-    function switchTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        localStorage.setItem('theme', theme);
-        
-        // Update theme buttons
-        document.querySelectorAll('.toggle button').forEach(btn => btn.classList.remove('active'));
-        const activeButton = document.getElementById(`theme-${theme}`);
-        if (activeButton) {
-            activeButton.classList.add('active');
-        }
-    }
-
-    // ==========================
-    // Event Listeners
-    // ==========================
-    
-    function setupEventListeners() {
-        // Navigation
-        const prevButton = document.getElementById('prev-button');
-        const nextButton = document.getElementById('next-button');
-        const todayButton = document.getElementById('go-today');
-
-        if (prevButton) {
-            prevButton.addEventListener('click', () => navigateCalendar(-1));
-        }
-        if (nextButton) {
-            nextButton.addEventListener('click', () => navigateCalendar(1));
-        }
-        if (todayButton) {
-            todayButton.addEventListener('click', goToToday);
-        }
-
-        // View toggles
-        document.querySelectorAll('.view-btn').forEach(button => {
-            button.addEventListener('click', () => {
-                const view = button.dataset.view;
-                switchToView(view);
-            });
-        });
-
-        // Calendar type
-        const calendarType = document.getElementById('calendarType');
-        if (calendarType) {
-            calendarType.addEventListener('change', (e) => {
-                localStorage.setItem('calendarType', e.target.value);
-                renderCalendar();
-            });
-        }
-
-        // Theme switching
-        const themeDark = document.getElementById('theme-dark');
-        const themeLight = document.getElementById('theme-light');
-
-        if (themeDark) {
-            themeDark.addEventListener('click', () => switchTheme('dark'));
-        }
-        if (themeLight) {
-            themeLight.addEventListener('click', () => switchTheme('light'));
-        }
-
-        // Modals
-        const openOccasions = document.getElementById('open-occasions');
-        const openReminders = document.getElementById('open-reminders');
-        const quickOccasions = document.getElementById('quick-occasions');
-        const quickReminders = document.getElementById('quick-reminders');
-
-        if (openOccasions) {
-            openOccasions.addEventListener('click', () => openModal('occasions'));
-        }
-        if (openReminders) {
-            openReminders.addEventListener('click', () => openModal('reminders'));
-        }
-        if (quickOccasions) {
-            quickOccasions.addEventListener('click', () => openModal('occasions'));
-        }
-        if (quickReminders) {
-            quickReminders.addEventListener('click', () => openModal('reminders'));
-        }
-
-        // Close modals
-        document.addEventListener('click', (e) => {
-            const closeId = e.target.getAttribute('data-close');
-            if (closeId) {
-                closeModal(closeId);
-            }
-        });
-
-        // Day clicks
-        document.getElementById('month-grid')?.addEventListener('click', (e) => {
-            const cell = e.target.closest('.day');
-            if (!cell) return;
-            const date = toDate(cell.dataset.date);
-            if (date) {
-                openDayModal(date);
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (e) => {
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-            switch (e.key) {
-                case 'ArrowLeft':
-                    e.preventDefault();
-                    navigateCalendar(-1);
-                    break;
-                case 'ArrowRight':
-                    e.preventDefault();
-                    navigateCalendar(1);
-                    break;
-                case 't':
-                case 'T':
-                    e.preventDefault();
-                    goToToday();
-                    break;
-                case 'Escape':
-                    // Close any open modals
-                    document.querySelectorAll('.modal.open').forEach(modal => {
-                        const modalName = modal.id.replace('-modal', '');
-                        closeModal(modalName);
-                    });
-                    break;
-            }
-        });
-
-        // Day keyboard navigation
-        document.addEventListener('keydown', (e) => {
-            if (e.target.classList.contains('day')) {
-                switch (e.key) {
-                    case 'Enter':
-                    case ' ':
-                        e.preventDefault();
-                        const date = toDate(e.target.dataset.date);
-                        if (date) {
-                            openDayModal(date);
-                        }
-                        break;
-                }
-            }
-        });
-    }
-
-    // ==========================
-    // Initialization
-    // ==========================
-    
-    function initialize() {
-        // Load saved preferences
-        const savedTheme = localStorage.getItem('theme') || 'dark';
-        switchTheme(savedTheme);
-
-        const savedCalendarType = localStorage.getItem('calendarType') || 'both';
-        const calendarTypeSelect = document.getElementById('calendarType');
-        if (calendarTypeSelect) {
-            calendarTypeSelect.value = savedCalendarType;
-        }
-
-        // Setup event listeners
-        setupEventListeners();
-
-        // Initial render
-        renderCalendar();
-
-        console.log('🎉 Modern Islamic Calendar initialized successfully!');
-    }
-
-    // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
+  } catch(e){ /* ignore */ }
+  // Fallback: disconnected state
+  setOAuthStatus({ google:false, microsoft:false });
+}
+refreshOAuthStatus();
+
+/* ==========================
+   Prayer email reminders — save via API if available
+   ========================== */
+document.getElementById('save-reminders')?.addEventListener('click', async ()=>{
+  const chosen = ['fajr','sunrise','dhuhr','asr','maghrib','isha'].filter(k => document.getElementById('rem-'+k)?.checked);
+  const email = document.getElementById('rem-email')?.value || '';
+  const offset = document.getElementById('rem-offset')?.value || '0';
+  const payload = { prayers: chosen, offset: Number(offset), email };
+  const status = document.getElementById('rem-status');
+  try {
+    const res = await http('/api/prayer-reminders', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
+    if (res && res.ok){
+      status.textContent = `Saved: ${chosen.join(', ')} (offset ${offset}) → ${email}`;
     } else {
-        initialize();
+      status.textContent = 'Failed to save (server error)';
     }
+  } catch(err){ status.textContent = 'Failed to save (network error)'; }
+});
 
-    // Expose functions globally for integration
-    window.calendarAPI = {
-        renderCalendar,
-        switchToView,
-        navigateCalendar,
-        goToToday,
-        openModal,
-        closeModal,
-        switchTheme,
-        addEvent: (event) => {
-            calendarEvents.push(event);
-            renderCalendar();
-        },
-        removeEvent: (id) => {
-            calendarEvents = calendarEvents.filter(e => e.id !== id);
-            renderCalendar();
-        }
-    };
+/* ==========================
+   Day modal — open on day click with REAL events when available
+   ========================== */
+const dayList = document.getElementById('day-events-list');
+const dayTitle = document.getElementById('day-title');
 
-})();
+document.getElementById('month-grid')?.addEventListener('click', (e) => {
+  const cell = e.target.closest('.day');
+  if (!cell) return;
+  const date = inferDateFromCell(cell);
+
+  // Update modal title with readable date
+  try {
+    const fmt = new Intl.DateTimeFormat(undefined, { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+    if (dayTitle) dayTitle.textContent = `Events on ${fmt.format(date)}`;
+  } catch { dayTitle.textContent = `Events on ${date.toDateString()}`; }
+
+  // Populate list
+  if (dayList){
+    dayList.innerHTML = '';
+    const events = getEventsForDate(date, cell);
+    if (!events.length){
+      const li = document.createElement('li');
+      li.innerHTML = '<div>No events for this day.</div>';
+      dayList.appendChild(li);
+    } else {
+      events.forEach(ev => dayList.appendChild(renderDayRow(ev)));
+    }
+  }
+  // Open modal after content ready
+  openModal('day-modal');
+});
+
+// Edit / Delete actions
+dayList?.addEventListener('click', (e)=>{
+  const action = e.target.getAttribute('data-action');
+  const id = e.target.getAttribute('data-id');
+  if (!action || !id) return;
+  if (action === 'edit') return openEditorForEvent(id);
+  if (action === 'delete') return deleteEventById(id);
+});
+
+// ==========================
+// Additional Calendar Navigation & Today Button
+// ==========================
+
+// Today button functionality
+document.getElementById('go-today')?.addEventListener('click', (e) => {
+  e.preventDefault();
+  // Scroll to today or refresh calendar view
+  const today = new Date();
+  const todayElement = document.querySelector(`[data-date="${today.toISOString().split('T')[0]}"]`);
+  if (todayElement) {
+    todayElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    todayElement.focus();
+  }
+});
+
+// Navigation buttons
+document.getElementById('prev-button')?.addEventListener('click', () => {
+  // Previous month/week/day logic
+  console.log('Previous period clicked');
+});
+
+document.getElementById('next-button')?.addEventListener('click', () => {
+  // Next month/week/day logic
+  console.log('Next period clicked');
+});
+
+// View toggle buttons
+document.querySelectorAll('.view-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // Remove active class from all view buttons
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    // Add active class to clicked button
+    btn.classList.add('active');
+    console.log('View changed to:', btn.dataset.view);
+  });
+});
+
+// Calendar type selector
+document.getElementById('calendarType')?.addEventListener('change', (e) => {
+  console.log('Calendar type changed to:', e.target.value);
+});
+
+// Prayer reminders modal
+document.getElementById('open-reminders')?.addEventListener('click', () => {
+  openModal('reminders-modal');
+});
+
+// Quick reminders button
+document.getElementById('quick-reminders')?.addEventListener('click', () => {
+  openModal('reminders-modal');
+});
+
+// Create event on day button
+document.getElementById('create-event-on-day')?.addEventListener('click', () => {
+  console.log('Create event on selected day');
+  // Close day modal and open event creation modal
+  closeModal('day-modal');
+  // In integration: open your event creation modal
+  alert('In integration: open event creation modal for selected day');
+});
+
+console.log('🎉 Islamic Calendar Modern UI/UX loaded successfully!');
