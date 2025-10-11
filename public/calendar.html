@@ -14,246 +14,319 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-hijri/2.1.2/moment-hijri.min.js"></script>
 </head>
-<body>
+  <body>
+    <!-- Skip to content link for accessibility -->
+    <a href="#calendar" class="skip-link">Skip to main calendar</a>
+
+    <!-- Top App Bar -->
+    <header class="app-bar" role="banner">
+      <div class="bar-inner">
+        <!-- Brand/Logo -->
+        <div class="brand">
+          <div class="logo">
+            <span>🕌</span>
+          </div>
+          <div>
+            <div style="font-size: 15px; color: var(--muted); font-weight: 700; letter-spacing: .08em; text-transform: uppercase;">
+              Islamic Portal
+            </div>
+            <div style="font-size: 18px; font-weight: 800;">
+              Calendar
+            </div>
+          </div>
+        </div>
+        <div class="bar-spacer"></div>
+
+          <!-- Global Search -->
+          <div class="search">
+            <input id="global-search" class="ring" type="text" placeholder="Search events, people, or places" 
+                   aria-label="Search calendar events" aria-describedby="search-help">
+            <span class="kbd" id="search-help">⌘K</span>
+            <div class="search-results" id="global-search-results" role="listbox" aria-label="Search results"></div>
+          </div>
+
+        <!-- Main Toolbar: theme, OAuth, reminders, event add button -->
+        <div class="toolbar">
+          <div class="toggle" role="tablist" aria-label="Theme">
+            <button id="theme-dark" class="active" aria-selected="true">Dark</button>
+            <button id="theme-light">Light</button>
+          </div>
+          <a class="btn ghost" href="#" id="go-today" aria-label="Go to today's date">Today</a>
+          <button class="btn ghost" id="open-occasions" aria-label="Open Islamic occasions and holidays">Occasions</button>
+          <button class="btn ghost" id="open-reminders" aria-label="Open prayer email reminders">Prayer Reminders</button>
+          <div class="oauth-mini" id="oauth-status">
+            <span class="pill-status disconnected" id="oauth-google-status" data-provider="google">
+              <span class="dot"></span>Google
+            </span>
+            <span class="pill-status disconnected" id="oauth-microsoft-status" data-provider="microsoft">
+              <span class="dot"></span>Microsoft
+            </span>
+          </div>
+          <button class="btn primary" id="add-event" aria-label="Add new calendar event">Add Event</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Calendar Header & Toolbar (Modern UI) -->
+    <div class="calendar-header">
+      <div class="period">
+        <div class="toggle" role="tablist" aria-label="View">
+          <button class="view-btn active" id="view-month" data-view="month">Month</button>
+          <button class="view-btn" id="view-week" data-view="week">Week</button>
+          <button class="view-btn" id="view-day" data-view="day">Day</button>
+          <button class="view-btn" id="view-year" data-view="year">Year</button>
+        </div>
+        <div class="nav" role="group" aria-label="Calendar navigation">
+          <button class="icon-btn" id="prev-button" data-nav="prev" aria-label="Previous period">
+            <span>&lt;</span>
+          </button>
+          <div class="pill" id="period-label" role="status" aria-live="polite">October 2025</div>
+          <button class="icon-btn" id="next-button" data-nav="next" aria-label="Next period">
+            <span>&gt;</span>
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="select" style="min-width:160px;">
+          <select id="calendarType" aria-label="Calendar type">
+            <option value="both" selected>Both calendars</option>
+            <option value="gregorian">Gregorian</option>
+            <option value="hijri">Hijri</option>
+          </select>
+        </div>
+        <div class="pill" id="today-hijri" title="Hijri date today" role="status" aria-live="polite">11 Rabi al-Thani 1447 AH</div>
+      </div>
+    </div>
 
     <div class="container">
 
-        
-        <!-- Enhanced UI Controls -->
-        <div class="enhanced-controls">
-            <!-- View Mode Buttons -->
-            <div class="view-mode-buttons" id="view-mode-buttons">
-                <button class="view-btn active" data-view="month"><i class="fa-solid fa-calendar-days"></i> Month</button>
-                <button class="view-btn" data-view="week"><i class="fa-solid fa-calendar-week"></i> Week</button>
-                <button class="view-btn" data-view="day"><i class="fa-solid fa-calendar-day"></i> Day</button>
-                <button class="view-btn" data-view="year"><i class="fa-solid fa-calendar"></i> Year</button>
-            </div>
-            
-            <!-- Calendar Navigation -->
-            <div class="calendar-navigation">
-                <button id="prev-btn" class="nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                <div class="current-period">
-                    <span id="current-period">January 2024</span>
+    <!-- Main Calendar Content -->
+    <section id="calendar" class="main card fade-in" role="main" aria-label="Calendar view">
+      <div class="calendar-surface">
+        <!-- Modern Month Grid -->
+        <div class="month-grid" id="month-grid" role="grid" aria-label="Calendar grid">
+              <!-- October 2025 - Week 1 -->
+              <div class="day" data-date="2025-09-29">
+                <div class="g-num">29</div>
+                <div class="h-num">6 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-09-30">
+                <div class="g-num">30</div>
+                <div class="h-num">7 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-01">
+                <div class="g-num">1</div>
+                <div class="h-num">8 محرم</div>
+                <div class="events">
+                  <div class="event-pill" data-id="islamic-new-year">
+                    <span class="cat islamic"></span>
+                    <strong>Islamic New Year</strong>
+                  </div>
                 </div>
-                <button id="next-btn" class="nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
-                <button id="today-btn" class="today-btn">Today</button>
+              </div>
+              <div class="day" data-date="2025-10-02">
+                <div class="g-num">2</div>
+                <div class="h-num">9 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-03">
+                <div class="g-num">3</div>
+                <div class="h-num">10 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-04">
+                <div class="g-num">4</div>
+                <div class="h-num">11 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-05">
+                <div class="g-num">5</div>
+                <div class="h-num">12 محرم</div>
+                <div class="events"></div>
+              </div>
+              
+              <!-- October 2025 - Week 2 -->
+              <div class="day" data-date="2025-10-06">
+                <div class="g-num">6</div>
+                <div class="h-num">13 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-07">
+                <div class="g-num">7</div>
+                <div class="h-num">14 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-08">
+                <div class="g-num">8</div>
+                <div class="h-num">15 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-09">
+                <div class="g-num">9</div>
+                <div class="h-num">16 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-10">
+                <div class="g-num">10</div>
+                <div class="h-num">17 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-11">
+                <div class="g-num">11</div>
+                <div class="h-num">18 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-12">
+                <div class="g-num">12</div>
+                <div class="h-num">19 محرم</div>
+                <div class="events"></div>
+              </div>
+              
+              <!-- October 2025 - Week 3 -->
+              <div class="day" data-date="2025-10-13">
+                <div class="g-num">13</div>
+                <div class="h-num">20 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-14">
+                <div class="g-num">14</div>
+                <div class="h-num">21 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-15">
+                <div class="g-num">15</div>
+                <div class="h-num">22 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-16">
+                <div class="g-num">16</div>
+                <div class="h-num">23 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-17">
+                <div class="g-num">17</div>
+                <div class="h-num">24 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-18">
+                <div class="g-num">18</div>
+                <div class="h-num">25 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-19">
+                <div class="g-num">19</div>
+                <div class="h-num">26 محرم</div>
+                <div class="events"></div>
+              </div>
+              
+              <!-- October 2025 - Week 4 -->
+              <div class="day" data-date="2025-10-20">
+                <div class="g-num">20</div>
+                <div class="h-num">27 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-21">
+                <div class="g-num">21</div>
+                <div class="h-num">28 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-22">
+                <div class="g-num">22</div>
+                <div class="h-num">29 محرم</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-23">
+                <div class="g-num">23</div>
+                <div class="h-num">1 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-24">
+                <div class="g-num">24</div>
+                <div class="h-num">2 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-25">
+                <div class="g-num">25</div>
+                <div class="h-num">3 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-26">
+                <div class="g-num">26</div>
+                <div class="h-num">4 صفر</div>
+                <div class="events"></div>
+              </div>
+              
+              <!-- October 2025 - Week 5 -->
+              <div class="day" data-date="2025-10-27">
+                <div class="g-num">27</div>
+                <div class="h-num">5 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-28">
+                <div class="g-num">28</div>
+                <div class="h-num">6 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-29">
+                <div class="g-num">29</div>
+                <div class="h-num">7 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-30">
+                <div class="g-num">30</div>
+                <div class="h-num">8 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-10-31">
+                <div class="g-num">31</div>
+                <div class="h-num">9 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-11-01">
+                <div class="g-num">1</div>
+                <div class="h-num">10 صفر</div>
+                <div class="events"></div>
+              </div>
+              <div class="day" data-date="2025-11-02">
+                <div class="g-num">2</div>
+                <div class="h-num">11 صفر</div>
+                <div class="events"></div>
+              </div>
             </div>
-            
-            <!-- Calendar Options -->
-            <div class="calendar-options">
-                <select id="calendar-type">
-                    <option value="gregorian">Gregorian</option>
-                    <option value="hijri">Hijri</option>
-                    <option value="both">Both Calendars</option>
-                </select>
-                
-                <select id="timezone-select">
-                    <option value="auto">Auto (Browser)</option>
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">New York</option>
-                    <option value="Europe/London">London</option>
-                    <option value="Asia/Dubai">Dubai</option>
-                    <option value="Asia/Riyadh">Riyadh</option>
-                    <option value="Asia/Karachi">Karachi</option>
-                    <option value="Asia/Jakarta">Jakarta</option>
-                </select>
-            </div>
-            
-            <!-- Theme Selector -->
-            <div class="theme-selector" id="theme-selector">
-                <div class="theme-switch-wrapper">
-                    <label class="theme-switch" for="theme-toggle">
-                        <input type="checkbox" id="theme-toggle" />
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-            </div>
-            
-            <!-- Search Container -->
-            <div class="search-container" id="search-container">
-                <!-- Will be populated by JavaScript -->
-            </div>
-            
-            <!-- Search Results -->
-            <div class="search-results" id="search-results"></div>
-            
-            <!-- Hijri Calendar Display -->
-            <div class="hijri-calendar-display">
-                <div class="hijri-date" id="hijri-date">
-                    <!-- Will be populated by JavaScript -->
-                </div>
-                <div class="islamic-holiday" id="islamic-holiday" style="display: none;">
-                    <!-- Will be populated by JavaScript -->
-                </div>
-            </div>
-            
-            <!-- OAuth Sync Status -->
-            <div class="oauth-sync-status">
-                <div class="sync-controls">
-                    <button onclick="syncWithGoogle()" class="sync-btn google-sync">
-                        <i class="fab fa-google"></i> Sync Google
-                    </button>
-                    <button onclick="syncWithMicrosoft()" class="sync-btn microsoft-sync">
-                        <i class="fab fa-microsoft"></i> Sync Microsoft
-                    </button>
-                    <button onclick="fullSync()" class="sync-btn full-sync">
-                        <i class="fas fa-sync"></i> Full Sync
-                    </button>
-                </div>
-                <div class="sync-status">
-                    <div class="google-sync-status">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                    <div class="microsoft-sync-status">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-        </div>
+          </div>
+        </section>
 
-        <!-- Calendar Views -->
-        <div class="calendar-views">
-            <!-- Month View -->
-            <div id="month-view" class="calendar-view active">
-                <div class="calendar-grid">
-                    <div class="day-headers">
-                        <div class="day-header">Sun</div>
-                        <div class="day-header">Mon</div>
-                        <div class="day-header">Tue</div>
-                        <div class="day-header">Wed</div>
-                        <div class="day-header">Thu</div>
-                        <div class="day-header">Fri</div>
-                        <div class="day-header">Sat</div>
-                    </div>
-                    <div id="month-grid" class="month-grid"></div>
-                </div>
+        <!-- Right rail with today's events and prayer times -->
+        <aside class="right card fade-in">
+          <div class="card-header">
+            <div style="font-weight:700">Today in Dubai</div>
+            <span class="pill" id="today-label">Sat 11 Oct 2025</span>
+          </div>
+          <div class="card-body">
+            <div class="list" id="today-list" style="margin-bottom:16px">
+              <!-- Populate with today's events using JS in later steps -->
             </div>
-
-            <!-- Week View -->
-            <div id="week-view" class="calendar-view">
-                <div class="week-header">
-                    <div class="time-column">Time</div>
-                    <div class="day-columns">
-                        <div class="day-column" data-day="0">Sunday</div>
-                        <div class="day-column" data-day="1">Monday</div>
-                        <div class="day-column" data-day="2">Tuesday</div>
-                        <div class="day-column" data-day="3">Wednesday</div>
-                        <div class="day-column" data-day="4">Thursday</div>
-                        <div class="day-column" data-day="5">Friday</div>
-                        <div class="day-column" data-day="6">Saturday</div>
-                    </div>
-                </div>
-                <div id="week-grid" class="week-grid"></div>
+            <div class="row" style="margin-bottom:12px; gap:8px">
+              <button class="btn ghost" id="quick-occasions">View Occasions</button>
+              <button class="btn ghost" id="quick-reminders">Email Reminders</button>
             </div>
-
-            <!-- Day View -->
-            <div id="day-view" class="calendar-view">
-                <div class="day-header">
-                    <div class="time-column">Time</div>
-                    <div class="day-column">Today</div>
-                </div>
-                <div id="day-grid" class="day-grid"></div>
+            <div class="card-header" style="margin:-14px -16px 10px">
+              <div style="font-weight:700">Prayer times</div>
+              <span class="pill" id="tz-label">Asia/Dubai</span>
             </div>
-
-            <!-- Year View -->
-            <div id="year-view" class="calendar-view">
-                <div id="year-grid" class="year-grid"></div>
+            <div class="prayers" id="prayer-times">
+              <!-- Each prayer time populated dynamically -->
+              <div class="p prayer-time" data-prayer="fajr"><h5 class="prayer-name">Fajr</h5><div class="t prayer-time-value">--:--</div></div>
+              <div class="p prayer-time" data-prayer="sunrise"><h5 class="prayer-name">Sunrise</h5><div class="t prayer-time-value">--:--</div></div>
+              <div class="p prayer-time" data-prayer="dhuhr"><h5 class="prayer-name">Dhuhr</h5><div class="t prayer-time-value">--:--</div></div>
+              <div class="p prayer-time" data-prayer="asr"><h5 class="prayer-name">Asr</h5><div class="t prayer-time-value">--:--</div></div>
+              <div class="p prayer-time" data-prayer="maghrib"><h5 class="prayer-name">Maghrib</h5><div class="t prayer-time-value">--:--</div></div>
+              <div class="p prayer-time" data-prayer="isha"><h5 class="prayer-name">Isha</h5><div class="t prayer-time-value">--:--</div></div>
             </div>
-        </div>
-
-        <!-- Integration Panel -->
-        <div class="integration-panel">
-            <h3><i class="fa-solid fa-plug"></i> Integrations & Export</h3>
-            <div class="integration-actions">
-                <div class="integration-status">
-                    <span id="sync-status" class="status-indicator">Not Connected</span>
-                </div>
-                <div class="export-import-buttons">
-                    <button id="export-json-btn" class="export-btn" title="Export as JSON">
-                        <i class="fa-solid fa-download"></i> JSON
-                    </button>
-                    <button id="export-csv-btn" class="export-btn" title="Export as CSV">
-                        <i class="fa-solid fa-file-csv"></i> CSV
-                    </button>
-                    <button id="export-ics-btn" class="export-btn" title="Export as iCal">
-                        <i class="fa-solid fa-calendar"></i> iCal
-                    </button>
-                    <button id="import-btn" class="import-btn" title="Import Calendar">
-                        <i class="fa-solid fa-upload"></i> Import
-                    </button>
-                    <input type="file" id="import-file" accept=".json" style="display: none;">
-                </div>
-            </div>
-            
-            <div class="integration-grid">
-
-                <!-- Email Integration -->
-                <div class="integration-card" id="email-sync-card">
-                    <div class="integration-icon">
-                        <i class="fa-solid fa-envelope"></i>
-                    </div>
-                    <div class="integration-info">
-                        <h4>Email Integration</h4>
-                        <p>Gmail & Outlook calendar sync via OAuth</p>
-                        
-                        <!-- Connection Status -->
-                        <div class="connection-status" id="email-connection-status">
-                            <div class="status-line">
-                                <span class="status-label">Status:</span>
-                                <span class="status-value" id="email-status-text">Checking...</span>
-                            </div>
-                            <div class="status-line" id="email-details" style="display: none;">
-                                <span class="status-label">Email:</span>
-                                <span class="status-value" id="email-address">-</span>
-                            </div>
-                            <div class="status-line" id="email-provider-line" style="display: none;">
-                                <span class="status-label">Provider:</span>
-                                <span class="status-value" id="email-provider">-</span>
-                            </div>
-                            <div class="status-line" id="email-last-sync-line" style="display: none;">
-                                <span class="status-label">Last Sync:</span>
-                                <span class="status-value" id="email-last-sync">-</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="integration-actions">
-                            <button id="email-sync-btn" class="integration-btn">Connect with OAuth</button>
-                            <div class="integration-controls" id="email-controls" style="display: none;">
-                                <button class="settings-btn" onclick="openEmailSettings()" title="Settings">
-                                    <i class="fa-solid fa-cog"></i>
-                                    <span>Settings</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- Event Management Panel -->
-        <div class="event-panel">
-            <h3><i class="fa-solid fa-list"></i> Events & Reminders</h3>
-            <div class="event-actions">
-                <button id="sync-all-btn" class="sync-btn"><i class="fa-solid fa-sync"></i> Sync All</button>
-                <button id="add-event-btn" class="add-btn"><i class="fa-solid fa-plus"></i> Add Event</button>
-            </div>
-            
-            <div class="event-filters">
-                <input type="text" id="event-search" placeholder="Search events...">
-                <select id="event-category-filter">
-                    <option value="">All Categories</option>
-                    <option value="prayer">Prayer Times</option>
-                    <option value="islamic">Islamic Events</option>
-                    <option value="personal">Personal</option>
-                    <option value="reminder">Reminders</option>
-                    <option value="holiday">Holidays</option>
-                </select>
-            </div>
-            
-            <div id="events-list" class="events-list"></div>
-        </div>
+          </div>
+        </aside>
 
 
 
@@ -508,6 +581,114 @@
     <script src="calendar.js"></script>
     <!-- Real-time Service -->
 
+    <!-- Islamic Occasions Modal -->
+    <div id="occasions-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="occasions-title">
+      <div class="backdrop" data-close="occasions"></div>
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="pill" style="display:inline-block; margin-right:8px;">Autolocation</div>
+            <strong id="occasions-title">Islamic Occasions & Country Holidays</strong>
+          </div>
+          <button class="close-x" data-close="occasions">&times;</button>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="country-select">Country</label>
+              <select id="country-select">
+                <option value="AE" selected>United Arab Emirates (Auto)</option>
+                <option value="SA">Saudi Arabia</option>
+                <option value="EG">Egypt</option>
+                <option value="UK">United Kingdom</option>
+                <option value="US">United States</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="year-select">Year</label>
+              <select id="year-select">
+                <option>2025</option>
+                <option selected>2026</option>
+                <option>2027</option>
+              </select>
+            </div>
+            <div class="field col-span-2">
+              <label>Events</label>
+              <ul id="occasions-list" class="list-clean"></ul>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn ghost" data-close="occasions">Close</button>
+          <button class="btn primary" id="add-occasions-to-calendar">Add to Calendar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prayer Email Reminders Modal -->
+    <div id="reminders-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="reminders-title">
+      <div class="backdrop" data-close="reminders"></div>
+      <div class="card">
+        <div class="card-header">
+          <strong id="reminders-title">Prayer Email Reminders</strong>
+          <button class="close-x" data-close="reminders">&times;</button>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field col-span-2">
+              <label>Select prayers</label>
+              <div class="checks">
+                <label class="chk"><input type="checkbox" id="rem-fajr" checked> Fajr</label>
+                <label class="chk"><input type="checkbox" id="rem-sunrise"> Sunrise</label>
+                <label class="chk"><input type="checkbox" id="rem-dhuhr" checked> Dhuhr</label>
+                <label class="chk"><input type="checkbox" id="rem-asr"> Asr</label>
+                <label class="chk"><input type="checkbox" id="rem-maghrib" checked> Maghrib</label>
+                <label class="chk"><input type="checkbox" id="rem-isha"> Isha</label>
+              </div>
+            </div>
+            <div class="field">
+              <label for="rem-offset">Send when</label>
+              <select id="rem-offset">
+                <option value="0" selected>At exact time</option>
+                <option value="-5">5 minutes before</option>
+                <option value="-10">10 minutes before</option>
+                <option value="-30">30 minutes before</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="rem-email">Send to email</label>
+              <input id="rem-email" type="email" placeholder="you@example.com">
+            </div>
+            <div class="field col-span-2">
+              <label>Status</label>
+              <div id="rem-status" class="pill">Not saved</div>
+            </div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn ghost" data-close="reminders">Cancel</button>
+          <button class="btn primary" id="save-reminders">Save Email Reminders</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day Details Modal -->
+    <div id="day-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="day-title">
+      <div class="backdrop" data-close="day"></div>
+      <div class="card">
+        <div class="card-header">
+          <strong id="day-title">Day Events</strong>
+          <button class="close-x" data-close="day">&times;</button>
+        </div>
+        <div class="card-body">
+          <ul id="day-events-list" class="list-clean"></ul>
+        </div>
+        <div class="card-footer">
+          <button class="btn ghost" data-close="day">Close</button>
+          <button class="btn primary" id="create-event-on-day">Add Event</button>
+        </div>
+      </div>
+    </div>
 
 </body>
 </html>

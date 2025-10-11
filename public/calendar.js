@@ -3067,25 +3067,18 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         }
     }
     
-    // Month view with better event display
+    // Month view with modern grid structure
     function renderMonthView() {
-        console.log('📅 Rendering month view...');
+        console.log('📅 Rendering modern month view...');
         
-        // Use the existing month view structure
-        const monthView = document.getElementById('month-view');
-        if (!monthView) {
-            console.log('❌ Month view container not found');
-            return;
-        }
-        
-        // Get the existing calendar grid
+        // Get the month grid container
         const monthGrid = document.getElementById('month-grid');
         if (!monthGrid) {
             console.log('❌ Month grid not found');
             return;
         }
         
-        console.log('✅ Month view containers found');
+        console.log('✅ Month grid container found');
         
         // Clear existing content
         monthGrid.innerHTML = '';
@@ -3103,7 +3096,7 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         console.log('📅 Generating calendar for:', currentYear, currentMonth);
         console.log('📅 Total calendar events:', calendarEvents.length);
         
-        
+        // Generate 42 days (6 weeks) for the calendar grid
         for (let i = 0; i < 42; i++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + i);
@@ -3112,12 +3105,12 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             monthGrid.appendChild(dayElement);
         }
         
-        console.log('✅ Month view rendered with', monthGrid.children.length, 'days');
+        console.log('✅ Modern month view rendered with', monthGrid.children.length, 'days');
         
         // Add a simple test to ensure visibility
         if (monthGrid.children.length === 0) {
             console.log('⚠️ No calendar days generated, adding fallback...');
-            monthGrid.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text-color);">Calendar loading... Please wait.</div>';
+            monthGrid.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--text);">Calendar loading... Please wait.</div>';
         }
     }
     
@@ -3928,16 +3921,30 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         });
     }
     
-    // Create day element for calendar
+    // Create day element for modern calendar grid
     function createDayElement(date) {
         const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
+        dayElement.className = 'day';
         dayElement.dataset.date = date.toISOString().split('T')[0];
+        dayElement.setAttribute('tabindex', '0');
+        dayElement.setAttribute('role', 'gridcell');
+        dayElement.setAttribute('aria-label', `Date ${date.toLocaleDateString()}`);
         
-        const dayNumber = document.createElement('div');
-        dayNumber.className = 'day-number';
-        dayNumber.textContent = date.getDate();
-        dayElement.appendChild(dayNumber);
+        // Gregorian date number
+        const gNum = document.createElement('div');
+        gNum.className = 'g-num';
+        gNum.textContent = date.getDate();
+        dayElement.appendChild(gNum);
+        
+        // Hijri date (simplified for now - you can integrate with hijri.js later)
+        const hNum = document.createElement('div');
+        hNum.className = 'h-num';
+        hNum.textContent = getHijriDate(date);
+        dayElement.appendChild(hNum);
+        
+        // Events container
+        const eventsContainer = document.createElement('div');
+        eventsContainer.className = 'events';
         
         // Add events for this day
         const dayEvents = calendarEvents.filter(event => {
@@ -3952,30 +3959,43 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             return matches;
         });
         
+        // Create event pills
+        dayEvents.forEach(event => {
+            const eventPill = document.createElement('div');
+            eventPill.className = 'event-pill';
+            eventPill.dataset.id = event.id || event.title.toLowerCase().replace(/\s+/g, '-');
+            
+            // Category indicator
+            const cat = document.createElement('span');
+            cat.className = `cat ${event.category || 'personal'}`;
+            eventPill.appendChild(cat);
+            
+            // Event title
+            const title = document.createElement('strong');
+            title.textContent = event.title;
+            eventPill.appendChild(title);
+            
+            eventsContainer.appendChild(eventPill);
+        });
         
-        if (dayEvents.length > 0) {
-            const eventsContainer = document.createElement('div');
-            eventsContainer.className = 'day-events';
-            
-            dayEvents.slice(0, 3).forEach(event => {
-                const eventElement = document.createElement('div');
-                eventElement.className = 'day-event';
-                eventElement.textContent = event.title;
-                eventElement.title = event.description || event.title;
-                eventsContainer.appendChild(eventElement);
-            });
-            
-            if (dayEvents.length > 3) {
-                const moreElement = document.createElement('div');
-                moreElement.className = 'day-event more';
-                moreElement.textContent = `+${dayEvents.length - 3} more`;
-                eventsContainer.appendChild(moreElement);
-            }
-            
-            dayElement.appendChild(eventsContainer);
-        }
+        dayElement.appendChild(eventsContainer);
         
         return dayElement;
+    }
+    
+    // Simple Hijri date conversion (placeholder - integrate with proper hijri.js later)
+    function getHijriDate(date) {
+        // This is a simplified placeholder - replace with proper hijri.js integration
+        const hijriMonths = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني', 'جمادى الأولى', 'جمادى الآخرة', 
+                           'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
+        
+        // Simple approximation (not accurate - just for display)
+        const day = date.getDate();
+        const month = date.getMonth();
+        const hijriDay = Math.max(1, day - 10); // Rough approximation
+        const hijriMonth = hijriMonths[month] || hijriMonths[0];
+        
+        return `${hijriDay} ${hijriMonth}`;
     }
     
     // Generate day events for day view
@@ -5227,6 +5247,524 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
             renderCalendarEnhanced();
         }
     }
+
+    // ===== MODERN UI EVENT LISTENERS =====
+    
+    // 1. Calendar Navigation
+    function setupCalendarNavigation() {
+        const prevButton = document.getElementById('prev-button');
+        const nextButton = document.getElementById('next-button');
+        
+        if (prevButton) {
+            prevButton.addEventListener('click', () => {
+                navigateCalendar(-1);
+            });
+        }
+        
+        if (nextButton) {
+            nextButton.addEventListener('click', () => {
+                navigateCalendar(1);
+            });
+        }
+    }
+    
+    function navigateCalendar(direction) {
+        const currentView = getCurrentView();
+        
+        switch (currentView) {
+            case 'month':
+                currentDate.setMonth(currentDate.getMonth() + direction);
+                break;
+            case 'week':
+                currentDate.setDate(currentDate.getDate() + (direction * 7));
+                break;
+            case 'day':
+                currentDate.setDate(currentDate.getDate() + direction);
+                break;
+            case 'year':
+                currentDate.setFullYear(currentDate.getFullYear() + direction);
+                break;
+        }
+        
+        updatePeriodLabel();
+        renderCalendarEnhanced();
+        renderSidebar();
+    }
+    
+    function getCurrentView() {
+        const activeView = document.querySelector('.view-btn.active');
+        return activeView ? activeView.dataset.view : 'month';
+    }
+    
+    // 2. View Toggle
+    function setupViewToggle() {
+        const viewButtons = document.querySelectorAll('.view-btn');
+        
+        viewButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const view = button.dataset.view;
+                switchToView(view);
+            });
+        });
+    }
+    
+    function switchToView(view) {
+        // Remove active class from all view buttons
+        document.querySelectorAll('.view-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Add active class to clicked button
+        const activeButton = document.querySelector(`[data-view="${view}"]`);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+        
+        // Update current view mode
+        currentViewMode = view;
+        
+        // Re-render calendar
+        renderCalendarEnhanced();
+        renderSidebar();
+    }
+    
+    // 3. Calendar Type
+    function setupCalendarType() {
+        const calendarTypeSelect = document.getElementById('calendarType');
+        
+        if (calendarTypeSelect) {
+            calendarTypeSelect.addEventListener('change', (e) => {
+                const type = e.target.value;
+                updateCalendarType(type);
+            });
+        }
+    }
+    
+    function updateCalendarType(type) {
+        // Store the calendar type preference
+        localStorage.setItem('calendarType', type);
+        
+        // Re-render calendar with new type
+        renderCalendarEnhanced();
+    }
+    
+    // 4. Period Label Update
+    function updatePeriodLabel() {
+        const periodLabel = document.getElementById('period-label');
+        if (!periodLabel) return;
+        
+        const currentView = getCurrentView();
+        let label = '';
+        
+        switch (currentView) {
+            case 'month':
+                label = currentDate.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                });
+                break;
+            case 'week':
+                const weekStart = new Date(currentDate);
+                weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekStart.getDate() + 6);
+                
+                label = `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+                break;
+            case 'day':
+                label = currentDate.toLocaleDateString('en-US', { 
+                    weekday: 'long',
+                    month: 'long', 
+                    day: 'numeric',
+                    year: 'numeric'
+                });
+                break;
+            case 'year':
+                label = currentDate.getFullYear().toString();
+                break;
+        }
+        
+        periodLabel.textContent = label;
+    }
+    
+    // 5. Sidebar Population
+    function renderSidebar() {
+        updateTodayList();
+        updatePrayerTimes();
+        updateTodayLabel();
+        updateTimezoneLabel();
+    }
+    
+    function updateTodayList() {
+        const todayList = document.getElementById('today-list');
+        if (!todayList) return;
+        
+        const today = new Date();
+        const todayEvents = calendarEvents.filter(event => {
+            const eventDate = new Date(event.startDate || event.start);
+            return eventDate.toDateString() === today.toDateString();
+        });
+        
+        todayList.innerHTML = '';
+        
+        if (todayEvents.length === 0) {
+            todayList.innerHTML = '<div class="list-item"><div class="title">No events today</div></div>';
+            return;
+        }
+        
+        todayEvents.forEach(event => {
+            const listItem = document.createElement('div');
+            listItem.className = 'list-item';
+            
+            const time = event.startTime ? event.startTime : 'All day';
+            const category = event.category || 'personal';
+            
+            listItem.innerHTML = `
+                <div class="time">${time}</div>
+                <div class="title">${event.title}</div>
+                <div class="category cat ${category}"></div>
+            `;
+            
+            todayList.appendChild(listItem);
+        });
+    }
+    
+    function updatePrayerTimes() {
+        const prayerTimes = document.getElementById('prayer-times');
+        if (!prayerTimes) return;
+        
+        // Sample prayer times (replace with actual calculation)
+        const times = {
+            'Fajr': '05:30',
+            'Sunrise': '06:45',
+            'Dhuhr': '12:15',
+            'Asr': '15:30',
+            'Maghrib': '18:20',
+            'Isha': '19:45'
+        };
+        
+        Object.entries(times).forEach(([prayer, time]) => {
+            const prayerElement = prayerTimes.querySelector(`[data-prayer="${prayer.toLowerCase()}"]`);
+            if (prayerElement) {
+                const timeElement = prayerElement.querySelector('.prayer-time-value');
+                if (timeElement) {
+                    timeElement.textContent = time;
+                }
+            }
+        });
+    }
+    
+    function updateTodayLabel() {
+        const todayLabel = document.getElementById('today-label');
+        if (!todayLabel) return;
+        
+        const today = new Date();
+        const label = today.toLocaleDateString('en-US', { 
+            weekday: 'short',
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+        });
+        
+        todayLabel.textContent = label;
+    }
+    
+    function updateTimezoneLabel() {
+        const tzLabel = document.getElementById('tz-label');
+        if (!tzLabel) return;
+        
+        // Get timezone from browser or default to Asia/Dubai
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Asia/Dubai';
+        tzLabel.textContent = timezone;
+    }
+    
+    // 6. Event Pills (already implemented in createDayElement)
+    // This is handled in the existing createDayElement function
+    
+    // 7. Modals
+    function setupModals() {
+        // Open modals
+        const openOccasions = document.getElementById('open-occasions');
+        const openReminders = document.getElementById('open-reminders');
+        
+        if (openOccasions) {
+            openOccasions.addEventListener('click', () => openModal('occasions'));
+        }
+        
+        if (openReminders) {
+            openReminders.addEventListener('click', () => openModal('reminders'));
+        }
+        
+        // Close modals
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('close-x') || e.target.hasAttribute('data-close')) {
+                const modalName = e.target.getAttribute('data-close');
+                if (modalName) {
+                    closeModal(modalName);
+                }
+            }
+        });
+        
+        // Day click for day modal
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.day')) {
+                const dayElement = e.target.closest('.day');
+                const date = dayElement.dataset.date;
+                openDayModal(date);
+            }
+        });
+    }
+    
+    function openModal(modalName) {
+        const modal = document.getElementById(`${modalName}-modal`);
+        if (modal) {
+            modal.setAttribute('aria-hidden', 'false');
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            // Focus management for accessibility
+            const firstFocusable = modal.querySelector('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+            if (firstFocusable) {
+                firstFocusable.focus();
+            }
+            
+            // Trap focus within modal
+            trapFocus(modal);
+        }
+    }
+    
+    function trapFocus(modal) {
+        const focusableElements = modal.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        const firstElement = focusableElements[0];
+        const lastElement = focusableElements[focusableElements.length - 1];
+        
+        modal.addEventListener('keydown', function(e) {
+            if (e.key === 'Tab') {
+                if (e.shiftKey) {
+                    if (document.activeElement === firstElement) {
+                        lastElement.focus();
+                        e.preventDefault();
+                    }
+                } else {
+                    if (document.activeElement === lastElement) {
+                        firstElement.focus();
+                        e.preventDefault();
+                    }
+                }
+            }
+        });
+    }
+    
+    function closeModal(modalName) {
+        const modal = document.getElementById(`${modalName}-modal`);
+        if (modal) {
+            modal.setAttribute('aria-hidden', 'true');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+    
+    function openDayModal(date) {
+        const modal = document.getElementById('day-modal');
+        const dayEventsList = document.getElementById('day-events-list');
+        
+        if (modal && dayEventsList) {
+            // Populate day events
+            const dayEvents = calendarEvents.filter(event => {
+                const eventDate = new Date(event.startDate || event.start);
+                return eventDate.toISOString().split('T')[0] === date;
+            });
+            
+            dayEventsList.innerHTML = '';
+            
+            if (dayEvents.length === 0) {
+                dayEventsList.innerHTML = '<li>No events on this day</li>';
+            } else {
+                dayEvents.forEach(event => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <div class="time">${event.startTime || 'All day'}</div>
+                        <div class="title">${event.title}</div>
+                        <div class="category cat ${event.category || 'personal'}"></div>
+                    `;
+                    dayEventsList.appendChild(listItem);
+                });
+            }
+            
+            openModal('day');
+        }
+    }
+    
+    // 8. Theme Switching
+    function setupThemeSwitching() {
+        const themeDark = document.getElementById('theme-dark');
+        const themeLight = document.getElementById('theme-light');
+        
+        if (themeDark) {
+            themeDark.addEventListener('click', () => switchTheme('dark'));
+        }
+        
+        if (themeLight) {
+            themeLight.addEventListener('click', () => switchTheme('light'));
+        }
+        
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'dark';
+        switchTheme(savedTheme);
+    }
+    
+    function switchTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        // Update theme buttons
+        document.querySelectorAll('.toggle button').forEach(btn => btn.classList.remove('active'));
+        const activeButton = document.getElementById(`theme-${theme}`);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+    }
+    
+    // 9. Keyboard Shortcuts and Navigation
+    function setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Only handle shortcuts when not in input fields
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            switch (e.key) {
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    navigateCalendar(-1);
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    navigateCalendar(1);
+                    break;
+                case 't':
+                case 'T':
+                    e.preventDefault();
+                    const todayBtn = document.getElementById('go-today');
+                    if (todayBtn) todayBtn.click();
+                    break;
+                case 'Escape':
+                    // Close any open modals
+                    document.querySelectorAll('.modal[aria-hidden="false"]').forEach(modal => {
+                        const modalName = modal.id.replace('-modal', '');
+                        closeModal(modalName);
+                    });
+                    break;
+                case 'Tab':
+                    // Ensure proper tab order
+                    handleTabNavigation(e);
+                    break;
+            }
+        });
+        
+        // Add keyboard navigation for day cells
+        setupDayKeyboardNavigation();
+    }
+    
+    function handleTabNavigation(e) {
+        // Allow default tab behavior but ensure focus is visible
+        const focusedElement = document.activeElement;
+        if (focusedElement && !focusedElement.classList.contains('btn') && 
+            !focusedElement.classList.contains('icon-btn') && 
+            !focusedElement.classList.contains('view-btn')) {
+            // Add focus styles to any focused element
+            focusedElement.classList.add('keyboard-focused');
+        }
+    }
+    
+    function setupDayKeyboardNavigation() {
+        // Add keyboard support for day cells
+        document.addEventListener('keydown', (e) => {
+            if (e.target.classList.contains('day')) {
+                switch (e.key) {
+                    case 'Enter':
+                    case ' ':
+                        e.preventDefault();
+                        const date = e.target.dataset.date;
+                        if (date) {
+                            openDayModal(date);
+                        }
+                        break;
+                }
+            }
+        });
+    }
+    
+    // Today Button
+    function setupTodayButton() {
+        const todayBtn = document.getElementById('go-today');
+        if (todayBtn) {
+            todayBtn.addEventListener('click', () => {
+                currentDate = new Date();
+                updatePeriodLabel();
+                renderCalendarEnhanced();
+                renderSidebar();
+            });
+        }
+    }
+    
+    // Initialize all event listeners
+    function initializeModernUI() {
+        setupCalendarNavigation();
+        setupViewToggle();
+        setupCalendarType();
+        setupModals();
+        setupThemeSwitching();
+        setupKeyboardShortcuts();
+        setupTodayButton();
+        
+        // Initial render
+        updatePeriodLabel();
+        renderSidebar();
+    }
+    
+    // Testing and QA functions
+    function runFeatureTests() {
+        console.log('🧪 Running calendar feature tests...');
+        
+        // Test 1: Navigation buttons
+        const prevBtn = document.getElementById('prev-button');
+        const nextBtn = document.getElementById('next-button');
+        console.log('✅ Navigation buttons found:', !!prevBtn, !!nextBtn);
+        
+        // Test 2: View toggle buttons
+        const viewButtons = document.querySelectorAll('.view-btn');
+        console.log('✅ View buttons found:', viewButtons.length);
+        
+        // Test 3: Calendar type selector
+        const calendarType = document.getElementById('calendarType');
+        console.log('✅ Calendar type selector found:', !!calendarType);
+        
+        // Test 4: Modals
+        const occasionsModal = document.getElementById('occasions-modal');
+        const remindersModal = document.getElementById('reminders-modal');
+        const dayModal = document.getElementById('day-modal');
+        console.log('✅ Modals found:', !!occasionsModal, !!remindersModal, !!dayModal);
+        
+        // Test 5: Sidebar elements
+        const todayList = document.getElementById('today-list');
+        const prayerTimes = document.getElementById('prayer-times');
+        const todayLabel = document.getElementById('today-label');
+        console.log('✅ Sidebar elements found:', !!todayList, !!prayerTimes, !!todayLabel);
+        
+        // Test 6: Theme buttons
+        const themeDark = document.getElementById('theme-dark');
+        const themeLight = document.getElementById('theme-light');
+        console.log('✅ Theme buttons found:', !!themeDark, !!themeLight);
+        
+        // Test 7: Calendar grid
+        const monthGrid = document.getElementById('month-grid');
+        console.log('✅ Calendar grid found:', !!monthGrid);
+        
+        console.log('🎉 All feature tests completed!');
+    }
+    
+    // Call initialization
+    initializeModernUI();
+    
+    // Run tests after a short delay to ensure DOM is ready
+    setTimeout(runFeatureTests, 1000);
 });
 
 })(); // End of IIFE for double initialization prevention

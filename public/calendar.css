@@ -38,6 +38,887 @@
     opacity: 0.9;
 }
 
+/* Modern Design System - New Calendar Styles */
+:root {
+  /* Modern design tokens, gradients, backgrounds, accent colors */
+  --bg: #0b1220;
+  --bg-soft: #0f172a;
+  --panel: #111a2e;
+  --panel-2: #0f182b;
+  --muted: #7b8aa5;
+  --text: #e6edf7;
+  --text-2: #b7c4d6;
+  --accent: #3b82f6;
+  --accent-2: #22d3ee;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.02);
+  --glass: rgba(255,255,255,.04);
+  --grid-gap: 8px;
+}
+
+/* Main layout and app bar */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, sans-serif;
+  margin: 0;
+  box-sizing: border-box;
+}
+.app-bar {
+  position: sticky; top: 0;
+  backdrop-filter: blur(12px);
+  background: linear-gradient(180deg, rgba(10,15,26,.8), rgba(10,15,26,.55));
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  z-index: 50;
+}
+.bar-inner {
+  max-width: 1240px; margin: 0 auto; padding: 14px 18px;
+  display: flex; align-items: center; gap: 14px;
+}
+/* Brand/logo for top bar */
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
+.brand .logo { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; }
+.bar-spacer { flex: 1; }
+
+.search { position: relative; width: 420px; max-width: 50vw; }
+.search input { width: 100%; padding: 12px 40px 12px 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08); background: var(--panel); color: var(--text); }
+/* Toolbar and buttons */
+.toolbar { display: flex; align-items: center; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,.08); padding: 10px 14px; border-radius: 12px; background: var(--panel); color: var(--text); cursor: pointer; transition: .2s; }
+.btn.primary { background: linear-gradient(180deg, var(--accent), #1e40af); color: #fff; }
+.btn.ghost { background: transparent; border-color: rgba(255,255,255,.14); }
+.toggle { display: inline-grid; grid-template-columns: 1fr 1fr; padding: 2px; background: var(--panel); border-radius: 12px; border: 1px solid rgba(255,255,255,.08); }
+.toggle button.active { background: linear-gradient(180deg, var(--accent), #1d4ed8); color: #fff; }
+/* Calendar header and period switch */
+.calendar-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.period { display: flex; align-items: center; gap: 10px; }
+.nav { display: flex; gap: 8px; }
+.icon-btn { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; border: 1px solid rgba(255,255,255,.08); background: var(--panel); cursor: pointer; }
+/* Month grid and day cells */
+.month-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--grid-gap); }
+.day { position: relative; min-height: 120px; background: var(--glass); border: 1px solid rgba(255,255,255,.06); border-radius: 12px; padding: 10px; overflow: hidden; transition: .2s; cursor: pointer; }
+.day .g-num { font-weight: 700; font-size: 14px; color: var(--text); }
+.day .h-num { font-size: 11px; color: var(--muted); }
+.events { margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.event-pill { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(255,255,255,.06); background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02)); }
+.event-pill .cat { width: 8px; height: 8px; border-radius: 50%; }
+.cat.personal { background: #a78bfa; }
+.cat.prayer { background: #22d3ee; }
+.cat.islamic { background: #34d399; }
+.cat.holiday { background: #f59e0b; }
+
+/* Additional modern styles for pill elements */
+.pill { 
+  display: inline-flex; 
+  align-items: center; 
+  padding: 6px 12px; 
+  background: var(--glass); 
+  border: 1px solid rgba(255,255,255,.08); 
+  border-radius: 20px; 
+  font-size: 12px; 
+  font-weight: 500; 
+  color: var(--text-2); 
+}
+
+/* Select dropdown styling */
+.select {
+  position: relative;
+}
+
+.select select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.select select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* View button styling */
+.view-btn {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.view-btn.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.view-btn:hover:not(.active) {
+  background: var(--glass);
+  color: var(--text);
+}
+
+/* OAuth status pills */
+.oauth-mini {
+  display: flex;
+  gap: 6px;
+}
+
+.pill-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,.06);
+}
+
+.pill-status.connected {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3);
+  color: #10b981;
+}
+
+.pill-status.disconnected {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.pill-status .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Keyboard shortcut styling */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-left: 8px;
+}
+
+/* Search results styling */
+.search-results {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  margin-top: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+}
+
+.search-results.show {
+  display: block;
+}
+
+/* Card styling */
+.card {
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Sidebar and card styling */
+.right {
+  position: sticky;
+  top: 80px;
+  width: 320px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  margin-left: 20px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  margin-bottom: 0;
+}
+
+.card-body {
+  padding: 16px;
+}
+
+/* List styling for today's events */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.list-item:hover {
+  background: rgba(255,255,255,.08);
+  transform: translateX(2px);
+}
+
+.list-item .time {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  min-width: 60px;
+}
+
+.list-item .title {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 500;
+  flex: 1;
+}
+
+.list-item .category {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* Row layout for buttons */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Prayer times styling */
+.prayers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.prayer-time {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.prayer-time:hover {
+  background: rgba(255,255,255,.08);
+  transform: translateX(2px);
+}
+
+.prayer-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0;
+}
+
+.prayer-time-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+}
+
+/* Responsive Design - Enhanced Mobile/Tablet Support */
+
+/* Large tablets and small desktops */
+@media (max-width: 1200px) {
+  .right {
+    width: 280px;
+    margin-left: 16px;
+  }
+  
+  .app-bar .bar-inner {
+    padding: 12px 16px;
+  }
+  
+  .search {
+    width: 300px;
+  }
+  
+  .month-grid {
+    gap: 6px;
+  }
+  
+  .day {
+    min-height: 100px;
+    padding: 8px;
+  }
+}
+
+/* Tablets */
+@media (max-width: 1024px) {
+  .app-bar .toolbar {
+    gap: 8px;
+  }
+  
+  .app-bar .btn {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+  
+  .calendar-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .period {
+    justify-content: center;
+  }
+  
+  .right {
+    width: 260px;
+  }
+}
+
+/* Mobile landscape and small tablets */
+@media (max-width: 768px) {
+  .app-bar .bar-inner {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px;
+  }
+  
+  .app-bar .brand {
+    order: 1;
+  }
+  
+  .app-bar .search {
+    order: 2;
+    width: 100%;
+    max-width: none;
+  }
+  
+  .app-bar .toolbar {
+    order: 3;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .calendar-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .period {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+  
+  .nav {
+    justify-content: center;
+  }
+  
+  .month-grid {
+    gap: 4px;
+  }
+  
+  .day {
+    min-height: 80px;
+    padding: 6px;
+    font-size: 12px;
+  }
+  
+  .day .g-num {
+    font-size: 12px;
+  }
+  
+  .day .h-num {
+    font-size: 10px;
+  }
+  
+  .event-pill {
+    font-size: 10px;
+    padding: 4px 6px;
+  }
+  
+  .right {
+    position: static;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 20px;
+    max-height: none;
+  }
+  
+  .card-header {
+    padding: 12px;
+  }
+  
+  .card-body {
+    padding: 12px;
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 480px) {
+  .app-bar .bar-inner {
+    padding: 8px;
+  }
+  
+  .app-bar .toolbar {
+    gap: 6px;
+  }
+  
+  .app-bar .btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .app-bar .toggle {
+    padding: 1px;
+  }
+  
+  .app-bar .toggle button {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  
+  .calendar-header {
+    padding: 0 8px;
+  }
+  
+  .view-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .month-grid {
+    gap: 2px;
+  }
+  
+  .day {
+    min-height: 70px;
+    padding: 4px;
+  }
+  
+  .day .g-num {
+    font-size: 11px;
+  }
+  
+  .day .h-num {
+    font-size: 9px;
+  }
+  
+  .event-pill {
+    font-size: 9px;
+    padding: 3px 5px;
+  }
+  
+  .prayer-time {
+    padding: 8px;
+  }
+  
+  .prayer-name {
+    font-size: 12px;
+  }
+  
+  .prayer-time-value {
+    font-size: 12px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 360px) {
+  .app-bar .toolbar {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .app-bar .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .calendar-header {
+    padding: 0 4px;
+  }
+  
+  .period {
+    gap: 8px;
+  }
+  
+  .nav {
+    gap: 4px;
+  }
+  
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .month-grid {
+    gap: 1px;
+  }
+  
+  .day {
+    min-height: 60px;
+    padding: 3px;
+  }
+}
+
+/* Modern Modal Styling */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal[aria-hidden="false"] {
+  display: flex;
+}
+
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.modal .card {
+  position: relative;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  z-index: 1001;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.close-x {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.close-x:hover {
+  color: var(--text);
+  background: var(--glass);
+}
+
+/* Form Grid Layout */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.field.col-span-2 {
+  grid-column: span 2;
+}
+
+.field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.field input,
+.field select {
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.field input:focus,
+.field select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Checkbox Styling */
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.chk {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.chk:hover {
+  background: var(--glass);
+}
+
+.chk input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  margin: 0;
+}
+
+.chk label {
+  margin: 0;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+/* List Clean Styling */
+.list-clean {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.list-clean li {
+  padding: 12px;
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: all 0.2s;
+}
+
+.list-clean li:hover {
+  background: rgba(255,255,255,.08);
+  transform: translateX(2px);
+}
+
+/* Card Footer */
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  margin-top: 0;
+}
+
+/* Accessibility - Focus Styles and ARIA Support */
+.btn:focus,
+.icon-btn:focus,
+.view-btn:focus,
+.close-x:focus,
+input:focus,
+select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.btn:focus-visible,
+.icon-btn:focus-visible,
+.view-btn:focus-visible,
+.close-x:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.day:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+/* Skip to content link for screen readers */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--accent);
+  color: white;
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  top: 6px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn {
+    border-width: 2px;
+  }
+  
+  .day {
+    border-width: 2px;
+  }
+  
+  .event-pill {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .fade-in {
+    animation: none;
+  }
+  
+  .modal .card {
+    animation: none;
+  }
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Touch targets for mobile */
+@media (max-width: 768px) {
+  .btn,
+  .icon-btn,
+  .view-btn,
+  .day {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .event-pill {
+    min-height: 32px;
+    padding: 8px 12px;
+  }
+}
+
+/* Responsive Modal */
+@media (max-width: 768px) {
+  .modal {
+    padding: 10px;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .field.col-span-2 {
+    grid-column: span 1;
+  }
+  
+  .checks {
+    grid-template-columns: 1fr;
+  }
+  
+  .card-footer {
+    flex-direction: column;
+  }
+  
+  .card-footer .btn {
+    width: 100%;
+  }
+}
+
 .islamic-sync-buttons {
     display: flex;
     gap: 8px;
