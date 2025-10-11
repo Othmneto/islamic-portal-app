@@ -374,48 +374,29 @@
 
         <!-- Integration Panel -->
         <div class="integration-panel">
-            <div class="panel-header">
-                <h3><i class="fa-solid fa-plug"></i> Integrations & Export</h3>
-                <div class="integration-actions">
-                    <div class="integration-status">
-                        <span id="sync-status" class="status-indicator">Not Connected</span>
-                    </div>
-                    <div class="export-import-buttons">
-                        <button id="export-json-btn" class="export-btn" title="Export as JSON">
-                            <i class="fa-solid fa-download"></i> JSON
-                        </button>
-                        <button id="export-csv-btn" class="export-btn" title="Export as CSV">
-                            <i class="fa-solid fa-file-csv"></i> CSV
-                        </button>
-                        <button id="export-ics-btn" class="export-btn" title="Export as iCal">
-                            <i class="fa-solid fa-calendar"></i> iCal
-                        </button>
-                        <button id="import-btn" class="import-btn" title="Import Calendar">
-                            <i class="fa-solid fa-upload"></i> Import
-                        </button>
-                        <input type="file" id="import-file" accept=".json" style="display: none;">
-                    </div>
+            <h3><i class="fa-solid fa-plug"></i> Integrations & Export</h3>
+            <div class="integration-actions">
+                <div class="integration-status">
+                    <span id="sync-status" class="status-indicator">Not Connected</span>
+                </div>
+                <div class="export-import-buttons">
+                    <button id="export-json-btn" class="export-btn" title="Export as JSON">
+                        <i class="fa-solid fa-download"></i> JSON
+                    </button>
+                    <button id="export-csv-btn" class="export-btn" title="Export as CSV">
+                        <i class="fa-solid fa-file-csv"></i> CSV
+                    </button>
+                    <button id="export-ics-btn" class="export-btn" title="Export as iCal">
+                        <i class="fa-solid fa-calendar"></i> iCal
+                    </button>
+                    <button id="import-btn" class="import-btn" title="Import Calendar">
+                        <i class="fa-solid fa-upload"></i> Import
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display: none;">
                 </div>
             </div>
             
             <div class="integration-grid">
-                <!-- Mobile Sync -->
-                <div class="integration-card" id="mobile-sync-card">
-                    <div class="integration-icon">
-                        <i class="fa-solid fa-mobile-screen-button"></i>
-                    </div>
-                    <div class="integration-info">
-                        <h4>Mobile Calendar Sync</h4>
-                        <p>Mobile calendar integration is not currently supported.</p>
-                        <div class="integration-notice">
-                            <i class="fa-solid fa-info-circle"></i>
-                            <span>This feature is under development and will be available in a future update.</span>
-                        </div>
-                        <div class="integration-status">
-                            <span class="status-notice">Not Supported</span>
-                        </div>
-                    </div>
-                </div>
 
                 <!-- Email Integration -->
                 <div class="integration-card" id="email-sync-card">
@@ -440,6 +421,10 @@
                                 <span class="status-label">Provider:</span>
                                 <span class="status-value" id="email-provider">-</span>
                             </div>
+                            <div class="status-line" id="email-last-sync-line" style="display: none;">
+                                <span class="status-label">Last Sync:</span>
+                                <span class="status-value" id="email-last-sync">-</span>
+                            </div>
                         </div>
                         
                         <!-- Action Buttons -->
@@ -460,12 +445,10 @@
 
         <!-- Event Management Panel -->
         <div class="event-panel">
-            <div class="panel-header">
-                <h3><i class="fa-solid fa-list"></i> Events & Reminders</h3>
-                <div class="event-actions">
-                    <button id="sync-all-btn" class="sync-btn"><i class="fa-solid fa-sync"></i> Sync All</button>
-                    <button id="add-event-btn" class="add-btn"><i class="fa-solid fa-plus"></i> Add Event</button>
-                </div>
+            <h3><i class="fa-solid fa-list"></i> Events & Reminders</h3>
+            <div class="event-actions">
+                <button id="sync-all-btn" class="sync-btn"><i class="fa-solid fa-sync"></i> Sync All</button>
+                <button id="add-event-btn" class="add-btn"><i class="fa-solid fa-plus"></i> Add Event</button>
             </div>
             
             <div class="event-filters">
@@ -485,12 +468,10 @@
 
         <!-- Prayer Times Panel -->
         <div class="prayer-panel">
-            <div class="panel-header">
-                <h3><i class="fa-solid fa-mosque"></i> Prayer Times</h3>
-                <div class="location-info">
-                    <span id="current-location">Loading location...</span>
-                    <button id="change-location-btn" class="change-btn">Change</button>
-                </div>
+            <h3><i class="fa-solid fa-mosque"></i> Prayer Times</h3>
+            <div class="location-info">
+                <span id="current-location">Loading location...</span>
+                <button id="change-location-btn" class="change-btn">Change</button>
             </div>
             
             <div id="prayer-times" class="prayer-times">
@@ -528,9 +509,7 @@
 
         <!-- Islamic Events Panel -->
         <div class="islamic-events-panel">
-            <div class="panel-header">
-                <h3><i class="fa-solid fa-star-and-crescent"></i> Islamic Events</h3>
-            </div>
+            <h3><i class="fa-solid fa-star-and-crescent"></i> Islamic Events</h3>
             
             <div id="islamic-events" class="islamic-events">
                 <div class="event-item">
@@ -643,6 +622,20 @@
                         </select>
                     </div>
                     
+                    <!-- Recurrence Options (hidden by default) -->
+                    <div class="form-group" id="recurrence-options" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="recurrence-end-date">End Date (Optional)</label>
+                                <input type="date" id="recurrence-end-date">
+                            </div>
+                            <div class="form-group">
+                                <label for="recurrence-count">Number of Occurrences</label>
+                                <input type="number" id="recurrence-count" min="1" max="365">
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label for="meeting-type">Meeting Type</label>
                         <select id="meeting-type">
@@ -665,10 +658,42 @@
                         </label>
                     </div>
                     
+                    <!-- Islamic Event Options -->
                     <div class="form-group">
                         <label>
-                            <input type="checkbox" id="sync-mobile"> Sync to Mobile Calendar
+                            <input type="checkbox" id="islamic-event"> Islamic Event
                         </label>
+                    </div>
+                    
+                    <div class="form-group" id="prayer-time-group" style="display: none;">
+                        <label for="prayer-time">Prayer Time</label>
+                        <select id="prayer-time">
+                            <option value="">Select Prayer Time</option>
+                            <option value="fajr">Fajr</option>
+                            <option value="dhuhr">Dhuhr</option>
+                            <option value="asr">Asr</option>
+                            <option value="maghrib">Maghrib</option>
+                            <option value="isha">Isha</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Template Options -->
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="save-as-template"> Save as Template
+                        </label>
+                    </div>
+                    
+                    <div class="form-group" id="template-category-group" style="display: none;">
+                        <label for="template-category">Template Category</label>
+                        <select id="template-category">
+                            <option value="personal">Personal</option>
+                            <option value="work">Work</option>
+                            <option value="prayer">Prayer</option>
+                            <option value="islamic">Islamic Event</option>
+                            <option value="reminder">Reminder</option>
+                            <option value="holiday">Holiday</option>
+                        </select>
                     </div>
                     
                     <div class="form-group">
@@ -706,80 +731,6 @@
             </div>
         </div>
 
-        <!-- Mobile Sync Modal -->
-        <div id="mobile-sync-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Mobile Calendar Sync</h3>
-                    <button class="close-btn" id="close-mobile-sync-modal">&times;</button>
-                </div>
-                <div class="integration-setup">
-                    <!-- Connected Status (shown when connected) -->
-                    <div id="mobile-connected-status" class="connected-status" style="display: none;">
-                        <div class="status-header">
-                            <i class="fa-solid fa-check-circle status-icon connected"></i>
-                            <h4>Mobile Calendar Connected</h4>
-                        </div>
-                        <div class="status-details">
-                            <div class="device-info">
-                                <span class="device-label">Device:</span>
-                                <span id="connected-mobile-device" class="device-name">-</span>
-                            </div>
-                            <div class="provider-info">
-                                <span class="provider-label">Provider:</span>
-                                <span id="connected-mobile-provider" class="provider-name">-</span>
-                            </div>
-                            <div class="last-sync-info">
-                                <span class="sync-label">Last Sync:</span>
-                                <span id="connected-mobile-last-sync" class="sync-time">-</span>
-                            </div>
-                        </div>
-                        <div class="connected-actions">
-                            <button type="button" id="test-mobile-connection" class="btn-secondary">Test Connection</button>
-                            <button type="button" id="disconnect-mobile" class="btn-danger">Disconnect</button>
-                        </div>
-                    </div>
-                    
-                    <!-- Setup Flow (shown when not connected) -->
-                    <div id="mobile-setup-flow">
-                        <div class="setup-step">
-                            <h4><i class="fa-solid fa-mobile-screen-button"></i> OAuth Integration</h4>
-                            <p>Connect your mobile calendar using OAuth authentication for secure access.</p>
-                            <div class="device-options">
-                                <button class="device-btn" data-device="ios">
-                                    <i class="fa-brands fa-apple"></i>
-                                    <span>iOS (iPhone/iPad)</span>
-                                </button>
-                                <button class="device-btn" data-device="android">
-                                    <i class="fa-brands fa-android"></i>
-                                    <span>Android</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="setup-step" id="oauth-setup" style="display: none;">
-                            <h4><i class="fa-solid fa-shield-alt"></i> OAuth Authentication</h4>
-                            <div class="oauth-info">
-                                <p>Click the button below to authenticate with your calendar provider:</p>
-                                <button id="oauth-auth-btn" class="btn-primary oauth-btn">
-                                    <i class="fa-solid fa-lock"></i>
-                                    Authenticate with OAuth
-                                </button>
-                                <div class="oauth-status" id="oauth-status" style="display: none;">
-                                    <i class="fa-solid fa-check-circle"></i>
-                                    <span>Authentication successful!</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" id="test-mobile-sync" class="btn-secondary">Test Connection</button>
-                            <button type="button" id="save-mobile-sync" class="btn-primary">Save Settings</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Email Integration Modal -->
         <div id="email-sync-modal" class="modal">

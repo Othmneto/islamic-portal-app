@@ -289,7 +289,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Integration state
     let integrations = {
-        mobile: { connected: false, type: null, oauthToken: null },
         email: { connected: false, provider: null, oauthToken: null }
     };
 
@@ -340,21 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Modals
         eventModal: document.getElementById('event-modal'),
         locationModal: document.getElementById('location-modal'),
-        mobileSyncModal: document.getElementById('mobile-sync-modal'),
         emailSyncModal: document.getElementById('email-sync-modal'),
         eventForm: document.getElementById('event-form'),
         
         // Integration elements
-        mobileSyncBtn: document.getElementById('mobile-sync-btn'),
         emailSyncBtn: document.getElementById('email-sync-btn'),
         syncAllBtn: document.getElementById('sync-all-btn'),
-        mobileSyncStatus: document.getElementById('mobile-sync-status'),
         emailSyncStatus: document.getElementById('email-sync-status'),
         syncStatus: document.getElementById('sync-status'),
         
         // Connected status elements
-        mobileConnectedStatus: document.getElementById('mobile-connected-status'),
-        mobileSetupFlow: document.getElementById('mobile-setup-flow'),
         emailConnectedStatus: document.getElementById('email-connected-status'),
         emailSetupFlow: document.getElementById('email-setup-flow'),
         
@@ -970,75 +964,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Advanced Integration Functions ---
     
-    // Mobile Sync Functions
-    function openMobileSyncModal() {
-        elements.mobileSyncModal.style.display = 'block';
-        updateMobileModalContent();
-    }
-    
-    function closeMobileSyncModal() {
-        elements.mobileSyncModal.style.display = 'none';
-    }
-    
-    async function setupMobileSync(deviceType) {
-        try {
-            showNotification('Setting up mobile sync with OAuth...', 'info');
-            
-            // For mobile sync, we'll use the email provider's OAuth
-            // Check if user has Google or Microsoft connected
-            const authToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
-            const response = await fetch('/api/calendar/status', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to check integration status');
-            }
-
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error('Failed to get integration status');
-            }
-
-            // Check if email integration is connected
-            if (!data.integrations.email.connected) {
-                showNotification('Please connect your email account first (Google or Microsoft)', 'warning');
-                return;
-            }
-            
-            // Create mobile sync configuration
-            const mobileConfig = {
-                deviceType: deviceType,
-                provider: data.integrations.email.provider,
-                syncInterval: 300000, // 5 minutes
-                lastSync: new Date(),
-                autoSync: true
-            };
-            
-            // Store configuration
-            integrations.mobile.connected = true;
-            integrations.mobile.type = deviceType;
-            integrations.mobile.config = mobileConfig;
-            
-            // Save to localStorage
-            saveIntegrationSettings();
-            
-            // Start auto-sync
-            startMobileAutoSync();
-            
-            updateIntegrationStatus();
-            showNotification(`${deviceType.toUpperCase()} sync connected via OAuth successfully!`, 'success');
-            closeMobileSyncModal();
-            
-        } catch (error) {
-            console.error('Mobile sync setup error:', error);
-            showNotification('Failed to setup mobile sync', 'error');
-        }
-    }
     
     function generateQRCode(elementId, url) {
         const element = document.getElementById(elementId);
@@ -1097,76 +1022,64 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     
-    function startMobileAutoSync() {
-        if (integrations.mobile.autoSync) {
-            setInterval(() => {
-                if (integrations.mobile.connected) {
-                    syncToMobileCalendar();
-                }
-            }, integrations.mobile.config?.syncInterval || 300000);
-        }
-    }
     
-    function showMobileSetupInstructions(deviceType, calendarUrl) {
-        const instructions = deviceType === 'ios' ? 
-            `iOS Setup Instructions:
-1. Open Settings > Calendar > Accounts
-2. Add Account > Other > Add CalDAV Account
-3. Server: ${window.location.hostname}
-4. Username: your-username
-5. Password: your-password
-6. Or scan the QR code above` :
-            `Android Setup Instructions:
-1. Open Google Calendar app
-2. Go to Settings > Add account
-3. Select "Other" and enter:
-4. Calendar URL: ${calendarUrl}
-5. Or scan the QR code above`;
-        
-        showNotification(instructions, 'info', 8000);
-    }
     
     // Email Integration Functions
     function openEmailSyncModal() {
-        elements.emailSyncModal.style.display = 'block';
-        updateEmailModalContent();
+        console.log('📧 Opening email sync modal...');
+        console.log('📧 Email sync modal element:', elements.emailSyncModal);
+        if (elements.emailSyncModal) {
+            elements.emailSyncModal.style.display = 'block';
+            updateEmailModalContent();
+            console.log('✅ Email sync modal opened successfully');
+        } else {
+            console.error('❌ Email sync modal element not found');
+        }
     }
     
     function closeEmailSyncModal() {
         elements.emailSyncModal.style.display = 'none';
     }
     
-    // Update modal content based on connection status
-    function updateMobileModalContent() {
-        if (integrations.mobile && integrations.mobile.connected) {
-            // Show connected status
-            elements.mobileConnectedStatus.style.display = 'block';
-            elements.mobileSetupFlow.style.display = 'none';
-            
-            // Update connected status details
-            document.getElementById('connected-mobile-device').textContent = integrations.mobile.type || 'Unknown';
-            document.getElementById('connected-mobile-provider').textContent = integrations.mobile.provider || 'Unknown';
-            document.getElementById('connected-mobile-last-sync').textContent = integrations.mobile.lastSync || 'Never';
-        } else {
-            // Show setup flow
-            elements.mobileConnectedStatus.style.display = 'none';
-            elements.mobileSetupFlow.style.display = 'block';
-        }
+    function openEmailSettings() {
+        openEmailSyncModal();
     }
     
+    // Update modal content based on connection status
+    
     function updateEmailModalContent() {
+        console.log('📧 Updating email modal content...');
+        console.log('📧 Email integration status:', integrations.email);
+        console.log('📧 Email connected status elements:', elements.emailConnectedStatus, elements.emailSetupFlow);
+        
         if (integrations.email && integrations.email.connected) {
             // Show connected status
-            elements.emailConnectedStatus.style.display = 'block';
-            elements.emailSetupFlow.style.display = 'none';
+            if (elements.emailConnectedStatus) {
+                elements.emailConnectedStatus.style.display = 'block';
+            }
+            if (elements.emailSetupFlow) {
+                elements.emailSetupFlow.style.display = 'none';
+            }
             
             // Update connected status details
-            document.getElementById('connected-email-provider').textContent = integrations.email.provider || 'Unknown';
-            document.getElementById('connected-email-last-sync').textContent = integrations.email.lastSync || 'Never';
+            const providerElement = document.getElementById('connected-email-provider');
+            const lastSyncElement = document.getElementById('connected-email-last-sync');
+            if (providerElement) {
+                providerElement.textContent = integrations.email.provider || 'Unknown';
+            }
+            if (lastSyncElement) {
+                lastSyncElement.textContent = integrations.email.lastSync || 'Never';
+            }
+            console.log('✅ Email modal content updated - connected status');
         } else {
             // Show setup flow
-            elements.emailConnectedStatus.style.display = 'none';
-            elements.emailSetupFlow.style.display = 'block';
+            if (elements.emailConnectedStatus) {
+                elements.emailConnectedStatus.style.display = 'none';
+            }
+            if (elements.emailSetupFlow) {
+                elements.emailSetupFlow.style.display = 'block';
+            }
+            console.log('✅ Email modal content updated - setup flow');
         }
     }
     
@@ -1530,63 +1443,6 @@ Calendar System
         URL.revokeObjectURL(url);
     }
     
-    // Sync to Mobile Calendar
-    async function syncToMobileCalendar(eventData) {
-        try {
-            if (!integrations.mobile.connected) {
-                throw new Error('Mobile integration not connected');
-            }
-            
-            // Get the provider from mobile config
-            const provider = integrations.mobile.config?.provider;
-            if (!provider) {
-                throw new Error('No provider configured for mobile sync');
-            }
-
-            // Sync to the provider's calendar
-            const authToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
-            const response = await fetch(`/api/calendar/sync/${provider}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    events: [eventData]
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to sync to calendar');
-            }
-
-            const data = await response.json();
-            if (!data.success) {
-                throw new Error(data.error || 'Sync failed');
-            }
-            
-            // Store sync data
-            const syncData = {
-                id: Date.now().toString(),
-                eventId: eventData.id,
-                deviceType: integrations.mobile.type,
-                provider: provider,
-                syncedAt: new Date(),
-                status: 'synced'
-            };
-            
-            // Save to localStorage
-            saveMobileSyncData(syncData);
-            
-            showNotification(`Event synced to ${provider.toUpperCase()} calendar!`, 'success');
-            return true;
-        } catch (error) {
-            console.error('Mobile sync error:', error);
-            showNotification('Failed to sync to mobile calendar', 'error');
-            return false;
-        }
-    }
     
     function generateCalendarExport(eventData) {
         const startDate = formatDate(eventData.startDate, 'YYYYMMDDTHHmmss');
@@ -1607,11 +1463,6 @@ END:VEVENT
 END:VCALENDAR`;
     }
     
-    function saveMobileSyncData(syncData) {
-        const syncs = JSON.parse(localStorage.getItem('calendar-mobile-syncs') || '[]');
-        syncs.push(syncData);
-        localStorage.setItem('calendar-mobile-syncs', JSON.stringify(syncs));
-    }
     
     function downloadCalendarFile(calendarData, eventTitle) {
         const blob = new Blob([calendarData], { type: 'text/calendar' });
@@ -1791,11 +1642,6 @@ END:VCALENDAR`;
         if (!integration.connected) return;
         
         switch (type) {
-            case 'mobile':
-                document.getElementById('mobile-device-type').textContent = integration.type?.toUpperCase() || '-';
-                document.getElementById('mobile-last-sync').textContent = 
-                    integration.config?.lastSync ? new Date(integration.config.lastSync).toLocaleString() : '-';
-                break;
             case 'email':
                 document.getElementById('email-provider').textContent = integration.provider?.toUpperCase() || '-';
                 document.getElementById('email-last-sync').textContent = 
@@ -1830,12 +1676,10 @@ END:VCALENDAR`;
                     integrations = data.integrations;
                     console.log('✅ Calendar integrations loaded from server:', integrations);
                     console.log('🔍 Integration details:', {
-                        mobile: integrations.mobile,
                         email: integrations.email,
-                        mobileConnected: integrations.mobile?.connected,
                         emailConnected: integrations.email?.connected
                     });
-            updateIntegrationStatus();
+                    updateIntegrationStatus();
                     return;
                 } else {
                     console.log('❌ Server returned success: false', data);
@@ -2030,7 +1874,6 @@ ${data.events.map(event => `
 `).join('\n')}
 
 INTEGRATIONS:
-- Mobile: ${integrations.mobile?.connected ? 'Connected' : 'Not Connected'}
 - Email: ${integrations.email?.connected ? 'Connected' : 'Not Connected'}
 ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 'Not Connected'}` : ''}
         `.trim();
@@ -2087,8 +1930,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             let provider = null;
             if (type === 'email') {
                 provider = integrations.email.provider;
-            } else if (type === 'mobile') {
-                provider = integrations.mobile.config?.provider;
             }
 
             if (!provider) {
@@ -2124,11 +1965,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
     
     function getIntegrationStatus() {
         const status = {
-            mobile: {
-                connected: integrations.mobile.connected,
-                type: integrations.mobile.type,
-                lastSync: integrations.mobile.config?.lastSync
-            },
             email: {
                 connected: integrations.email.connected,
                 provider: integrations.email.provider,
@@ -2268,7 +2104,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             const formData = new FormData(elements.eventForm);
             const meetingType = document.getElementById('meeting-type').value;
             const meetingLink = document.getElementById('meeting-link').value;
-            const syncMobile = document.getElementById('sync-mobile').checked;
             const sendEmail = document.getElementById('send-email').checked;
             
             const event = {
@@ -2284,7 +2119,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
                 reminder: document.getElementById('event-reminder').checked,
                 meetingType: meetingType,
                 meetingLink: meetingLink || null,
-                syncMobile: syncMobile,
                 sendEmail: sendEmail,
                 
                 // === ADVANCED EVENT MANAGEMENT ===
@@ -2385,14 +2219,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             // Handle integrations asynchronously
             const integrationPromises = [];
             
-            if (syncMobile && integrations.mobile.connected) {
-                integrationPromises.push(
-                    syncToMobileCalendar(event).catch(error => {
-                        console.error('Mobile sync error:', error);
-                        showNotification('Mobile sync failed', 'warning');
-                    })
-                );
-            }
             
             if (sendEmail && integrations.email.connected) {
                 const attendees = ['demo@example.com'];
@@ -2787,17 +2613,8 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         });
         
         // Integration modal close buttons
-        document.getElementById('close-mobile-sync-modal').addEventListener('click', closeMobileSyncModal);
         document.getElementById('close-email-sync-modal').addEventListener('click', closeEmailSyncModal);
         
-        // Device selection for mobile sync
-        document.querySelectorAll('.device-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const deviceType = e.currentTarget.dataset.device;
-                document.querySelectorAll('.setup-step').forEach(step => step.style.display = 'none');
-                document.getElementById('oauth-setup').style.display = 'block';
-            });
-        });
         
         // Email provider selection
         document.querySelectorAll('.email-btn').forEach(btn => {
@@ -2818,13 +2635,36 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             }
         });
         
-        // Integration setup buttons
-        document.getElementById('save-mobile-sync').addEventListener('click', () => {
-            const selectedDevice = document.querySelector('.device-btn.active')?.dataset.device;
-            if (selectedDevice) {
-                setupMobileSync(selectedDevice);
+        // Event repeat change handler
+        document.getElementById('event-repeat').addEventListener('change', (e) => {
+            const recurrenceOptions = document.getElementById('recurrence-options');
+            if (e.target.value !== 'none') {
+                recurrenceOptions.style.display = 'block';
+            } else {
+                recurrenceOptions.style.display = 'none';
             }
         });
+        
+        // Islamic event change handler
+        document.getElementById('islamic-event').addEventListener('change', (e) => {
+            const prayerTimeGroup = document.getElementById('prayer-time-group');
+            if (e.target.checked) {
+                prayerTimeGroup.style.display = 'block';
+            } else {
+                prayerTimeGroup.style.display = 'none';
+            }
+        });
+        
+        // Save as template change handler
+        document.getElementById('save-as-template').addEventListener('change', (e) => {
+            const templateCategoryGroup = document.getElementById('template-category-group');
+            if (e.target.checked) {
+                templateCategoryGroup.style.display = 'block';
+            } else {
+                templateCategoryGroup.style.display = 'none';
+            }
+        });
+        
         
         document.getElementById('save-email-sync').addEventListener('click', () => {
             const selectedProvider = document.querySelector('.email-btn.active')?.dataset.provider;
@@ -2833,18 +2673,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             }
         });
         
-        // OAuth authentication buttons
-        document.getElementById('oauth-auth-btn').addEventListener('click', () => {
-            const selectedDevice = document.querySelector('.device-btn.active')?.dataset.device;
-            if (selectedDevice) {
-                // Simulate OAuth flow
-                showNotification('Redirecting to OAuth provider...', 'info');
-                setTimeout(() => {
-                    document.getElementById('oauth-status').style.display = 'block';
-                    showNotification('OAuth authentication successful!', 'success');
-                }, 2000);
-            }
-        });
         
         document.getElementById('oauth-email-auth-btn').addEventListener('click', () => {
             const selectedProvider = document.querySelector('.email-btn.active')?.dataset.provider;
@@ -5792,7 +5620,6 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
                     category: 'work',
                     meetingType: 'teams',
                     meetingLink: 'https://teams.microsoft.com/l/meetup-join/123456789',
-                    syncMobile: true,
                     sendEmail: true
                 },
                 {
@@ -5801,7 +5628,6 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
                     description: 'Morning prayer',
                     startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // Day after tomorrow
                     category: 'prayer',
-                    syncMobile: true
                 },
                 {
                     id: 'demo-3',
