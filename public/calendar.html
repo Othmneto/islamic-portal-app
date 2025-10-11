@@ -3,14 +3,18 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Islamic Calendar — Modern UI/UX (Integrated)</title>
-  <!-- Google Fonts for clean, legible UI type -->
+  <title>Islamic Calendar — Modern UI/UX (Production)</title>
+
+  <!-- Google Fonts (keeps the v3 look) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="calendar.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-hijri/2.1.2/moment-hijri.min.js"></script>
+
+  <!-- External production CSS -->
+  <link rel="stylesheet" href="calendar.css" />
+
+  <!-- External production JS -->
+  <script src="calendar.js" defer></script>
 </head>
 <body>
   <!-- ==========================
@@ -28,14 +32,14 @@
 
       <div class="bar-spacer"></div>
 
-      <!-- Global search with result container for later hookup to your code -->
+      <!-- Global search ready to be wired to your data -->
       <div class="search">
         <input id="global-search" class="ring" type="text" placeholder="Search events, people, or places…" />
         <span class="kbd">⌘K</span>
         <div class="search-results" id="global-search-results"></div>
       </div>
 
-      <!-- Main toolbar with theme switch, occasions/reminders, OAuth status and add-event -->
+      <!-- Main toolbar: theme, occasions, reminders, OAuth status, add-event -->
       <div class="toolbar">
         <div class="toggle" role="tablist" aria-label="Theme">
           <button id="theme-dark" class="active" aria-selected="true">Dark</button>
@@ -57,7 +61,7 @@
        Main Content Area
        ========================== -->
   <main class="wrap">
-    <!-- Calendar Surface (uses your IDs to ease integration) -->
+    <!-- Calendar Surface (IDs match your scripts) -->
     <section id="calendar" class="main card fade-in">
       <div class="calendar-surface">
         <!-- Header: view switch + period navigator + calendar type -->
@@ -87,23 +91,8 @@
           </div>
         </div>
 
-        <!-- Month grid preview (static sample data for layout). In your app, your JS will generate this -->
+        <!-- Month grid preview (your month renderer can override this) -->
         <div class="month-grid" id="month-grid">
-          <!-- Day cell template (7x5 shown just for preview; data-date helps integration) -->
-          <div class="day" data-date="2025-09-28">
-            <div class="g-num">28</div>
-            <div class="h-num">24 / 02</div>
-            <div class="events">
-              <div class="event-pill" data-id="islamic-new-year"><span class="cat islamic"></span><strong>Islamic New Year</strong></div>
-            </div>
-          </div>
-          <div class="day" data-date="2025-09-29"><div class="g-num">29</div><div class="h-num">25 / 02</div></div>
-          <div class="day" data-date="2025-09-30"><div class="g-num">30</div><div class="h-num">26 / 02</div></div>
-          <div class="day" data-date="2025-10-01"><div class="g-num">1</div><div class="h-num">27 / 02</div></div>
-          <div class="day" data-date="2025-10-02"><div class="g-num">2</div><div class="h-num">28 / 02</div></div>
-          <div class="day" data-date="2025-10-03"><div class="g-num">3</div><div class="h-num">29 / 02</div></div>
-          <div class="day" data-date="2025-10-04"><div class="g-num">4</div><div class="h-num">1 / 03</div></div>
-
           <div class="day" data-date="2025-10-05"><div class="g-num">5</div><div class="h-num">2 / 03</div>
             <div class="today-ring"></div>
             <div class="events">
@@ -111,44 +100,12 @@
               <div class="event-pill" data-id="standup"><span class="cat personal"></span>Team Standup</div>
             </div>
           </div>
-          <div class="day" data-date="2025-10-06"><div class="g-num">6</div><div class="h-num">3 / 03</div></div>
-          <div class="day" data-date="2025-10-07"><div class="g-num">7</div><div class="h-num">4 / 03</div></div>
           <div class="day" data-date="2025-10-08"><div class="g-num">8</div><div class="h-num">5 / 03</div>
-            <div class="events">
-              <div class="event-pill" data-id="mawlid-observed"><span class="cat holiday"></span>Mawlid (Observed)</div>
-            </div>
+            <div class="events"><div class="event-pill" data-id="mawlid-observed"><span class="cat holiday"></span>Mawlid (Observed)</div></div>
           </div>
-          <div class="day" data-date="2025-10-09"><div class="g-num">9</div><div class="h-num">6 / 03</div></div>
-          <div class="day" data-date="2025-10-10"><div class="g-num">10</div><div class="h-num">7 / 03</div></div>
-          <div class="day" data-date="2025-10-11"><div class="g-num">11</div><div class="h-num">8 / 03</div></div>
-
-          <div class="day" data-date="2025-10-12"><div class="g-num">12</div><div class="h-num">9 / 03</div></div>
-          <div class="day" data-date="2025-10-13"><div class="g-num">13</div><div class="h-num">10 / 03</div></div>
           <div class="day" data-date="2025-10-14"><div class="g-num">14</div><div class="h-num">11 / 03</div>
-            <div class="events">
-              <div class="event-pill" data-id="client-demo"><span class="cat personal"></span>Client Demo</div>
-            </div>
+            <div class="events"><div class="event-pill" data-id="client-demo"><span class="cat personal"></span>Client Demo</div></div>
           </div>
-          <div class="day" data-date="2025-10-15"><div class="g-num">15</div><div class="h-num">12 / 03</div></div>
-          <div class="day" data-date="2025-10-16"><div class="g-num">16</div><div class="h-num">13 / 03</div></div>
-          <div class="day" data-date="2025-10-17"><div class="g-num">17</div><div class="h-num">14 / 03</div></div>
-          <div class="day" data-date="2025-10-18"><div class="g-num">18</div><div class="h-num">15 / 03</div></div>
-
-          <div class="day" data-date="2025-10-19"><div class="g-num">19</div><div class="h-num">16 / 03</div></div>
-          <div class="day" data-date="2025-10-20"><div class="g-num">20</div><div class="h-num">17 / 03</div></div>
-          <div class="day" data-date="2025-10-21"><div class="g-num">21</div><div class="h-num">18 / 03</div></div>
-          <div class="day" data-date="2025-10-22"><div class="g-num">22</div><div class="h-num">19 / 03</div></div>
-          <div class="day" data-date="2025-10-23"><div class="g-num">23</div><div class="h-num">20 / 03</div></div>
-          <div class="day" data-date="2025-10-24"><div class="g-num">24</div><div class="h-num">21 / 03</div></div>
-          <div class="day" data-date="2025-10-25"><div class="g-num">25</div><div class="h-num">22 / 03</div></div>
-
-          <div class="day" data-date="2025-10-26"><div class="g-num">26</div><div class="h-num">23 / 03</div></div>
-          <div class="day" data-date="2025-10-27"><div class="g-num">27</div><div class="h-num">24 / 03</div></div>
-          <div class="day" data-date="2025-10-28"><div class="g-num">28</div><div class="h-num">25 / 03</div></div>
-          <div class="day" data-date="2025-10-29"><div class="g-num">29</div><div class="h-num">26 / 03</div></div>
-          <div class="day" data-date="2025-10-30"><div class="g-num">30</div><div class="h-num">27 / 03</div></div>
-          <div class="day" data-date="2025-10-31"><div class="g-num">31</div><div class="h-num">28 / 03</div></div>
-          <div class="day" data-date="2025-11-01"><div class="g-num">1</div><div class="h-num">29 / 03</div></div>
         </div>
       </div>
     </section>
@@ -182,7 +139,7 @@
   </main>
 
   <footer>
-    <div>Integrated preview • Uses your global state if present, with safe fallbacks.</div>
+    <div>Production build • External CSS/JS, keeps your latest UI.</div>
     <div class="pill">Keyboard: ← → • T • 1‑4</div>
   </footer>
 
@@ -291,7 +248,5 @@
       </div>
     </div>
   </div>
-
-  <script src="calendar.js"></script>
 </body>
 </html>
