@@ -9,22 +9,29 @@ document.addEventListener('DOMContentLoaded', () => {
   const darkBtn = document.getElementById('theme-dark');
   const lightBtn = document.getElementById('theme-light');
 
-  darkBtn?.addEventListener('click', () => {
-    html.setAttribute('data-theme','dark');
-    darkBtn.classList.add('active');
-    lightBtn?.classList.remove('active');
-  });
-  lightBtn?.addEventListener('click', () => {
-    html.setAttribute('data-theme','light');
-    lightBtn.classList.add('active');
-    darkBtn?.classList.remove('active');
-  });
+  if (darkBtn) {
+    darkBtn.addEventListener('click', () => {
+      html.setAttribute('data-theme','dark');
+      darkBtn.classList.add('active');
+      if (lightBtn) lightBtn.classList.remove('active');
+    });
+  }
+  if (lightBtn) {
+    lightBtn.addEventListener('click', () => {
+      html.setAttribute('data-theme','light');
+      lightBtn.classList.add('active');
+      if (darkBtn) darkBtn.classList.remove('active');
+    });
+  }
 
   // Add event (hook your real modal if available)
-  document.getElementById('add-event')?.addEventListener('click', () => {
-    // document.getElementById('event-modal')?.classList.add('open');
-    alert('Preview only: In integration, open your #event-modal and use your form logic.');
-  });
+  const addEventBtn = document.getElementById('add-event');
+  if (addEventBtn) {
+    addEventBtn.addEventListener('click', () => {
+      // document.getElementById('event-modal')?.classList.add('open');
+      alert('Preview only: In integration, open your #event-modal and use your form logic.');
+    });
+  }
 });
 
 // ===== HTTP wrapper (uses your authenticatedFetch if available) =====
@@ -46,7 +53,8 @@ function isSameDay(a, b){
 }
 function monthAnchor(){
   // Derive visible month from label "October 2025"
-  const label = document.getElementById('period-label')?.textContent?.trim()||'';
+  const periodLabel = document.getElementById('period-label');
+  const label = periodLabel ? periodLabel.textContent.trim() : '';
   const m = new Date(label+' 01');
   return isNaN(+m) ? new Date() : m;
 }
@@ -55,7 +63,8 @@ function inferDateFromCell(cell){
   const ds = cell.getAttribute('data-date');
   if (ds) return new Date(ds);
   const base = monthAnchor();
-  const dayNum = parseInt(cell.querySelector('.g-num')?.textContent||'1',10);
+  const gNumEl = cell.querySelector('.g-num');
+  const dayNum = parseInt(gNumEl ? gNumEl.textContent : '1', 10);
   return new Date(base.getFullYear(), base.getMonth(), dayNum);
 }
 
@@ -68,9 +77,12 @@ function getEventsForDate(targetDate, cell){
   }
   // Fallback: scrape preview DOM
   const out = [];
-  cell?.querySelectorAll('.events .event-pill')?.forEach((n,i)=>{
-    out.push({ id: n.getAttribute('data-id')||`preview-${i}`, title: n.textContent.trim() });
-  });
+  if (cell) {
+    const eventPills = cell.querySelectorAll('.events .event-pill');
+    eventPills.forEach((n,i)=>{
+      out.push({ id: n.getAttribute('data-id')||`preview-${i}`, title: n.textContent.trim() });
+    });
+  }
   return out;
 }
 function eventId(ev){ return ev.id || ev._id || ev.uuid || ev.key || ev.slug || ''; }
@@ -104,7 +116,7 @@ async function fetchOccasions(countryCode, year){
     if (res && res.ok) return await res.json();
   }catch(_){/* ignore */}
   // Fallback preview set
-  return [
+                return [
     { date: `${year}-12-02`, label: 'UAE National Day', type: 'Public Holiday' },
     { date: `${year}-12-01`, label: 'Commemoration Day', type: 'Public Holiday' },
     { hijri: '1 Shawwal 1447', label: 'Eid al‑Fitr', type: 'Islamic' },
@@ -113,7 +125,8 @@ async function fetchOccasions(countryCode, year){
   ];
 }
 async function renderOccasions(country){
-  const y = document.getElementById('year-select')?.value || new Date().getFullYear();
+  const yearSelect = document.getElementById('year-select');
+  const y = yearSelect ? yearSelect.value : new Date().getFullYear();
   const list = document.getElementById('occasions-list');
   if (!list) return;
   list.innerHTML = '<li><div>Loading…</div><div class="pill">Please wait</div></li>';
@@ -129,17 +142,33 @@ async function renderOccasions(country){
     list.appendChild(li);
   });
 }
-document.getElementById('country-select')?.addEventListener('change', (e)=> renderOccasions(e.target.value));
-document.getElementById('year-select')?.addEventListener('change', ()=> renderOccasions(document.getElementById('country-select')?.value||'AE'));
+const countrySelect = document.getElementById('country-select');
+if (countrySelect) {
+  countrySelect.addEventListener('change', (e)=> renderOccasions(e.target.value));
+}
+
+const yearSelect = document.getElementById('year-select');
+if (yearSelect) {
+  yearSelect.addEventListener('change', ()=> {
+    const countrySelectEl = document.getElementById('country-select');
+    renderOccasions(countrySelectEl ? countrySelectEl.value : 'AE');
+  });
+}
+
 [document.getElementById('open-occasions'), document.getElementById('quick-occasions')]
   .filter(Boolean)
   .forEach(btn => btn.addEventListener('click', async ()=> {
-    await renderOccasions(document.getElementById('country-select')?.value||'AE');
+    const countrySelectEl = document.getElementById('country-select');
+    await renderOccasions(countrySelectEl ? countrySelectEl.value : 'AE');
     openModal('occasions-modal');
   }));
-document.getElementById('add-occasions-to-calendar')?.addEventListener('click', ()=>{
-  alert('Preview: would add selected occasions to your calendar and re-render.');
-});
+
+const addOccasionsBtn = document.getElementById('add-occasions-to-calendar');
+if (addOccasionsBtn) {
+  addOccasionsBtn.addEventListener('click', ()=>{
+    alert('Preview: would add selected occasions to your calendar and re-render.');
+  });
+}
 
 // ===== OAuth indicators =====
 function setOAuthStatus({google, microsoft, googleEmail, msEmail}){
@@ -158,17 +187,29 @@ async function refreshOAuthStatus(){
 refreshOAuthStatus();
 
 // ===== Prayer email reminders =====
-document.getElementById('save-reminders')?.addEventListener('click', async ()=>{
-  const chosen = ['fajr','sunrise','dhuhr','asr','maghrib','isha'].filter(k => document.getElementById('rem-'+k)?.checked);
-  const email = document.getElementById('rem-email')?.value || '';
-  const offset = document.getElementById('rem-offset')?.value || '0';
-  const payload = { prayers: chosen, offset: Number(offset), email };
-  const status = document.getElementById('rem-status');
-  try {
-    const res = await http('/api/prayer-reminders', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
-    status.textContent = res && res.ok ? `Saved: ${chosen.join(', ')} (offset ${offset}) → ${email}` : 'Failed to save (server error)';
-  } catch(_){ status.textContent = 'Failed to save (network error)'; }
-});
+const saveRemindersBtn = document.getElementById('save-reminders');
+if (saveRemindersBtn) {
+  saveRemindersBtn.addEventListener('click', async ()=>{
+    const chosen = ['fajr','sunrise','dhuhr','asr','maghrib','isha'].filter(k => {
+      const checkbox = document.getElementById('rem-'+k);
+      return checkbox ? checkbox.checked : false;
+    });
+    const emailEl = document.getElementById('rem-email');
+    const email = emailEl ? emailEl.value : '';
+    const offsetEl = document.getElementById('rem-offset');
+    const offset = offsetEl ? offsetEl.value : '0';
+    const payload = { prayers: chosen, offset: Number(offset), email };
+    const status = document.getElementById('rem-status');
+    try {
+      const res = await http('/api/prayer-reminders', { method:'POST', headers:{ 'Content-Type':'application/json' }, body: JSON.stringify(payload), credentials:'include' });
+      if (status) {
+        status.textContent = res && res.ok ? `Saved: ${chosen.join(', ')} (offset ${offset}) → ${email}` : 'Failed to save (server error)';
+      }
+    } catch(_){ 
+      if (status) status.textContent = 'Failed to save (network error)'; 
+    }
+  });
+}
 
 // ===== Day modal (open on day click) =====
 const dayList = document.getElementById('day-events-list');
@@ -176,7 +217,9 @@ const dayTitle = document.getElementById('day-title');
 let lastClickedDate = null;
 
 // Open modal when any .day cell in #month-grid is clicked
-document.getElementById('month-grid')?.addEventListener('click', (e) => {
+const monthGrid = document.getElementById('month-grid');
+if (monthGrid) {
+  monthGrid.addEventListener('click', (e) => {
   const cell = e.target.closest('.day');
   if (!cell) return;
   const date = inferDateFromCell(cell);
@@ -204,20 +247,22 @@ document.getElementById('month-grid')?.addEventListener('click', (e) => {
           <div>
             <div style="font-weight:700;">${eventTitle(ev)}</div>
             <div class="meta">ID: ${id}</div>
-          </div>
+            </div>
           <div>
             <button class="btn ghost small" data-action="edit" data-id="${id}">Edit</button>
             <button class="btn ghost small danger" data-action="delete" data-id="${id}">Delete</button>
-          </div>`;
+            </div>`;
         dayList.appendChild(li);
       });
     }
   }
   openModal('day-modal');
-});
+  });
+}
 
 // Edit/Delete inside the modal
-dayList?.addEventListener('click', async (e)=>{
+if (dayList) {
+  dayList.addEventListener('click', async (e)=>{
   const action = e.target.getAttribute('data-action');
   const id = e.target.getAttribute('data-id');
   if (!action || !id) return;
@@ -225,9 +270,9 @@ dayList?.addEventListener('click', async (e)=>{
   if (action === 'edit'){
     if (typeof openEventModalWith === 'function') openEventModalWith(id);
     else alert('Edit event ' + id);
-    return;
-  }
-
+            return;
+        }
+        
   if (action === 'delete'){
     const yes = confirm('Delete this event?');
     if (!yes) return;
@@ -248,7 +293,7 @@ dayList?.addEventListener('click', async (e)=>{
         const li = document.createElement('li');
         li.textContent = 'No events for this day.';
         dayList.appendChild(li);
-      } else {
+        } else {
         refreshed.forEach(ev => {
           const li = document.createElement('li');
           const id2 = eventId(ev);
@@ -266,25 +311,31 @@ dayList?.addEventListener('click', async (e)=>{
       }
     }
   }
-});
+  });
+}
 
 // Create new event for selected date (prefill)
-document.getElementById('create-event-on-day')?.addEventListener('click', ()=>{
-  if (typeof openEventModalWith === 'function') {
-    // Extend your function to accept an object with date when creating
-    openEventModalWith({ date: lastClickedDate });
-  } else {
-    alert('Preview: would open create-event dialog for ' + (lastClickedDate?.toDateString() || 'selected date'));
-  }
-});
+const createEventBtn = document.getElementById('create-event-on-day');
+if (createEventBtn) {
+  createEventBtn.addEventListener('click', ()=>{
+    if (typeof openEventModalWith === 'function') {
+      // Extend your function to accept an object with date when creating
+      openEventModalWith({ date: lastClickedDate });
+    } else {
+      const dateStr = lastClickedDate ? lastClickedDate.toDateString() : 'selected date';
+      alert('Preview: would open create-event dialog for ' + dateStr);
+    }
+  });
+}
 
 // ===== Optional: "Today" panel & prayer times hooks =====
 function setTodayPanel(){
   try {
-    const now = new Date();
+        const now = new Date();
     const fmt = new Intl.DateTimeFormat(undefined, { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
-    document.getElementById('today-label')?.textContent = fmt.format(now);
-  } catch {}
+    const todayLabel = document.getElementById('today-label');
+    if (todayLabel) todayLabel.textContent = fmt.format(now);
+        } catch {}
   const list = document.getElementById('today-list');
   if (!list) return;
   list.innerHTML = '';
