@@ -521,124 +521,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Calendar Rendering ---
     function renderCalendar() {
         console.log('🎨 Rendering calendar...');
-        switch (currentView) {
-            case VIEWS.MONTH:
-                renderMonthView();
-                break;
-            case VIEWS.WEEK:
-                renderWeekView();
-                break;
-            case VIEWS.DAY:
-                renderDayView();
-                break;
-            case VIEWS.YEAR:
-                renderYearView();
-                break;
-        }
+        renderCalendarEnhanced();
     }
 
-    function renderMonthView() {
-        if (!elements.monthGrid) return;
-        
-        console.log('📅 renderMonthView: Current date:', currentDate);
-        console.log('📅 renderMonthView: Calendar events count:', calendarEvents.length);
-        console.log('📅 renderMonthView: Islamic events count:', calendarEvents.filter(e => e.isIslamicEvent).length);
-        
-        // Add loading animation
-        elements.monthGrid.style.opacity = '0.5';
-        elements.monthGrid.style.transform = 'scale(0.95)';
-        
-        setTimeout(() => {
-            elements.monthGrid.innerHTML = '';
-            
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const startDate = new Date(firstDay);
-            startDate.setDate(startDate.getDate() - firstDay.getDay());
-            
-            const endDate = new Date(lastDay);
-            endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
-            
-            const today = new Date();
-            const currentMonth = today.getMonth();
-            const currentYear = today.getFullYear();
-            
-            let dayIndex = 0;
-            for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
-                const dayElement = document.createElement('div');
-                dayElement.className = 'day-cell';
-                
-                const isCurrentMonth = d.getMonth() === month;
-                const isToday = d.getDate() === today.getDate() && 
-                               d.getMonth() === currentMonth && 
-                               d.getYear() === currentYear;
-                const isSelected = selectedDate && 
-                                  d.getDate() === selectedDate.getDate() && 
-                                  d.getMonth() === selectedDate.getMonth() && 
-                                  d.getYear() === selectedDate.getYear();
-                
-                if (!isCurrentMonth) dayElement.classList.add('other-month');
-                if (isToday) dayElement.classList.add('today');
-                if (isSelected) dayElement.classList.add('selected');
-                
-                // Add staggered animation
-                dayElement.style.animationDelay = `${dayIndex * 0.02}s`;
-                dayElement.classList.add('fade-in');
-                
-                // Debug: Check for events on this day
-                const dayEvents = getDayEvents(d);
-                
-                dayElement.innerHTML = `
-                    <div class="day-number">${d.getDate()}</div>
-                    <div class="hijri-date">${getHijriDate(d)}</div>
-                    <div class="day-events">${getDayEventsHTML(d)}</div>
-                `;
-                
-                // Enhanced click handler with ripple effect
-                dayElement.addEventListener('click', (event) => {
-                    addRippleEffect(dayElement, event);
-                    
-                    // Remove previous selection
-                    document.querySelectorAll('.day-cell.selected').forEach(cell => {
-                        cell.classList.remove('selected');
-                    });
-                    
-                    selectedDate = new Date(d);
-                    dayElement.classList.add('selected');
-                    
-                    // Animate selection
-                    dayElement.style.animation = 'bounce 0.6s ease';
-                    setTimeout(() => {
-                        dayElement.style.animation = '';
-                    }, 600);
-                    
-                    loadDayEvents(selectedDate);
-                    showNotification(`Selected ${formatDate(selectedDate, 'MMMM D, YYYY')}`, 'info', 2000);
-                });
-                
-                // Add hover effects
-                dayElement.addEventListener('mouseenter', () => {
-                    dayElement.style.transform = 'translateY(-2px) scale(1.02)';
-                });
-                
-                dayElement.addEventListener('mouseleave', () => {
-                    if (!dayElement.classList.contains('selected')) {
-                        dayElement.style.transform = '';
-                    }
-                });
-                
-                elements.monthGrid.appendChild(dayElement);
-                dayIndex++;
-            }
-            
-            // Animate grid appearance
-            elements.monthGrid.style.opacity = '1';
-            elements.monthGrid.style.transform = 'scale(1)';
-            elements.monthGrid.style.transition = 'all 0.3s ease';
-        }, 100);
-    }
     
     function getDayEventsHTML(date) {
         const dayEvents = getDayEvents(date);
@@ -5194,6 +5079,7 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
         console.log('🔍 Debugging calendar visibility...');
         console.log('📅 Month view element:', document.getElementById('month-view'));
         console.log('📅 Month grid element:', document.getElementById('month-grid'));
+        console.log('📅 Calendar grid element:', document.querySelector('.calendar-grid'));
         console.log('📅 Calendar views container:', document.querySelector('.calendar-views'));
         console.log('📅 Current date:', currentDate);
         console.log('📅 Current year:', currentDate.getFullYear());
