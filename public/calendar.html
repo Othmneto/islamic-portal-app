@@ -228,46 +228,19 @@
   </header>
 
     <div class="container">
-        <!-- Header -->
-        <header class="calendar-header">
-            <div class="header-left">
-                <h1><i class="fa-solid fa-calendar-days"></i> Islamic Calendar</h1>
-                <p>Comprehensive Islamic calendar with events, prayer times, and more</p>
-                <!-- Hijri Date Display -->
-                <div id="hijri-date-display" class="hijri-date-display">
-                    <div class="hijri-date-main">Loading...</div>
-                    <div class="hijri-date-english"></div>
-                </div>
-            </div>
-            <div class="header-right">
-                <!-- Islamic Calendar Sync Buttons -->
-                <div class="islamic-sync-buttons">
-                    <button onclick="syncIslamicEventsToGoogle()" class="sync-btn google-sync" title="Sync Islamic events to Google Calendar">
-                        <i class="fab fa-google"></i> Sync to Google
-                    </button>
-                    <button onclick="syncIslamicEventsToMicrosoft()" class="sync-btn microsoft-sync" title="Sync Islamic events to Microsoft Calendar">
-                        <i class="fab fa-microsoft"></i> Sync to Microsoft
-                    </button>
-                </div>
-                <div class="theme-switch-wrapper">
-                    <label class="theme-switch" for="theme-toggle">
-                        <input type="checkbox" id="theme-toggle" />
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-                <a href="/" class="home-link"><i class="fa-solid fa-home"></i> Home</a>
-            </div>
-        </header>
 
-        <!-- Calendar Controls -->
-        <div class="calendar-controls">
-            <div class="view-controls">
+        
+        <!-- Enhanced UI Controls -->
+        <div class="enhanced-controls">
+            <!-- View Mode Buttons -->
+            <div class="view-mode-buttons" id="view-mode-buttons">
                 <button class="view-btn active" data-view="month"><i class="fa-solid fa-calendar-days"></i> Month</button>
                 <button class="view-btn" data-view="week"><i class="fa-solid fa-calendar-week"></i> Week</button>
                 <button class="view-btn" data-view="day"><i class="fa-solid fa-calendar-day"></i> Day</button>
                 <button class="view-btn" data-view="year"><i class="fa-solid fa-calendar"></i> Year</button>
             </div>
             
+            <!-- Calendar Navigation -->
             <div class="calendar-navigation">
                 <button id="prev-btn" class="nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
                 <div class="current-period">
@@ -276,7 +249,8 @@
                 <button id="next-btn" class="nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
                 <button id="today-btn" class="today-btn">Today</button>
             </div>
-
+            
+            <!-- Calendar Options -->
             <div class="calendar-options">
                 <select id="calendar-type">
                     <option value="gregorian">Gregorian</option>
@@ -295,18 +269,15 @@
                     <option value="Asia/Jakarta">Jakarta</option>
                 </select>
             </div>
-        </div>
-        
-        <!-- Enhanced UI Controls -->
-        <div class="enhanced-controls">
-            <!-- View Mode Buttons -->
-            <div class="view-mode-buttons" id="view-mode-buttons">
-                <!-- Will be populated by JavaScript -->
-            </div>
             
             <!-- Theme Selector -->
             <div class="theme-selector" id="theme-selector">
-                <!-- Will be populated by JavaScript -->
+                <div class="theme-switch-wrapper">
+                    <label class="theme-switch" for="theme-toggle">
+                        <input type="checkbox" id="theme-toggle" />
+                        <span class="slider round"></span>
+                    </label>
+                </div>
             </div>
             
             <!-- Search Container -->

@@ -4681,16 +4681,13 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             element.textContent = `${hijriDate.day} ${hijriDate.monthName} ${hijriDate.year} AH`;
         });
         
-        // Update calendar header with Hijri date
-        const calendarHeader = document.querySelector('.calendar-header');
-        if (calendarHeader) {
-            const hijriDisplay = document.createElement('div');
-            hijriDisplay.className = 'hijri-display';
+        // Update Hijri date display in enhanced controls
+        const hijriDisplay = document.querySelector('#hijri-date');
+        if (hijriDisplay) {
             hijriDisplay.innerHTML = `
                 <span class="hijri-date">${hijriDate.day} ${hijriDate.monthName} ${hijriDate.year} AH</span>
                 ${hijriDate.isHoliday ? `<span class="islamic-holiday">${hijriDate.holiday.name}</span>` : ''}
             `;
-            calendarHeader.appendChild(hijriDisplay);
         }
     }
     
