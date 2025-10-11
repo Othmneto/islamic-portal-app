@@ -285,12 +285,6 @@ body {
         padding: 6px 8px;
     }
     
-    .islamic-sync-buttons {
-        flex-direction: column;
-        gap: 4px;
-        margin-right: 0;
-        margin-top: 8px;
-    }
     
     .sync-btn {
         font-size: 0.8rem;
@@ -349,17 +343,6 @@ body {
     margin-bottom: 5px;
 }
 
-.islamic-holiday {
-    background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
-    color: white;
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 0.9em;
-    font-weight: 500;
-    display: inline-block;
-    margin-top: 5px;
-    box-shadow: 0 2px 4px rgba(255, 107, 107, 0.3);
-}
 
 /* === OAUTH SYNC STYLES === */
 .oauth-sync-status {
@@ -514,18 +497,6 @@ body {
     --border-color: #495057;
 }
 
-/* Islamic theme */
-[data-theme="islamic"] {
-    --primary-color: #2E7D32;
-    --secondary-color: #8BC34A;
-    --success-color: #4CAF50;
-    --danger-color: #F44336;
-    --warning-color: #FF9800;
-    --info-color: #2196F3;
-    --background-color: #F5F5F5;
-    --text-color: #2E2E2E;
-    --border-color: #E0E0E0;
-}
 
 /* === VIEW MODE BUTTONS === */
 .view-mode-buttons {
@@ -1082,85 +1053,7 @@ body {
 }
 
 /* === ISLAMIC CALENDAR FEATURES === */
-.islamic-date {
-    font-size: 12px;
-    color: var(--primary-color);
-    font-weight: bold;
-    margin-top: 5px;
-}
 
-.prayer-times {
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-}
-
-.prayer-times h4 {
-    margin: 0 0 15px 0;
-    color: var(--text-color);
-}
-
-.prayer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-}
-
-.prayer-item {
-    text-align: center;
-    padding: 10px;
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-}
-
-.prayer-item.active {
-    background: var(--primary-color);
-    color: white;
-}
-
-.prayer-name {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.prayer-time {
-    font-size: 14px;
-    color: var(--secondary-color);
-}
-
-.qibla-direction {
-    background: var(--background-color);
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius);
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
-    text-align: center;
-}
-
-.qibla-compass {
-    width: 100px;
-    height: 100px;
-    border: 3px solid var(--primary-color);
-    border-radius: 50%;
-    margin: 0 auto 15px;
-    position: relative;
-}
-
-.qibla-arrow {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 2px;
-    height: 40px;
-    background: var(--danger-color);
-    transform-origin: bottom center;
-    transform: translate(-50%, -100%) rotate(135deg);
-}
 
 .ramadan-indicator {
     background: linear-gradient(45deg, #2E7D32, #4CAF50);

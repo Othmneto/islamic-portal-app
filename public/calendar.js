@@ -283,7 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTimezone = 'auto';
     let events = [];
     let calendarEvents = []; // Enhanced events array for advanced features
-    let prayerTimes = {};
     let userLocation = null;
     let selectedDate = null;
     
@@ -292,12 +291,6 @@ document.addEventListener('DOMContentLoaded', () => {
         email: { connected: false, provider: null, oauthToken: null }
     };
 
-    // Islamic calendar state
-    let islamicEvents = {
-        holidays: [],
-        prayerEvents: [],
-        hijriDate: null
-    };
     let userCountry = 'AE';
     let userLatitude = 25.2048;
     let userLongitude = 55.2708;
@@ -331,10 +324,6 @@ document.addEventListener('DOMContentLoaded', () => {
         eventSearch: document.getElementById('event-search'),
         eventCategoryFilter: document.getElementById('event-category-filter'),
         
-        // Prayer Times
-        prayerTimes: document.getElementById('prayer-times'),
-        currentLocation: document.getElementById('current-location'),
-        changeLocationBtn: document.getElementById('change-location-btn'),
         
         // Modals
         eventModal: document.getElementById('event-modal'),
@@ -598,12 +587,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 dayElement.style.animationDelay = `${dayIndex * 0.02}s`;
                 dayElement.classList.add('fade-in');
                 
-                // Debug: Check for Islamic events on this day
+                // Debug: Check for events on this day
                 const dayEvents = getDayEvents(d);
-                const islamicEvents = dayEvents.filter(e => e.isIslamicEvent);
-                if (islamicEvents.length > 0) {
-                    log.debug(`🕌 Day ${d.getDate()}: Found ${islamicEvents.length} Islamic events`);
-                }
                 
                 dayElement.innerHTML = `
                     <div class="day-number">${d.getDate()}</div>
@@ -659,11 +644,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const dayEvents = getDayEvents(date);
         if (dayEvents.length === 0) return '';
         
-        // Debug logging for Islamic events
-        const islamicEvents = dayEvents.filter(e => e.isIslamicEvent);
-        if (islamicEvents.length > 0) {
-            console.log(`🕌 Found ${islamicEvents.length} Islamic events for ${date.toDateString()}:`, islamicEvents.map(e => e.title));
-        }
         
         return dayEvents.map(event => {
             const categoryClass = event.category || 'personal';
@@ -807,11 +787,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return matches;
         });
         
-        // Debug logging for Islamic events
-        const islamicEvents = dayEvents.filter(e => e.isIslamicEvent);
-        if (islamicEvents.length > 0) {
-            log.debug(`🕌 getDayEvents: Found ${islamicEvents.length} Islamic events for ${dateStr}:`, islamicEvents.map(e => e.title));
-        }
         
         return dayEvents;
     }
@@ -902,65 +877,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Prayer Times ---
-    async function loadPrayerTimes() {
-        try {
-            if (!userLocation) {
-                await getCurrentLocation();
-            }
-            
-            if (userLocation) {
-                const response = await fetch(`/api/prayer-times?lat=${userLocation.lat}&lon=${userLocation.lon}&date=${formatDate(currentDate)}`);
-                const data = await response.json();
-                
-                if (data.success) {
-                    prayerTimes = data.times;
-                    updatePrayerTimesDisplay();
-                }
-            }
-        } catch (error) {
-            console.error('Error loading prayer times:', error);
-            showNotification('Failed to load prayer times', 'error');
-        }
-    }
 
-    function updatePrayerTimesDisplay() {
-        if (!elements.prayerTimes) return;
-        
-        PRAYER_NAMES.forEach(prayer => {
-            const prayerElement = elements.prayerTimes.querySelector(`.prayer-time .prayer-name:contains("${prayer}")`);
-            if (prayerElement && prayerTimes[prayer]) {
-                const timeElement = prayerElement.parentElement.querySelector('.prayer-time-value');
-                if (timeElement) {
-                    timeElement.textContent = formatTime(prayerTimes[prayer], 'HH:mm');
-                }
-            }
-        });
-    }
-
-    async function getCurrentLocation() {
-        return new Promise((resolve, reject) => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        userLocation = {
-                            lat: position.coords.latitude,
-                            lon: position.coords.longitude
-                        };
-                        elements.currentLocation.textContent = 'Current Location';
-                        resolve(userLocation);
-                    },
-                    (error) => {
-                        console.error('Geolocation error:', error);
-                        showNotification('Unable to get location. Please set manually.', 'warning');
-                        reject(error);
-                    }
-                );
-            } else {
-                reject(new Error('Geolocation not supported'));
-            }
-        });
-    }
 
     // --- Advanced Integration Functions ---
     
@@ -2554,7 +2471,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         
         elements.timezoneSelect.addEventListener('change', () => {
             currentTimezone = elements.timezoneSelect.value;
-            loadPrayerTimes();
         });
         
         // Enhanced event management with animations
@@ -2804,12 +2720,9 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         await loadHijriData();
         
         // Load Islamic calendar events
-        await loadCurrentHijriDate();
-        await loadIslamicEvents();
     
     // Load OAuth sync status
     await loadOAuthSyncStatus();
-        loadPrayerTimes();
         await loadIntegrationSettings();
         attachEventListeners();
         
@@ -3324,19 +3237,7 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         
         console.log('📅 Generating calendar for:', currentYear, currentMonth);
         console.log('📅 Total calendar events:', calendarEvents.length);
-        console.log('📅 Islamic events in calendarEvents:', calendarEvents.filter(e => e.isIslamicEvent).length);
         
-        // Debug: Show first few Islamic events
-        const islamicEventsDebug = calendarEvents.filter(e => e.isIslamicEvent);
-        if (islamicEventsDebug.length > 0) {
-            console.log('🕌 First 5 Islamic events in calendarEvents:', islamicEventsDebug.slice(0, 5).map(e => ({
-                id: e.id,
-                title: e.title,
-                startDate: e.startDate,
-                start: e.start,
-                category: e.category
-            })));
-        }
         
         for (let i = 0; i < 42; i++) {
             const date = new Date(startDate);
@@ -3514,11 +3415,10 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
     function getFastingTimes(date) {
         if (!isRamadan(date)) return null;
         
-        const prayerTimes = getPrayerTimes(date);
         return {
-            suhoor: prayerTimes.fajr,
-            iftar: prayerTimes.maghrib,
-            duration: calculateFastingDuration(prayerTimes.fajr, prayerTimes.maghrib)
+            suhoor: '05:00', // Default time
+            iftar: '18:30', // Default time
+            duration: '13h 30m' // Default duration
         };
     }
     
@@ -4187,11 +4087,6 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
             return matches;
         });
         
-        // Debug: Check for Islamic events on this day
-        const islamicEvents = dayEvents.filter(e => e.isIslamicEvent);
-        if (islamicEvents.length > 0) {
-            log.debug(`🕌 Day ${date.getDate()}: Found ${islamicEvents.length} Islamic events`);
-        }
         
         if (dayEvents.length > 0) {
             const eventsContainer = document.createElement('div');
@@ -5242,89 +5137,19 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
 
     // --- Islamic Calendar Functions ---
     
-    // Load current Hijri date
-    async function loadCurrentHijriDate() {
-        try {
-            // Get JWT token from localStorage (same pattern as other successful API calls)
-            const authToken = localStorage.getItem('authToken') || 
-                             localStorage.getItem('accessToken') || 
-                             localStorage.getItem('token') || 
-                             localStorage.getItem('jwt');
-            
-            const response = await fetch('/api/islamic-calendar/current-hijri', {
-                headers: {
-                    'Authorization': authToken ? `Bearer ${authToken}` : '',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                islamicEvents.hijriDate = data.hijri;
-                updateHijriDisplay();
-            }
-        } catch (error) {
-            console.error('Error loading Hijri date:', error);
-        }
-    }
 
     // Update Hijri date display
     function updateHijriDisplay() {
         const hijriDisplay = document.getElementById('hijri-date-display');
-        if (hijriDisplay && islamicEvents.hijriDate) {
-            const hijri = islamicEvents.hijriDate;
+        if (hijriDisplay) {
             hijriDisplay.innerHTML = `
                 <div class="hijri-date-main">
-                    ${hijri.day} ${hijri.monthNameAr} ${hijri.year} AH
-                </div>
-                <div class="hijri-date-english">
-                    ${hijri.day} ${hijri.monthName} ${hijri.year} AH
+                    Loading...
                 </div>
             `;
         }
     }
 
-    // Load Islamic events for current month
-    async function loadIslamicEvents() {
-        try {
-            console.log('🕌 Loading Islamic events...');
-            
-            // Get JWT token from localStorage (same pattern as other successful API calls)
-            const authToken = localStorage.getItem('authToken') || 
-                             localStorage.getItem('accessToken') || 
-                             localStorage.getItem('token') || 
-                             localStorage.getItem('jwt');
-            
-            const response = await fetch(`/api/islamic-calendar/monthly-events/${currentDate.getFullYear()}/${currentDate.getMonth() + 1}?latitude=${userLatitude}&longitude=${userLongitude}&country=${userCountry}`, {
-                headers: {
-                    'Authorization': authToken ? `Bearer ${authToken}` : '',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-
-            console.log('🕌 Islamic events API response status:', response.status);
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('🕌 Islamic events API data:', data);
-                islamicEvents = data.events || data;
-                console.log('✅ Islamic events loaded:', islamicEvents);
-                
-                // Add Islamic events to calendar
-                addIslamicEventsToCalendar(islamicEvents);
-                
-                // Update prayer times display
-                updatePrayerTimesDisplay();
-            } else {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('❌ Islamic events API error:', response.status, errorData);
-            }
-        } catch (error) {
-            console.error('❌ Error loading Islamic events:', error);
-        }
-    }
 
     // Bulletproof deduplication for Islamic events
     function addIslamicEvents(generated) {
@@ -5335,221 +5160,8 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
         return toAdd.length;
     }
 
-    // Add Islamic events to calendar
-    function addIslamicEventsToCalendar(eventsData = islamicEvents) {
-        try {
-            logger.info('🕌 Adding Islamic events to calendar:', eventsData);
-            
-            const eventsToAdd = [];
-            
-            // Add holidays
-            if (eventsData.holidays && Array.isArray(eventsData.holidays)) {
-                eventsData.holidays.forEach(holiday => {
-                    const event = {
-                        id: `islamic-holiday-${holiday.date}`,
-                        title: holiday.name,
-                        description: holiday.nameAr,
-                        startDate: new Date(holiday.date),
-                        endDate: new Date(holiday.date),
-                        start: new Date(holiday.date), // Keep both for compatibility
-                        end: new Date(holiday.date),
-                        category: 'islamic',
-                        color: holiday.type === 'public' ? '#28a745' : '#dc3545',
-                        isIslamicEvent: true,
-                        isHoliday: true,
-                        country: holiday.country,
-                        source: 'islamic',
-                        updatedAt: new Date()
-                    };
-                    
-                    if (!eventDeduplicator.isDuplicate(event)) {
-                        eventsToAdd.push(eventDeduplicator.add(event));
-                    }
-                });
-                logger.info(`✅ Processed ${eventsData.holidays.length} Islamic holidays`);
-            } else {
-                logger.warn('⚠️ No holidays found in Islamic events data');
-            }
 
-            // Add prayer events
-            if (eventsData.prayerEvents && Array.isArray(eventsData.prayerEvents)) {
-                eventsData.prayerEvents.forEach((prayer, index) => {
-                    const event = {
-                        id: `prayer-${prayer.start}`,
-                        title: prayer.title,
-                        description: prayer.description,
-                        startDate: new Date(prayer.start),
-                        endDate: new Date(prayer.end),
-                        start: new Date(prayer.start), // Keep both for compatibility
-                        end: new Date(prayer.end),
-                        category: 'prayer',
-                        color: '#007bff',
-                        isIslamicEvent: true,
-                        isPrayer: true
-                    };
-                    
-                    // Debug: Show first few events
-                    if (index < 3) {
-                        console.log(`🕌 Creating prayer event ${index + 1}:`, {
-                            title: event.title,
-                            startDate: event.startDate,
-                            start: event.start,
-                            startDateStr: formatDate(event.startDate),
-                            startStr: formatDate(event.start)
-                        });
-                    }
-                    
-                    // Check if event already exists
-                    const existingIndex = calendarEvents.findIndex(e => e.id === event.id);
-                    if (existingIndex === -1) {
-                        calendarEvents.push(event);
-                    }
-                });
-                console.log(`✅ Added ${eventsData.prayerEvents.length} prayer events to calendar`);
-            } else {
-                console.log('⚠️ No prayer events found in Islamic events data');
-            }
 
-            // Re-render calendar with new events
-            console.log('🔄 Total calendar events after adding Islamic events:', calendarEvents.length);
-            console.log('🔄 Islamic events in calendarEvents:', calendarEvents.filter(e => e.isIslamicEvent).length);
-            
-            // Debug: Show first few Islamic events
-            const islamicEvents = calendarEvents.filter(e => e.isIslamicEvent);
-            if (islamicEvents.length > 0) {
-                console.log('🕌 First 5 Islamic events:', islamicEvents.slice(0, 5).map(e => ({
-                    id: e.id,
-                    title: e.title,
-                    startDate: e.startDate,
-                    start: e.start,
-                    category: e.category
-                })));
-            }
-            
-            renderCalendarEnhanced();
-            console.log('✅ Islamic events added to calendar successfully');
-            
-        } catch (error) {
-            console.error('❌ Error adding Islamic events to calendar:', error);
-        }
-    }
-
-    // Update prayer times display
-    function updatePrayerTimesDisplay() {
-        const prayerTimesContainer = document.getElementById('prayer-times');
-        if (prayerTimesContainer) {
-            if (islamicEvents.prayerEvents && Array.isArray(islamicEvents.prayerEvents) && islamicEvents.prayerEvents.length > 0) {
-                const today = new Date().toISOString().split('T')[0];
-                const todayPrayers = islamicEvents.prayerEvents.filter(prayer => 
-                    new Date(prayer.start).toISOString().split('T')[0] === today
-                );
-
-                if (todayPrayers.length > 0) {
-                    prayerTimesContainer.innerHTML = `
-                        <h3>🕐 Today's Prayer Times</h3>
-                        <div class="prayer-times-grid">
-                            ${todayPrayers.map(prayer => `
-                                <div class="prayer-time-item">
-                                    <span class="prayer-name">${prayer.title}</span>
-                                    <span class="prayer-time">${new Date(prayer.start).toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                } else {
-                    prayerTimesContainer.innerHTML = `
-                        <h3>🕐 Prayer Times</h3>
-                        <p>Prayer times will be loaded soon...</p>
-                    `;
-                }
-            } else {
-                prayerTimesContainer.innerHTML = `
-                    <h3>🕐 Prayer Times</h3>
-                    <p>Prayer times will be loaded soon...</p>
-                `;
-            }
-        }
-    }
-
-    // Sync Islamic events to Google Calendar
-    async function syncIslamicEventsToGoogle() {
-        try {
-            console.log('🕌 Syncing Islamic events to Google...');
-            
-            // Get JWT token from localStorage (same pattern as other successful API calls)
-            const authToken = localStorage.getItem('authToken') || 
-                             localStorage.getItem('accessToken') || 
-                             localStorage.getItem('token') || 
-                             localStorage.getItem('jwt');
-            
-            const response = await fetch('/api/oauth-sync/google/sync-islamic-events', {
-                method: 'POST',
-                headers: {
-                    'Authorization': authToken ? `Bearer ${authToken}` : '',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    latitude: userLatitude,
-                    longitude: userLongitude,
-                    country: userCountry
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Islamic events synced to Google:', data);
-                alert(`✅ Islamic events synced to Google Calendar!\nEvents created: ${data.eventsCreated}`);
-            } else {
-                const errorData = await response.json();
-                console.error('❌ Islamic events sync failed:', errorData);
-                alert('❌ Failed to sync Islamic events: ' + (errorData.error || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('❌ Islamic events sync error:', error);
-            alert('❌ Error syncing Islamic events: ' + error.message);
-        }
-    }
-
-    // Sync Islamic events to Microsoft Calendar
-    async function syncIslamicEventsToMicrosoft() {
-        try {
-            console.log('🕌 Syncing Islamic events to Microsoft...');
-            
-            // Get JWT token from localStorage (same pattern as other successful API calls)
-            const authToken = localStorage.getItem('authToken') || 
-                             localStorage.getItem('accessToken') || 
-                             localStorage.getItem('token') || 
-                             localStorage.getItem('jwt');
-            
-            const response = await fetch('/api/oauth-sync/microsoft/sync-islamic-events', {
-                method: 'POST',
-                headers: {
-                    'Authorization': authToken ? `Bearer ${authToken}` : '',
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    latitude: userLatitude,
-                    longitude: userLongitude,
-                    country: userCountry
-                })
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                console.log('✅ Islamic events synced to Microsoft:', data);
-                alert(`✅ Islamic events synced to Microsoft Calendar!\nEvents created: ${data.eventsCreated}`);
-            } else {
-                const errorData = await response.json();
-                console.error('❌ Islamic events sync failed:', errorData);
-                alert('❌ Failed to sync Islamic events: ' + (errorData.error || 'Unknown error'));
-            }
-        } catch (error) {
-            console.error('❌ Islamic events sync error:', error);
-            alert('❌ Error syncing Islamic events: ' + error.message);
-        }
-    }
 
     // Expose functions to global scope for HTML onclick handlers
     window.syncWithGoogle = syncWithGoogle;
@@ -5565,8 +5177,6 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
     window.testMicrosoftConfig = testMicrosoftConfig;
     window.checkMicrosoftCallback = checkMicrosoftCallback;
     window.triggerMicrosoftOAuth = triggerMicrosoftOAuth;
-    window.syncIslamicEventsToGoogle = syncIslamicEventsToGoogle;
-    window.syncIslamicEventsToMicrosoft = syncIslamicEventsToMicrosoft;
 
     // Debug: Log function exposure
     console.log('🔧 [Calendar] Functions exposed to global scope:', {
