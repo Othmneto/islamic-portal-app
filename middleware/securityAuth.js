@@ -19,7 +19,7 @@ const getClientIP = (req) => {
 const isRateLimited = (ip) => {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
-  const maxAttempts = 5;
+  const maxAttempts = 50; // Increased for testing
   
   if (!authAttempts.has(ip)) {
     authAttempts.set(ip, []);

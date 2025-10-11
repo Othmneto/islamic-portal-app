@@ -477,3 +477,4 @@ if (document.readyState === 'loading') {
     console.log('📄 [SimpleTextTranslator] DOM already loaded, initializing...');
     new SimpleTextTranslator();
 }
+

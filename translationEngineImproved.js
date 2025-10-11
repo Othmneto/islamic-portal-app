@@ -5,15 +5,18 @@
 
 const axios = require('axios');
 const { v4: uuidv4 } = require('uuid');
+const IslamicTerminologyService = require('./services/islamicTerminologyService');
 
 class TranslationEngine {
     constructor() {
         this.apiKey = process.env.OPENAI_API_KEY;
         this.baseUrl = 'https://api.openai.com/v1/chat/completions';
         this.model = 'gpt-4o'; // Using GPT-4o for better translation quality
-        this.timeout = 30000; // 30 seconds
-        this.maxRetries = 3;
-        this.retryDelay = 1000; // 1 second
+        this.timeout = 15000; // Reduced to 15 seconds for faster response
+        this.maxRetries = 2; // Reduced retries for speed
+        this.retryDelay = 500; // Faster retry delay
+        this.contextHistory = new Map(); // Store recent translations for context
+        this.islamicTerminology = new IslamicTerminologyService(); // Islamic terms database
     }
 
     /**
@@ -37,15 +40,34 @@ class TranslationEngine {
                 };
             }
 
+            // Check for Islamic terms and preprocess
+            const islamicTerms = this.islamicTerminology.findIslamicTerms(text);
+            let processedText = text;
+            let hasIslamicTerms = islamicTerms.length > 0;
+            
+            if (hasIslamicTerms) {
+                console.log(`[TranslationEngine] Found ${islamicTerms.length} Islamic terms, preprocessing...`);
+                processedText = this.islamicTerminology.replaceIslamicTerms(text, targetLang, 'religious');
+            }
+
             // Perform translation
-            const result = await this.performTranslation(text, sourceLang, targetLang);
+            const result = await this.performTranslation(processedText, sourceLang, targetLang);
+            
+            // Post-process to ensure Islamic terms are properly translated
+            let finalTranslation = result.translatedText;
+            if (hasIslamicTerms) {
+                // Double-check that Islamic terms are correctly translated
+                finalTranslation = this.postProcessIslamicTerms(finalTranslation, targetLang);
+            }
             
             return {
-                translatedText: result.translatedText,
+                translatedText: finalTranslation,
                 confidence: result.confidence || 0.9,
                 source: 'openai-gpt4o',
                 model: result.model || 'gpt-4o',
-                processingTime: result.processingTime
+                processingTime: result.processingTime,
+                islamicTermsProcessed: hasIslamicTerms,
+                islamicTermsCount: islamicTerms.length
             };
 
         } catch (error) {
@@ -65,6 +87,29 @@ class TranslationEngine {
             
             // Try fallback methods
             return await this.tryFallbackTranslation(text, sourceLang, targetLang, error);
+        }
+    }
+
+    /**
+     * Post-process translation to ensure Islamic terms are correctly translated
+     * @param {string} translation - Translated text
+     * @param {string} targetLang - Target language
+     * @returns {string} Post-processed translation
+     */
+    postProcessIslamicTerms(translation, targetLang) {
+        try {
+            // Find any remaining Islamic terms that might not have been properly translated
+            const islamicTerms = this.islamicTerminology.findIslamicTerms(translation);
+            
+            if (islamicTerms.length > 0) {
+                console.log(`[TranslationEngine] Post-processing ${islamicTerms.length} Islamic terms in translation`);
+                return this.islamicTerminology.replaceIslamicTerms(translation, targetLang, 'religious');
+            }
+            
+            return translation;
+        } catch (error) {
+            console.error('[TranslationEngine] Error in post-processing Islamic terms:', error);
+            return translation;
         }
     }
 
@@ -119,8 +164,20 @@ class TranslationEngine {
                 const sourceLangName = this.getLanguageName(sourceLang);
                 const targetLangName = this.getLanguageName(targetLang);
                 
+                // Get context from recent translations for better accuracy
+                const sessionKey = `${sourceLang}_${targetLang}`;
+                const recentContext = this.contextHistory.get(sessionKey) || [];
+                const contextStr = recentContext.length > 0 
+                    ? `\n\nRecent context (for coherence):\n${recentContext.slice(-3).map(c => `"${c}"`).join('\n')}`
+                    : '';
+                
                 const prompt = `Translate the following text from ${sourceLangName} to ${targetLangName}. 
-                Return only the translated text, nothing else. No explanations, no additional text, just the translation.
+                Context: This is part of a live Islamic religious speech/sermon (Khutbah). 
+                - Maintain formal, respectful tone appropriate for religious content
+                - Preserve Islamic terminology and concepts accurately
+                - Use proper Islamic terms (e.g., "Salah" for prayer, "Allah" for God)
+                - Maintain the spiritual and reverent nature of the content
+                Return only the translated text, nothing else. No explanations, no additional text, just the translation.${contextStr}
 
                 Text to translate: "${text}"`;
 
@@ -131,7 +188,7 @@ class TranslationEngine {
                         messages: [
                             {
                                 role: "system",
-                                content: "You are a professional translator. Translate the given text accurately and naturally. Return only the translated text."
+                                content: "You are a professional Islamic translator specializing in religious content. Translate Arabic Islamic texts (sermons, Quranic recitations, Hadith) with utmost accuracy and reverence. Preserve Islamic terminology, maintain formal tone, and ensure spiritual authenticity. Return only the translated text."
                             },
                             {
                                 role: "user",
@@ -167,6 +224,13 @@ class TranslationEngine {
                 if (response.data && response.data.choices && response.data.choices[0]) {
                     const translatedText = response.data.choices[0].message.content.trim();
                     console.log('[TranslationEngine] Translation successful:', translatedText);
+                    
+                    // Store in context for future translations (improves coherence)
+                    const sessionKey = `${sourceLang}_${targetLang}`;
+                    const contextList = this.contextHistory.get(sessionKey) || [];
+                    contextList.push(text);
+                    if (contextList.length > 10) contextList.shift(); // Keep last 10 for memory efficiency
+                    this.contextHistory.set(sessionKey, contextList);
                     
                     return {
                         translatedText: translatedText,

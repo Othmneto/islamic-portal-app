@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🕌 Enhanced Islamic Calendar</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .hijri-date {
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            margin: 15px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-weight: bold;
+            color: #555;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.4);
+        }
+
+        .btn.islamic {
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+        }
+
+        .btn.prayer {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+        }
+
+        .calendar-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .month-year {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 10px;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .calendar-day-header {
+            background: #34495e;
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .calendar-day {
+            background: white;
+            min-height: 120px;
+            padding: 10px;
+            border: 1px solid #eee;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .calendar-day:hover {
+            background: #f8f9fa;
+            transform: scale(1.02);
+        }
+
+        .calendar-day.today {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+        }
+
+        .calendar-day.islamic-holiday {
+            background: linear-gradient(45deg, #8B4513, #D2691E);
+            color: white;
+        }
+
+        .calendar-day.prayer-day {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .day-number {
+            font-weight: bold;
+            font-size: 1.1em;
+            margin-bottom: 5px;
+        }
+
+        .hijri-day {
+            font-size: 0.8em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .event {
+            background: rgba(0, 123, 255, 0.1);
+            border-left: 3px solid #007bff;
+            padding: 2px 5px;
+            margin: 2px 0;
+            border-radius: 3px;
+            font-size: 0.8em;
+            cursor: pointer;
+        }
+
+        .event.prayer {
+            background: rgba(40, 167, 69, 0.1);
+            border-left-color: #28a745;
+        }
+
+        .event.holiday {
+            background: rgba(139, 69, 19, 0.1);
+            border-left-color: #8B4513;
+        }
+
+        .event.islamic {
+            background: rgba(220, 53, 69, 0.1);
+            border-left-color: #dc3545;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .prayer-times {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .prayer-times h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .prayer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .prayer-item {
+            background: linear-gradient(45deg, #28a745, #1e7e34);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .prayer-item.current {
+            background: linear-gradient(45deg, #ffc107, #e0a800);
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .calendar-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .calendar-day {
+                min-height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕌 Enhanced Islamic Calendar</h1>
+            <div class="hijri-date" id="hijriDate">
+                Loading Hijri date...
+            </div>
+            <div class="controls">
+                <div class="control-group">
+                    <label for="country">Country:</label>
+                    <select id="country">
+                        <option value="AE">🇦🇪 United Arab Emirates</option>
+                        <option value="SA">🇸🇦 Saudi Arabia</option>
+                        <option value="TR">🇹🇷 Turkey</option>
+                        <option value="PK">🇵🇰 Pakistan</option>
+                        <option value="MY">🇲🇾 Malaysia</option>
+                        <option value="ID">🇮🇩 Indonesia</option>
+                        <option value="EG">🇪🇬 Egypt</option>
+                        <option value="MA">🇲🇦 Morocco</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="latitude">Latitude:</label>
+                    <input type="number" id="latitude" step="0.000001" placeholder="25.2048" value="25.2048">
+                </div>
+                <div class="control-group">
+                    <label for="longitude">Longitude:</label>
+                    <input type="number" id="longitude" step="0.000001" placeholder="55.2708" value="55.2708">
+                </div>
+                <button class="btn islamic" onclick="loadIslamicEvents()">🕌 Load Islamic Events</button>
+                <button class="btn prayer" onclick="loadPrayerTimes()">🕐 Load Prayer Times</button>
+            </div>
+        </div>
+
+        <div class="calendar-container">
+            <div class="calendar-header">
+                <div class="month-year" id="monthYear"></div>
+                <div class="calendar-nav">
+                    <button class="btn" onclick="previousMonth()">← Previous</button>
+                    <button class="btn" onclick="nextMonth()">Next →</button>
+                    <button class="btn" onclick="goToToday()">Today</button>
+                </div>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+        </div>
+
+        <div class="prayer-times" id="prayerTimes" style="display: none;">
+            <h3>🕐 Prayer Times</h3>
+            <div class="prayer-grid" id="prayerGrid"></div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        let currentDate = new Date();
+        let currentMonth = currentDate.getMonth();
+        let currentYear = currentDate.getFullYear();
+        let islamicEvents = {};
+        let prayerTimes = {};
+
+        // Initialize calendar
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCurrentHijriDate();
+            renderCalendar();
+            loadIslamicEvents();
+        });
+
+        // Load current Hijri date
+        async function loadCurrentHijriDate() {
+            try {
+                const response = await fetch('/api/islamic-calendar/current-hijri', {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const hijri = data.hijri;
+                    document.getElementById('hijriDate').innerHTML = `
+                        ${hijri.dayNameAr} - ${hijri.day} ${hijri.monthNameAr} ${hijri.year} AH
+                        <br>
+                        <small>${hijri.dayName} - ${hijri.day} ${hijri.monthName} ${hijri.year} AH</small>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading Hijri date:', error);
+            }
+        }
+
+        // Load Islamic events for current month
+        async function loadIslamicEvents() {
+            try {
+                showStatus('🔄 Loading Islamic events...', 'info');
+                
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+                const country = document.getElementById('country').value;
+
+                if (!latitude || !longitude) {
+                    showStatus('❌ Please enter latitude and longitude', 'error');
+                    return;
+                }
+
+                const response = await fetch(`/api/islamic-calendar/monthly-events/${currentYear}/${currentMonth + 1}?latitude=${latitude}&longitude=${longitude}&country=${country}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    islamicEvents = data.events;
+                    showStatus(`✅ Loaded ${islamicEvents.holidays.length} holidays and ${islamicEvents.prayerEvents.length} prayer events`, 'success');
+                    renderCalendar();
+                } else {
+                    showStatus('❌ Failed to load Islamic events', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading Islamic events:', error);
+                showStatus('❌ Error loading Islamic events', 'error');
+            }
+        }
+
+        // Load prayer times for today
+        async function loadPrayerTimes() {
+            try {
+                showStatus('🔄 Loading prayer times...', 'info');
+                
+                const latitude = document.getElementById('latitude').value;
+                const longitude = document.getElementById('longitude').value;
+                const country = document.getElementById('country').value;
+                const today = new Date().toISOString().split('T')[0];
+
+                if (!latitude || !longitude) {
+                    showStatus('❌ Please enter latitude and longitude', 'error');
+                    return;
+                }
+
+                const response = await fetch(`/api/islamic-calendar/prayer-times/${today}?latitude=${latitude}&longitude=${longitude}&country=${country}`, {
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('authToken') || localStorage.getItem('token')}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    prayerTimes = data.prayerTimes;
+                    displayPrayerTimes();
+                    showStatus('✅ Prayer times loaded successfully', 'success');
+                } else {
+                    showStatus('❌ Failed to load prayer times', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading prayer times:', error);
+                showStatus('❌ Error loading prayer times', 'error');
+            }
+        }
+
+        // Display prayer times
+        function displayPrayerTimes() {
+            const prayerGrid = document.getElementById('prayerGrid');
+            const prayerTimesDiv = document.getElementById('prayerTimes');
+            
+            const prayers = [
+                { name: 'Fajr', time: prayerTimes.fajr, icon: '🌅' },
+                { name: 'Sunrise', time: prayerTimes.sunrise, icon: '☀️' },
+                { name: 'Dhuhr', time: prayerTimes.dhuhr, icon: '☀️' },
+                { name: 'Asr', time: prayerTimes.asr, icon: '🌤️' },
+                { name: 'Maghrib', time: prayerTimes.maghrib, icon: '🌅' },
+                { name: 'Isha', time: prayerTimes.isha, icon: '🌙' }
+            ];
+
+            prayerGrid.innerHTML = prayers.map(prayer => `
+                <div class="prayer-item">
+                    <div>${prayer.icon}</div>
+                    <div>${prayer.name}</div>
+                    <div>${prayer.time}</div>
+                </div>
+            `).join('');
+
+            prayerTimesDiv.style.display = 'block';
+        }
+
+        // Render calendar
+        function renderCalendar() {
+            const monthYear = document.getElementById('monthYear');
+            const calendarGrid = document.getElementById('calendarGrid');
+            
+            const monthNames = [
+                'January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'
+            ];
+
+            monthYear.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+
+            // Clear calendar
+            calendarGrid.innerHTML = '';
+
+            // Add day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.className = 'calendar-day-header';
+                dayHeader.textContent = day;
+                calendarGrid.appendChild(dayHeader);
+            });
+
+            // Get first day of month and number of days
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDay = firstDay.getDay();
+
+            // Add empty cells for days before month starts
+            for (let i = 0; i < startingDay; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'calendar-day';
+                calendarGrid.appendChild(emptyDay);
+            }
+
+            // Add days of month
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.className = 'calendar-day';
+                
+                const dayDate = new Date(currentYear, currentMonth, day);
+                const isToday = dayDate.toDateString() === new Date().toDateString();
+                
+                if (isToday) {
+                    dayElement.classList.add('today');
+                }
+
+                // Add day number
+                const dayNumber = document.createElement('div');
+                dayNumber.className = 'day-number';
+                dayNumber.textContent = day;
+                dayElement.appendChild(dayNumber);
+
+                // Add Hijri date
+                const hijriDay = document.createElement('div');
+                hijriDay.className = 'hijri-day';
+                hijriDay.textContent = `Hijri: ${day}`;
+                dayElement.appendChild(hijriDay);
+
+                // Add events
+                addEventsToDay(dayElement, dayDate);
+
+                calendarGrid.appendChild(dayElement);
+            }
+        }
+
+        // Add events to a specific day
+        function addEventsToDay(dayElement, date) {
+            const dateStr = date.toISOString().split('T')[0];
+            
+            // Add Islamic holidays
+            if (islamicEvents.holidays) {
+                islamicEvents.holidays.forEach(holiday => {
+                    if (holiday.date.split('T')[0] === dateStr) {
+                        const event = document.createElement('div');
+                        event.className = 'event holiday';
+                        event.textContent = holiday.name;
+                        event.title = holiday.nameAr;
+                        dayElement.appendChild(event);
+                        dayElement.classList.add('islamic-holiday');
+                    }
+                });
+            }
+
+            // Add prayer events
+            if (islamicEvents.prayerEvents) {
+                islamicEvents.prayerEvents.forEach(prayer => {
+                    const prayerDate = new Date(prayer.start).toISOString().split('T')[0];
+                    if (prayerDate === dateStr) {
+                        const event = document.createElement('div');
+                        event.className = 'event prayer';
+                        event.textContent = prayer.title;
+                        dayElement.appendChild(event);
+                        dayElement.classList.add('prayer-day');
+                    }
+                });
+            }
+        }
+
+        // Navigation functions
+        function previousMonth() {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar();
+            loadIslamicEvents();
+        }
+
+        function nextMonth() {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar();
+            loadIslamicEvents();
+        }
+
+        function goToToday() {
+            currentDate = new Date();
+            currentMonth = currentDate.getMonth();
+            currentYear = currentDate.getFullYear();
+            renderCalendar();
+            loadIslamicEvents();
+        }
+
+        // Utility functions
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                statusDiv.innerHTML = '';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
+

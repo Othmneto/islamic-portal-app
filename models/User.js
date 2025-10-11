@@ -53,6 +53,34 @@ const userSchema = new mongoose.Schema(
     twitterId:  { type: String, unique: true, sparse: true },
     tiktokId:   { type: String, unique: true, sparse: true },
 
+    // OAuth tokens for calendar integration
+    googleAccessToken: { type: String, sparse: true },
+    googleRefreshToken: { type: String, sparse: true },
+    googleTokenExpiry: { type: Date, sparse: true },
+    microsoftAccessToken: { type: String, sparse: true },
+    microsoftRefreshToken: { type: String, sparse: true },
+    microsoftTokenExpiry: { type: Date, sparse: true },
+
+    // Calendar events
+    calendarEvents: [{
+      id: { type: String, required: true },
+      googleEventId: { type: String, default: null }, // Google Calendar event ID for sync
+      microsoftEventId: { type: String, default: null }, // Microsoft Calendar event ID for sync
+      title: { type: String, required: true },
+      description: { type: String, default: '' },
+      startDate: { type: Date, required: true },
+      endDate: { type: Date },
+      category: { type: String, default: 'personal' },
+      priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+      location: { type: String, default: '' },
+      tags: [{ type: String }],
+      isIslamicEvent: { type: Boolean, default: false },
+      prayerTime: { type: String },
+      isExternal: { type: Boolean, default: false }, // True if synced from external calendar
+      createdAt: { type: Date, default: Date.now },
+      updatedAt: { type: Date, default: Date.now }
+    }],
+
     // Provider of authentication
     authProvider: {
       type: String,
@@ -163,17 +191,8 @@ const userSchema = new mongoose.Schema(
     biometricEnabled: { type: Boolean, default: false },
     biometricType: { type: String, enum: ['webauthn', 'password-based', 'oauth-based'], default: null },
     biometricCredentials: {
-        // For WebAuthn credentials
-        id: String,
-        type: String,
-        rawId: String,
-        response: {
-            attestationObject: String,
-            clientDataJSON: String
-        },
-        // For OAuth/Password-based credentials
-        verified: Boolean,
-        enabledAt: Date
+        type: mongoose.Schema.Types.Mixed,
+        default: null
     },
     
     // MFA settings

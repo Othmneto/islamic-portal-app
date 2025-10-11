@@ -2,6 +2,7 @@
 
 const logger = require('../utils/logger');
 const RealTimeTranslationManager = require('./realTimeTranslationManager');
+const LiveTranslationHandler = require('./liveTranslationHandler');
 
 /**
  * Manages all WebSocket connections and events.
@@ -10,10 +11,16 @@ const RealTimeTranslationManager = require('./realTimeTranslationManager');
 module.exports = (io) => {
   // Initialize Real-Time Translation Manager
   const realTimeTranslationManager = new RealTimeTranslationManager(io);
+  
+  // Initialize Live Translation Handler (Imam-Worshipper)
+  const liveTranslationHandler = new LiveTranslationHandler(io);
 
   // This event fires whenever a new client connects
   io.on('connection', (socket) => {
     logger.info(`New client connected: ${socket.id}`);
+
+    // Setup Live Translation handlers (Imam-Worshipper feature)
+    liveTranslationHandler.setupHandlers(socket);
 
     // Example: A client can join a "room" to receive specific updates.
     // This is useful for things like translation jobs.
@@ -25,7 +32,7 @@ module.exports = (io) => {
       }
     });
 
-    // Real-time translation events
+    // Real-time translation events (existing feature)
     socket.on('joinConversation', (data) => {
       realTimeTranslationManager.initializeConversation(data.conversationId, data.sessionId);
       socket.join(data.conversationId);

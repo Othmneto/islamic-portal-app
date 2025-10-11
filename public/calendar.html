@@ -10,6 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="main.css">
     <link rel="stylesheet" href="calendar.css">
+    <link rel="stylesheet" href="./css/calendar-enhanced.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-hijri/2.1.2/moment-hijri.min.js"></script>
   <!-- Include global navbar CSS -->
@@ -232,8 +233,22 @@
             <div class="header-left">
                 <h1><i class="fa-solid fa-calendar-days"></i> Islamic Calendar</h1>
                 <p>Comprehensive Islamic calendar with events, prayer times, and more</p>
+                <!-- Hijri Date Display -->
+                <div id="hijri-date-display" class="hijri-date-display">
+                    <div class="hijri-date-main">Loading...</div>
+                    <div class="hijri-date-english"></div>
+                </div>
             </div>
             <div class="header-right">
+                <!-- Islamic Calendar Sync Buttons -->
+                <div class="islamic-sync-buttons">
+                    <button onclick="syncIslamicEventsToGoogle()" class="sync-btn google-sync" title="Sync Islamic events to Google Calendar">
+                        <i class="fab fa-google"></i> Sync to Google
+                    </button>
+                    <button onclick="syncIslamicEventsToMicrosoft()" class="sync-btn microsoft-sync" title="Sync Islamic events to Microsoft Calendar">
+                        <i class="fab fa-microsoft"></i> Sync to Microsoft
+                    </button>
+                </div>
                 <div class="theme-switch-wrapper">
                     <label class="theme-switch" for="theme-toggle">
                         <input type="checkbox" id="theme-toggle" />
@@ -279,6 +294,60 @@
                     <option value="Asia/Karachi">Karachi</option>
                     <option value="Asia/Jakarta">Jakarta</option>
                 </select>
+            </div>
+        </div>
+        
+        <!-- Enhanced UI Controls -->
+        <div class="enhanced-controls">
+            <!-- View Mode Buttons -->
+            <div class="view-mode-buttons" id="view-mode-buttons">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <!-- Theme Selector -->
+            <div class="theme-selector" id="theme-selector">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <!-- Search Container -->
+            <div class="search-container" id="search-container">
+                <!-- Will be populated by JavaScript -->
+            </div>
+            
+            <!-- Search Results -->
+            <div class="search-results" id="search-results"></div>
+            
+            <!-- Hijri Calendar Display -->
+            <div class="hijri-calendar-display">
+                <div class="hijri-date" id="hijri-date">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                <div class="islamic-holiday" id="islamic-holiday" style="display: none;">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- OAuth Sync Status -->
+            <div class="oauth-sync-status">
+                <div class="sync-controls">
+                    <button onclick="syncWithGoogle()" class="sync-btn google-sync">
+                        <i class="fab fa-google"></i> Sync Google
+                    </button>
+                    <button onclick="syncWithMicrosoft()" class="sync-btn microsoft-sync">
+                        <i class="fab fa-microsoft"></i> Sync Microsoft
+                    </button>
+                    <button onclick="fullSync()" class="sync-btn full-sync">
+                        <i class="fas fa-sync"></i> Full Sync
+                    </button>
+                </div>
+                <div class="sync-status">
+                    <div class="google-sync-status">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    <div class="microsoft-sync-status">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -366,22 +435,13 @@
                     </div>
                     <div class="integration-info">
                         <h4>Mobile Calendar Sync</h4>
-                        <p>Sync with iOS/Android calendar apps</p>
-                        <div class="integration-details" id="mobile-details" style="display: none;">
-                            <small>Device: <span id="mobile-device-type">-</span></small>
-                            <small>Last Sync: <span id="mobile-last-sync">-</span></small>
+                        <p>Mobile calendar integration is not currently supported.</p>
+                        <div class="integration-notice">
+                            <i class="fa-solid fa-info-circle"></i>
+                            <span>This feature is under development and will be available in a future update.</span>
                         </div>
-                        <div class="integration-actions">
-                            <button id="mobile-sync-btn" class="integration-btn">Connect</button>
-                            <div class="integration-controls" id="mobile-controls" style="display: none;">
-                                <button class="test-btn" onclick="testIntegration('mobile')" title="Test Connection">
-                                    <i class="fa-solid fa-vial"></i>
-                                </button>
-                                <button class="disconnect-btn" onclick="disconnectIntegration('mobile')" title="Disconnect">
-                                    <i class="fa-solid fa-unlink"></i>
-                                </button>
-                            </div>
-                            <div class="sync-status-indicator" id="mobile-sync-status"></div>
+                        <div class="integration-status">
+                            <span class="status-notice">Not Supported</span>
                         </div>
                     </div>
                 </div>
@@ -393,52 +453,37 @@
                     </div>
                     <div class="integration-info">
                         <h4>Email Integration</h4>
-                        <p>Gmail & Outlook calendar sync</p>
-                        <div class="integration-details" id="email-details" style="display: none;">
-                            <small>Provider: <span id="email-provider">-</span></small>
-                            <small>Last Sync: <span id="email-last-sync">-</span></small>
+                        <p>Gmail & Outlook calendar sync via OAuth</p>
+                        
+                        <!-- Connection Status -->
+                        <div class="connection-status" id="email-connection-status">
+                            <div class="status-line">
+                                <span class="status-label">Status:</span>
+                                <span class="status-value" id="email-status-text">Checking...</span>
+                            </div>
+                            <div class="status-line" id="email-details" style="display: none;">
+                                <span class="status-label">Email:</span>
+                                <span class="status-value" id="email-address">-</span>
+                            </div>
+                            <div class="status-line" id="email-provider-line" style="display: none;">
+                                <span class="status-label">Provider:</span>
+                                <span class="status-value" id="email-provider">-</span>
+                            </div>
                         </div>
+                        
+                        <!-- Action Buttons -->
                         <div class="integration-actions">
-                            <button id="email-sync-btn" class="integration-btn">Connect</button>
+                            <button id="email-sync-btn" class="integration-btn">Connect with OAuth</button>
                             <div class="integration-controls" id="email-controls" style="display: none;">
-                                <button class="test-btn" onclick="testIntegration('email')" title="Test Connection">
-                                    <i class="fa-solid fa-vial"></i>
-                                </button>
-                                <button class="disconnect-btn" onclick="disconnectIntegration('email')" title="Disconnect">
-                                    <i class="fa-solid fa-unlink"></i>
+                                <button class="settings-btn" onclick="openEmailSettings()" title="Settings">
+                                    <i class="fa-solid fa-cog"></i>
+                                    <span>Settings</span>
                                 </button>
                             </div>
-                            <div class="sync-status-indicator" id="email-sync-status"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Video Meetings -->
-                <div class="integration-card" id="video-meetings-card">
-                    <div class="integration-icon">
-                        <i class="fa-solid fa-video"></i>
-                    </div>
-                    <div class="integration-info">
-                        <h4>Video Meetings</h4>
-                        <p>Zoom & Teams integration</p>
-                        <div class="integration-details" id="video-details" style="display: none;">
-                            <small>Platform: <span id="video-platform">-</span></small>
-                            <small>Last Sync: <span id="video-last-sync">-</span></small>
-                        </div>
-                        <div class="integration-actions">
-                            <button id="video-meetings-btn" class="integration-btn">Connect</button>
-                            <div class="integration-controls" id="video-controls" style="display: none;">
-                                <button class="test-btn" onclick="testIntegration('video')" title="Test Connection">
-                                    <i class="fa-solid fa-vial"></i>
-                                </button>
-                                <button class="disconnect-btn" onclick="disconnectIntegration('video')" title="Disconnect">
-                                    <i class="fa-solid fa-unlink"></i>
-                                </button>
-                            </div>
-                            <div class="sync-status-indicator" id="video-meetings-status"></div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
 
@@ -631,7 +676,6 @@
                         <label for="meeting-type">Meeting Type</label>
                         <select id="meeting-type">
                             <option value="none">No Meeting</option>
-                            <option value="zoom">Zoom Meeting</option>
                             <option value="teams">Microsoft Teams</option>
                             <option value="google-meet">Google Meet</option>
                             <option value="webex">Cisco Webex</option>
@@ -699,51 +743,68 @@
                     <button class="close-btn" id="close-mobile-sync-modal">&times;</button>
                 </div>
                 <div class="integration-setup">
-                    <div class="setup-step">
-                        <h4><i class="fa-solid fa-mobile-screen-button"></i> Step 1: Choose Your Device</h4>
-                        <div class="device-options">
-                            <button class="device-btn" data-device="ios">
-                                <i class="fa-brands fa-apple"></i>
-                                <span>iOS (iPhone/iPad)</span>
-                            </button>
-                            <button class="device-btn" data-device="android">
-                                <i class="fa-brands fa-android"></i>
-                                <span>Android</span>
-                            </button>
+                    <!-- Connected Status (shown when connected) -->
+                    <div id="mobile-connected-status" class="connected-status" style="display: none;">
+                        <div class="status-header">
+                            <i class="fa-solid fa-check-circle status-icon connected"></i>
+                            <h4>Mobile Calendar Connected</h4>
+                        </div>
+                        <div class="status-details">
+                            <div class="device-info">
+                                <span class="device-label">Device:</span>
+                                <span id="connected-mobile-device" class="device-name">-</span>
+                            </div>
+                            <div class="provider-info">
+                                <span class="provider-label">Provider:</span>
+                                <span id="connected-mobile-provider" class="provider-name">-</span>
+                            </div>
+                            <div class="last-sync-info">
+                                <span class="sync-label">Last Sync:</span>
+                                <span id="connected-mobile-last-sync" class="sync-time">-</span>
+                            </div>
+                        </div>
+                        <div class="connected-actions">
+                            <button type="button" id="test-mobile-connection" class="btn-secondary">Test Connection</button>
+                            <button type="button" id="disconnect-mobile" class="btn-danger">Disconnect</button>
                         </div>
                     </div>
                     
-                    <div class="setup-step" id="ios-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Step 2: iOS Setup</h4>
-                        <ol>
-                            <li>Open Settings > Calendar > Accounts</li>
-                            <li>Add Account > Other > CalDAV</li>
-                            <li>Enter server: <code>calendar.yoursite.com</code></li>
-                            <li>Enter your credentials</li>
-                        </ol>
-                        <div class="qr-code">
-                            <div id="ios-qr-code"></div>
-                            <p>Scan QR code for quick setup</p>
+                    <!-- Setup Flow (shown when not connected) -->
+                    <div id="mobile-setup-flow">
+                        <div class="setup-step">
+                            <h4><i class="fa-solid fa-mobile-screen-button"></i> OAuth Integration</h4>
+                            <p>Connect your mobile calendar using OAuth authentication for secure access.</p>
+                            <div class="device-options">
+                                <button class="device-btn" data-device="ios">
+                                    <i class="fa-brands fa-apple"></i>
+                                    <span>iOS (iPhone/iPad)</span>
+                                </button>
+                                <button class="device-btn" data-device="android">
+                                    <i class="fa-brands fa-android"></i>
+                                    <span>Android</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="setup-step" id="android-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Step 2: Android Setup</h4>
-                        <ol>
-                            <li>Open Google Calendar app</li>
-                            <li>Go to Settings > Add account</li>
-                            <li>Select "Other" and enter calendar URL</li>
-                            <li>Enter your credentials</li>
-                        </ol>
-                        <div class="qr-code">
-                            <div id="android-qr-code"></div>
-                            <p>Scan QR code for quick setup</p>
+                        
+                        <div class="setup-step" id="oauth-setup" style="display: none;">
+                            <h4><i class="fa-solid fa-shield-alt"></i> OAuth Authentication</h4>
+                            <div class="oauth-info">
+                                <p>Click the button below to authenticate with your calendar provider:</p>
+                                <button id="oauth-auth-btn" class="btn-primary oauth-btn">
+                                    <i class="fa-solid fa-lock"></i>
+                                    Authenticate with OAuth
+                                </button>
+                                <div class="oauth-status" id="oauth-status" style="display: none;">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                    <span>Authentication successful!</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" id="test-mobile-sync" class="btn-secondary">Test Connection</button>
-                        <button type="button" id="save-mobile-sync" class="btn-primary">Save Settings</button>
+                        
+                        <div class="form-actions">
+                            <button type="button" id="test-mobile-sync" class="btn-secondary">Test Connection</button>
+                            <button type="button" id="save-mobile-sync" class="btn-primary">Save Settings</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -757,143 +818,69 @@
                     <button class="close-btn" id="close-email-sync-modal">&times;</button>
                 </div>
                 <div class="integration-setup">
-                    <div class="setup-step">
-                        <h4><i class="fa-solid fa-envelope"></i> Choose Email Provider</h4>
-                        <div class="email-options">
-                            <button class="email-btn" data-provider="gmail">
-                                <i class="fa-brands fa-google"></i>
-                                <span>Gmail</span>
-                            </button>
-                            <button class="email-btn" data-provider="outlook">
-                                <i class="fa-brands fa-microsoft"></i>
-                                <span>Outlook</span>
-                            </button>
-                            <button class="email-btn" data-provider="yahoo">
-                                <i class="fa-brands fa-yahoo"></i>
-                                <span>Yahoo Mail</span>
-                            </button>
+                    <!-- Connected Status (shown when connected) -->
+                    <div id="email-connected-status" class="connected-status" style="display: none;">
+                        <div class="status-header">
+                            <i class="fa-solid fa-check-circle status-icon connected"></i>
+                            <h4>Email Integration Connected</h4>
+                        </div>
+                        <div class="status-details">
+                            <div class="provider-info">
+                                <span class="provider-label">Provider:</span>
+                                <span id="connected-email-provider" class="provider-name">-</span>
+                            </div>
+                            <div class="last-sync-info">
+                                <span class="sync-label">Last Sync:</span>
+                                <span id="connected-email-last-sync" class="sync-time">-</span>
+                            </div>
+                        </div>
+                        <div class="connected-actions">
+                            <button type="button" id="test-email-connection" class="btn-secondary">Test Connection</button>
+                            <button type="button" id="disconnect-email" class="btn-danger">Disconnect</button>
                         </div>
                     </div>
                     
-                    <div class="setup-step" id="gmail-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Gmail Setup</h4>
-                        <div class="form-group">
-                            <label for="gmail-email">Gmail Address</label>
-                            <input type="email" id="gmail-email" placeholder="your@gmail.com">
+                    <!-- Setup Flow (shown when not connected) -->
+                    <div id="email-setup-flow">
+                        <div class="setup-step">
+                            <h4><i class="fa-solid fa-envelope"></i> Choose Email Provider</h4>
+                            <p>Select your email provider to connect via OAuth authentication:</p>
+                            <div class="email-options">
+                                <button class="email-btn" data-provider="gmail">
+                                    <i class="fa-brands fa-google"></i>
+                                    <span>Gmail</span>
+                                </button>
+                                <button class="email-btn" data-provider="outlook">
+                                    <i class="fa-brands fa-microsoft"></i>
+                                    <span>Outlook</span>
+                                </button>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="gmail-password">App Password</label>
-                            <input type="password" id="gmail-password" placeholder="App-specific password">
-                            <small>Generate app password in Google Account settings</small>
+                        
+                        <div class="setup-step" id="oauth-email-setup" style="display: none;">
+                            <h4><i class="fa-solid fa-shield-alt"></i> OAuth Authentication</h4>
+                            <div class="oauth-info">
+                                <p>Click the button below to authenticate with your email provider:</p>
+                                <button id="oauth-email-auth-btn" class="btn-primary oauth-btn">
+                                    <i class="fa-solid fa-lock"></i>
+                                    Authenticate with OAuth
+                                </button>
+                                <div class="oauth-status" id="oauth-email-status" style="display: none;">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                    <span>Authentication successful!</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="auth-button">
-                            <button id="gmail-auth-btn" class="btn-primary">Authorize Gmail</button>
+                        
+                        <div class="form-actions">
+                            <button type="button" id="test-email-sync" class="btn-secondary">Test Connection</button>
+                            <button type="button" id="save-email-sync" class="btn-primary">Save Settings</button>
                         </div>
-                    </div>
-                    
-                    <div class="setup-step" id="outlook-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Outlook Setup</h4>
-                        <div class="form-group">
-                            <label for="outlook-email">Outlook Email</label>
-                            <input type="email" id="outlook-email" placeholder="your@outlook.com">
-                        </div>
-                        <div class="form-group">
-                            <label for="outlook-password">Password</label>
-                            <input type="password" id="outlook-password" placeholder="Your password">
-                        </div>
-                        <div class="auth-button">
-                            <button id="outlook-auth-btn" class="btn-primary">Authorize Outlook</button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" id="test-email-sync" class="btn-secondary">Test Connection</button>
-                        <button type="button" id="save-email-sync" class="btn-primary">Save Settings</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Video Meetings Modal -->
-        <div id="video-meetings-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Video Meeting Integration</h3>
-                    <button class="close-btn" id="close-video-meetings-modal">&times;</button>
-                </div>
-                <div class="integration-setup">
-                    <div class="setup-step">
-                        <h4><i class="fa-solid fa-video"></i> Choose Video Platform</h4>
-                        <div class="video-options">
-                            <button class="video-btn" data-platform="zoom">
-                                <i class="fa-solid fa-video"></i>
-                                <span>Zoom</span>
-                            </button>
-                            <button class="video-btn" data-platform="teams">
-                                <i class="fa-brands fa-microsoft"></i>
-                                <span>Microsoft Teams</span>
-                            </button>
-                            <button class="video-btn" data-platform="google-meet">
-                                <i class="fa-brands fa-google"></i>
-                                <span>Google Meet</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="setup-step" id="zoom-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Zoom Setup</h4>
-                        <div class="form-group">
-                            <label for="zoom-api-key">Zoom API Key</label>
-                            <input type="text" id="zoom-api-key" placeholder="Your Zoom API Key">
-                        </div>
-                        <div class="form-group">
-                            <label for="zoom-api-secret">Zoom API Secret</label>
-                            <input type="password" id="zoom-api-secret" placeholder="Your Zoom API Secret">
-                        </div>
-                        <div class="form-group">
-                            <label for="zoom-account-id">Zoom Account ID</label>
-                            <input type="text" id="zoom-account-id" placeholder="Your Zoom Account ID">
-                        </div>
-                    </div>
-                    
-                    <div class="setup-step" id="teams-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Teams Setup</h4>
-                        <div class="form-group">
-                            <label for="teams-client-id">Teams Client ID</label>
-                            <input type="text" id="teams-client-id" placeholder="Your Teams Client ID">
-                        </div>
-                        <div class="form-group">
-                            <label for="teams-client-secret">Teams Client Secret</label>
-                            <input type="password" id="teams-client-secret" placeholder="Your Teams Client Secret">
-                        </div>
-                        <div class="form-group">
-                            <label for="teams-tenant-id">Teams Tenant ID</label>
-                            <input type="text" id="teams-tenant-id" placeholder="Your Teams Tenant ID">
-                        </div>
-                    </div>
-                    
-                    <div class="setup-step" id="google-meet-setup" style="display: none;">
-                        <h4><i class="fa-solid fa-cog"></i> Google Meet Setup</h4>
-                        <div class="form-group">
-                            <label for="google-client-id">Google Client ID</label>
-                            <input type="text" id="google-client-id" placeholder="Your Google Client ID">
-                        </div>
-                        <div class="form-group">
-                            <label for="google-client-secret">Google Client Secret</label>
-                            <input type="password" id="google-client-secret" placeholder="Your Google Client Secret">
-                        </div>
-                        <div class="auth-button">
-                            <button id="google-meet-auth-btn" class="btn-primary">Authorize Google Meet</button>
-                        </div>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" id="test-video-sync" class="btn-secondary">Test Connection</button>
-                        <button type="button" id="save-video-sync" class="btn-primary">Save Settings</button>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Notification -->
         <div id="notification" class="notification"></div>

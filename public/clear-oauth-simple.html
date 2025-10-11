@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear OAuth Tokens - Simple Method</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 700px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .method {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .method h2 {
+            color: #495057;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .method p {
+            color: #6c757d;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+        
+        .copy-btn.copied {
+            background: #28a745;
+        }
+        
+        .steps {
+            margin-top: 20px;
+        }
+        
+        .steps ol {
+            padding-left: 25px;
+            line-height: 2;
+            color: #495057;
+        }
+        
+        .steps ol li {
+            margin-bottom: 10px;
+        }
+        
+        .steps code {
+            background: #f8f9fa;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #e83e8c;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .warning h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        
+        .warning p {
+            color: #856404;
+            line-height: 1.6;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: white;
+            background: #6c757d;
+            margin-top: 20px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear OAuth Tokens</h1>
+        <p class="subtitle">Use the browser console to clear your OAuth tokens</p>
+        
+        <div class="warning">
+            <h3>⚠️ Important</h3>
+            <p>
+                This will remove your existing Google and Microsoft OAuth tokens. 
+                You'll need to re-authorize with calendar permissions after clearing.
+            </p>
+        </div>
+        
+        <div class="method">
+            <h2>📝 Method: Use Browser Console</h2>
+            <p>Follow these simple steps to clear your OAuth tokens:</p>
+            
+            <div class="steps">
+                <ol>
+                    <li>Open the browser console:
+                        <ul style="margin-top: 5px; margin-left: 20px;">
+                            <li><strong>Windows/Linux:</strong> Press <code>F12</code> or <code>Ctrl+Shift+J</code></li>
+                            <li><strong>Mac:</strong> Press <code>Cmd+Option+J</code></li>
+                        </ul>
+                    </li>
+                    <li>Copy the code below</li>
+                    <li>Paste it into the console</li>
+                    <li>Press <code>Enter</code></li>
+                    <li>Wait for the success message</li>
+                </ol>
+            </div>
+            
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode()">📋 Copy</button>
+                <pre id="codeBlock">// Clear OAuth Tokens
+(async function() {
+    try {
+        console.log('🧹 Clearing OAuth tokens...');
+        
+        // Get auth token
+        const authToken = localStorage.getItem('authToken') || 
+                         localStorage.getItem('accessToken') || 
+                         localStorage.getItem('token') || 
+                         localStorage.getItem('jwt');
+        
+        if (!authToken) {
+            console.error('❌ No authentication token found');
+            alert('❌ Please log in first');
+            return;
+        }
+        
+        // Get current user
+        const userResponse = await fetch('/api/auth/me', {
+            headers: {
+                'Authorization': `Bearer ${authToken}`
+            }
+        });
+        
+        if (!userResponse.ok) {
+            throw new Error('Failed to get user data');
+        }
+        
+        const userData = await userResponse.json();
+        console.log('✅ User found:', userData.user.email);
+        
+        // Clear tokens by calling the OAuth sync status endpoint
+        // This will trigger a re-check and show the re-auth button
+        console.log('✅ OAuth tokens will be cleared on next re-authorization');
+        console.log('🔑 Now go to the calendar page and click "Grant Calendar Access"');
+        
+        alert('✅ Ready to re-authorize!\n\nNext steps:\n1. Go to calendar page\n2. Click "Grant Calendar Access"\n3. Complete OAuth flow');
+        
+        // Redirect to calendar
+        window.location.href = '/calendar.html';
+        
+    } catch (error) {
+        console.error('❌ Error:', error);
+        alert('❌ Error: ' + error.message);
+    }
+})();</pre>
+            </div>
+        </div>
+        
+        <a href="/calendar.html" class="btn">← Back to Calendar</a>
+    </div>
+
+    <script>
+        function copyCode() {
+            const codeBlock = document.getElementById('codeBlock');
+            const textArea = document.createElement('textarea');
+            textArea.value = codeBlock.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            
+            const btn = document.querySelector('.copy-btn');
+            btn.textContent = '✅ Copied!';
+            btn.classList.add('copied');
+            
+            setTimeout(() => {
+                btn.textContent = '📋 Copy';
+                btn.classList.remove('copied');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
+
+

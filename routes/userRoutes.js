@@ -381,4 +381,82 @@ router.delete(
   }
 );
 
+/**
+ * Clear Microsoft OAuth tokens
+ * POST /api/user/clear-microsoft-tokens
+ */
+router.post("/clear-microsoft-tokens", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "User not found" 
+      });
+    }
+
+    // Clear Microsoft OAuth tokens
+    user.microsoftAccessToken = undefined;
+    user.microsoftRefreshToken = undefined;
+    user.microsoftTokenExpiry = undefined;
+    user.microsoftId = undefined;
+    user.lastMicrosoftSync = undefined;
+
+    await user.save();
+
+    logger.info(`Microsoft OAuth tokens cleared for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: "Microsoft OAuth tokens cleared successfully"
+    });
+
+  } catch (error) {
+    logger.error("Error clearing Microsoft tokens:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to clear Microsoft tokens" 
+    });
+  }
+});
+
+/**
+ * Clear Google OAuth tokens
+ * POST /api/user/clear-google-tokens
+ */
+router.post("/clear-google-tokens", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        error: "User not found" 
+      });
+    }
+
+    // Clear Google OAuth tokens
+    user.googleAccessToken = undefined;
+    user.googleRefreshToken = undefined;
+    user.googleTokenExpiry = undefined;
+    user.googleId = undefined;
+    user.lastGoogleSync = undefined;
+
+    await user.save();
+
+    logger.info(`Google OAuth tokens cleared for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: "Google OAuth tokens cleared successfully"
+    });
+
+  } catch (error) {
+    logger.error("Error clearing Google tokens:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Failed to clear Google tokens" 
+    });
+  }
+});
+
 module.exports = router;

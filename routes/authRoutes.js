@@ -191,48 +191,49 @@ router.get('/debug/test-callback', (req, res) => {
 });
 
 // --- Social Auth Routes ---
+// DISABLED: Using custom PKCE implementation in routes/enhancedOAuth.js instead
 
-// Google
-router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+// Google - DISABLED (using custom PKCE implementation)
+// router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
-router.get(
-  '/google/callback',
-  passport.authenticate('google', {
-    failureRedirect: '/login.html?error=auth_failed',
-    session: false,
-  }),
-  async (req, res) => {
-    try {
-      console.log('🔄 Google OAuth: Processing callback for user:', req.user);
-      
-      // Use unified auth service to handle the OAuth callback
-      const response = await unifiedAuthService.handleOAuthCallback(
-        req.user, 
-        'google', 
-        req.ip, 
-        req.get('User-Agent')
-      );
-      
-      console.log('✅ Google OAuth: Unified auth service response:', response);
-      
-      // Redirect to success page with token
-      const redirectBase = process.env.OAUTH_REDIRECT_URL || 'http://localhost:3000/authCallback.html';
-      const redirectUrl = `${redirectBase}?token=${encodeURIComponent(response.token)}`;
-      
-      console.log('🎉 Google OAuth: Redirecting to:', redirectUrl);
-      res.redirect(redirectUrl);
-    } catch (error) {
-      console.error('❌ Google OAuth callback error:', error);
-      res.status(500).json({
-        success: false,
-        error: {
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'OAuth callback processing failed'
-        }
-      });
-    }
-  }
-);
+// router.get(
+//   '/google/callback',
+//   passport.authenticate('google', {
+//     failureRedirect: '/login.html?error=auth_failed',
+//     session: false,
+//   }),
+//   async (req, res) => {
+//     try {
+//       console.log('🔄 Google OAuth: Processing callback for user:', req.user);
+//       
+//       // Use unified auth service to handle the OAuth callback
+//       const response = await unifiedAuthService.handleOAuthCallback(
+//         req.user, 
+//         'google', 
+//         req.ip, 
+//         req.get('User-Agent')
+//       );
+//       
+//       console.log('✅ Google OAuth: Unified auth service response:', response);
+//       
+//       // Redirect to success page with token
+//       const redirectBase = process.env.OAUTH_REDIRECT_URL || 'http://localhost:3000/authCallback.html';
+//       const redirectUrl = `${redirectBase}?token=${encodeURIComponent(response.token)}`;
+//       
+//       console.log('🎉 Google OAuth: Redirecting to:', redirectUrl);
+//       res.redirect(redirectUrl);
+//     } catch (error) {
+//       console.error('❌ Google OAuth callback error:', error);
+//       res.status(500).json({
+//         success: false,
+//         error: {
+//           code: 'INTERNAL_SERVER_ERROR',
+//           message: 'OAuth callback processing failed'
+//         }
+//       });
+//     }
+//   }
+// );
 
 // JWT-based logout route
 router.post('/logout', authMiddleware, async (req, res) => {

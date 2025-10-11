@@ -13,7 +13,6 @@ This is the backend server for a multi-functional application that provides AI-p
     -   Retrieve the 99 Names of Allah (Asma-ul-Husna).
     -   Search the Quran.
 -   **Rate Limiting**: Protects the API from brute-force attacks and abuse.
--   **Containerized**: Includes a `Dockerfile` for easy deployment.
 
 ## 🛠️ Tech Stack
 
@@ -24,7 +23,6 @@ This is the backend server for a multi-functional application that provides AI-p
     -   `@google-cloud/speech`
     -   `@google-cloud/text-to-speech`
 -   **Validation**: `express-validator` for input sanitation and validation
--   **Deployment**: Docker
 
 ## 🚀 Getting Started
 

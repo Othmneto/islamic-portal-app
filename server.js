@@ -71,7 +71,7 @@ const translationHistoryRoutes = require('./routes/translationHistoryRoutes');
 const enhancedTranslationRoutes = require('./routes/enhancedTranslationRoutes');
 const apiRoutes = require('./routes/apiRoutes');
 const authRoutes = require('./routes/authRoutes');
-const microsoftAuth = require('./routes/microsoftAuth');
+// const microsoftAuth = require('./routes/microsoftAuth'); // Removed - using custom PKCE OAuth instead
 const namesRoutes = require('./routes/api/names');
 const userRoutes = require('./routes/userRoutes');
 const authCookieRoutes = require('./routes/authCookieRoutes');
@@ -122,24 +122,59 @@ app.use(
   helmet({
     crossOriginEmbedderPolicy: false,
     contentSecurityPolicy: {
-      useDefaults: true,
+      useDefaults: false,
       directives: {
         "default-src": ["'self'"],
-        // Added 'unsafe-inline' to allow inline scripts when needed
-        "script-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
-        "style-src": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-        "style-src-elem": ["'self'", "'unsafe-inline'", "https://cdnjs.cloudflare.com", "https://fonts.googleapis.com"],
-        "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com", "https://r2cdn.perplexity.ai"],
-        "img-src": ["'self'", "data:"],
+        "script-src": [
+          "'self'", 
+          "'unsafe-inline'", 
+          "'unsafe-eval'",
+          "https://cdnjs.cloudflare.com", 
+          "https://cdn.jsdelivr.net", 
+          "https://cdn.socket.io",
+          "https://unpkg.com"
+        ],
+        "style-src": [
+          "'self'", 
+          "'unsafe-inline'", 
+          "https://cdnjs.cloudflare.com", 
+          "https://fonts.googleapis.com",
+          "https://unpkg.com"
+        ],
+        "style-src-elem": [
+          "'self'", 
+          "'unsafe-inline'", 
+          "https://cdnjs.cloudflare.com", 
+          "https://fonts.googleapis.com",
+          "https://unpkg.com"
+        ],
+        "font-src": [
+          "'self'", 
+          "https://fonts.gstatic.com", 
+          "https://cdnjs.cloudflare.com", 
+          "https://r2cdn.perplexity.ai",
+          "data:"
+        ],
+        "img-src": ["'self'", "data:", "https:", "http:"],
         "connect-src": [
           "'self'",
+          "ws://localhost:3000",
+          "wss://localhost:3000",
+          "http://localhost:3000",
           "https://kaabah-ai-model-1-0-0.onrender.com",
           "https://nominatim.openstreetmap.org",
           "https://cdnjs.cloudflare.com",
           "https://fonts.googleapis.com",
-          "https://fonts.gstatic.com"
+          "https://fonts.gstatic.com",
+          "https://api.openai.com",
+          "https://api.elevenlabs.io"
         ],
-        "media-src": ["'self'"],
+        "media-src": ["'self'", "data:", "blob:"],
+        "object-src": ["'none'"],
+        "base-uri": ["'self'"],
+        "form-action": ["'self'"],
+        "frame-ancestors": ["'none'"],
+        "upgrade-insecure-requests": []
       },
     },
   })
@@ -247,7 +282,8 @@ app.use(generalLimiter);
 app.use('/api/auth/login', loginLimiter); // Apply strict rate limiting to login
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/auth-cookie', authLimiter, authCookieRoutes);
-app.use('/api/auth/microsoft', microsoftAuth);
+// Removed Passport OAuth routes to allow custom PKCE implementation to take precedence
+app.use('/api/auth', require('./routes/enhancedOAuth'));
 app.use('/api/token', apiLimiter, require('./routes/tokenRoutes')); // Token management routes
 app.use('/api/notifications', notificationLimiter, notificationsRouter);
 app.use('/api/subscription', require('./routes/subscriptionRoutes'));
@@ -262,6 +298,29 @@ app.use('/api/translation', translationLimiter, translationRoutes);
 app.use('/api/text-translation', translationLimiter, textTranslationRoutes);
 app.use('/api/enhanced-translation', translationLimiter, enhancedTranslationRoutes);
 app.use('/api/translation-history', translationHistoryRoutes);
+app.use('/api/live-translation', translationLimiter, require('./routes/liveTranslationRoutes'));
+app.use('/api/content-scraping', require('./routes/contentScrapingRoutes'));
+app.use('/api/data-enhancement', require('./routes/dataEnhancementRoutes'));
+
+// Data Viewer Routes
+app.use('/api/data-viewer', require('./routes/dataViewerRoutes'));
+
+// Calendar Integration Routes
+app.use('/api/calendar', require('./routes/calendarIntegrationRoutes'));
+app.use('/api/calendar', require('./routes/calendarEventsRoutes'));
+
+// Hijri Calendar Routes
+app.use('/api/hijri', require('./routes/hijriCalendarRoutes'));
+
+// Enhanced Islamic Calendar Routes
+app.use('/api/islamic-calendar', require('./routes/islamicCalendarRoutes'));
+
+// OAuth Sync Routes
+app.use('/api/oauth-sync', require('./routes/oauthSyncRoutes'));
+// Clear OAuth Tokens Route (for testing)
+app.use('/api', require('./routes/clearOAuthTokens'));
+// Direct token clearing route
+app.use('/api/tokens', require('./routes/clearTokensRoute'));
 app.use('/api/quran', quranRoutes);
 app.use('/api/history', requireSession, historyRoutes);
 app.use('/api/user', userRoutes);
@@ -383,6 +442,17 @@ async function startServer() {
       logger.info?.('✅ Read replicas initialized successfully');
     } catch (error) {
       logger.warn?.('⚠️ Read replicas initialization failed (continuing with primary):', error.message);
+    }
+
+    // Initialize content scheduler for web scraping
+    try {
+      const ContentScheduler = require('./services/contentScheduler');
+      const contentScheduler = new ContentScheduler();
+      await contentScheduler.initialize();
+      contentScheduler.startScheduledScraping();
+      logger.info?.('✅ Content scheduler initialized and started');
+    } catch (error) {
+      logger.warn?.('⚠️ Content scheduler initialization failed (continuing without scraping):', error.message);
     }
 
     // Redis cluster removed - using simple in-memory solutions

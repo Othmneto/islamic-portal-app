@@ -25,14 +25,19 @@ const socketAuth = async (socket, next) => {
         // Verify JWT token
         const payload = jwt.verify(token, process.env.JWT_SECRET);
         
-        // Attach user info to socket
+        // Attach user info to socket (multiple formats for compatibility)
         socket.user = {
-            id: payload.sub || payload.id,
+            id: payload.sub || payload.id || payload.userId,
             email: payload.email,
             role: payload.role || 'user'
         };
+        
+        // Also attach directly for easier access in handlers
+        socket.userId = socket.user.id;
+        socket.userEmail = socket.user.email;
+        socket.userRole = socket.user.role;
 
-        console.log(`[SocketAuth] Authenticated user: ${socket.user.id}`);
+        console.log(`[SocketAuth] Authenticated user: ${socket.user.id} (${socket.user.email})`);
         next();
     } catch (error) {
         console.error('[SocketAuth] Authentication failed:', error.message);

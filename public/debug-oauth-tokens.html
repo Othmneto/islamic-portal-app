@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug OAuth Tokens</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            text-align: left;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug OAuth Tokens</h1>
+        <p>This tool helps debug why OAuth tokens aren't being saved properly.</p>
+        
+        <button class="btn" onclick="checkOAuthStatus()">🔍 Check OAuth Status</button>
+        <button class="btn" onclick="testTokenSaving()">🧪 Test Token Saving</button>
+        <button class="btn" onclick="clearAndReauth()">🔄 Clear & Re-authorize</button>
+        
+        <div id="status"></div>
+        <div id="debugInfo"></div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/calendar.html" class="btn" style="background: #28a745; text-decoration: none; display: inline-block;">
+                📅 Back to Calendar
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let authToken;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            authToken = localStorage.getItem('authToken') || 
+                       localStorage.getItem('accessToken') || 
+                       localStorage.getItem('token') || 
+                       localStorage.getItem('jwt');
+            
+            if (!authToken) {
+                showStatus('❌ Please log in first', 'error');
+                return;
+            }
+            
+            showStatus('✅ Ready to debug OAuth tokens', 'info');
+        });
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function showDebugInfo(title, data) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.innerHTML += `
+                <div class="debug-info">
+                    <h4>${title}</h4>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        }
+        
+        async function checkOAuthStatus() {
+            showStatus('🔍 Checking OAuth status...', 'info');
+            document.getElementById('debugInfo').innerHTML = '';
+            
+            try {
+                // Check OAuth sync status
+                const syncResponse = await fetch('/api/oauth-sync/status', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (syncResponse.ok) {
+                    const syncData = await syncResponse.json();
+                    showDebugInfo('OAuth Sync Status', syncData);
+                } else {
+                    showDebugInfo('OAuth Sync Status Error', {
+                        status: syncResponse.status,
+                        statusText: syncResponse.statusText
+                    });
+                }
+                
+                // Check user profile
+                const userResponse = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    showDebugInfo('User Profile', userData);
+                } else {
+                    showDebugInfo('User Profile Error', {
+                        status: userResponse.status,
+                        statusText: userResponse.statusText
+                    });
+                }
+                
+                showStatus('✅ OAuth status check completed', 'success');
+                
+            } catch (error) {
+                console.error('❌ Error checking OAuth status:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testTokenSaving() {
+            showStatus('🧪 Testing token saving...', 'info');
+            
+            try {
+                // Try to save a test token
+                const testResponse = await fetch('/api/tokens/clear-all-tokens', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (testResponse.ok) {
+                    const result = await testResponse.json();
+                    showDebugInfo('Token Clearing Test', result);
+                    showStatus('✅ Token clearing test completed', 'success');
+                } else {
+                    showDebugInfo('Token Clearing Test Error', {
+                        status: testResponse.status,
+                        statusText: testResponse.statusText
+                    });
+                    showStatus('❌ Token clearing test failed', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error testing token saving:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function clearAndReauth() {
+            showStatus('🔄 Clearing tokens and preparing for re-authorization...', 'info');
+            
+            try {
+                // Clear tokens
+                const clearResponse = await fetch('/api/tokens/clear-all-tokens', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (clearResponse.ok) {
+                    showStatus('✅ Tokens cleared. Now re-authorize with calendar permissions.', 'success');
+                    
+                    // Show re-authorization instructions
+                    showDebugInfo('Re-authorization Instructions', {
+                        step1: 'Go to your calendar page',
+                        step2: 'Click "🔑 Grant Calendar Access" for Google',
+                        step3: 'Click "🔑 Grant Calendar Access" for Microsoft',
+                        step4: 'Grant calendar permissions when prompted',
+                        step5: 'Check server logs for token saving confirmation'
+                    });
+                } else {
+                    showStatus('❌ Failed to clear tokens', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error clearing tokens:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+

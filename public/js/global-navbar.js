@@ -58,8 +58,13 @@ class GlobalNavbar {
 
     async init() {
         // Prevent multiple initializations
-        if (window.globalNavbar && window.globalNavbar.isInitialized) {
+        if (window.__globalNavbarInitialized) {
             console.log('🔄 [GlobalNavbar] Navbar already initialized, skipping...');
+            return;
+        }
+        
+        if (window.globalNavbar && window.globalNavbar.isInitialized) {
+            console.log('🔄 [GlobalNavbar] Navbar instance already exists, skipping...');
             return;
         }
         
@@ -92,6 +97,7 @@ class GlobalNavbar {
             this.updateAuthStatus();
             
             this.isInitialized = true;
+            window.__globalNavbarInitialized = true;
             console.log('✅ [GlobalNavbar] Global navbar initialized successfully');
         } catch (error) {
             console.error('❌ [GlobalNavbar] Failed to initialize:', error);
@@ -1411,10 +1417,20 @@ window.triggerNavbarUpdate = function(eventType, data) {
 // Initialize global navbar when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Only create if not already created by individual pages
-    if (!window.globalNavbar) {
+    if (!window.__globalNavbarInitialized && !window.globalNavbar) {
         window.globalNavbar = new GlobalNavbar();
     }
 });
+
+// Also initialize immediately if DOM is already loaded
+if (document.readyState === 'loading') {
+    // DOM is still loading, wait for DOMContentLoaded
+} else {
+    // DOM is already loaded, initialize immediately
+    if (!window.__globalNavbarInitialized && !window.globalNavbar) {
+        window.globalNavbar = new GlobalNavbar();
+    }
+}
 
 // Export for use in other modules
 window.GlobalNavbar = GlobalNavbar;

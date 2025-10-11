@@ -8,13 +8,13 @@ const { createError } = require('./errorHandler');
  */
 const RATE_LIMITS = {
   // Authentication endpoints
-  login: { windowMs: 15 * 60 * 1000, max: 5, message: 'Too many login attempts' },
+  login: { windowMs: 15 * 60 * 1000, max: 30, message: 'Too many login attempts' },
   register: { windowMs: 60 * 60 * 1000, max: 3, message: 'Too many registration attempts' },
   passwordReset: { windowMs: 60 * 60 * 1000, max: 3, message: 'Too many password reset attempts' },
   emailVerification: { windowMs: 60 * 60 * 1000, max: 5, message: 'Too many email verification attempts' },
   
   // OAuth endpoints
-  oauth: { windowMs: 15 * 60 * 1000, max: 10, message: 'Too many OAuth attempts' },
+  oauth: { windowMs: 15 * 60 * 1000, max: 50, message: 'Too many OAuth attempts' },
   
   // API endpoints
   api: { windowMs: 15 * 60 * 1000, max: 100, message: 'Too many API requests' },

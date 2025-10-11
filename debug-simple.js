@@ -76,3 +76,4 @@ if (window.textTranslator) {
 }
 
 console.log('🔍 [Debug] Simple debug complete!');
+

@@ -14,7 +14,7 @@ const generalLimiter = new InMemoryRateLimiter({
 
 const authLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per window
+  max: 50, // 50 requests per window (increased for testing)
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false
@@ -22,7 +22,7 @@ const authLimiter = new InMemoryRateLimiter({
 
 const loginLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // 10 login attempts per window (more reasonable)
+  max: 30, // 30 login attempts per window (increased for testing)
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false

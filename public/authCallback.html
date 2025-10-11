@@ -221,9 +221,10 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            // 1. Get the token from the URL
+            // 1. Get the token and redirect from the URL
             const params = new URLSearchParams(window.location.search);
             const token = params.get('token');
+            const redirect = params.get('redirect');
 
             if (token) {
                 // 2. Clear any old tokens and save the new one
@@ -259,8 +260,17 @@
                             // Redirect to username setup page
                             window.location.href = '/setup-username.html';
                         } else {
-                            // Redirect to the home page
-                            window.location.href = '/';
+                            // Redirect to specified page or home page
+                            if (redirect) {
+                                // Add callback parameters to indicate successful OAuth
+                                const redirectUrl = new URL(redirect, window.location.origin);
+                                redirectUrl.searchParams.set('oauth_callback', 'success');
+                                redirectUrl.searchParams.set('provider', 'microsoft');
+                                redirectUrl.searchParams.set('timestamp', Date.now().toString());
+                                window.location.href = redirectUrl.toString();
+                            } else {
+                                window.location.href = '/';
+                            }
                         }
                     } else {
                         console.error('Failed to fetch user data');

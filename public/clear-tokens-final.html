@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear OAuth Tokens - Final</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .btn {
+            background: linear-gradient(45deg, #dc3545, #c82333);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(220,53,69,0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220,53,69,0.4);
+        }
+        
+        .btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #dc3545;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ Clear OAuth Tokens - Final</h1>
+        <p>This will clear all your Google and Microsoft OAuth tokens from the database.</p>
+        
+        <div class="warning">
+            <strong>⚠️ Warning:</strong> After clearing tokens, you'll need to re-authorize both Google and Microsoft accounts to use calendar sync features.
+        </div>
+        
+        <button class="btn" onclick="clearAllTokens()" id="clearBtn">
+            🗑️ Clear All OAuth Tokens
+        </button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Clearing OAuth tokens...</p>
+        </div>
+        
+        <div id="status"></div>
+        
+        <div style="margin-top: 30px;">
+            <a href="/calendar.html" class="btn" style="background: #007bff; text-decoration: none; display: inline-block;">
+                📅 Back to Calendar
+            </a>
+        </div>
+    </div>
+
+    <script>
+        let authToken;
+        
+        // Get auth token on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            authToken = localStorage.getItem('authToken') || 
+                       localStorage.getItem('accessToken') || 
+                       localStorage.getItem('token') || 
+                       localStorage.getItem('jwt');
+            
+            if (!authToken) {
+                showStatus('❌ Please log in first', 'error');
+                document.getElementById('clearBtn').disabled = true;
+                return;
+            }
+            
+            showStatus('✅ Ready to clear OAuth tokens', 'info');
+        });
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('clearBtn').disabled = show;
+        }
+        
+        async function clearAllTokens() {
+            if (!authToken) {
+                showStatus('❌ Please log in first', 'error');
+                return;
+            }
+            
+            showLoading(true);
+            showStatus('Clearing OAuth tokens...', 'info');
+            
+            try {
+                console.log('🗑️ Clearing OAuth tokens via API...');
+                
+                const response = await fetch('/api/tokens/clear-all-tokens', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok && result.success) {
+                    console.log('✅ Tokens cleared successfully:', result);
+                    showStatus(`✅ ${result.message}! You can now re-authorize with calendar permissions.`, 'success');
+                } else {
+                    console.error('❌ Failed to clear tokens:', result);
+                    showStatus(`❌ Failed to clear tokens: ${result.error || 'Unknown error'}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error clearing tokens:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            } finally {
+                showLoading(false);
+            }
+        }
+    </script>
+</body>
+</html>
+

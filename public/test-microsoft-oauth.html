@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Microsoft OAuth</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
+        .status {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 15px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Test Microsoft OAuth Calendar Integration</h1>
+        <p>This page helps debug Microsoft OAuth calendar sync issues.</p>
+        
+        <div id="status"></div>
+        
+        <h3>Step 1: Check Current Status</h3>
+        <button class="btn" onclick="checkOAuthStatus()">🔍 Check OAuth Status</button>
+        
+        <h3>Step 2: Clear Microsoft Tokens</h3>
+        <button class="btn btn-danger" onclick="clearMicrosoftTokens()">🗑️ Clear Microsoft Tokens</button>
+        
+        <h3>Step 3: Reauthorize Microsoft</h3>
+        <button class="btn btn-success" onclick="reauthorizeMicrosoft()">🔑 Reauthorize Microsoft</button>
+        
+        <h3>Step 4: Test Calendar Sync</h3>
+        <button class="btn" onclick="testMicrosoftSync()">🧪 Test Microsoft Sync</button>
+        
+        <h3>Step 5: Refresh Token</h3>
+        <button class="btn" onclick="refreshMicrosoftToken()">🔄 Refresh Microsoft Token</button>
+        
+        <div id="debugInfo" class="debug-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function showDebugInfo(title, data) {
+            const debugDiv = document.getElementById('debugInfo');
+            debugDiv.style.display = 'block';
+            debugDiv.innerHTML = `<strong>${title}:</strong>\n${JSON.stringify(data, null, 2)}`;
+        }
+        
+        async function checkOAuthStatus() {
+            showStatus('🔍 Checking OAuth status...', 'info');
+            
+            try {
+                const authToken = localStorage.getItem('authToken') || 
+                                 localStorage.getItem('accessToken') || 
+                                 localStorage.getItem('token') || 
+                                 localStorage.getItem('jwt');
+                
+                if (!authToken) {
+                    showStatus('❌ No auth token found. Please log in first.', 'error');
+                    return;
+                }
+                
+                const response = await fetch('/api/oauth-sync/status', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showDebugInfo('OAuth Status', data);
+                    showStatus('✅ OAuth status retrieved successfully', 'success');
+                } else {
+                    const error = await response.text();
+                    showDebugInfo('Status Error', { status: response.status, error });
+                    showStatus('❌ Failed to get OAuth status', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error checking status:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function clearMicrosoftTokens() {
+            showStatus('🗑️ Clearing Microsoft tokens...', 'info');
+            
+            try {
+                const authToken = localStorage.getItem('authToken') || 
+                                 localStorage.getItem('accessToken') || 
+                                 localStorage.getItem('token') || 
+                                 localStorage.getItem('jwt');
+                
+                const response = await fetch('/api/user/clear-microsoft-tokens', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showDebugInfo('Clear Tokens Result', data);
+                    showStatus('✅ Microsoft tokens cleared successfully', 'success');
+                } else {
+                    const error = await response.text();
+                    showDebugInfo('Clear Tokens Error', { status: response.status, error });
+                    showStatus('❌ Failed to clear Microsoft tokens', 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error clearing tokens:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        function reauthorizeMicrosoft() {
+            showStatus('🔄 Redirecting to Microsoft OAuth...', 'info');
+            window.location.href = '/api/oauth-sync/microsoft/reauth';
+        }
+        
+        async function testMicrosoftSync() {
+            showStatus('🧪 Testing Microsoft calendar sync...', 'info');
+            
+            try {
+                const authToken = localStorage.getItem('authToken') || 
+                                 localStorage.getItem('accessToken') || 
+                                 localStorage.getItem('token') || 
+                                 localStorage.getItem('jwt');
+                
+                const response = await fetch('/api/oauth-sync/microsoft/two-way', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                showDebugInfo('Sync Test Result', { status: response.status, data });
+                
+                if (response.ok && data.success) {
+                    showStatus(`✅ Microsoft sync successful! ${data.result?.totalSynced || 0} events synced.`, 'success');
+                } else {
+                    showStatus(`❌ Microsoft sync failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error testing sync:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function refreshMicrosoftToken() {
+            showStatus('🔄 Refreshing Microsoft token...', 'info');
+            
+            try {
+                const authToken = localStorage.getItem('authToken') || 
+                                 localStorage.getItem('accessToken') || 
+                                 localStorage.getItem('token') || 
+                                 localStorage.getItem('jwt');
+                
+                const response = await fetch('/api/oauth-sync/microsoft/refresh-token', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const data = await response.json();
+                showDebugInfo('Refresh Token Result', { status: response.status, data });
+                
+                if (response.ok) {
+                    showStatus('✅ Microsoft token refreshed successfully', 'success');
+                } else {
+                    showStatus(`❌ Microsoft token refresh failed: ${data.error || 'Unknown error'}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error refreshing token:', error);
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Auto-check status on page load
+        window.addEventListener('load', () => {
+            checkOAuthStatus();
+        });
+    </script>
+</body>
+</html>
