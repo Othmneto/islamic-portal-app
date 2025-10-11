@@ -1510,7 +1510,7 @@ END:VCALENDAR`;
     
     // Create mock integrations based on available user data
     function createMockIntegrations() {
-        // Try to get user data from global navbar or other sources
+        // Try to get user data from available sources
         let userEmail = 'ahmedothmanofff@gmail.com'; // Default fallback
         
         // Check multiple sources for user email
@@ -2634,40 +2634,20 @@ ${integrations.video ? `- Video: ${integrations.video.connected ? 'Connected' : 
         showNotification('Advanced calendar loaded successfully', 'success');
     }
     
-    // Check if user is authenticated (using global navbar state)
+    // Check if user is authenticated
     async function checkAuthentication() {
         try {
             console.log('🔐 Checking authentication...');
             
-            // Wait for navbar to be ready if it's still initializing
-            let attempts = 0;
-            const maxAttempts = 10;
+            // Check for authentication token in localStorage
+            const authToken = localStorage.getItem('authToken') || 
+                             localStorage.getItem('accessToken') || 
+                             localStorage.getItem('token') || 
+                             localStorage.getItem('jwt');
             
-            while (attempts < maxAttempts) {
-                const navbarState = window.GlobalNavbarState || {};
-                const isAuthenticated = navbarState.isAuthenticated || false;
-                
-                console.log(`🔑 Auth state from navbar (attempt ${attempts + 1}):`, {
-                    isAuthenticated,
-                    hasUser: !!navbarState.currentUser,
-                    user: navbarState.currentUser,
-                    navbarReady: window.__globalNavbarInitialized
-                });
-                
-                if (isAuthenticated && navbarState.currentUser) {
-                    console.log('✅ User is authenticated via navbar state:', navbarState.currentUser);
-                        return true;
-                    }
-                
-                // If navbar is still initializing, wait a bit
-                if (!window.__globalNavbarInitialized && attempts < maxAttempts - 1) {
-                    console.log('⏳ Navbar still initializing, waiting...');
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    attempts++;
-                    continue;
-                }
-                
-                break;
+            if (authToken) {
+                console.log('✅ User is authenticated via token');
+                return true;
             }
             
             console.log('ℹ️ No authentication found, calendar will work in offline mode');
@@ -5147,21 +5127,6 @@ Raw Data: ${JSON.stringify(microsoftData, null, 2)}`;
     // Initialize authentication system
     auth.init();
     
-    // Listen for navbar state changes
-    if (window.GlobalNavbarEvents) {
-        window.GlobalNavbarEvents.addListener((eventType, data) => {
-            if (eventType === 'userStateChanged') {
-                console.log('🔄 [Calendar] Received navbar auth state change:', data);
-                // Re-check authentication when navbar state changes
-                checkAuthentication().then(isAuth => {
-                    if (isAuth) {
-                        console.log('✅ [Calendar] Authentication confirmed, refreshing calendar...');
-                        // Optionally refresh calendar data or UI
-                    }
-                });
-            }
-        });
-    }
     
     // Check for Microsoft OAuth callback on page load
     checkMicrosoftCallback();
