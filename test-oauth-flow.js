@@ -42,18 +42,18 @@ console.log('\n3. Testing server connection...');
 
 const req = http.request(options, (res) => {
   let data = '';
-  
+
   res.on('data', (chunk) => {
     data += chunk;
   });
-  
+
   res.on('end', () => {
     console.log(`   Server Status: ${res.statusCode}`);
     if (res.statusCode === 200) {
       const config = JSON.parse(data);
       console.log(`   Microsoft OAuth Config: ${JSON.stringify(config.microsoft, null, 2)}`);
     }
-    
+
     console.log('\n4. Next Steps:');
     console.log('   1. Make sure the redirect URI is configured in Azure:');
     console.log(`      ${redirectUri}`);

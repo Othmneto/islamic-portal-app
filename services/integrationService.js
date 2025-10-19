@@ -19,7 +19,7 @@ class IntegrationService {
             auditLogging: null,
             databaseOptimization: null
         };
-        
+
         this.isInitialized = false;
     }
 
@@ -29,27 +29,27 @@ class IntegrationService {
     async initialize() {
         try {
             console.log('🔧 [IntegrationService] Initializing all enhanced services...');
-            
+
             // Initialize individual services
             this.services.contextAware = new ContextAwareTranslationService();
             this.services.domainSpecific = new DomainSpecificTranslationService();
             this.services.encryption = new EncryptionService();
             this.services.auditLogging = new AuditLoggingService();
             // this.services.databaseOptimization = new DatabaseOptimizationService(); // Skip for now
-            
+
             // Initialize enhanced translation service
             this.services.enhancedTranslation = new EnhancedTranslationService();
             await this.services.enhancedTranslation.initialize();
-            
+
             this.isInitialized = true;
             console.log('✅ [IntegrationService] All services initialized successfully');
-            
+
             // Log system initialization
             await this.services.auditLogging.logEvent('SYSTEM_START', 'system', {
                 services: Object.keys(this.services),
                 timestamp: new Date().toISOString()
             });
-            
+
         } catch (error) {
             console.error('❌ [IntegrationService] Failed to initialize services:', error);
             throw error;
@@ -144,9 +144,9 @@ class IntegrationService {
                     status.services[serviceName] = { status: 'inactive' };
                 }
             } catch (error) {
-                status.services[serviceName] = { 
-                    status: 'error', 
-                    error: error.message 
+                status.services[serviceName] = {
+                    status: 'error',
+                    error: error.message
                 };
             }
         }
@@ -160,19 +160,19 @@ class IntegrationService {
     async shutdown() {
         try {
             console.log('🔄 [IntegrationService] Shutting down all services...');
-            
+
             // Log system shutdown
             if (this.services.auditLogging) {
                 await this.services.auditLogging.logEvent('SYSTEM_SHUTDOWN', 'system', {
                     timestamp: new Date().toISOString()
                 });
             }
-            
+
             // Clear encryption keys
             if (this.services.encryption) {
                 this.services.encryption.clearCachedKeys();
             }
-            
+
             this.isInitialized = false;
             console.log('✅ [IntegrationService] All services shut down successfully');
         } catch (error) {

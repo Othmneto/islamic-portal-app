@@ -14,6 +14,8 @@ const unifiedAuthService = require('../services/unifiedAuthService');
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const { safeLogAuthEvent, safeLogSecurityViolation } = require('../middleware/securityLogging');
+const sessionManagementService = require('../services/sessionManagementService');
+const { checkPersistentAuth } = require('../middleware/persistentAuthMiddleware');
 
 // --- Validation Rules ---
 const registerValidation = [
@@ -86,9 +88,9 @@ router.post('/unified-login', [
     res.json(response);
   } catch (error) {
     console.error('Unified login error:', error);
-    res.status(401).json({ 
-      success: false, 
-      message: error.message || 'Authentication failed' 
+    res.status(401).json({
+      success: false,
+      message: error.message || 'Authentication failed'
     });
   }
 });
@@ -100,9 +102,9 @@ router.get('/auth-methods/:userId', authMiddleware, async (req, res) => {
     res.json(authMethods);
   } catch (error) {
     console.error('Get auth methods error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Failed to get authentication methods' 
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get authentication methods'
     });
   }
 });
@@ -120,7 +122,7 @@ router.post('/link-oauth', authMiddleware, [
 
     const { provider, profile } = req.body;
     const user = await unifiedAuthService.linkOAuthToExistingUser(req.user.email, profile, provider);
-    
+
     res.json({
       success: true,
       message: `${provider} account linked successfully`,
@@ -132,9 +134,9 @@ router.post('/link-oauth', authMiddleware, [
     });
   } catch (error) {
     console.error('Link OAuth error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message || 'Failed to link OAuth account' 
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to link OAuth account'
     });
   }
 });
@@ -144,7 +146,7 @@ router.delete('/unlink-oauth/:provider', authMiddleware, async (req, res) => {
   try {
     const { provider } = req.params;
     const user = await unifiedAuthService.unlinkOAuthAccount(req.user.id, provider);
-    
+
     res.json({
       success: true,
       message: `${provider} account unlinked successfully`,
@@ -156,9 +158,9 @@ router.delete('/unlink-oauth/:provider', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Unlink OAuth error:', error);
-    res.status(400).json({ 
-      success: false, 
-      message: error.message || 'Failed to unlink OAuth account' 
+    res.status(400).json({
+      success: false,
+      message: error.message || 'Failed to unlink OAuth account'
     });
   }
 });
@@ -205,21 +207,21 @@ router.get('/debug/test-callback', (req, res) => {
 //   async (req, res) => {
 //     try {
 //       console.log('🔄 Google OAuth: Processing callback for user:', req.user);
-//       
+//
 //       // Use unified auth service to handle the OAuth callback
 //       const response = await unifiedAuthService.handleOAuthCallback(
-//         req.user, 
-//         'google', 
-//         req.ip, 
+//         req.user,
+//         'google',
+//         req.ip,
 //         req.get('User-Agent')
 //       );
-//       
+//
 //       console.log('✅ Google OAuth: Unified auth service response:', response);
-//       
+//
 //       // Redirect to success page with token
 //       const redirectBase = process.env.OAUTH_REDIRECT_URL || 'http://localhost:3000/authCallback.html';
 //       const redirectUrl = `${redirectBase}?token=${encodeURIComponent(response.token)}`;
-//       
+//
 //       console.log('🎉 Google OAuth: Redirecting to:', redirectUrl);
 //       res.redirect(redirectUrl);
 //     } catch (error) {
@@ -239,28 +241,28 @@ router.get('/debug/test-callback', (req, res) => {
 router.post('/logout', authMiddleware, async (req, res) => {
   try {
     const TokenBlacklist = require('../models/TokenBlacklist');
-    
+
     // Get the token from the Authorization header
     const authHeader = req.header('Authorization');
     const token = authHeader ? authHeader.split(' ')[1] : null;
-    
+
     if (token) {
       // Blacklist the token for security
       await TokenBlacklist.blacklistToken(token, req.user.id, 'logout');
     }
-    
+
     console.log(`🔓 User logout: ${req.user.email} (${req.user.id})`);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       message: 'Logged out successfully',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
     console.error('❌ Logout error:', error);
-    res.status(500).json({ 
-      success: false, 
-      message: 'Logout failed. Please try again.' 
+    res.status(500).json({
+      success: false,
+      message: 'Logout failed. Please try again.'
     });
   }
 });
@@ -290,7 +292,7 @@ router.post('/logout', authMiddleware, async (req, res) => {
 router.post('/verify-password', authMiddleware, async (req, res) => {
     try {
         const { password } = req.body;
-        
+
         if (!password) {
             return res.status(400).json({ error: 'Password is required' });
         }
@@ -338,7 +340,7 @@ router.post('/verify-password', authMiddleware, async (req, res) => {
 router.post('/enable-biometric', authMiddleware, async (req, res) => {
     try {
         const { credential, type, verified } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -365,9 +367,9 @@ router.post('/enable-biometric', authMiddleware, async (req, res) => {
                 description: 'OAuth-based biometric authentication enabled for user'
             });
 
-            res.json({ 
-                success: true, 
-                message: 'Biometric authentication enabled successfully (OAuth-based)' 
+            res.json({
+                success: true,
+                message: 'Biometric authentication enabled successfully (OAuth-based)'
             });
         } else if (type === 'password-based' && verified) {
             // For password-verified users
@@ -389,9 +391,9 @@ router.post('/enable-biometric', authMiddleware, async (req, res) => {
                 description: 'Password-based biometric authentication enabled for user'
             });
 
-            res.json({ 
-                success: true, 
-                message: 'Biometric authentication enabled successfully (Password-based)' 
+            res.json({
+                success: true,
+                message: 'Biometric authentication enabled successfully (Password-based)'
             });
         } else if (credential) {
             // For WebAuthn credentials
@@ -418,9 +420,9 @@ router.post('/enable-biometric', authMiddleware, async (req, res) => {
                 description: 'WebAuthn biometric authentication enabled for user'
             });
 
-            res.json({ 
-                success: true, 
-                message: 'Biometric authentication enabled successfully (WebAuthn)' 
+            res.json({
+                success: true,
+                message: 'Biometric authentication enabled successfully (WebAuthn)'
             });
         } else {
             return res.status(400).json({ error: 'Invalid biometric authentication data' });
@@ -454,13 +456,73 @@ router.post('/disable-biometric', authMiddleware, async (req, res) => {
             description: 'Biometric authentication disabled for user'
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Biometric authentication disabled successfully' 
+        res.json({
+            success: true,
+            message: 'Biometric authentication disabled successfully'
         });
     } catch (error) {
         console.error('Error disabling biometric authentication:', error);
         res.status(500).json({ error: 'Failed to disable biometric authentication' });
+    }
+});
+
+// Update user location for persistent authentication
+router.post('/update-location', authMiddleware, checkPersistentAuth, async (req, res) => {
+    try {
+        console.log('📍 [Auth] Updating user location for persistent auth:', req.user.id);
+
+        const { location, deviceInfo } = req.body;
+
+        if (!location || !location.lat || !location.lon) {
+            return res.status(400).json({
+                success: false,
+                error: 'Valid location data is required'
+            });
+        }
+
+        // Update user's last known location
+        const user = await User.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                error: 'User not found'
+            });
+        }
+
+        // Update user location
+        user.lastKnownLocation = {
+            lat: location.lat,
+            lon: location.lon,
+            accuracy: location.accuracy || 0,
+            timestamp: new Date(),
+            isDefault: location.isDefault || false
+        };
+
+        await user.save();
+
+        // Update session with location and device info
+        if (req.sessionId) {
+            await sessionManagementService.updateSession(req.sessionId, {
+                location: location,
+                deviceInfo: deviceInfo,
+                lastActivity: Date.now()
+            });
+        }
+
+        console.log('✅ [Auth] User location updated successfully');
+
+        res.json({
+            success: true,
+            message: 'Location updated successfully',
+            location: user.lastKnownLocation
+        });
+
+    } catch (error) {
+        console.error('❌ [Auth] Error updating user location:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to update location'
+        });
     }
 });
 

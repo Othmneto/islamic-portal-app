@@ -18,13 +18,13 @@ export class PrayerTimesUIComponents {
       this.core.el.assistantModal?.setAttribute("aria-hidden", "false");
       document.body.setAttribute("inert", "");
     });
-    
+
     this.core.el.closeAssistantBtn?.addEventListener("click", () => {
       this.core.el.assistantModal?.classList.remove("active");
       this.core.el.assistantModal?.setAttribute("aria-hidden", "true");
       document.body.removeAttribute("inert");
     });
-    
+
     this.core.el.assistantSendBtn?.addEventListener("click", () => {
       const input = this.core.el.assistantInput;
       if (!input || !input.value.trim()) return;

@@ -265,7 +265,8 @@
                                 // Add callback parameters to indicate successful OAuth
                                 const redirectUrl = new URL(redirect, window.location.origin);
                                 redirectUrl.searchParams.set('oauth_callback', 'success');
-                                redirectUrl.searchParams.set('provider', 'microsoft');
+                                const provider = params.get('provider') || 'google';
+                                redirectUrl.searchParams.set('provider', provider);
                                 redirectUrl.searchParams.set('timestamp', Date.now().toString());
                                 window.location.href = redirectUrl.toString();
                             } else {

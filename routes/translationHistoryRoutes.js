@@ -85,7 +85,7 @@ router.get('/conversation/:conversationId', auth, async (req, res) => {
 router.get('/search', auth, async (req, res) => {
     try {
         const { q, page = 1, limit = 20, fromLanguage, toLanguage } = req.query;
-        
+
         if (!q || q.trim().length < 2) {
             return res.status(400).json({
                 success: false,
@@ -365,7 +365,7 @@ router.delete('/:id', auth, async (req, res) => {
 router.get('/stats', auth, async (req, res) => {
     try {
         const stats = await partialTranslationService.getUserStats(req.user.id);
-        
+
         res.json({
             success: true,
             data: stats

@@ -12,7 +12,7 @@ class LiveTranslationHandler {
         this.io = io;
         this.sessionManager = getSessionManager();
         this.liveTranslationService = getLiveTranslationService();
-        
+
         logger.info('✅ [LiveTranslationHandler] Initialized');
     }
 
@@ -29,17 +29,17 @@ class LiveTranslationHandler {
         socket.on('imam:resumeBroadcast', (data) => this.handleResumeBroadcast(socket, data));
         socket.on('imam:endSession', (data) => this.handleEndSession(socket, data));
         socket.on('imam:textMessage', (data) => this.handleTextMessage(socket, data));
-        
+
         // Worshipper events
         socket.on('worshipper:joinSession', (data) => this.handleJoinSession(socket, data));
         socket.on('worshipper:leaveSession', (data) => this.handleLeaveSession(socket, data));
         socket.on('worshipper:changeLanguage', (data) => this.handleChangeLanguage(socket, data));
         socket.on('worshipper:connectionQuality', (data) => this.handleConnectionQuality(socket, data));
-        
+
         // General events
         socket.on('ping', (data) => this.handlePing(socket, data));
         socket.on('disconnect', () => this.handleDisconnect(socket));
-        
+
         logger.info(`🔌 [LiveTranslationHandler] Event handlers setup for socket: ${socket.id}`);
     }
 
@@ -55,9 +55,9 @@ class LiveTranslationHandler {
             console.log('Data:', data);
             console.log('========================================');
             logger.info(`👤 [LiveTranslationHandler] Create session request from: ${socket.userId}`);
-            
+
             const { sourceLanguage, sourceLanguageName, title, description, password, settings } = data;
-            
+
             const result = await this.sessionManager.createSession(
                 socket.userId,
                 socket.userEmail || 'Imam',
@@ -70,16 +70,16 @@ class LiveTranslationHandler {
                     ...settings
                 }
             );
-            
+
             if (result.success) {
                 // Join the session room
                 socket.join(result.sessionId);
-                
+
                 // Set as Imam socket
                 this.sessionManager.setImamSocket(result.sessionId, socket.id);
-                
+
                 logger.info(`✅ [LiveTranslationHandler] Session created: ${result.sessionId}`);
-                
+
                 socket.emit('imam:sessionCreated', {
                     success: true,
                     sessionId: result.sessionId,
@@ -93,7 +93,7 @@ class LiveTranslationHandler {
                     timestamp: Date.now()
                 });
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Create session error:', error);
             socket.emit('imam:sessionCreated', {
@@ -110,11 +110,11 @@ class LiveTranslationHandler {
     async handleStartBroadcast(socket, data) {
         try {
             const { sessionId } = data;
-            
+
             logger.info(`🎤 [LiveTranslationHandler] Start broadcast: ${sessionId}`);
-            
+
             const result = await this.sessionManager.updateSessionStatus(sessionId, 'active');
-            
+
             if (result.success) {
                 // Notify all worshippers
                 this.io.to(sessionId).emit('session:statusChanged', {
@@ -123,7 +123,7 @@ class LiveTranslationHandler {
                     message: 'Broadcast started',
                     timestamp: Date.now()
                 });
-                
+
                 socket.emit('imam:broadcastStarted', {
                     success: true,
                     sessionId,
@@ -136,7 +136,7 @@ class LiveTranslationHandler {
                     timestamp: Date.now()
                 });
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Start broadcast error:', error);
             socket.emit('imam:broadcastStarted', {
@@ -153,27 +153,27 @@ class LiveTranslationHandler {
     async handleAudioChunk(socket, data) {
         try {
             const { sessionId, audioData, format } = data;
-            
+
             console.log('🎵 [LiveTranslationHandler] ========== AUDIO CHUNK RECEIVED ==========');
             console.log('Session ID:', sessionId);
             console.log('Format:', format);
             console.log('Audio data type:', typeof audioData);
-            
+
             // Convert base64 to buffer if needed
-            const audioBuffer = Buffer.isBuffer(audioData) 
-                ? audioData 
+            const audioBuffer = Buffer.isBuffer(audioData)
+                ? audioData
                 : Buffer.from(audioData, 'base64');
-            
+
             console.log('🎵 [LiveTranslationHandler] Audio buffer size:', audioBuffer.length, 'bytes');
             logger.info(`🎵 [LiveTranslationHandler] Audio chunk received: ${audioBuffer.length} bytes`);
-            
+
             // Process through the live translation service
             const result = await this.liveTranslationService.processAudioChunk(
                 sessionId,
                 audioBuffer,
                 this.io
             );
-            
+
             if (result.success && !result.buffering) {
                 // Acknowledge to Imam
                 socket.emit('imam:audioProcessed', {
@@ -184,7 +184,7 @@ class LiveTranslationHandler {
                     timestamp: Date.now()
                 });
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Audio chunk error:', error);
             socket.emit('imam:audioProcessed', {
@@ -201,11 +201,11 @@ class LiveTranslationHandler {
     async handleStopBroadcast(socket, data) {
         try {
             const { sessionId } = data;
-            
+
             logger.info(`⏹️ [LiveTranslationHandler] Stop broadcast: ${sessionId}`);
-            
+
             const result = await this.sessionManager.updateSessionStatus(sessionId, 'paused');
-            
+
             if (result.success) {
                 this.io.to(sessionId).emit('session:statusChanged', {
                     sessionId,
@@ -213,14 +213,14 @@ class LiveTranslationHandler {
                     message: 'Broadcast stopped',
                     timestamp: Date.now()
                 });
-                
+
                 socket.emit('imam:broadcastStopped', {
                     success: true,
                     sessionId,
                     timestamp: Date.now()
                 });
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Stop broadcast error:', error);
             socket.emit('imam:broadcastStopped', {
@@ -251,11 +251,11 @@ class LiveTranslationHandler {
     async handleEndSession(socket, data) {
         try {
             const { sessionId } = data;
-            
+
             logger.info(`🏁 [LiveTranslationHandler] End session: ${sessionId}`);
-            
+
             const result = await this.sessionManager.updateSessionStatus(sessionId, 'ended');
-            
+
             if (result.success) {
                 // Notify all worshippers
                 this.io.to(sessionId).emit('session:ended', {
@@ -263,17 +263,17 @@ class LiveTranslationHandler {
                     message: 'Session has ended',
                     timestamp: Date.now()
                 });
-                
+
                 socket.emit('imam:sessionEnded', {
                     success: true,
                     sessionId,
                     timestamp: Date.now()
                 });
-                
+
                 // Clean up all connections
                 this.io.in(sessionId).socketsLeave(sessionId);
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] End session error:', error);
             socket.emit('imam:sessionEnded', {
@@ -290,21 +290,21 @@ class LiveTranslationHandler {
     async handleTextMessage(socket, data) {
         try {
             const { sessionId, text } = data;
-            
+
             logger.info(`💬 [LiveTranslationHandler] Text message: ${sessionId}`);
-            
+
             const result = await this.liveTranslationService.processTextTranslation(
                 sessionId,
                 text,
                 this.io
             );
-            
+
             socket.emit('imam:textProcessed', {
                 success: result.success,
                 processingTime: result.processingTime,
                 timestamp: Date.now()
             });
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Text message error:', error);
             socket.emit('imam:textProcessed', {
@@ -321,7 +321,7 @@ class LiveTranslationHandler {
     async handleJoinSession(socket, data) {
         try {
             const { sessionId, targetLanguage, targetLanguageName, password } = data;
-            
+
             console.log('========================================');
             console.log('👥 [LiveTranslationHandler] JOIN SESSION REQUEST');
             console.log('Session ID:', sessionId);
@@ -329,7 +329,7 @@ class LiveTranslationHandler {
             console.log('User ID:', socket.userId);
             console.log('========================================');
             logger.info(`👥 [LiveTranslationHandler] Join session request: ${sessionId} (${targetLanguage})`);
-            
+
             // Verify session exists
             const session = await this.sessionManager.getSession(sessionId);
             if (!session) {
@@ -340,7 +340,7 @@ class LiveTranslationHandler {
                 });
                 return;
             }
-            
+
             // Verify password if protected
             if (session.isPasswordProtected) {
                 const passwordCheck = await this.sessionManager.verifySessionPassword(sessionId, password);
@@ -353,7 +353,7 @@ class LiveTranslationHandler {
                     return;
                 }
             }
-            
+
             // Add worshipper to session
             const result = await this.sessionManager.addWorshipper(sessionId, {
                 userId: socket.userId,
@@ -362,11 +362,11 @@ class LiveTranslationHandler {
                 targetLanguageName: targetLanguageName || 'English',
                 socketId: socket.id
             });
-            
+
             if (result.success) {
                 // Join the session room
                 socket.join(sessionId);
-                
+
                 socket.emit('worshipper:joinResult', {
                     success: true,
                     sessionId,
@@ -374,7 +374,7 @@ class LiveTranslationHandler {
                     worshipperCount: result.worshipperCount,
                     timestamp: Date.now()
                 });
-                
+
                 // Notify Imam
                 const imamSocket = this.sessionManager.getImamSocket(sessionId);
                 if (imamSocket) {
@@ -386,7 +386,7 @@ class LiveTranslationHandler {
                         timestamp: Date.now()
                     });
                 }
-                
+
                 logger.info(`✅ [LiveTranslationHandler] Worshipper joined: ${sessionId}`);
             } else {
                 socket.emit('worshipper:joinResult', {
@@ -395,7 +395,7 @@ class LiveTranslationHandler {
                     timestamp: Date.now()
                 });
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Join session error:', error);
             socket.emit('worshipper:joinResult', {
@@ -412,24 +412,24 @@ class LiveTranslationHandler {
     async handleLeaveSession(socket, data) {
         try {
             const { sessionId } = data;
-            
+
             logger.info(`👋 [LiveTranslationHandler] Leave session: ${sessionId}`);
-            
+
             const result = await this.sessionManager.removeWorshipper(
                 sessionId,
                 socket.userId,
                 socket.id
             );
-            
+
             if (result.success) {
                 socket.leave(sessionId);
-                
+
                 socket.emit('worshipper:leaveResult', {
                     success: true,
                     sessionId,
                     timestamp: Date.now()
                 });
-                
+
                 // Notify Imam
                 const imamSocket = this.sessionManager.getImamSocket(sessionId);
                 if (imamSocket) {
@@ -440,7 +440,7 @@ class LiveTranslationHandler {
                     });
                 }
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Leave session error:', error);
             socket.emit('worshipper:leaveResult', {
@@ -457,12 +457,12 @@ class LiveTranslationHandler {
     async handleChangeLanguage(socket, data) {
         try {
             const { sessionId, targetLanguage, targetLanguageName } = data;
-            
+
             logger.info(`🌍 [LiveTranslationHandler] Change language: ${sessionId} → ${targetLanguage}`);
-            
+
             // Remove and re-add with new language
             await this.sessionManager.removeWorshipper(sessionId, socket.userId, socket.id);
-            
+
             const result = await this.sessionManager.addWorshipper(sessionId, {
                 userId: socket.userId,
                 userName: socket.userEmail || 'Guest',
@@ -470,7 +470,7 @@ class LiveTranslationHandler {
                 targetLanguageName: targetLanguageName || targetLanguage,
                 socketId: socket.id
             });
-            
+
             if (result.success) {
                 socket.emit('worshipper:languageChanged', {
                     success: true,
@@ -479,7 +479,7 @@ class LiveTranslationHandler {
                     timestamp: Date.now()
                 });
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Change language error:', error);
             socket.emit('worshipper:languageChanged', {
@@ -495,10 +495,10 @@ class LiveTranslationHandler {
      */
     async handleConnectionQuality(socket, data) {
         const { sessionId, quality, latency } = data;
-        
+
         // Store quality metrics (could be used for adaptive quality)
         logger.info(`📊 [LiveTranslationHandler] Connection quality: ${quality} (${latency}ms)`);
-        
+
         socket.emit('worshipper:qualityAcknowledged', {
             received: true,
             timestamp: Date.now()
@@ -521,14 +521,14 @@ class LiveTranslationHandler {
     async handleDisconnect(socket) {
         try {
             logger.info(`🔌 [LiveTranslationHandler] Socket disconnected: ${socket.id}`);
-            
+
             // Find which session this socket was in
             const sessionId = this.sessionManager.getSessionBySocket(socket.id);
-            
+
             if (sessionId) {
                 // Check if it was the Imam
                 const imamSocket = this.sessionManager.getImamSocket(sessionId);
-                
+
                 if (imamSocket === socket.id) {
                     // Imam disconnected - notify all worshippers
                     this.io.to(sessionId).emit('session:imamDisconnected', {
@@ -536,12 +536,12 @@ class LiveTranslationHandler {
                         message: 'Imam has disconnected',
                         timestamp: Date.now()
                     });
-                    
+
                     logger.info(`👤 [LiveTranslationHandler] Imam disconnected from: ${sessionId}`);
                 } else {
                     // Worshipper disconnected
                     await this.sessionManager.removeWorshipper(sessionId, socket.userId, socket.id);
-                    
+
                     // Notify Imam
                     if (imamSocket) {
                         this.io.to(imamSocket).emit('imam:worshipperLeft', {
@@ -551,7 +551,7 @@ class LiveTranslationHandler {
                     }
                 }
             }
-            
+
         } catch (error) {
             logger.error('[LiveTranslationHandler] Disconnect error:', error);
         }

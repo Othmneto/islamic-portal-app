@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     detailsHTML += `<div class="details-title">${title}</div><div class="details-text">${content}</div>`;
                 }
             };
-            
+
             const addSimpleSection = (titleKey, valueKey) => {
                  const value = getTranslation(name[valueKey]);
                  if(value) {
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
 
             // --- REMOVED THE MEANING SNIPPET LOGIC ---
-            
+
             addSimpleSection('category', 'category');
             addSimpleSection('root', 'root');
 
@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     }
-    
+
     function renderFilteredNames() {
         const filter = searchInput.value.trim().toLowerCase();
         const filteredData = allNamesData.filter(n => {

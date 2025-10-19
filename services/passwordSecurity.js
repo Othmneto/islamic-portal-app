@@ -15,32 +15,32 @@ class PasswordSecurity {
     // Validate password strength
     validatePassword(password) {
         const errors = [];
-        
+
         if (password.length < this.minLength) {
             errors.push(`Password must be at least ${this.minLength} characters long`);
         }
-        
+
         if (this.requireUppercase && !/[A-Z]/.test(password)) {
             errors.push('Password must contain at least one uppercase letter');
         }
-        
+
         if (this.requireLowercase && !/[a-z]/.test(password)) {
             errors.push('Password must contain at least one lowercase letter');
         }
-        
+
         if (this.requireNumbers && !/\d/.test(password)) {
             errors.push('Password must contain at least one number');
         }
-        
+
         if (this.requireSpecialChars && !/[@$!%*?&]/.test(password)) {
             errors.push('Password must contain at least one special character (@$!%*?&)');
         }
-        
+
         // Check for common patterns
         if (this.hasCommonPatterns(password)) {
             errors.push('Password contains common patterns and is not secure');
         }
-        
+
         return {
             isValid: errors.length === 0,
             errors
@@ -71,7 +71,7 @@ class PasswordSecurity {
             /welcome/i,
             /welcome/i
         ];
-        
+
         return commonPatterns.some(pattern => pattern.test(password));
     }
 
@@ -79,18 +79,18 @@ class PasswordSecurity {
     generateSecurePassword(length = 16) {
         const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&';
         let password = '';
-        
+
         // Ensure at least one character from each required category
         password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
         password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
         password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
         password += '@$!%*?&'[Math.floor(Math.random() * 7)]; // Special char
-        
+
         // Fill the rest with random characters
         for (let i = password.length; i < length; i++) {
             password += charset[Math.floor(Math.random() * charset.length)];
         }
-        
+
         // Shuffle the password
         return password.split('').sort(() => Math.random() - 0.5).join('');
     }
@@ -119,15 +119,15 @@ class PasswordSecurity {
     // Update password history
     async updatePasswordHistory(user, newPasswordHash) {
         const passwordHistory = user.passwordHistory || [];
-        
+
         // Add new password to history
         passwordHistory.push(newPasswordHash);
-        
+
         // Keep only the last N passwords
         if (passwordHistory.length > this.passwordHistorySize) {
             passwordHistory.splice(0, passwordHistory.length - this.passwordHistorySize);
         }
-        
+
         return passwordHistory;
     }
 

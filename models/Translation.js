@@ -26,14 +26,14 @@ const translationSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    
+
     // User information
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    
+
     // Translation metadata
     confidence: {
         type: Number,
@@ -50,7 +50,7 @@ const translationSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    
+
     // Enhanced features
     alternatives: [{
         text: String,
@@ -61,7 +61,7 @@ const translationSchema = new mongoose.Schema({
         type: Map,
         of: String
     },
-    
+
     // User preferences
     isFavorite: {
         type: Boolean,
@@ -76,7 +76,7 @@ const translationSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    
+
     // Security and encryption
     encrypted: {
         type: Boolean,
@@ -86,7 +86,7 @@ const translationSchema = new mongoose.Schema({
         algorithm: String,
         timestamp: Date
     },
-    
+
     // Analytics
     accessCount: {
         type: Number,
@@ -96,7 +96,7 @@ const translationSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    
+
     // Cache information
     cached: {
         type: Boolean,
@@ -147,27 +147,27 @@ translationSchema.methods.updateRating = function(rating) {
 // Static methods
 translationSchema.statics.findByUser = function(userId, options = {}) {
     const query = { userId };
-    
+
     if (options.sourceLanguage) {
         query.sourceLanguage = options.sourceLanguage;
     }
-    
+
     if (options.targetLanguage) {
         query.targetLanguage = options.targetLanguage;
     }
-    
+
     if (options.context) {
         query.context = options.context;
     }
-    
+
     if (options.isIslamic !== undefined) {
         query.isIslamic = options.isIslamic;
     }
-    
+
     if (options.isFavorite !== undefined) {
         query.isFavorite = options.isFavorite;
     }
-    
+
     return this.find(query)
         .sort(options.sort || { createdAt: -1 })
         .limit(options.limit || 50);
@@ -193,7 +193,7 @@ translationSchema.statics.search = function(query, userId, options = {}) {
             { translated: { $regex: query, $options: 'i' } }
         ]
     };
-    
+
     return this.find(searchQuery)
         .sort(options.sort || { createdAt: -1 })
         .limit(options.limit || 20);
@@ -205,7 +205,7 @@ translationSchema.pre('save', function(next) {
     if (!this.lastAccessed) {
         this.lastAccessed = new Date();
     }
-    
+
     // Set cache strategy based on context
     if (this.context === 'quranic_text' || this.context === 'hadith_text') {
         this.cacheStrategy = 'hot';
@@ -214,7 +214,7 @@ translationSchema.pre('save', function(next) {
     } else {
         this.cacheStrategy = 'cold';
     }
-    
+
     next();
 });
 

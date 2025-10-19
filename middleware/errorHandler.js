@@ -139,19 +139,19 @@ const validationErrorHandler = (errors) => {
  */
 const databaseErrorHandler = (err) => {
   console.error('❌ Database Error:', err);
-  
+
   if (err.name === 'MongoError') {
     if (err.code === 11000) {
       return createError('Duplicate entry found', 409, 'DUPLICATE_ENTRY');
     }
     return createError('Database operation failed', 500, 'DATABASE_ERROR');
   }
-  
+
   if (err.name === 'ValidationError') {
     const errors = Object.values(err.errors).map(e => e.message);
     return validationErrorHandler(errors);
   }
-  
+
   return createError('Database error', 500, 'DATABASE_ERROR');
 };
 
@@ -168,15 +168,15 @@ const redisErrorHandler = (err) => {
  */
 const oauthErrorHandler = (err, provider) => {
   console.error(`❌ ${provider} OAuth Error:`, err);
-  
+
   if (err.message.includes('No email found')) {
     return createError(`No email found in ${provider} profile`, 400, 'OAUTH_NO_EMAIL');
   }
-  
+
   if (err.message.includes('access_denied')) {
     return createError('OAuth access denied', 403, 'OAUTH_ACCESS_DENIED');
   }
-  
+
   return createError(`${provider} OAuth authentication failed`, 500, 'OAUTH_ERROR');
 };
 
@@ -193,15 +193,15 @@ const rateLimitErrorHandler = (err) => {
  */
 const securityErrorHandler = (err) => {
   console.error('❌ Security Error:', err);
-  
+
   if (err.message.includes('CSRF')) {
     return createError('CSRF token validation failed', 403, 'CSRF_VIOLATION');
   }
-  
+
   if (err.message.includes('XSS')) {
     return createError('Potential XSS attack detected', 400, 'XSS_ATTEMPT');
   }
-  
+
   return createError('Security violation detected', 403, 'SECURITY_VIOLATION');
 };
 

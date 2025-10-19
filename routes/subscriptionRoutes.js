@@ -45,7 +45,7 @@ async function enqueuePush({ subscriptionDoc, payload, opts = {} }) {
       { removeOnComplete: true, removeOnFail: true, ...opts }
     );
   }
-  
+
   // Fallback: Send notification directly if no queue is available
   console.warn('[subscriptionRoutes] No notification queue available, sending directly');
   return sendToSubscription(subscriptionDoc, payload);
@@ -224,15 +224,15 @@ router.post('/subscribe', verifyCsrf, validate(subscribeSchema), async (req, res
     return res.status(201).json({ success: true, message: 'Subscription saved.' });
   } catch (e) {
     console.error('Failed to save subscription:', e);
-    
+
     // Handle specific MongoDB errors
     if (e.code === 11000) {
-      return res.status(409).json({ 
-        success: false, 
-        message: 'Subscription already exists. Please try refreshing the page.' 
+      return res.status(409).json({
+        success: false,
+        message: 'Subscription already exists. Please try refreshing the page.'
       });
     }
-    
+
     return res.status(500).json({ success: false, message: 'Failed to save subscription.' });
   }
 });

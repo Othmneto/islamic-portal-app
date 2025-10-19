@@ -32,7 +32,7 @@ class AdvancedDataViewer {
             refreshInterval: 10000,
             itemsPerPage: 25
         };
-        
+
         console.log('🔧 [AdvancedDataViewer] Initializing...');
         this.init();
     }
@@ -41,26 +41,26 @@ class AdvancedDataViewer {
         try {
             console.log('🎯 [AdvancedDataViewer] Setting up UI elements...');
             this.setupElements();
-            
+
             console.log('👂 [AdvancedDataViewer] Setting up event listeners...');
             this.setupEventListeners();
-            
+
             console.log('⚙️ [AdvancedDataViewer] Loading settings...');
             this.loadSettings();
-            
+
             console.log('📊 [AdvancedDataViewer] Loading initial data...');
             await this.loadOverviewData();
             await this.loadTerms();
             await this.loadAnalytics();
             await this.loadHistory();
             await this.loadStatistics();
-            
+
             console.log('🎨 [AdvancedDataViewer] Initializing charts...');
             this.initializeCharts();
-            
+
             console.log('🔄 [AdvancedDataViewer] Starting real-time updates...');
             this.startRealTimeUpdates();
-            
+
             console.log('✅ [AdvancedDataViewer] Initialized successfully');
             this.showNotification('Data viewer initialized successfully', 'success');
         } catch (error) {
@@ -75,7 +75,7 @@ class AdvancedDataViewer {
             // Header elements
             refreshAll: document.getElementById('refresh-all'),
             exportAll: document.getElementById('export-all'),
-            
+
             // Overview elements
             totalSites: document.getElementById('total-sites'),
             successfulScrapes: document.getElementById('successful-scrapes'),
@@ -83,22 +83,22 @@ class AdvancedDataViewer {
             supportedLanguages: document.getElementById('supported-languages'),
             successRate: document.getElementById('success-rate'),
             lastScrape: document.getElementById('last-scrape'),
-            
+
             // View controls
             viewToggles: document.querySelectorAll('.view-toggle'),
             cardsView: document.getElementById('cards-view'),
             chartsView: document.getElementById('charts-view'),
-            
+
             // Tab elements
             tabBtns: document.querySelectorAll('.tab-btn'),
             tabContents: document.querySelectorAll('.tab-content'),
-            
+
             // Global search and filters
             globalSearch: document.getElementById('global-search'),
             clearSearch: document.getElementById('clear-search'),
             dateFilter: document.getElementById('date-filter'),
             categoryFilter: document.getElementById('category-filter'),
-            
+
             // Terms tab elements
             termSearch: document.getElementById('term-search'),
             languageFilter: document.getElementById('language-filter'),
@@ -106,25 +106,25 @@ class AdvancedDataViewer {
             termsList: document.getElementById('terms-list'),
             termsTotal: document.getElementById('terms-total'),
             termsPagination: document.getElementById('terms-pagination'),
-            
+
             // Analytics tab elements
             analyticsTimeframe: document.getElementById('analytics-timeframe'),
             refreshAnalytics: document.getElementById('refresh-analytics'),
-            
+
             // History tab elements
             historyFilter: document.getElementById('history-filter'),
             refreshHistory: document.getElementById('refresh-history'),
             historyList: document.getElementById('history-list'),
-            
+
             // Statistics tab elements
             refreshStats: document.getElementById('refresh-stats'),
             statsContent: document.getElementById('stats-content'),
-            
+
             // Export tab elements
             exportJson: document.getElementById('export-json'),
             exportCsv: document.getElementById('export-csv'),
             exportStatus: document.getElementById('export-status'),
-            
+
             // Status bar elements
             lastUpdated: document.getElementById('last-updated'),
             scrapingStatus: document.getElementById('scraping-status'),
@@ -133,17 +133,17 @@ class AdvancedDataViewer {
             autoRefresh: document.getElementById('auto-refresh'),
             notificationsToggle: document.getElementById('notifications-toggle'),
             settingsToggle: document.getElementById('settings-toggle'),
-            
+
             // Modal elements
             settingsModal: document.getElementById('settings-modal'),
             modalClose: document.querySelector('.modal-close'),
             saveSettings: document.getElementById('save-settings'),
             resetSettings: document.getElementById('reset-settings'),
-            
+
             // Notification container
             notificationContainer: document.getElementById('notification-container')
         };
-        
+
         console.log('🎯 [AdvancedDataViewer] UI elements found:', Object.keys(this.elements).length);
     }
 
@@ -152,7 +152,7 @@ class AdvancedDataViewer {
         this.elements.refreshAll?.addEventListener('click', () => {
             this.refreshAllData();
         });
-        
+
         this.elements.exportAll?.addEventListener('click', () => {
             this.exportAllData();
         });
@@ -178,16 +178,16 @@ class AdvancedDataViewer {
             this.searchQuery = e.target.value;
             this.performGlobalSearch();
         });
-        
+
         this.elements.clearSearch?.addEventListener('click', () => {
             this.clearSearch();
         });
-        
+
         this.elements.dateFilter?.addEventListener('change', (e) => {
             this.filters.date = e.target.value;
             this.applyFilters();
         });
-        
+
         this.elements.categoryFilter?.addEventListener('change', (e) => {
             this.filters.category = e.target.value;
             this.applyFilters();
@@ -198,12 +198,12 @@ class AdvancedDataViewer {
             this.searchQuery = e.target.value;
             this.filterTerms();
         });
-        
+
         this.elements.languageFilter?.addEventListener('change', (e) => {
             this.filters.language = e.target.value;
             this.filterTerms();
         });
-        
+
         this.elements.sortFilter?.addEventListener('change', (e) => {
             this.filters.sort = e.target.value;
             this.sortTerms();
@@ -213,7 +213,7 @@ class AdvancedDataViewer {
         this.elements.analyticsTimeframe?.addEventListener('change', (e) => {
             this.loadAnalytics(e.target.value);
         });
-        
+
         this.elements.refreshAnalytics?.addEventListener('click', () => {
             this.loadAnalytics();
         });
@@ -221,11 +221,11 @@ class AdvancedDataViewer {
         // Research controls
         const researchCategory = document.getElementById('research-category');
         const refreshResearch = document.getElementById('refresh-research');
-        
+
         researchCategory?.addEventListener('change', (e) => {
             this.loadResearchData(e.target.value);
         });
-        
+
         refreshResearch?.addEventListener('click', () => {
             this.loadResearchData();
         });
@@ -233,11 +233,11 @@ class AdvancedDataViewer {
         // Knowledge graph controls
         const graphFilter = document.getElementById('graph-filter');
         const refreshGraph = document.getElementById('refresh-graph');
-        
+
         graphFilter?.addEventListener('change', (e) => {
             this.loadKnowledgeGraph(e.target.value);
         });
-        
+
         refreshGraph?.addEventListener('click', () => {
             this.loadKnowledgeGraph();
         });
@@ -245,11 +245,11 @@ class AdvancedDataViewer {
         // Cross-references controls
         const crossrefConfidence = document.getElementById('crossref-confidence');
         const refreshCrossref = document.getElementById('refresh-crossref');
-        
+
         crossrefConfidence?.addEventListener('change', (e) => {
             this.loadCrossReferences(e.target.value);
         });
-        
+
         refreshCrossref?.addEventListener('click', () => {
             this.loadCrossReferences();
         });
@@ -264,7 +264,7 @@ class AdvancedDataViewer {
         this.elements.refreshHistory?.addEventListener('click', () => {
             this.loadHistory();
         });
-        
+
         this.elements.historyFilter?.addEventListener('change', (e) => {
             this.filterHistory(e.target.value);
         });
@@ -278,7 +278,7 @@ class AdvancedDataViewer {
         this.elements.exportJson?.addEventListener('click', () => {
             this.exportData('json');
         });
-        
+
         this.elements.exportCsv?.addEventListener('click', () => {
             this.exportData('csv');
         });
@@ -287,11 +287,11 @@ class AdvancedDataViewer {
         this.elements.autoRefresh?.addEventListener('click', () => {
             this.toggleAutoRefresh();
         });
-        
+
         this.elements.notificationsToggle?.addEventListener('click', () => {
             this.toggleNotifications();
         });
-        
+
         this.elements.settingsToggle?.addEventListener('click', () => {
             this.openSettings();
         });
@@ -300,11 +300,11 @@ class AdvancedDataViewer {
         this.elements.modalClose?.addEventListener('click', () => {
             this.closeSettings();
         });
-        
+
         this.elements.saveSettings?.addEventListener('click', () => {
             this.saveSettings();
         });
-        
+
         this.elements.resetSettings?.addEventListener('click', () => {
             this.resetSettings();
         });
@@ -321,7 +321,7 @@ class AdvancedDataViewer {
 
     switchTab(tabName) {
         console.log('🔄 [AdvancedDataViewer] Switching to tab:', tabName);
-        
+
         // Update tab buttons
         this.elements.tabBtns.forEach(btn => {
             btn.classList.remove('active');
@@ -339,7 +339,7 @@ class AdvancedDataViewer {
         });
 
         this.currentTab = tabName;
-        
+
         // Load data for the new tab if needed
         if (tabName === 'analytics' && !this.analytics.data) {
             this.loadAnalytics();
@@ -354,7 +354,7 @@ class AdvancedDataViewer {
 
     switchView(viewName) {
         console.log('🔄 [AdvancedDataViewer] Switching to view:', viewName);
-        
+
         // Update view toggles
         this.elements.viewToggles.forEach(toggle => {
             toggle.classList.remove('active');
@@ -420,14 +420,14 @@ class AdvancedDataViewer {
             <span>${message}</span>
             <button class="notification-close">&times;</button>
         `;
-        
+
         this.elements.notificationContainer?.appendChild(notification);
-        
+
         // Auto remove after 5 seconds
         setTimeout(() => {
             notification.remove();
         }, 5000);
-        
+
         // Close button
         notification.querySelector('.notification-close').addEventListener('click', () => {
             notification.remove();
@@ -447,7 +447,7 @@ class AdvancedDataViewer {
     refreshAllData() {
         console.log('🔄 [AdvancedDataViewer] Refreshing all data...');
         this.showNotification('Refreshing all data...', 'info');
-        
+
         Promise.all([
             this.loadOverviewData(),
             this.loadTerms(),
@@ -472,7 +472,7 @@ class AdvancedDataViewer {
     async loadAnalytics(timeframe = '24h') {
         try {
             console.log('📊 [AdvancedDataViewer] Loading analytics data...');
-            
+
             // Mock analytics data for now
             this.analytics = {
                 timeframe: timeframe,
@@ -487,7 +487,7 @@ class AdvancedDataViewer {
                     }
                 }
             };
-            
+
             this.renderAnalytics();
             console.log('✅ [AdvancedDataViewer] Analytics loaded');
         } catch (error) {
@@ -511,14 +511,14 @@ class AdvancedDataViewer {
 
     renderAnalytics() {
         if (!this.analytics.data) return;
-        
+
         const { efficiency } = this.analytics.data;
-        
+
         // Update efficiency metrics
         const efficiencySuccess = document.getElementById('efficiency-success');
         const efficiencyResponse = document.getElementById('efficiency-response');
         const efficiencyTerms = document.getElementById('efficiency-terms');
-        
+
         if (efficiencySuccess) efficiencySuccess.textContent = `${efficiency.successRate}%`;
         if (efficiencyResponse) efficiencyResponse.textContent = `${efficiency.avgResponseTime}ms`;
         if (efficiencyTerms) efficiencyTerms.textContent = efficiency.termsPerHour;
@@ -526,7 +526,7 @@ class AdvancedDataViewer {
 
     initializeCharts() {
         console.log('🎨 [AdvancedDataViewer] Initializing charts...');
-        
+
         // Initialize Chart.js charts
         this.initializeScrapingChart();
         this.initializeLanguageChart();
@@ -536,7 +536,7 @@ class AdvancedDataViewer {
     initializeScrapingChart() {
         const ctx = document.getElementById('scraping-chart');
         if (!ctx) return;
-        
+
         this.charts.scraping = new Chart(ctx, {
             type: 'line',
             data: this.generateMockChartData(),
@@ -555,7 +555,7 @@ class AdvancedDataViewer {
     initializeLanguageChart() {
         const ctx = document.getElementById('language-chart');
         if (!ctx) return;
-        
+
         this.charts.language = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -587,7 +587,7 @@ class AdvancedDataViewer {
     initializeTermsTimelineChart() {
         const ctx = document.getElementById('terms-timeline-chart');
         if (!ctx) return;
-        
+
         this.charts.termsTimeline = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -617,7 +617,7 @@ class AdvancedDataViewer {
 
     startRealTimeUpdates() {
         console.log('🔄 [AdvancedDataViewer] Starting real-time updates...');
-        
+
         // Start auto-refresh if enabled
         if (this.settings.autoRefresh !== false) {
             this.startAutoRefresh();
@@ -665,62 +665,62 @@ class AdvancedDataViewer {
     async loadOverviewData() {
         try {
             console.log('📊 [AdvancedDataViewer] Loading research overview data...');
-            
+
             const response = await fetch('/api/content-scraping/status');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('📊 [AdvancedDataViewer] Research overview data received:', data);
-            
+
             if (data.success && data.data) {
                 const { scraper, terminology, researchData } = data.data;
-                
+
                 // Update basic stats
                 if (this.elements.totalSites) this.elements.totalSites.textContent = scraper?.totalSites || 0;
                 if (this.elements.successfulScrapes) this.elements.successfulScrapes.textContent = scraper?.successfulScrapes || 0;
                 if (this.elements.newTerms) this.elements.newTerms.textContent = terminology?.totalTerms || 0;
                 if (this.elements.supportedLanguages) this.elements.supportedLanguages.textContent = terminology?.supportedLanguages?.length || 0;
-                
+
                 // Update research-grade stats
                 if (this.elements.totalSources) this.elements.totalSources.textContent = researchData?.totalSources || 0;
                 if (this.elements.totalTerms) this.elements.totalTerms.textContent = researchData?.totalTerms || 0;
                 if (this.elements.knowledgeNodes) this.elements.knowledgeNodes.textContent = researchData?.knowledgeNodes || 0;
                 if (this.elements.crossReferences) this.elements.crossReferences.textContent = researchData?.crossReferences || 0;
-                
+
                 // Update enhanced stats
                 if (this.elements.successRate) {
                     const successRate = scraper?.totalSites ? Math.round((scraper.successfulScrapes / (scraper.successfulScrapes + scraper.failedScrapes)) * 100) : 0;
                     this.elements.successRate.textContent = `${successRate}%`;
                 }
-                
+
                 if (this.elements.lastScrape) {
                     const lastScrape = scraper?.lastScrape ? new Date(scraper.lastScrape).toLocaleString() : 'Never';
                     this.elements.lastScrape.textContent = lastScrape;
                 }
-                
+
                 // Update data points
                 if (this.elements.dataPoints) {
                     const dataPoints = (scraper?.successfulScrapes || 0) + (terminology?.totalTerms || 0);
                     this.elements.dataPoints.textContent = dataPoints.toLocaleString();
                 }
-                
+
                 // Update scraping status
                 const status = scraper?.isScraping ? 'running' : 'idle';
                 if (this.elements.scrapingStatus) {
                     this.elements.scrapingStatus.textContent = status;
                     this.elements.scrapingStatus.className = `status-badge ${status}`;
                 }
-                
+
                 // Update last updated time
                 if (this.elements.lastUpdated) {
                     this.elements.lastUpdated.textContent = new Date().toLocaleTimeString();
                 }
-                
+
                 // Update tab badges
                 this.updateTabBadges(scraper, terminology, researchData);
-                
+
                 console.log('✅ [AdvancedDataViewer] Research overview data updated');
             } else {
                 throw new Error(data.error || 'Failed to load research overview data');
@@ -738,31 +738,31 @@ class AdvancedDataViewer {
         if (termsCount) {
             termsCount.textContent = terminology?.totalTerms || 0;
         }
-        
+
         // Update research count badge
         const researchCount = document.getElementById('research-count');
         if (researchCount) {
             researchCount.textContent = researchData?.totalSources || 0;
         }
-        
+
         // Update knowledge graph count badge
         const graphCount = document.getElementById('graph-count');
         if (graphCount) {
             graphCount.textContent = researchData?.knowledgeNodes || 0;
         }
-        
+
         // Update cross-references count badge
         const crossrefCount = document.getElementById('crossref-count');
         if (crossrefCount) {
             crossrefCount.textContent = researchData?.crossReferences || 0;
         }
-        
+
         // Update analytics count badge
         const analyticsCount = document.getElementById('analytics-count');
         if (analyticsCount) {
             analyticsCount.textContent = scraper?.successfulScrapes || 0;
         }
-        
+
         // Update history count badge
         const historyCount = document.getElementById('history-count');
         if (historyCount) {
@@ -774,15 +774,15 @@ class AdvancedDataViewer {
     async loadResearchData(category = '') {
         try {
             console.log('🔬 [AdvancedDataViewer] Loading research data...');
-            
+
             const response = await fetch(`/api/content-scraping/research-data?category=${category}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('🔬 [AdvancedDataViewer] Research data received:', data);
-            
+
             if (data.success && data.data) {
                 this.renderResearchData(data.data);
                 console.log('✅ [AdvancedDataViewer] Research data loaded');
@@ -884,15 +884,15 @@ class AdvancedDataViewer {
     async loadKnowledgeGraph(filter = '') {
         try {
             console.log('🧠 [AdvancedDataViewer] Loading knowledge graph...');
-            
+
             const response = await fetch(`/api/content-scraping/knowledge-graph?filter=${filter}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('🧠 [AdvancedDataViewer] Knowledge graph data received:', data);
-            
+
             if (data.success && data.data) {
                 this.renderKnowledgeGraph(data.data);
                 console.log('✅ [AdvancedDataViewer] Knowledge graph loaded');
@@ -910,11 +910,11 @@ class AdvancedDataViewer {
         const graphNodes = document.getElementById('graph-nodes');
         const graphEdges = document.getElementById('graph-edges');
         const graphClusters = document.getElementById('graph-clusters');
-        
+
         if (graphNodes) graphNodes.textContent = data.nodes || 0;
         if (graphEdges) graphEdges.textContent = data.edges || 0;
         if (graphClusters) graphClusters.textContent = data.clusters || 0;
-        
+
         // Update graph visualization placeholder
         const graphViz = document.getElementById('knowledge-graph-viz');
         if (graphViz) {
@@ -945,15 +945,15 @@ class AdvancedDataViewer {
     async loadCrossReferences(confidence = '') {
         try {
             console.log('🔗 [AdvancedDataViewer] Loading cross-references...');
-            
+
             const response = await fetch(`/api/content-scraping/cross-references?confidence=${confidence}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('🔗 [AdvancedDataViewer] Cross-references data received:', data);
-            
+
             if (data.success && data.data) {
                 this.renderCrossReferences(data.data);
                 console.log('✅ [AdvancedDataViewer] Cross-references loaded');
@@ -969,12 +969,12 @@ class AdvancedDataViewer {
     renderCrossReferences(data) {
         const crossrefList = document.getElementById('crossref-list');
         if (!crossrefList) return;
-        
+
         if (data.length === 0) {
             crossrefList.innerHTML = '<div class="loading">No cross-references found</div>';
             return;
         }
-        
+
         crossrefList.innerHTML = data.map(item => `
             <div class="crossref-item">
                 <div class="crossref-header">
@@ -994,21 +994,21 @@ class AdvancedDataViewer {
         try {
             console.log('🚀 [AdvancedDataViewer] Starting research...');
             this.showNotification('Starting research-grade scraping...', 'info');
-            
+
             const response = await fetch('/api/content-scraping/start', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 }
             });
-            
+
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('🚀 [AdvancedDataViewer] Research started:', data);
-            
+
             if (data.success) {
                 this.showNotification('Research started successfully!', 'success');
                 // Refresh overview data to show updated status
@@ -1025,15 +1025,15 @@ class AdvancedDataViewer {
     async loadTerms() {
         try {
             console.log('📚 [DataViewer] Loading Islamic terms...');
-            
+
             const response = await fetch('/api/data-viewer/terms');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('📚 [DataViewer] Terms data received:', data);
-            
+
             if (data.success && data.data) {
                 this.terms = data.data.terms || [];
                 this.renderTerms();
@@ -1049,7 +1049,7 @@ class AdvancedDataViewer {
 
     renderTerms() {
         console.log('🎨 [AdvancedDataViewer] Rendering terms...');
-        
+
         if (this.terms.length === 0) {
             this.elements.termsList.innerHTML = '<div class="loading"><div class="loading-spinner"></div><span>No terms found</span></div>';
             return;
@@ -1058,21 +1058,21 @@ class AdvancedDataViewer {
         const searchTerm = this.searchQuery.toLowerCase();
         const languageFilter = this.filters.language;
         const categoryFilter = this.filters.category;
-        
+
         let filteredTerms = this.terms.filter(term => {
-            const matchesSearch = !searchTerm || 
+            const matchesSearch = !searchTerm ||
                 term.arabic.toLowerCase().includes(searchTerm) ||
-                Object.values(term.translations).some(translation => 
+                Object.values(term.translations).some(translation =>
                     translation.toLowerCase().includes(searchTerm)
                 ) ||
                 term.category.toLowerCase().includes(searchTerm);
-            
-            const matchesLanguage = !languageFilter || 
+
+            const matchesLanguage = !languageFilter ||
                 term.translations[languageFilter];
-            
-            const matchesCategory = !categoryFilter || 
+
+            const matchesCategory = !categoryFilter ||
                 term.category.toLowerCase() === categoryFilter.toLowerCase();
-            
+
             return matchesSearch && matchesLanguage && matchesCategory;
         });
 
@@ -1128,7 +1128,7 @@ class AdvancedDataViewer {
 
         // Render pagination
         this.renderPagination();
-        
+
         console.log('✅ [AdvancedDataViewer] Terms rendered:', paginatedTerms.length);
     }
 
@@ -1148,14 +1148,14 @@ class AdvancedDataViewer {
 
     renderPagination() {
         if (!this.elements.termsPagination) return;
-        
+
         if (this.totalPages <= 1) {
             this.elements.termsPagination.innerHTML = '';
             return;
         }
 
         let paginationHTML = '<div class="pagination">';
-        
+
         // Previous button
         paginationHTML += `
             <button class="pagination-btn ${this.currentPage === 1 ? 'disabled' : ''}" 
@@ -1164,7 +1164,7 @@ class AdvancedDataViewer {
                 <i class="fas fa-chevron-left"></i>
             </button>
         `;
-        
+
         // Page numbers
         for (let i = 1; i <= this.totalPages; i++) {
             if (i === 1 || i === this.totalPages || (i >= this.currentPage - 2 && i <= this.currentPage + 2)) {
@@ -1178,7 +1178,7 @@ class AdvancedDataViewer {
                 paginationHTML += '<span class="pagination-ellipsis">...</span>';
             }
         }
-        
+
         // Next button
         paginationHTML += `
             <button class="pagination-btn ${this.currentPage === this.totalPages ? 'disabled' : ''}" 
@@ -1187,7 +1187,7 @@ class AdvancedDataViewer {
                 <i class="fas fa-chevron-right"></i>
             </button>
         `;
-        
+
         paginationHTML += '</div>';
         this.elements.termsPagination.innerHTML = paginationHTML;
     }
@@ -1222,15 +1222,15 @@ class AdvancedDataViewer {
     async loadHistory() {
         try {
             console.log('📈 [DataViewer] Loading scraping history...');
-            
+
             const response = await fetch('/api/data-viewer/history');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('📈 [DataViewer] History data received:', data);
-            
+
             if (data.success && data.data) {
                 this.history = data.data.recentActivity || [];
                 this.renderHistory();
@@ -1246,7 +1246,7 @@ class AdvancedDataViewer {
 
     renderHistory() {
         console.log('🎨 [DataViewer] Rendering history...');
-        
+
         if (this.history.length === 0) {
             this.elements.historyList.innerHTML = '<div class="loading">No history found</div>';
             return;
@@ -1265,22 +1265,22 @@ class AdvancedDataViewer {
                 </div>
             </div>
         `).join('');
-        
+
         console.log('✅ [DataViewer] History rendered:', this.history.length);
     }
 
     async loadStatistics() {
         try {
             console.log('📊 [DataViewer] Loading detailed statistics...');
-            
+
             const response = await fetch('/api/data-viewer/statistics');
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const data = await response.json();
             console.log('📊 [DataViewer] Statistics data received:', data);
-            
+
             if (data.success && data.data) {
                 this.statistics = data.data;
                 this.renderStatistics();
@@ -1296,9 +1296,9 @@ class AdvancedDataViewer {
 
     renderStatistics() {
         console.log('🎨 [DataViewer] Rendering statistics...');
-        
+
         const { terminology, scraping, performance } = this.statistics;
-        
+
         this.elements.statsContent.innerHTML = `
             <div class="stats-grid">
                 <div class="stats-card">
@@ -1370,21 +1370,21 @@ class AdvancedDataViewer {
                 </div>
             </div>
         `;
-        
+
         console.log('✅ [DataViewer] Statistics rendered');
     }
 
     async exportData(format) {
         try {
             console.log(`📤 [DataViewer] Exporting data as ${format.toUpperCase()}...`);
-            
+
             this.elements.exportStatus.innerHTML = '<div class="loading">Preparing export...</div>';
-            
+
             const response = await fetch(`/api/data-viewer/export?format=${format}`);
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-            
+
             const blob = await response.blob();
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -1394,13 +1394,13 @@ class AdvancedDataViewer {
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-            
+
             this.elements.exportStatus.innerHTML = `
                 <div class="export-status success">
                     ✅ Export completed successfully! File downloaded.
                 </div>
             `;
-            
+
             console.log('✅ [DataViewer] Export completed');
         } catch (error) {
             console.error('❌ [DataViewer] Export failed:', error);
@@ -1425,7 +1425,7 @@ class AdvancedDataViewer {
         this.isAutoRefresh = true;
         this.elements.autoRefresh.innerHTML = '<i class="fas fa-stop"></i> Stop Auto Refresh';
         this.elements.autoRefresh.classList.add('btn-danger');
-        
+
         this.autoRefreshInterval = setInterval(async () => {
             try {
                 await this.loadOverviewData();
@@ -1433,14 +1433,14 @@ class AdvancedDataViewer {
                 if (this.currentTab === 'analytics') await this.loadAnalytics();
                 if (this.currentTab === 'history') await this.loadHistory();
                 if (this.currentTab === 'statistics') await this.loadStatistics();
-                
+
                 // Update recent activity
                 this.updateRecentActivity();
             } catch (error) {
                 console.error('❌ [AdvancedDataViewer] Auto refresh error:', error);
             }
         }, this.refreshInterval);
-        
+
         console.log('✅ [AdvancedDataViewer] Auto refresh started');
         this.showNotification('Auto refresh started', 'success');
     }
@@ -1450,12 +1450,12 @@ class AdvancedDataViewer {
         this.isAutoRefresh = false;
         this.elements.autoRefresh.innerHTML = '<i class="fas fa-sync-alt"></i> Auto Refresh';
         this.elements.autoRefresh.classList.remove('btn-danger');
-        
+
         if (this.autoRefreshInterval) {
             clearInterval(this.autoRefreshInterval);
             this.autoRefreshInterval = null;
         }
-        
+
         console.log('✅ [AdvancedDataViewer] Auto refresh stopped');
         this.showNotification('Auto refresh stopped', 'info');
     }
@@ -1468,7 +1468,7 @@ class AdvancedDataViewer {
             'Analytics data refreshed',
             'Database statistics updated'
         ];
-        
+
         const randomActivity = activities[Math.floor(Math.random() * activities.length)];
         if (this.elements.recentActivity) {
             this.elements.recentActivity.textContent = randomActivity;

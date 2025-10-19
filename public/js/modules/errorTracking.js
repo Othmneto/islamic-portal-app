@@ -8,13 +8,13 @@ class ErrorTracking {
             criticalErrors: 3, // 3 critical errors
             timeWindow: 300000 // 5 minutes
         };
-        
+
         this.alertChannels = {
             console: true,
             notification: true,
             server: true
         };
-        
+
         this.errorCategories = {
             JAVASCRIPT: 'javascript',
             NETWORK: 'network',
@@ -23,7 +23,7 @@ class ErrorTracking {
             CUSTOM: 'custom',
             CRITICAL: 'critical'
         };
-        
+
         this.initializeErrorTracking();
     }
 
@@ -34,7 +34,7 @@ class ErrorTracking {
         this.setupResourceErrorHandlers();
         this.setupCustomErrorHandlers();
         this.startErrorAnalysis();
-        
+
         console.log('Error tracking initialized');
     }
 
@@ -126,28 +126,28 @@ class ErrorTracking {
     recordError(error) {
         // Add to errors array
         this.errors.push(error);
-        
+
         // Update error patterns
         this.updateErrorPatterns(error);
-        
+
         // Check for alerts
         this.checkAlerts(error);
-        
+
         // Send to server if enabled
         if (this.alertChannels.server) {
             this.sendErrorToServer(error);
         }
-        
+
         // Log to console if enabled
         if (this.alertChannels.console) {
             this.logErrorToConsole(error);
         }
-        
+
         // Show notification if enabled
         if (this.alertChannels.notification && error.severity === 'critical') {
             this.showErrorNotification(error);
         }
-        
+
         // Keep only last 1000 errors
         if (this.errors.length > 1000) {
             this.errors = this.errors.slice(-1000);
@@ -157,7 +157,7 @@ class ErrorTracking {
     // Update error patterns for analysis
     updateErrorPatterns(error) {
         const patternKey = this.getErrorPatternKey(error);
-        
+
         if (!this.errorPatterns.has(patternKey)) {
             this.errorPatterns.set(patternKey, {
                 count: 0,
@@ -167,11 +167,11 @@ class ErrorTracking {
                 examples: []
             });
         }
-        
+
         const pattern = this.errorPatterns.get(patternKey);
         pattern.count++;
         pattern.lastSeen = error.timestamp;
-        
+
         if (pattern.examples.length < 5) {
             pattern.examples.push({
                 message: error.message,
@@ -190,12 +190,12 @@ class ErrorTracking {
     checkAlerts(error) {
         const now = Date.now();
         const timeWindow = this.alertThresholds.timeWindow;
-        
+
         // Check error rate
         const recentErrors = this.errors.filter(e => now - e.timestamp < timeWindow);
         const totalInteractions = this.getTotalInteractions();
         const errorRate = totalInteractions > 0 ? recentErrors.length / totalInteractions : 0;
-        
+
         if (errorRate > this.alertThresholds.errorRate) {
             this.triggerAlert('high_error_rate', {
                 errorRate,
@@ -203,7 +203,7 @@ class ErrorTracking {
                 recentErrors: recentErrors.length
             });
         }
-        
+
         // Check critical errors
         const criticalErrors = recentErrors.filter(e => e.severity === 'critical');
         if (criticalErrors.length >= this.alertThresholds.criticalErrors) {
@@ -212,7 +212,7 @@ class ErrorTracking {
                 threshold: this.alertThresholds.criticalErrors
             });
         }
-        
+
         // Check error patterns
         const pattern = this.errorPatterns.get(this.getErrorPatternKey(error));
         if (pattern && pattern.count >= 10) {
@@ -231,12 +231,12 @@ class ErrorTracking {
             timestamp: Date.now(),
             id: this.generateErrorId()
         };
-        
+
         console.warn(`Error Alert: ${type}`, data);
-        
+
         // Send alert to server
         this.sendAlertToServer(alert);
-        
+
         // Show notification
         this.showAlertNotification(alert);
     }
@@ -244,31 +244,31 @@ class ErrorTracking {
     // Determine error severity
     determineSeverity(error) {
         if (!error) return 'low';
-        
+
         const message = error.message || String(error);
         const stack = error.stack || '';
-        
+
         // Critical errors
-        if (message.includes('Critical') || 
+        if (message.includes('Critical') ||
             message.includes('Fatal') ||
             stack.includes('Critical')) {
             return 'critical';
         }
-        
+
         // High severity errors
         if (message.includes('TypeError') ||
             message.includes('ReferenceError') ||
             message.includes('SyntaxError')) {
             return 'high';
         }
-        
+
         // Medium severity errors
         if (message.includes('Network') ||
             message.includes('Timeout') ||
             message.includes('Failed to fetch')) {
             return 'medium';
         }
-        
+
         return 'low';
     }
 
@@ -362,7 +362,7 @@ class ErrorTracking {
                 <button onclick="this.parentElement.parentElement.remove()">Dismiss</button>
             </div>
         `;
-        
+
         notification.style.cssText = `
             position: fixed;
             top: 20px;
@@ -375,9 +375,9 @@ class ErrorTracking {
             max-width: 400px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         `;
-        
+
         document.body.appendChild(notification);
-        
+
         // Auto-remove after 10 seconds
         setTimeout(() => {
             if (notification.parentNode) {
@@ -398,7 +398,7 @@ class ErrorTracking {
     analyzeErrorPatterns() {
         const now = Date.now();
         const oneHour = 60 * 60 * 1000;
-        
+
         for (const [patternKey, pattern] of this.errorPatterns) {
             if (now - pattern.lastSeen > oneHour) {
                 // Pattern hasn't been seen in an hour, remove it
@@ -419,9 +419,9 @@ class ErrorTracking {
             examples: pattern.examples,
             recommendation: this.getRecommendation(pattern)
         };
-        
+
         console.log('Recurring error pattern detected:', analysis);
-        
+
         // Send analysis to server
         this.sendAnalysisToServer(analysis);
     }
@@ -458,7 +458,7 @@ class ErrorTracking {
     cleanupOldErrors() {
         const now = Date.now();
         const oneDay = 24 * 60 * 60 * 1000;
-        
+
         this.errors = this.errors.filter(error => now - error.timestamp < oneDay);
     }
 
@@ -472,21 +472,21 @@ class ErrorTracking {
         const now = Date.now();
         const oneHour = 60 * 60 * 1000;
         const oneDay = 24 * 60 * 60 * 1000;
-        
+
         const recentErrors = this.errors.filter(e => now - e.timestamp < oneHour);
         const dailyErrors = this.errors.filter(e => now - e.timestamp < oneDay);
-        
+
         const severityCounts = {
             critical: 0,
             high: 0,
             medium: 0,
             low: 0
         };
-        
+
         recentErrors.forEach(error => {
             severityCounts[error.severity]++;
         });
-        
+
         return {
             total: this.errors.length,
             recent: recentErrors.length,
@@ -515,7 +515,7 @@ class ErrorTracking {
     // Convert to CSV
     convertToCSV(errors) {
         const headers = ['id', 'type', 'message', 'severity', 'timestamp', 'url'];
-        const rows = errors.map(error => 
+        const rows = errors.map(error =>
             headers.map(header => `"${error[header] || ''}"`).join(',')
         );
         return [headers.join(','), ...rows].join('\n');

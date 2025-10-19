@@ -665,64 +665,29 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background: var(--primary-bg);
     color: var(--text-primary);
-    display: flex;
-    flex-direction: column; /* Stacks header, main content, and footer vertically */
-    align-items: center; /* Centers the entire content block (header, main, footer) horizontally on the page */
-    min-height: 100vh; /* Ensures the body takes at least the full viewport height */
     margin: 0; /* Remove default body margin */
     padding: 0; /* Remove default body padding; individual sections will handle their own padding */
     overflow-x: hidden; /* Prevents horizontal scrollbar, which can appear with layout issues */
     transition: background-color 0.3s, color 0.3s; /* Smooth transition for theme changes */
+    min-height: 100vh; /* Ensures the body takes at least the full viewport height */
 }
 
-/* --- Navbar (Top Navigation Bar) Styles --- */
+/* --- Legacy Navbar Styles (Deprecated - Use Global Navbar) --- */
+/* These styles are kept for backward compatibility but should not be used */
 .navbar {
-    width: 100%; /* Ensures the navbar spans the full width of the screen */
-    background-color: var(--secondary-bg);
-    padding: 1rem 2rem; /* Padding inside the navbar */
-    display: flex; /* Enables flexbox for horizontal alignment of its children */
-    justify-content: space-between; /* Distributes space: logo on left, nav links/toggle on right */
-    align-items: center; /* Vertically centers items within the navbar */
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3); /* Subtle shadow for depth */
-    position: sticky; /* Makes the navbar stick to the top when scrolling */
-    top: 0;
-    z-index: 1000; /* Ensures navbar stays on top of other content */
-    transition: background-color 0.3s, box-shadow 0.3s;
+    display: none; /* Hide legacy navbar when global navbar is present */
 }
 
 .navbar .logo {
-    color: var(--accent-color);
-    font-size: 1.8rem;
-    font-weight: bold;
-    text-decoration: none;
-    flex-shrink: 0; /* Prevents the logo from shrinking on smaller screens */
+    display: none;
 }
 
 .nav-links {
-    list-style: none; /* Removes bullet points from list items */
-    margin: 0;
-    padding: 0;
-    display: flex; /* Enables flexbox for horizontal alignment of list items */
-    flex-direction: row; /* Explicitly ensures links are in a row */
-    gap: 1.5rem; /* Space between each navigation link */
-    flex-grow: 1; /* Allows the nav-links container to take up available space */
-    justify-content: flex-end; /* Pushes the navigation links to the right within their available space */
-    align-items: center; /* Vertically aligns individual links */
-    flex-wrap: nowrap; /* Prevents links from wrapping to the next line on larger screens */
-    margin-left: 20px; /* Adds a bit of space from the logo */
-    margin-right: 20px; /* Adds a bit of space from the theme toggle */
+    display: none;
 }
 
 .nav-links li a {
-    color: var(--text-primary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s ease;
-    white-space: nowrap; /* Prevents individual link text from wrapping */
-}
-
-.nav-links li a:hover {
-    color: var(--accent-color);
+    display: none;
 }
 
 /* Theme Toggle Styles */
@@ -765,11 +730,11 @@ body {
 
 /* --- Main Content Area --- */
 main {
-    flex-grow: 1; /* Allows the main content area to expand and fill available vertical space */
-    width: 100%; /* Takes full width within its parent (body, which is centered) */
+    width: 100%; /* Takes full width within its parent */
     max-width: 1200px; /* Sets a maximum width for the content for readability on large screens */
     padding: 2rem; /* Consistent padding around the main content */
     box-sizing: border-box; /* Ensures padding is included in the width */
+    margin: 0 auto; /* Center the main content */
 }
 
 .container {

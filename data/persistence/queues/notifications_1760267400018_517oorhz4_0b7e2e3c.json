@@ -1,0 +1,104 @@
+{
+  "value": {
+    "id": "notifications_1760267400018_517oorhz4",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "_id": "68eb50891a823d515c45a925",
+        "userId": "6888c9391815657294913e8d",
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/e4LCly5wiN8:APA91bHFNYeiXXdR51VO0wbsJaCmb9bLXBFFdf0YCYPAfdMBkPHfh-r9eT80o8HeBWK7U6ZmeqaTRYlrq_TbSkY70k4HK4h7j0XeH2Pnueq_P-IM2yrGyra77mn-2SnmrLMx8iZbdNp-",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BChs_qjkY1itjCSzdtljH_yTeKkuiLp-I0l0DuelIcXAxLASxbaNF4IDJbZpifXKViHxJVFaxfrDdoD_yihhduY",
+            "auth": "0aZroDfwci1mC6FKxlSP0g"
+          }
+        },
+        "tz": "Asia/Dubai",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "location": {
+          "lat": 25.0734,
+          "lon": 55.2979,
+          "city": "Dubai, United Arab Emirates"
+        },
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "createdAt": "2025-10-12T06:54:01.213Z",
+        "updatedAt": "2025-10-12T06:54:01.213Z",
+        "__v": 0
+      },
+      "payload": {
+        "title": "⏰ 15 min until 🌤️ Asr Prayer Time",
+        "body": "Prepare for Asr prayer\n📍 Your location\n🕐 3:25 PM",
+        "icon": "/images/prayers/asr-icon.svg",
+        "badge": "/images/prayers/asr-icon.svg",
+        "color": "#FF8C00",
+        "tag": "reminder-asr-15min",
+        "requireInteraction": false,
+        "data": {
+          "url": "/prayer-time.html",
+          "prayer": "asr",
+          "time": "3:25 PM",
+          "location": "Your location",
+          "category": "pre-prayer-reminders",
+          "isReminder": true,
+          "minutesBefore": 15,
+          "timestamp": "2025-10-12T10:33:21.151Z",
+          "audioFile": "/audio/adhan.mp3"
+        },
+        "actions": [
+          {
+            "action": "view_times",
+            "title": "🕐 View Prayer Times"
+          },
+          {
+            "action": "prepare",
+            "title": "🧘 Prepare for Prayer"
+          }
+        ],
+        "category": "pre-prayer-reminders",
+        "priority": "normal",
+        "audioFile": "/audio/adhan.mp3"
+      }
+    },
+    "options": {
+      "concurrency": 5,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 2000
+      },
+      "delay": 4000
+    },
+    "timestamp": 1760267400018,
+    "status": "failed",
+    "attempts": 4,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-12T11:10:00.018Z",
+    "processedAt": null,
+    "finishedAt": 1760267405305,
+    "failedReason": "Received unexpected response code"
+  },
+  "timestamp": 1760267405305,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760267400018_517oorhz4"
+}

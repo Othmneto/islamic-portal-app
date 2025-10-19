@@ -117,7 +117,7 @@ translationHistorySchema.virtual('durationAgo').get(function() {
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(minutes / 60);
   const days = Math.floor(hours / 24);
-  
+
   if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
   if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
   if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
@@ -128,7 +128,7 @@ translationHistorySchema.virtual('durationAgo').get(function() {
 translationHistorySchema.statics.getUserStats = async function(userId, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   const stats = await this.aggregate([
     {
       $match: {
@@ -151,7 +151,7 @@ translationHistorySchema.statics.getUserStats = async function(userId, days = 30
       }
     }
   ]);
-  
+
   return stats[0] || {
     totalTranslations: 0,
     successfulTranslations: 0,
@@ -190,7 +190,7 @@ translationHistorySchema.statics.getLanguagePairStats = async function(userId, l
 translationHistorySchema.statics.getDailyActivity = async function(userId, days = 30) {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - days);
-  
+
   return await this.aggregate([
     {
       $match: {
@@ -221,12 +221,12 @@ translationHistorySchema.pre('save', function(next) {
   if (this.original) this.original = this.original.trim();
   if (this.translated) this.translated = this.translated.trim();
   if (this.error) this.error = this.error.trim();
-  
+
   // Ensure translated text exists for successful translations
   if (!this.error && !this.translated) {
     this.error = 'Translation result missing';
   }
-  
+
   next();
 });
 

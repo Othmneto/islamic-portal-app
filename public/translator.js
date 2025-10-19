@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
           uploadForm = document.getElementById('upload-form'),
           audioFileInput = document.getElementById('audio-file-input'),
           textInput = document.getElementById('text-input'),
-          textTranslateBtn = document.getElementById('text-translate-btn'),        
+          textTranslateBtn = document.getElementById('text-translate-btn'),
           tabs = document.querySelectorAll('.tab-button'),
           latestTranslationContainer = document.getElementById('latest-translation-container'),
           historyList = document.getElementById("history-list"),
@@ -92,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         latestTranslationContainer.innerHTML = '';
         latestTranslationContainer.appendChild(historyItem);
-        
+
         // <<< FIX: Auto-play the audio for the newly generated translation >>>
         if (item.audioId) {
             console.log("Auto-playing new translation audio:", item.audioId);
@@ -139,12 +139,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         historyList.appendChild(fragment);
     }
-    
+
     // --- API Logic ---
     async function performTranslation(url, options, buttonToUpdate) {
         buttonToUpdate.disabled = true;
         buttonToUpdate.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Translating...';
-        
+
         try {
             const response = await fetch(url, options);
             if (!response.ok) {
@@ -252,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const historyItemElement = button.closest('.history-item');
         if (!historyItemElement) return;
         const itemId = historyItemElement.dataset.id;
-        
+
         if (button.classList.contains('replay-btn')) {
             const audioId = button.dataset.audioId;
             console.log("Replay button clicked for audioId:", audioId);
@@ -277,7 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showNotification('Copied!', 'success');
         } else if (button.classList.contains('favorite-btn')) {
             const isCurrentlyFavorite = button.classList.contains('favorited');
-            fetch(`/history/${itemId}/favorite`, { 
+            fetch(`/history/${itemId}/favorite`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ isFavorite: !isCurrentlyFavorite })
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (favoritesToggleBtn) { /* Unchanged */ }
     if (historySearch) { /* Unchanged */ }
     if(themeToggle) { /* Unchanged */ }
-    
+
     function initialize() {
         applyTheme(localStorage.getItem('theme') || 'dark');
         getOrCreateSessionId();
@@ -309,6 +309,6 @@ document.addEventListener('DOMContentLoaded', () => {
             transcript.textContent = 'Speech recognition is not supported in this browser.';
         }
     }
-    
+
     initialize();
 });

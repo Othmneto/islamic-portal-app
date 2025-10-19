@@ -11,7 +11,7 @@ class BruteForceProtection {
         this.lockoutDuration = 30 * 60 * 1000; // 30 minutes
         this.progressiveDelay = true; // Increase delay with each attempt
         this.maxDelay = 300000; // 5 minutes max delay
-        
+
         // IP-based protection
         this.ipMaxAttempts = 10;
         this.ipWindowMs = 60 * 60 * 1000; // 1 hour
@@ -110,7 +110,7 @@ class BruteForceProtection {
             });
 
             // Check if user should be locked out
-            const recentUserAttempts = userAttempts.filter(attempt => 
+            const recentUserAttempts = userAttempts.filter(attempt =>
                 now - attempt.timestamp <= this.windowMs
             );
 
@@ -119,7 +119,7 @@ class BruteForceProtection {
             }
 
             // Check if IP should be locked out
-            const recentIPAttempts = ipAttempts.filter(attempt => 
+            const recentIPAttempts = ipAttempts.filter(attempt =>
                 now - attempt.timestamp <= this.ipWindowMs
             );
 
@@ -265,7 +265,7 @@ class BruteForceProtection {
 
             const attempts = JSON.parse(data);
             const now = Date.now();
-            
+
             // Filter out expired attempts
             return attempts.filter(attempt => now - attempt.timestamp <= windowMs);
         } catch (error) {

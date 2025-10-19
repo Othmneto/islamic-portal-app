@@ -12,14 +12,14 @@ const createProgressiveRateLimit = (baseConfig) => {
     },
     handler: (req, res) => {
       const ip = req.ip || req.connection.remoteAddress || 'unknown';
-      
+
       // Log rate limit violation
       console.warn(`🚫 Rate limit exceeded: ${ip}`, {
         path: req.path,
         userAgent: req.get('User-Agent'),
         timestamp: new Date().toISOString()
       });
-      
+
       res.status(429).json({
         error: 'Too many requests',
         retryAfter: Math.ceil(baseConfig.windowMs / 1000),
@@ -64,7 +64,7 @@ const apiLimiter = createProgressiveRateLimit({
   legacyHeaders: false,
   skip: (req) => {
     // Skip for static assets and health checks
-    return req.path.startsWith('/static/') || 
+    return req.path.startsWith('/static/') ||
            req.path === '/health' ||
            req.path.startsWith('/api/auth/login') ||
            req.path.startsWith('/api/auth/register');

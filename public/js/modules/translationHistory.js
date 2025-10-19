@@ -30,8 +30,8 @@ export class TranslationHistory {
         };
 
         // Check if this translation already exists (avoid duplicates)
-        const exists = this.history.some(item => 
-            item.original === historyItem.original && 
+        const exists = this.history.some(item =>
+            item.original === historyItem.original &&
             item.translated === historyItem.translated
         );
 
@@ -48,7 +48,7 @@ export class TranslationHistory {
             return;
         }
 
-        return this.history.filter(item => 
+        return this.history.filter(item =>
             item.original.toLowerCase().includes(query.toLowerCase()) ||
             item.translated.toLowerCase().includes(query.toLowerCase())
         );
@@ -77,7 +77,7 @@ export class TranslationHistory {
     updateDisplay() {
         const historyList = document.getElementById('history-list');
         if (!historyList) return;
-        
+
         if (this.history.length === 0) {
             historyList.innerHTML = `
                 <div class="empty-state">

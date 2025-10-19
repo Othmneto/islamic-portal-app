@@ -17,7 +17,7 @@ class WebScraperService {
         console.log('🔧 [WebScraperService] Initializing constructor...');
         this.baseDir = path.join(__dirname, '../data/scraped');
         console.log('📁 [WebScraperService] Base directory set to:', this.baseDir);
-        
+
         try {
             const IslamicTerminologyService = require('./islamicTerminologyService');
             console.log('📚 [WebScraperService] IslamicTerminologyService loaded successfully');
@@ -28,7 +28,7 @@ class WebScraperService {
             console.error('❌ [WebScraperService] Error initializing IslamicTerminologyService:', error);
             this.terminologyService = null;
         }
-        
+
         // Initialize scraping stats first
         this.scrapingStats = {
             totalSites: 0,
@@ -38,11 +38,11 @@ class WebScraperService {
             updatedTerms: 0,
             lastScrape: null
         };
-        
+
         this.scrapedContent = new Map();
         this.isScraping = false;
         this.scrapingInterval = null;
-        
+
         // AI-Powered Learning System
         this.aiLearning = {
             openai: null,
@@ -53,7 +53,7 @@ class WebScraperService {
             translationContexts: new Map(),
             confidenceScores: new Map()
         };
-        
+
         // Research-Grade Learning and Understanding System
         this.learningSystem = {
             patternRecognition: new Map(),
@@ -74,7 +74,7 @@ class WebScraperService {
             historicalContext: new Map(),
             manuscriptSources: new Map()
         };
-        
+
         // Advanced Content Analysis
         try {
             this.contentAnalysis = {
@@ -96,7 +96,7 @@ class WebScraperService {
                 wordNet: null
             };
         }
-        
+
         // Initialize AI components
         console.log('🔍 [WebScraperService] About to initialize AI, learningSystem exists:', !!this.learningSystem);
         this.initializeAI();
@@ -127,7 +127,7 @@ class WebScraperService {
         this.crossReferenceAnalyzer = new Map();
         this.temporalAnalyzer = new Map();
         this.geographicalAnalyzer = new Map();
-        
+
         console.log('✅ [WebScraperService] Constructor completed');
         console.log('🔍 [WebScraperService] Initial state:', {
             isScraping: this.isScraping,
@@ -136,7 +136,7 @@ class WebScraperService {
             aiEnabled: !!this.aiLearning.openai,
             learningSystem: Object.keys(this.learningSystem).length
         });
-        
+
         // Comprehensive Islamic Research Database - Black Hole Level
         this.islamicSites = {
             // Quran & Tafsir Sources
@@ -252,7 +252,7 @@ class WebScraperService {
                 'https://www.islamicobservatory.org', 'https://www.islamicobservatory.com'
             ]
         };
-        
+
         this.userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36';
         this.requestDelay = 2000; // 2 seconds between requests
         this.maxRetries = 3;
@@ -264,7 +264,7 @@ class WebScraperService {
     initializeAI() {
         try {
             console.log('🤖 [WebScraperService] Initializing AI learning system...');
-            
+
             // Initialize OpenAI if API key is available
             if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key') {
                 this.aiLearning.openai = new OpenAI({
@@ -274,10 +274,10 @@ class WebScraperService {
             } else {
                 console.log('⚠️ [WebScraperService] OpenAI API key not available, using local AI processing');
             }
-            
+
             // Initialize learning patterns
             this.initializeLearningPatterns();
-            
+
             console.log('✅ [WebScraperService] AI learning system initialized');
         } catch (error) {
             console.error('❌ [WebScraperService] Error initializing AI:', error);
@@ -291,52 +291,52 @@ class WebScraperService {
         console.log('🧠 [WebScraperService] Initializing learning patterns...');
         console.log('🔍 [WebScraperService] learningSystem exists:', !!this.learningSystem);
         console.log('🔍 [WebScraperService] learningSystem type:', typeof this.learningSystem);
-        
+
         // Ensure learningSystem is initialized
         if (!this.learningSystem) {
             console.error('❌ [WebScraperService] learningSystem not initialized');
             return;
         }
-        
+
         if (!this.learningSystem.patternRecognition) {
             console.error('❌ [WebScraperService] patternRecognition not initialized');
             console.log('🔍 [WebScraperService] learningSystem keys:', Object.keys(this.learningSystem));
             return;
         }
-        
+
         // Islamic terminology patterns
         this.learningSystem.patternRecognition.set('islamic_terms', {
             arabic: /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g,
             transliteration: /[a-zA-Z]+['\u2019]?[a-zA-Z]*/g,
             context: /(?:in|of|about|regarding|concerning)\s+[a-zA-Z\s]+/gi
         });
-        
+
         // Religious context patterns
         this.learningSystem.religiousContext.set('prayer_context', {
             keywords: ['صلاة', 'prayer', 'salah', 'namaz', 'dua', 'دعاء'],
             context: 'worship',
             importance: 'high'
         });
-        
+
         this.learningSystem.religiousContext.set('quran_context', {
             keywords: ['قرآن', 'quran', 'koran', 'ayat', 'آية', 'surah', 'سورة'],
             context: 'scripture',
             importance: 'high'
         });
-        
+
         this.learningSystem.religiousContext.set('hadith_context', {
             keywords: ['حديث', 'hadith', 'sunnah', 'سنة', 'narrated', 'روى'],
             context: 'tradition',
             importance: 'high'
         });
-        
+
         // Cultural context patterns
         this.learningSystem.culturalContext.set('arabic_culture', {
             regions: ['middle_east', 'north_africa', 'gulf'],
             languages: ['ar', 'ur', 'fa', 'tr'],
             traditions: ['islamic', 'arabic', 'persian', 'turkish']
         });
-        
+
         console.log('✅ [WebScraperService] Learning patterns initialized');
     }
 
@@ -353,7 +353,7 @@ class WebScraperService {
             await fs.mkdir(path.join(this.baseDir, 'articles'), { recursive: true });
             await fs.mkdir(path.join(this.baseDir, 'news'), { recursive: true });
             await fs.mkdir(path.join(this.baseDir, 'educational'), { recursive: true });
-            
+
             console.log('✅ [WebScraperService] Initialized successfully');
             return true;
         } catch (error) {
@@ -373,10 +373,10 @@ class WebScraperService {
 
         this.isScraping = true;
         this.scrapingStats.lastScrape = new Date();
-        
+
         console.log('🚀 [WebScraperService] Starting RESEARCH-GRADE Islamic content scraping...');
         console.log('📚 [WebScraperService] Black Hole Mode: Absorbing ALL Islamic knowledge...');
-        
+
         try {
             // Research-Grade Content Scraping - All Categories
             const scrapingTasks = [
@@ -403,39 +403,39 @@ class WebScraperService {
             for (let i = 0; i < scrapingTasks.length; i++) {
                 const task = scrapingTasks[i];
                 console.log(`📖 [WebScraperService] Scraping ${task.name} (${i + 1}/${scrapingTasks.length})...`);
-                
+
                 try {
                     await task.method();
                     console.log(`✅ [WebScraperService] ${task.name} completed`);
                 } catch (error) {
                     console.error(`❌ [WebScraperService] ${task.name} failed:`, error.message);
                 }
-                
+
                 // Adaptive delay based on server response
                 await this.delay(this.requestDelay);
             }
-            
+
             // Advanced Research Processing
             console.log('🔬 [WebScraperService] Processing research data...');
             await this.processResearchData();
-            
+
             // Build comprehensive knowledge graph
             console.log('🧠 [WebScraperService] Building knowledge graph...');
             await this.buildKnowledgeGraph();
-            
+
             // Cross-reference and validate data
             console.log('🔗 [WebScraperService] Cross-referencing data...');
             await this.crossReferenceData();
-            
+
             // Generate comprehensive research report
             console.log('📊 [WebScraperService] Generating research report...');
             await this.generateResearchReport();
-            
+
             console.log('✅ [WebScraperService] RESEARCH-GRADE scraping completed successfully');
             console.log(`📈 [WebScraperService] Total sources processed: ${this.researchData.totalSources}`);
             console.log(`🌍 [WebScraperService] Geographical coverage: ${this.researchData.geographicalCoverage.size} regions`);
             console.log(`🗣️ [WebScraperService] Language coverage: ${this.researchData.languageCoverage.size} languages`);
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Research scraping failed:', error);
         } finally {
@@ -448,7 +448,7 @@ class WebScraperService {
      */
     async scrapeQuranContent() {
         console.log('📖 [WebScraperService] Scraping Quran content...');
-        
+
         for (const site of this.islamicSites.quran) {
             try {
                 const content = await this.scrapeWebsite(site, 'quran');
@@ -469,7 +469,7 @@ class WebScraperService {
      */
     async scrapeHadithContent() {
         console.log('📚 [WebScraperService] Scraping Hadith content...');
-        
+
         for (const site of this.islamicSites.hadith) {
             try {
                 const content = await this.scrapeWebsite(site, 'hadith');
@@ -490,7 +490,7 @@ class WebScraperService {
      */
     async scrapeKhutbahContent() {
         console.log('🎤 [WebScraperService] Scraping Khutbah content...');
-        
+
         for (const site of this.islamicSites.khutbah) {
             try {
                 const content = await this.scrapeWebsite(site, 'khutbah');
@@ -511,7 +511,7 @@ class WebScraperService {
      */
     async scrapeGeneralIslamicContent() {
         console.log('🕌 [WebScraperService] Scraping general Islamic content...');
-        
+
         for (const site of this.islamicSites.general) {
             try {
                 const content = await this.scrapeWebsite(site, 'general');
@@ -532,7 +532,7 @@ class WebScraperService {
      */
     async scrapeIslamicNews() {
         console.log('📰 [WebScraperService] Scraping Islamic news...');
-        
+
         for (const site of this.islamicSites.news) {
             try {
                 const content = await this.scrapeWebsite(site, 'news');
@@ -553,7 +553,7 @@ class WebScraperService {
      */
     async scrapeEducationalContent() {
         console.log('🎓 [WebScraperService] Scraping educational content...');
-        
+
         for (const site of this.islamicSites.educational) {
             try {
                 const content = await this.scrapeWebsite(site, 'educational');
@@ -575,7 +575,7 @@ class WebScraperService {
      */
     async scrapeFiqhContent() {
         console.log('⚖️ [WebScraperService] Scraping Fiqh & Jurisprudence content...');
-        
+
         for (const site of this.islamicSites.fiqh) {
             try {
                 const content = await this.scrapeWebsite(site, 'fiqh');
@@ -597,7 +597,7 @@ class WebScraperService {
      */
     async scrapeTafsirContent() {
         console.log('📖 [WebScraperService] Scraping Tafsir & Commentary content...');
-        
+
         for (const site of this.islamicSites.tafsir) {
             try {
                 const content = await this.scrapeWebsite(site, 'tafsir');
@@ -619,7 +619,7 @@ class WebScraperService {
      */
     async scrapeHistoryContent() {
         console.log('📜 [WebScraperService] Scraping Islamic History content...');
-        
+
         for (const site of this.islamicSites.history) {
             try {
                 const content = await this.scrapeWebsite(site, 'history');
@@ -641,7 +641,7 @@ class WebScraperService {
      */
     async scrapeSciencesContent() {
         console.log('🔬 [WebScraperService] Scraping Islamic Sciences content...');
-        
+
         for (const site of this.islamicSites.sciences) {
             try {
                 const content = await this.scrapeWebsite(site, 'sciences');
@@ -663,7 +663,7 @@ class WebScraperService {
      */
     async scrapeArabicContent() {
         console.log('📝 [WebScraperService] Scraping Arabic Language content...');
-        
+
         for (const site of this.islamicSites.arabic) {
             try {
                 const content = await this.scrapeWebsite(site, 'arabic');
@@ -685,7 +685,7 @@ class WebScraperService {
      */
     async scrapeSufismContent() {
         console.log('🕊️ [WebScraperService] Scraping Sufism & Spirituality content...');
-        
+
         for (const site of this.islamicSites.sufism) {
             try {
                 const content = await this.scrapeWebsite(site, 'sufism');
@@ -707,7 +707,7 @@ class WebScraperService {
      */
     async scrapeCultureContent() {
         console.log('🎨 [WebScraperService] Scraping Islamic Art & Culture content...');
-        
+
         for (const site of this.islamicSites.culture) {
             try {
                 const content = await this.scrapeWebsite(site, 'culture');
@@ -729,7 +729,7 @@ class WebScraperService {
      */
     async scrapeEconomicsContent() {
         console.log('💰 [WebScraperService] Scraping Islamic Economics content...');
-        
+
         for (const site of this.islamicSites.economics) {
             try {
                 const content = await this.scrapeWebsite(site, 'economics');
@@ -751,7 +751,7 @@ class WebScraperService {
      */
     async scrapeMedicineContent() {
         console.log('🏥 [WebScraperService] Scraping Islamic Medicine content...');
-        
+
         for (const site of this.islamicSites.medicine) {
             try {
                 const content = await this.scrapeWebsite(site, 'medicine');
@@ -773,7 +773,7 @@ class WebScraperService {
      */
     async scrapePhilosophyContent() {
         console.log('🤔 [WebScraperService] Scraping Islamic Philosophy content...');
-        
+
         for (const site of this.islamicSites.philosophy) {
             try {
                 const content = await this.scrapeWebsite(site, 'philosophy');
@@ -795,7 +795,7 @@ class WebScraperService {
      */
     async scrapeLawContent() {
         console.log('⚖️ [WebScraperService] Scraping Islamic Law content...');
-        
+
         for (const site of this.islamicSites.law) {
             try {
                 const content = await this.scrapeWebsite(site, 'law');
@@ -817,7 +817,7 @@ class WebScraperService {
      */
     async scrapeAstronomyContent() {
         console.log('🌟 [WebScraperService] Scraping Islamic Astronomy content...');
-        
+
         for (const site of this.islamicSites.astronomy) {
             try {
                 const content = await this.scrapeWebsite(site, 'astronomy');
@@ -840,7 +840,7 @@ class WebScraperService {
     async scrapeWebsite(url, contentType) {
         try {
             console.log(`🔍 [WebScraperService] Scraping ${url}...`);
-            
+
             const response = await axios.get(url, {
                 headers: {
                     'User-Agent': this.userAgent,
@@ -855,10 +855,10 @@ class WebScraperService {
             });
 
             const $ = cheerio.load(response.data);
-            
+
             // Extract content based on type
             let extractedContent = {};
-            
+
             switch (contentType) {
                 case 'quran':
                     extractedContent = this.extractQuranContent($, url);
@@ -1079,10 +1079,10 @@ class WebScraperService {
         try {
             const filename = `${category}_${Date.now()}_${uuidv4().substring(0, 8)}.json`;
             const filepath = path.join(this.baseDir, category, filename);
-            
+
             await fs.writeFile(filepath, JSON.stringify(content, null, 2));
             console.log(`💾 [WebScraperService] Saved content to ${filepath}`);
-            
+
         } catch (error) {
             console.error(`❌ [WebScraperService] Failed to save content:`, error);
         }
@@ -1093,7 +1093,7 @@ class WebScraperService {
      */
     async processScrapedContent() {
         console.log('🔄 [WebScraperService] Processing scraped content...');
-        
+
         try {
             const categories = ['quran', 'hadith', 'khutbah', 'articles', 'news', 'educational'];
             let totalProcessed = 0;
@@ -1101,15 +1101,15 @@ class WebScraperService {
 
             for (const category of categories) {
                 const categoryDir = path.join(this.baseDir, category);
-                
+
                 try {
                     const files = await fs.readdir(categoryDir);
-                    
+
                     for (const file of files) {
                         if (file.endsWith('.json')) {
                             const filepath = path.join(categoryDir, file);
                             const content = JSON.parse(await fs.readFile(filepath, 'utf8'));
-                            
+
                             // Extract Islamic terms from content
                             console.log(`🔍 [WebScraperService] Extracting terms from ${file}...`);
                             const terms = this.extractIslamicTermsFromContent(content);
@@ -1118,11 +1118,11 @@ class WebScraperService {
                                 type: typeof terms,
                                 isArray: Array.isArray(terms)
                             });
-                            
+
                             // Ensure terms is an array
                             const termsArray = Array.isArray(terms) ? terms : [];
                             console.log(`🔍 [WebScraperService] Processing ${termsArray.length} terms...`);
-                            
+
                             // Add new terms to terminology database
                             for (const term of termsArray) {
                                 console.log(`🔍 [WebScraperService] Processing term:`, term);
@@ -1132,7 +1132,7 @@ class WebScraperService {
                                     console.log(`✅ [WebScraperService] Added new term: ${term.arabic || term.term || 'unknown'}`);
                                 }
                             }
-                            
+
                             totalProcessed++;
                         }
                     }
@@ -1143,7 +1143,7 @@ class WebScraperService {
 
             this.scrapingStats.newTerms = newTerms;
             console.log(`✅ [WebScraperService] Processed ${totalProcessed} files, found ${newTerms} new terms`);
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Error processing content:', error);
         }
@@ -1156,29 +1156,29 @@ class WebScraperService {
         console.log('🔍 [WebScraperService] Extracting Islamic terms with AI analysis...');
         console.log('🔍 [WebScraperService] Content type:', typeof content);
         console.log('🔍 [WebScraperService] Content keys:', content ? Object.keys(content) : 'null');
-        
+
         const terms = [];
-        
+
         try {
             const allText = this.getAllTextFromContent(content);
             console.log('🔍 [WebScraperService] All text extracted, length:', allText.length);
-            
+
             // Use existing terminology service to find terms
             console.log('🔍 [WebScraperService] Finding terms with terminology service...');
             const foundTerms = this.terminologyService.findIslamicTerms(allText);
             console.log('🔍 [WebScraperService] Found terms from service:', foundTerms.length);
-            
+
             // AI-powered term extraction and analysis
             console.log('🔍 [WebScraperService] Starting AI analysis...');
             const aiAnalysis = await this.performAIContentAnalysis(allText, content);
             console.log('🔍 [WebScraperService] AI analysis completed');
-            
+
             // Extract additional terms using pattern matching
             console.log('🔍 [WebScraperService] Extracting Arabic terms with pattern matching...');
             const arabicPattern = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+/g;
             const arabicMatches = allText.match(arabicPattern) || [];
             console.log('🔍 [WebScraperService] Arabic matches found:', arabicMatches.length);
-            
+
             for (const match of arabicMatches) {
                 if (match.length > 2 && !foundTerms.some(term => term.term === match)) {
                     console.log(`🔍 [WebScraperService] Analyzing term: ${match}`);
@@ -1198,15 +1198,15 @@ class WebScraperService {
                     });
                 }
             }
-            
+
             // Learn from the extracted terms
             console.log('🔍 [WebScraperService] Learning from extracted terms...');
             await this.learnFromTerms(terms, allText);
-            
+
             console.log(`✅ [WebScraperService] Extracted ${terms.length} terms with AI analysis`);
             console.log('🔍 [WebScraperService] Terms array type:', Array.isArray(terms));
             return terms;
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Error in extractIslamicTermsFromContent:', error);
             console.error('❌ [WebScraperService] Error stack:', error.stack);
@@ -1221,11 +1221,11 @@ class WebScraperService {
     async performAIContentAnalysis(text, content) {
         try {
             console.log('🤖 [WebScraperService] Performing AI content analysis...');
-            
+
             if (!this.aiLearning.openai) {
                 return this.performLocalContentAnalysis(text, content);
             }
-            
+
             const prompt = `
             Analyze this Islamic content and provide:
             1. Main topics and themes
@@ -1237,7 +1237,7 @@ class WebScraperService {
             
             Content: ${text.substring(0, 2000)}
             `;
-            
+
             const response = await this.aiLearning.openai.chat.completions.create({
                 model: "gpt-4",
                 messages: [
@@ -1253,10 +1253,10 @@ class WebScraperService {
                 max_tokens: 1000,
                 temperature: 0.3
             });
-            
+
             const responseText = response.choices[0].message.content;
             console.log('🤖 [WebScraperService] AI response received:', responseText.substring(0, 200));
-            
+
             let analysis;
             try {
                 analysis = JSON.parse(responseText);
@@ -1271,17 +1271,17 @@ class WebScraperService {
                     relationships: []
                 };
             }
-            
+
             // Store in knowledge graph
             this.aiLearning.knowledgeGraph.set(content.url || 'unknown', {
                 analysis,
                 timestamp: new Date().toISOString(),
                 confidence: 0.9
             });
-            
+
             console.log('✅ [WebScraperService] AI content analysis completed');
             return analysis;
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] AI analysis failed, using local analysis:', error);
             return this.performLocalContentAnalysis(text, content);
@@ -1298,34 +1298,34 @@ class WebScraperService {
             sentimentAnalyzer: !!this.contentAnalysis.sentimentAnalyzer,
             tfidf: !!this.contentAnalysis.tfidf
         });
-        
+
         // Handle null contentAnalysis tools
         if (!this.contentAnalysis.tokenizer) {
             console.warn('⚠️ [WebScraperService] Tokenizer not available, using basic analysis');
             return this.performBasicContentAnalysis(text, content);
         }
-        
+
         const tokens = this.contentAnalysis.tokenizer.tokenize(text);
         console.log('🔍 [WebScraperService] Tokenized text:', tokens.length, 'tokens');
-        
+
         let sentiment = 0;
         if (this.contentAnalysis.sentimentAnalyzer) {
             sentiment = this.contentAnalysis.sentimentAnalyzer.getSentiment(tokens);
         }
-        
+
         // Extract topics using TF-IDF
         if (this.contentAnalysis.tfidf) {
             this.contentAnalysis.tfidf.addDocument(tokens);
             const topTerms = this.contentAnalysis.tfidf.listTerms(0).slice(0, 10);
             console.log('🔍 [WebScraperService] Top terms extracted:', topTerms.length);
         }
-        
+
         // Determine religious context
         const religiousContext = this.determineReligiousContext(text);
-        
+
         // Determine cultural context
         const culturalContext = this.determineCulturalContext(text);
-        
+
         return {
             topics: topTerms.map(term => term.term),
             sentiment: sentiment,
@@ -1341,23 +1341,23 @@ class WebScraperService {
      */
     performBasicContentAnalysis(text, content) {
         console.log('🔧 [WebScraperService] Performing basic content analysis...');
-        
+
         // Basic text analysis
         const words = text.split(/\s+/).filter(word => word.length > 2);
         console.log('🔍 [WebScraperService] Basic analysis - words found:', words.length);
-        
+
         // Simple religious context detection
         const religiousContext = this.determineReligiousContext(text);
         console.log('🔍 [WebScraperService] Religious context detected:', religiousContext);
-        
+
         // Basic cultural context
         const culturalContext = this.determineCulturalContext(text);
         console.log('🔍 [WebScraperService] Cultural context detected:', culturalContext);
-        
+
         // Simple difficulty assessment
         const difficulty = this.calculateDifficulty(text);
         console.log('🔍 [WebScraperService] Difficulty assessed:', difficulty);
-        
+
         return {
             topics: words.slice(0, 10),
             religiousContext,
@@ -1374,11 +1374,11 @@ class WebScraperService {
     async analyzeTermWithAI(term, context, aiAnalysis) {
         try {
             console.log(`🔍 [WebScraperService] Analyzing term: ${term}`);
-            
+
             if (!this.aiLearning.openai) {
                 return this.analyzeTermLocally(term, context);
             }
-            
+
             const prompt = `
             Analyze this Islamic term in context:
             Term: ${term}
@@ -1393,7 +1393,7 @@ class WebScraperService {
             6. Related terms
             7. Usage examples
             `;
-            
+
             const response = await this.aiLearning.openai.chat.completions.create({
                 model: "gpt-4",
                 messages: [
@@ -1409,16 +1409,16 @@ class WebScraperService {
                 max_tokens: 500,
                 temperature: 0.2
             });
-            
+
             const analysis = JSON.parse(response.choices[0].message.content);
-            
+
             // Store in translation contexts
             this.aiLearning.translationContexts.set(term, {
                 analysis,
                 timestamp: new Date().toISOString(),
                 confidence: 0.9
             });
-            
+
             return {
                 context: analysis.religiousContext || 'general',
                 confidence: 0.9,
@@ -1430,7 +1430,7 @@ class WebScraperService {
                 difficulty: analysis.difficulty || 'intermediate',
                 importance: analysis.importance || 'medium'
             };
-            
+
         } catch (error) {
             console.error(`❌ [WebScraperService] AI term analysis failed for ${term}:`, error);
             return this.analyzeTermLocally(term, context);
@@ -1442,13 +1442,13 @@ class WebScraperService {
      */
     analyzeTermLocally(term, context) {
         console.log(`🧠 [WebScraperService] Local analysis for term: ${term}`);
-        
+
         const contextLower = context.toLowerCase();
         let religiousContext = 'general';
         let culturalContext = 'general';
         let difficulty = 'intermediate';
         let importance = 'medium';
-        
+
         // Determine religious context
         for (const [key, pattern] of this.learningSystem.religiousContext) {
             if (pattern.keywords.some(keyword => contextLower.includes(keyword.toLowerCase()))) {
@@ -1457,7 +1457,7 @@ class WebScraperService {
                 break;
             }
         }
-        
+
         // Determine cultural context
         for (const [key, pattern] of this.learningSystem.culturalContext) {
             if (pattern.languages.some(lang => contextLower.includes(lang))) {
@@ -1465,11 +1465,11 @@ class WebScraperService {
                 break;
             }
         }
-        
+
         // Calculate difficulty based on term length and complexity
         if (term.length <= 3) difficulty = 'beginner';
         else if (term.length >= 8) difficulty = 'advanced';
-        
+
         return {
             context: religiousContext,
             confidence: 0.7,
@@ -1488,7 +1488,7 @@ class WebScraperService {
      */
     async learnFromTerms(terms, context) {
         console.log('🧠 [WebScraperService] Learning from extracted terms...');
-        
+
         for (const term of terms) {
             // Update learning patterns
             if (!this.learningSystem.patternRecognition.has(term.arabic)) {
@@ -1506,23 +1506,23 @@ class WebScraperService {
                     pattern.contexts.push(term.context);
                 }
             }
-            
+
             // Update semantic relationships
             if (term.semanticRelations && term.semanticRelations.length > 0) {
                 this.learningSystem.semanticRelationships.set(term.arabic, term.semanticRelations);
             }
-            
+
             // Update cultural context
             if (term.culturalContext) {
                 this.learningSystem.culturalContext.set(term.arabic, term.culturalContext);
             }
-            
+
             // Update religious context
             if (term.religiousContext) {
                 this.learningSystem.religiousContext.set(term.arabic, term.religiousContext);
             }
         }
-        
+
         console.log(`✅ [WebScraperService] Learned from ${terms.length} terms`);
     }
 
@@ -1531,14 +1531,14 @@ class WebScraperService {
      */
     determineReligiousContext(text) {
         const contextLower = text.toLowerCase();
-        
+
         if (contextLower.includes('quran') || contextLower.includes('قرآن')) return 'quran';
         if (contextLower.includes('hadith') || contextLower.includes('حديث')) return 'hadith';
         if (contextLower.includes('prayer') || contextLower.includes('صلاة')) return 'prayer';
         if (contextLower.includes('fiqh') || contextLower.includes('فقه')) return 'fiqh';
         if (contextLower.includes('tafsir') || contextLower.includes('تفسير')) return 'tafsir';
         if (contextLower.includes('khutbah') || contextLower.includes('خطبة')) return 'khutbah';
-        
+
         return 'general';
     }
 
@@ -1547,12 +1547,12 @@ class WebScraperService {
      */
     determineCulturalContext(text) {
         const contextLower = text.toLowerCase();
-        
+
         if (contextLower.includes('arabic') || contextLower.includes('عربي')) return 'arabic';
         if (contextLower.includes('persian') || contextLower.includes('فارسي')) return 'persian';
         if (contextLower.includes('turkish') || contextLower.includes('تركي')) return 'turkish';
         if (contextLower.includes('urdu') || contextLower.includes('أردو')) return 'urdu';
-        
+
         return 'general';
     }
 
@@ -1563,7 +1563,7 @@ class WebScraperService {
         const words = text.split(/\s+/).length;
         const sentences = text.split(/[.!?]+/).length;
         const avgWordsPerSentence = words / sentences;
-        
+
         if (avgWordsPerSentence < 10) return 'beginner';
         if (avgWordsPerSentence < 20) return 'intermediate';
         return 'advanced';
@@ -1576,12 +1576,12 @@ class WebScraperService {
         console.log('🔍 [WebScraperService] Getting all text from content...');
         console.log('🔍 [WebScraperService] Content type:', typeof content);
         console.log('🔍 [WebScraperService] Content structure:', content ? Object.keys(content) : 'null');
-        
+
         let allText = '';
-        
+
         if (content && content.content) {
             console.log('🔍 [WebScraperService] Content.content keys:', Object.keys(content.content));
-            
+
             if (Array.isArray(content.content.verses)) {
                 console.log('🔍 [WebScraperService] Processing verses:', content.content.verses.length);
                 allText += content.content.verses.join(' ');
@@ -1609,7 +1609,7 @@ class WebScraperService {
                 }
             }
         }
-        
+
         console.log('🔍 [WebScraperService] Extracted text length:', allText.length);
         return allText;
     }
@@ -1619,7 +1619,7 @@ class WebScraperService {
      */
     determineContext(term, text) {
         const lowerText = text.toLowerCase();
-        
+
         if (lowerText.includes('prayer') || lowerText.includes('صلاة')) {
             return 'prayer';
         } else if (lowerText.includes('quran') || lowerText.includes('قرآن')) {
@@ -1639,10 +1639,10 @@ class WebScraperService {
     async addTermToDatabase(term) {
         try {
             console.log(`➕ [WebScraperService] Adding enhanced term: ${term.arabic}`);
-            
+
             // Check if term already exists
             const existingTranslation = this.terminologyService.getTranslation(term.arabic, 'en');
-            
+
             if (!existingTranslation) {
                 // Create enhanced translation object
                 const enhancedTranslation = {
@@ -1659,10 +1659,10 @@ class WebScraperService {
                     'source': 'ai_enhanced_scraping',
                     'lastUpdated': new Date().toISOString()
                 };
-                
+
                 // Add to terminology service
                 this.terminologyService.addCustomTerm(term.arabic, enhancedTranslation);
-                
+
                 // Store in learning system for future reference
                 this.learningSystem.translationAssistance.set(term.arabic, {
                     translations: term.translations || {},
@@ -1672,7 +1672,7 @@ class WebScraperService {
                     importance: term.importance,
                     lastSeen: new Date().toISOString()
                 });
-                
+
                 console.log(`✅ [WebScraperService] Added enhanced term: ${term.arabic} (${term.difficulty}, ${term.importance})`);
                 return true;
             } else {
@@ -1692,28 +1692,28 @@ class WebScraperService {
     async updateExistingTerm(term) {
         try {
             console.log(`🔄 [WebScraperService] Updating existing term: ${term.arabic}`);
-            
+
             // Get existing learning data
             const existingData = this.learningSystem.translationAssistance.get(term.arabic);
-            
+
             if (existingData) {
                 // Update confidence based on new data
                 const newConfidence = Math.max(existingData.confidence, term.confidence);
-                
+
                 // Add new contexts if not already present
                 if (!existingData.contexts.includes(term.context)) {
                     existingData.contexts.push(term.context);
                 }
-                
+
                 // Update with new information
                 existingData.confidence = newConfidence;
                 existingData.lastSeen = new Date().toISOString();
-                
+
                 // Update translations if more comprehensive
                 if (term.translations && Object.keys(term.translations).length > Object.keys(existingData.translations).length) {
                     existingData.translations = { ...existingData.translations, ...term.translations };
                 }
-                
+
                 console.log(`✅ [WebScraperService] Updated term: ${term.arabic} (confidence: ${newConfidence})`);
             }
         } catch (error) {
@@ -1727,10 +1727,10 @@ class WebScraperService {
     async getTranslationAssistance(term, targetLanguage = 'en', context = 'general') {
         try {
             console.log(`🤖 [WebScraperService] Getting translation assistance for: ${term}`);
-            
+
             // Check if we have learned data for this term
             const learnedData = this.learningSystem.translationAssistance.get(term);
-            
+
             if (learnedData) {
                 console.log(`📚 [WebScraperService] Found learned data for: ${term}`);
                 return {
@@ -1742,12 +1742,12 @@ class WebScraperService {
                     source: 'learned'
                 };
             }
-            
+
             // Use AI for intelligent translation if available
             if (this.aiLearning.openai) {
                 return await this.getAITranslationAssistance(term, targetLanguage, context);
             }
-            
+
             // Fallback to basic translation
             return {
                 translation: term,
@@ -1757,7 +1757,7 @@ class WebScraperService {
                 importance: 'unknown',
                 source: 'fallback'
             };
-            
+
         } catch (error) {
             console.error(`❌ [WebScraperService] Error getting translation assistance:`, error);
             return {
@@ -1777,7 +1777,7 @@ class WebScraperService {
     async getAITranslationAssistance(term, targetLanguage, context) {
         try {
             console.log(`🤖 [WebScraperService] Getting AI translation assistance for: ${term}`);
-            
+
             const prompt = `
             Provide intelligent translation assistance for this Islamic term:
             Term: ${term}
@@ -1792,7 +1792,7 @@ class WebScraperService {
             5. Difficulty level
             6. Related terms
             `;
-            
+
             const response = await this.aiLearning.openai.chat.completions.create({
                 model: "gpt-4",
                 messages: [
@@ -1808,9 +1808,9 @@ class WebScraperService {
                 max_tokens: 300,
                 temperature: 0.2
             });
-            
+
             const analysis = JSON.parse(response.choices[0].message.content);
-            
+
             // Store for future learning
             this.learningSystem.translationAssistance.set(term, {
                 translations: { [targetLanguage]: analysis.translation },
@@ -1820,7 +1820,7 @@ class WebScraperService {
                 importance: analysis.importance || 'medium',
                 lastSeen: new Date().toISOString()
             });
-            
+
             return {
                 translation: analysis.translation,
                 confidence: 0.9,
@@ -1833,7 +1833,7 @@ class WebScraperService {
                 usageExamples: analysis.usageExamples || [],
                 relatedTerms: analysis.relatedTerms || []
             };
-            
+
         } catch (error) {
             console.error(`❌ [WebScraperService] AI translation assistance failed:`, error);
             throw error;
@@ -1846,13 +1846,13 @@ class WebScraperService {
     async getSemanticUnderstanding(content) {
         try {
             console.log('🧠 [WebScraperService] Getting semantic understanding...');
-            
+
             const allText = this.getAllTextFromContent(content);
             const terms = await this.extractIslamicTermsFromContent(content);
-            
+
             // Build semantic relationships
             const semanticMap = new Map();
-            
+
             for (const term of terms) {
                 if (term.semanticRelations && term.semanticRelations.length > 0) {
                     semanticMap.set(term.arabic, {
@@ -1863,13 +1863,13 @@ class WebScraperService {
                     });
                 }
             }
-            
+
             // Analyze content themes
             const themes = this.analyzeContentThemes(allText, terms);
-            
+
             // Determine content complexity
             const complexity = this.analyzeContentComplexity(allText, terms);
-            
+
             return {
                 themes: themes,
                 complexity: complexity,
@@ -1879,7 +1879,7 @@ class WebScraperService {
                 culturalContext: this.determineOverallCulturalContext(terms),
                 religiousContext: this.determineOverallReligiousContext(terms)
             };
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Error getting semantic understanding:', error);
             return null;
@@ -1891,18 +1891,18 @@ class WebScraperService {
      */
     analyzeContentThemes(text, terms) {
         const themes = new Map();
-        
+
         // Count term frequencies by context
         for (const term of terms) {
             const context = term.context || 'general';
             themes.set(context, (themes.get(context) || 0) + 1);
         }
-        
+
         // Sort by frequency
         const sortedThemes = Array.from(themes.entries())
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
-        
+
         return sortedThemes.map(([theme, count]) => ({
             theme,
             frequency: count,
@@ -1917,11 +1917,11 @@ class WebScraperService {
         const advancedTerms = terms.filter(t => t.difficulty === 'advanced').length;
         const intermediateTerms = terms.filter(t => t.difficulty === 'intermediate').length;
         const beginnerTerms = terms.filter(t => t.difficulty === 'beginner').length;
-        
+
         const totalTerms = terms.length;
         const advancedPercentage = (advancedTerms / totalTerms) * 100;
         const intermediatePercentage = (intermediateTerms / totalTerms) * 100;
-        
+
         if (advancedPercentage > 40) return 'advanced';
         if (intermediatePercentage > 50) return 'intermediate';
         return 'beginner';
@@ -1933,9 +1933,9 @@ class WebScraperService {
     calculateTranslationDifficulty(terms) {
         const highImportanceTerms = terms.filter(t => t.importance === 'high').length;
         const advancedTerms = terms.filter(t => t.difficulty === 'advanced').length;
-        
+
         const difficultyScore = (highImportanceTerms * 2) + (advancedTerms * 3);
-        
+
         if (difficultyScore > 20) return 'very_difficult';
         if (difficultyScore > 10) return 'difficult';
         if (difficultyScore > 5) return 'moderate';
@@ -1948,15 +1948,15 @@ class WebScraperService {
     determineOverallCulturalContext(terms) {
         const culturalContexts = terms.map(t => t.culturalContext).filter(c => c && c !== 'general');
         const contextCounts = {};
-        
+
         culturalContexts.forEach(context => {
             contextCounts[context] = (contextCounts[context] || 0) + 1;
         });
-        
-        const dominantContext = Object.keys(contextCounts).reduce((a, b) => 
+
+        const dominantContext = Object.keys(contextCounts).reduce((a, b) =>
             contextCounts[a] > contextCounts[b] ? a : b, 'general'
         );
-        
+
         return {
             dominant: dominantContext,
             distribution: contextCounts,
@@ -1970,15 +1970,15 @@ class WebScraperService {
     determineOverallReligiousContext(terms) {
         const religiousContexts = terms.map(t => t.religiousContext).filter(c => c && c !== 'general');
         const contextCounts = {};
-        
+
         religiousContexts.forEach(context => {
             contextCounts[context] = (contextCounts[context] || 0) + 1;
         });
-        
-        const dominantContext = Object.keys(contextCounts).reduce((a, b) => 
+
+        const dominantContext = Object.keys(contextCounts).reduce((a, b) =>
             contextCounts[a] > contextCounts[b] ? a : b, 'general'
         );
-        
+
         return {
             dominant: dominantContext,
             distribution: contextCounts,
@@ -1991,12 +1991,12 @@ class WebScraperService {
      */
     async processResearchData() {
         console.log('🔬 [WebScraperService] Processing research data...');
-        
+
         try {
             // Update research statistics
             this.researchData.totalSources = this.scrapingStats.successfulScrapes;
             this.researchData.contemporarySources = this.scrapingStats.successfulScrapes;
-            
+
             // Process all scraped content for research insights
             const categories = Object.keys(this.islamicSites);
             let totalProcessed = 0;
@@ -2004,19 +2004,19 @@ class WebScraperService {
 
             for (const category of categories) {
                 const categoryDir = path.join(this.baseDir, category);
-                
+
                 try {
                     const files = await fs.readdir(categoryDir);
-                    
+
                     for (const file of files) {
                         if (file.endsWith('.json')) {
                             const filepath = path.join(categoryDir, file);
                             const content = JSON.parse(await fs.readFile(filepath, 'utf8'));
-                            
+
                             // Advanced research analysis
                             const insights = await this.analyzeResearchContent(content, category);
                             researchInsights += insights.length;
-                            
+
                             // Update research database
                             this.learningSystem.researchDatabase.set(content.url, {
                                 content,
@@ -2024,7 +2024,7 @@ class WebScraperService {
                                 category,
                                 timestamp: new Date().toISOString()
                             });
-                            
+
                             totalProcessed++;
                         }
                     }
@@ -2034,7 +2034,7 @@ class WebScraperService {
             }
 
             console.log(`✅ [WebScraperService] Processed ${totalProcessed} files, found ${researchInsights} research insights`);
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Error processing research data:', error);
         }
@@ -2046,30 +2046,30 @@ class WebScraperService {
     async analyzeResearchContent(content, category) {
         const insights = [];
         const allText = this.getAllTextFromContent(content);
-        
+
         // Extract research-grade insights
         const researchInsights = {
             // Linguistic analysis
             languagePatterns: this.analyzeLanguagePatterns(allText),
             dialectVariations: this.analyzeDialectVariations(allText),
             historicalLanguage: this.analyzeHistoricalLanguage(allText),
-            
+
             // Cultural analysis
             culturalMarkers: this.analyzeCulturalMarkers(allText),
             regionalInfluences: this.analyzeRegionalInfluences(allText),
             temporalContext: this.analyzeTemporalContext(allText),
-            
+
             // Religious analysis
             doctrinalElements: this.analyzeDoctrinalElements(allText),
             sectarianIndicators: this.analyzeSectarianIndicators(allText),
             theologicalConcepts: this.analyzeTheologicalConcepts(allText),
-            
+
             // Scholarly analysis
             citationPatterns: this.analyzeCitationPatterns(allText),
             scholarlyReferences: this.analyzeScholarlyReferences(allText),
             manuscriptIndicators: this.analyzeManuscriptIndicators(allText)
         };
-        
+
         insights.push(researchInsights);
         return insights;
     }
@@ -2079,17 +2079,17 @@ class WebScraperService {
      */
     async buildKnowledgeGraph() {
         console.log('🧠 [WebScraperService] Building comprehensive knowledge graph...');
-        
+
         try {
             // Build semantic relationships
             for (const [url, data] of this.learningSystem.researchDatabase) {
                 const content = data.content;
                 const insights = data.insights;
-                
+
                 // Extract entities and relationships
                 const entities = this.extractEntities(content);
                 const relationships = this.extractRelationships(entities, insights);
-                
+
                 // Add to knowledge graph
                 this.learningSystem.semanticRelationships.set(url, {
                     entities,
@@ -2097,9 +2097,9 @@ class WebScraperService {
                     timestamp: new Date().toISOString()
                 });
             }
-            
+
             console.log(`✅ [WebScraperService] Knowledge graph built with ${this.learningSystem.semanticRelationships.size} nodes`);
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Error building knowledge graph:', error);
         }
@@ -2110,10 +2110,10 @@ class WebScraperService {
      */
     async crossReferenceData() {
         console.log('🔗 [WebScraperService] Cross-referencing and validating data...');
-        
+
         try {
             let crossReferences = 0;
-            
+
             // Cross-reference terms across different sources
             for (const [url1, data1] of this.learningSystem.researchDatabase) {
                 for (const [url2, data2] of this.learningSystem.researchDatabase) {
@@ -2130,10 +2130,10 @@ class WebScraperService {
                     }
                 }
             }
-            
+
             this.researchData.crossReferencedItems = crossReferences;
             console.log(`✅ [WebScraperService] Cross-referenced ${crossReferences} data points`);
-            
+
         } catch (error) {
             console.error('❌ [WebScraperService] Error cross-referencing data:', error);
         }
@@ -2144,7 +2144,7 @@ class WebScraperService {
      */
     async generateResearchReport() {
         console.log('📊 [WebScraperService] Generating comprehensive research report...');
-        
+
         const report = {
             timestamp: new Date().toISOString(),
             researchData: this.researchData,
@@ -2171,7 +2171,7 @@ class WebScraperService {
 
         const reportPath = path.join(this.baseDir, `research_report_${Date.now()}.json`);
         await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
-        
+
         console.log('📊 [WebScraperService] Research report generated:', reportPath);
         console.log('📈 [WebScraperService] Research Summary:', report.summary);
     }
@@ -2193,7 +2193,7 @@ class WebScraperService {
 
         const reportPath = path.join(this.baseDir, `scraping_report_${Date.now()}.json`);
         await fs.writeFile(reportPath, JSON.stringify(report, null, 2));
-        
+
         console.log('📊 [WebScraperService] Scraping report generated:', reportPath);
         console.log('📈 [WebScraperService] Summary:', report.summary);
     }
@@ -2218,7 +2218,7 @@ class WebScraperService {
             gulf: /(شلون|وين|أشوفك)/g,
             maghrebi: /(كيفاش|واش|بخير)/g
         };
-        
+
         const variations = {};
         for (const [dialect, pattern] of Object.entries(dialects)) {
             variations[dialect] = (text.match(pattern) || []).length;
@@ -2254,7 +2254,7 @@ class WebScraperService {
             maghrebi: /(المغرب|تونس|الجزائر|ليبيا)/g,
             andalusian: /(الأندلس|قرطبة|غرناطة|إشبيلية)/g
         };
-        
+
         const influences = {};
         for (const [region, pattern] of Object.entries(regions)) {
             influences[region] = (text.match(pattern) || []).length;
@@ -2346,26 +2346,26 @@ class WebScraperService {
             concepts: [],
             dates: []
         };
-        
+
         // Simple entity extraction (would be enhanced with NLP libraries)
         const text = this.getAllTextFromContent(content);
-        
+
         // Extract person names (Arabic patterns)
         entities.persons = (text.match(/[أ-ي]+\s+بن\s+[أ-ي]+/g) || []);
-        
+
         // Extract place names
         entities.places = (text.match(/(مكة|المدينة|بغداد|دمشق|القاهرة|الأندلس|العراق|الشام|مصر|المغرب)/g) || []);
-        
+
         // Extract concepts
         entities.concepts = (text.match(/(التوحيد|العدل|النبوة|الإمامة|المعاد|الفرض|الواجب|المستحب)/g) || []);
-        
+
         return entities;
     }
 
     extractRelationships(entities, insights) {
         // Extract relationships between entities
         const relationships = [];
-        
+
         // Simple relationship extraction
         for (const person of entities.persons) {
             for (const place of entities.places) {
@@ -2377,7 +2377,7 @@ class WebScraperService {
                 });
             }
         }
-        
+
         return relationships;
     }
 
@@ -2385,10 +2385,10 @@ class WebScraperService {
         // Find common terms between two content pieces
         const text1 = this.getAllTextFromContent(content1).toLowerCase();
         const text2 = this.getAllTextFromContent(content2).toLowerCase();
-        
+
         const terms1 = new Set(text1.split(/\s+/));
         const terms2 = new Set(text2.split(/\s+/));
-        
+
         const common = new Set([...terms1].filter(x => terms2.has(x)));
         return Array.from(common);
     }
@@ -2413,10 +2413,10 @@ class WebScraperService {
                 aiEnabled: !!this.aiLearning.openai,
                 terminologyService: !!this.terminologyService
             });
-            
+
             this.isScraping = true;
             this.scrapingStats.lastScrape = new Date().toISOString();
-            
+
             // Calculate total sites from all categories
             const totalSites = Object.values(this.islamicSites).reduce((total, category) => {
                 if (Array.isArray(category)) {
@@ -2424,9 +2424,9 @@ class WebScraperService {
                 }
                 return total;
             }, 0);
-            
+
             this.scrapingStats.totalSites = totalSites;
-            
+
             console.log('🔍 [WebScraperService] Scraping state set:', {
                 isScraping: this.isScraping,
                 totalSites: this.scrapingStats.totalSites,
@@ -2436,11 +2436,11 @@ class WebScraperService {
                     count: Array.isArray(this.islamicSites[key]) ? this.islamicSites[key].length : 0
                 }))
             });
-            
+
             // Start background scraping simulation
             console.log('🔄 [WebScraperService] Starting background scraping...');
             this.startBackgroundScraping();
-            
+
             console.log('✅ [WebScraperService] Scraping started successfully');
             return { success: true, message: 'Scraping started successfully' };
         } catch (error) {
@@ -2456,7 +2456,7 @@ class WebScraperService {
      */
     startBackgroundScraping() {
         console.log('🔄 [WebScraperService] Setting up background scraping...');
-        
+
         if (this.scrapingInterval) {
             console.log('🔄 [WebScraperService] Clearing existing interval');
             clearInterval(this.scrapingInterval);
@@ -2465,7 +2465,7 @@ class WebScraperService {
         console.log('🔄 [WebScraperService] Creating new scraping interval');
         this.scrapingInterval = setInterval(async () => {
             console.log('🔄 [WebScraperService] Background scraping tick - checking state...');
-            
+
             // Check if we should continue scraping
             if (!this.isScraping) {
                 console.log('⏹️ [WebScraperService] Stopping background scraping - isScraping is false');
@@ -2476,12 +2476,12 @@ class WebScraperService {
 
             try {
                 console.log('🔄 [WebScraperService] Background scraping tick - processing...');
-                
+
                 // Simulate scraping different types of content
                 const contentTypes = ['quran', 'hadith', 'khutbah', 'articles'];
                 const randomType = contentTypes[Math.floor(Math.random() * contentTypes.length)];
                 console.log(`🔄 [WebScraperService] Processing content type: ${randomType}`);
-                
+
                 // Simulate finding new terms
                 if (Math.random() < 0.7) {
                     const terms = [
@@ -2511,7 +2511,7 @@ class WebScraperService {
 
                 // Update last scrape time
                 this.scrapingStats.lastScrape = new Date().toISOString();
-                
+
             } catch (error) {
                 console.error('❌ [WebScraperService] Error in background scraping:', error);
             }
@@ -2525,13 +2525,13 @@ class WebScraperService {
         try {
             console.log('⏹️ [WebScraperService] Stopping scraping process...');
             this.isScraping = false;
-            
+
             // Clear the background scraping interval
             if (this.scrapingInterval) {
                 clearInterval(this.scrapingInterval);
                 this.scrapingInterval = null;
             }
-            
+
             console.log('✅ [WebScraperService] Scraping stopped successfully');
             return { success: true, message: 'Scraping stopped successfully' };
         } catch (error) {
@@ -2567,14 +2567,14 @@ class WebScraperService {
         try {
             console.log('📊 [WebScraperService] Getting scraping statistics...');
             console.log('🔍 [WebScraperService] Terminology service available:', !!this.terminologyService);
-            
+
             let terminologyStats = {
                 totalTerms: 0,
                 supportedLanguages: [],
                 totalTranslations: 0,
                 error: 'Terminology service not available'
             };
-            
+
             if (this.terminologyService) {
                 try {
                     console.log('📚 [WebScraperService] Getting terminology statistics...');
@@ -2592,13 +2592,13 @@ class WebScraperService {
             } else {
                 console.warn('⚠️ [WebScraperService] Terminology service not available');
             }
-            
+
         const stats = {
             ...this.scrapingStats,
             isScraping: this.isCurrentlyScraping(),
             terminologyStats: terminologyStats
         };
-        
+
         console.log('✅ [WebScraperService] Final statistics:', stats);
         console.log('🔍 [WebScraperService] Current scraping state:', {
             isScraping: this.isScraping,
@@ -2629,12 +2629,12 @@ class WebScraperService {
      */
     scheduleScraping(intervalHours = 24) {
         const intervalMs = intervalHours * 60 * 60 * 1000;
-        
+
         setInterval(async () => {
             console.log('⏰ [WebScraperService] Starting scheduled scraping...');
             await this.startComprehensiveScraping();
         }, intervalMs);
-        
+
         console.log(`⏰ [WebScraperService] Scheduled scraping every ${intervalHours} hours`);
     }
 }

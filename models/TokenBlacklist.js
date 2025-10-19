@@ -47,13 +47,13 @@ TokenBlacklistSchema.statics.blacklistToken = async function(token, userId, reas
     // Decode the token to get expiration time
     const jwt = require('jsonwebtoken');
     const decoded = jwt.decode(token);
-    
+
     if (!decoded || !decoded.exp) {
       throw new Error('Invalid token format');
     }
-    
+
     const expiresAt = new Date(decoded.exp * 1000);
-    
+
     // Create blacklist entry
     const blacklistEntry = new this({
       token,
@@ -61,7 +61,7 @@ TokenBlacklistSchema.statics.blacklistToken = async function(token, userId, reas
       reason,
       expiresAt
     });
-    
+
     await blacklistEntry.save();
     console.log(`🔒 Token blacklisted for user ${userId}, reason: ${reason}`);
     return true;

@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => {
             // --- Populate Summary Cards ---
             summaryContainer.innerHTML = '';
-            
+
             const summaryCard = document.createElement('div');
             summaryCard.className = 'stat-card';
             summaryCard.innerHTML = `

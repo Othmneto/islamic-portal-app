@@ -12,13 +12,13 @@ class SuspiciousActivityDetection {
             high: 80,
             critical: 90
         };
-        
+
         this.timeWindows = {
             short: 5 * 60 * 1000, // 5 minutes
             medium: 30 * 60 * 1000, // 30 minutes
             long: 24 * 60 * 60 * 1000 // 24 hours
         };
-        
+
         this.activityTypes = {
             LOGIN_ATTEMPT: { weight: 10, timeWindow: 'short' },
             FAILED_LOGIN: { weight: 20, timeWindow: 'short' },
@@ -120,13 +120,13 @@ class SuspiciousActivityDetection {
             let riskFactors = [];
 
             // Analyze different time windows
-            const shortTermActivities = activities.filter(a => 
+            const shortTermActivities = activities.filter(a =>
                 now - a.timestamp <= this.timeWindows.short
             );
-            const mediumTermActivities = activities.filter(a => 
+            const mediumTermActivities = activities.filter(a =>
                 now - a.timestamp <= this.timeWindows.medium
             );
-            const longTermActivities = activities.filter(a => 
+            const longTermActivities = activities.filter(a =>
                 now - a.timestamp <= this.timeWindows.long
             );
 
@@ -151,7 +151,7 @@ class SuspiciousActivityDetection {
             }
 
             // Check for account changes
-            const accountChanges = activities.filter(a => 
+            const accountChanges = activities.filter(a =>
                 ['PASSWORD_CHANGE', 'EMAIL_CHANGE', 'MFA_DISABLE'].includes(a.type)
             );
             if (accountChanges.length > 2) {
@@ -207,7 +207,7 @@ class SuspiciousActivityDetection {
      * Analyze login patterns
      */
     analyzeLoginPatterns(activities) {
-        const loginActivities = activities.filter(a => 
+        const loginActivities = activities.filter(a =>
             ['LOGIN_ATTEMPT', 'FAILED_LOGIN'].includes(a.type)
         );
 
@@ -219,7 +219,7 @@ class SuspiciousActivityDetection {
         let factors = [];
 
         // Check for rapid login attempts
-        const recentLogins = loginActivities.filter(a => 
+        const recentLogins = loginActivities.filter(a =>
             Date.now() - a.timestamp <= this.timeWindows.short
         );
         if (recentLogins.length > 5) {
@@ -308,12 +308,12 @@ class SuspiciousActivityDetection {
         for (let i = 1; i < activities.length; i++) {
             timeIntervals.push(activities[i].timestamp - activities[i - 1].timestamp);
         }
-        
+
         if (timeIntervals.length > 5) {
             const avgInterval = timeIntervals.reduce((a, b) => a + b, 0) / timeIntervals.length;
-            const variance = timeIntervals.reduce((acc, interval) => 
+            const variance = timeIntervals.reduce((acc, interval) =>
                 acc + Math.pow(interval - avgInterval, 2), 0) / timeIntervals.length;
-            
+
             if (variance < 1000) { // Very consistent timing
                 riskScore += 20;
                 factors.push('Consistent timing pattern');

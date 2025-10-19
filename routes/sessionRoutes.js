@@ -12,7 +12,7 @@ const { asyncHandler } = require('../middleware/errorHandler');
  */
 router.post('/refresh', asyncHandler(async (req, res) => {
     const { refreshToken } = req.body;
-    
+
     if (!refreshToken) {
         return res.status(400).json({
             success: false,
@@ -50,7 +50,7 @@ router.get('/', auth, asyncHandler(async (req, res) => {
  */
 router.delete('/:sessionId', auth, asyncHandler(async (req, res) => {
     const { sessionId } = req.params;
-    
+
     const result = await sessionManagementService.invalidateSession(sessionId);
     res.json(result);
 }));
@@ -62,9 +62,9 @@ router.delete('/:sessionId', auth, asyncHandler(async (req, res) => {
  */
 router.delete('/', auth, asyncHandler(async (req, res) => {
     const currentSessionId = req.headers['x-session-id']; // You'd need to pass this from frontend
-    
+
     const result = await sessionManagementService.invalidateAllUserSessions(
-        req.user.id, 
+        req.user.id,
         currentSessionId
     );
     res.json(result);
@@ -90,7 +90,7 @@ router.get('/stats', auth, asyncHandler(async (req, res) => {
  */
 router.put('/:sessionId/activity', auth, asyncHandler(async (req, res) => {
     const { sessionId } = req.params;
-    
+
     await sessionManagementService.updateSessionActivity(sessionId);
     res.json({
         success: true,

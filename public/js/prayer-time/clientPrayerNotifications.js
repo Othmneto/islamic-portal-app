@@ -16,7 +16,7 @@ export class ClientPrayerNotifications {
     this.location = null;
     this.prayerTimes = null;
     this.reminderMinutes = 5; // Default reminder time
-    
+
     this.init();
   }
 
@@ -24,13 +24,13 @@ export class ClientPrayerNotifications {
     try {
       // Load settings from localStorage
       this.loadSettings();
-      
+
       // Get user location
       await this.getLocation();
-      
+
       // Start prayer time monitoring
       this.startPrayerTimeMonitoring();
-      
+
       console.log("[ClientPrayerNotifications] Client-side notifications initialized");
     } catch (error) {
       console.error("[ClientPrayerNotifications] Failed to initialize:", error);
@@ -79,7 +79,7 @@ export class ClientPrayerNotifications {
             maximumAge: 300000 // 5 minutes
           });
         });
-        
+
         this.location = {
           lat: position.coords.latitude,
           lon: position.coords.longitude
@@ -121,10 +121,10 @@ export class ClientPrayerNotifications {
 
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
+
     // Schedule notifications for each prayer
     const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    
+
     prayers.forEach(prayer => {
       const prayerTime = this.prayerTimes[prayer];
       if (!prayerTime) return;
@@ -171,7 +171,7 @@ export class ClientPrayerNotifications {
   sendNotification(prayer, isReminder) {
     const prayerNames = {
       fajr: 'Fajr',
-      dhuhr: 'Dhuhr', 
+      dhuhr: 'Dhuhr',
       asr: 'Asr',
       maghrib: 'Maghrib',
       isha: 'Isha'
@@ -185,10 +185,10 @@ export class ClientPrayerNotifications {
       isha: '🌙'
     };
 
-    const title = isReminder 
+    const title = isReminder
       ? `${prayerEmojis[prayer]} ${prayerNames[prayer]} in ${this.reminderMinutes} minutes`
       : `${prayerEmojis[prayer]} ${prayerNames[prayer]} Prayer Time`;
-    
+
     const body = isReminder
       ? `Get ready for ${prayerNames[prayer]} prayer`
       : `It's time for ${prayerNames[prayer]} prayer`;
@@ -224,19 +224,19 @@ export class ClientPrayerNotifications {
   checkPrayerTimes() {
     const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
-    
+
     if (!this.prayerTimes) return;
 
     // Check if it's time for any prayer
     const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
-    
+
     prayers.forEach(prayer => {
       const prayerTime = this.prayerTimes[prayer];
       if (!prayerTime) return;
 
       const [hours, minutes] = prayerTime.split(':').map(Number);
       const prayerMinutes = hours * 60 + minutes;
-      
+
       // Check if it's within 1 minute of prayer time
       if (Math.abs(currentTime - prayerMinutes) <= 1) {
         this.sendNotification(prayer, false);

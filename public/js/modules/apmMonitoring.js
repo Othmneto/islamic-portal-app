@@ -9,19 +9,19 @@ class APMMonitoring {
             memoryUsage: [],
             customEvents: []
         };
-        
+
         this.thresholds = {
             pageLoadTime: 3000, // 3 seconds
             apiResponseTime: 2000, // 2 seconds
             memoryUsage: 100 * 1024 * 1024, // 100MB
             errorRate: 0.05 // 5%
         };
-        
+
         this.isMonitoring = false;
         this.performanceObserver = null;
         this.errorObserver = null;
         this.memoryObserver = null;
-        
+
         this.initializeMonitoring();
     }
 
@@ -33,7 +33,7 @@ class APMMonitoring {
         this.startUserInteractionMonitoring();
         this.startNetworkMonitoring();
         this.startCustomEventMonitoring();
-        
+
         this.isMonitoring = true;
         console.log('APM Monitoring initialized');
     }
@@ -42,13 +42,13 @@ class APMMonitoring {
     startPerformanceMonitoring() {
         // Core Web Vitals
         this.observeCoreWebVitals();
-        
+
         // Navigation timing
         this.observeNavigationTiming();
-        
+
         // Resource timing
         this.observeResourceTiming();
-        
+
         // Long tasks
         this.observeLongTasks();
     }
@@ -85,11 +85,11 @@ class APMMonitoring {
     observeNavigationTiming() {
         window.addEventListener('load', () => {
             const navigation = performance.getEntriesByType('navigation')[0];
-            
+
             this.recordMetric('domContentLoaded', navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart);
             this.recordMetric('loadComplete', navigation.loadEventEnd - navigation.loadEventStart);
             this.recordMetric('totalPageLoad', navigation.loadEventEnd - navigation.fetchStart);
-            
+
             // Check if page load is slow
             if (navigation.loadEventEnd - navigation.fetchStart > this.thresholds.pageLoadTime) {
                 this.recordCustomEvent('slow_page_load', {
@@ -109,7 +109,7 @@ class APMMonitoring {
                 }
             });
         });
-        
+
         this.performanceObserver.observe({ entryTypes: ['resource'] });
     }
 
@@ -197,7 +197,7 @@ class APMMonitoring {
     // User interaction monitoring
     startUserInteractionMonitoring() {
         const interactionTypes = ['click', 'scroll', 'keydown', 'mousemove', 'touchstart'];
-        
+
         interactionTypes.forEach(type => {
             document.addEventListener(type, (event) => {
                 this.recordUserInteraction({
@@ -218,11 +218,11 @@ class APMMonitoring {
         window.fetch = async (...args) => {
             const startTime = performance.now();
             const url = args[0];
-            
+
             try {
                 const response = await originalFetch(...args);
                 const endTime = performance.now();
-                
+
                 this.recordNetworkRequest({
                     url,
                     method: 'GET', // Default, could be extracted from args
@@ -271,7 +271,7 @@ class APMMonitoring {
         if (!this.metrics.performance[name]) {
             this.metrics.performance[name] = [];
         }
-        
+
         this.metrics.performance[name].push({
             value,
             timestamp: Date.now()
@@ -285,7 +285,7 @@ class APMMonitoring {
 
     recordError(error) {
         this.metrics.errors.push(error);
-        
+
         // Keep only last 500 errors
         if (this.metrics.errors.length > 500) {
             this.metrics.errors = this.metrics.errors.slice(-500);
@@ -309,7 +309,7 @@ class APMMonitoring {
 
     recordMemoryUsage(usage) {
         this.metrics.memoryUsage.push(usage);
-        
+
         // Keep only last 100 entries
         if (this.metrics.memoryUsage.length > 100) {
             this.metrics.memoryUsage = this.metrics.memoryUsage.slice(-100);
@@ -318,7 +318,7 @@ class APMMonitoring {
 
     recordUserInteraction(interaction) {
         this.metrics.userInteractions.push(interaction);
-        
+
         // Keep only last 1000 interactions
         if (this.metrics.userInteractions.length > 1000) {
             this.metrics.userInteractions = this.metrics.userInteractions.slice(-1000);
@@ -327,7 +327,7 @@ class APMMonitoring {
 
     recordNetworkRequest(request) {
         this.metrics.networkRequests.push(request);
-        
+
         // Keep only last 500 requests
         if (this.metrics.networkRequests.length > 500) {
             this.metrics.networkRequests = this.metrics.networkRequests.slice(-500);
@@ -340,7 +340,7 @@ class APMMonitoring {
             data,
             timestamp: Date.now()
         });
-        
+
         // Keep only last 1000 events
         if (this.metrics.customEvents.length > 1000) {
             this.metrics.customEvents = this.metrics.customEvents.slice(-1000);
@@ -388,7 +388,7 @@ class APMMonitoring {
     getAverageMetric(metricName) {
         const values = this.metrics.performance[metricName];
         if (!values || values.length === 0) return 0;
-        
+
         const sum = values.reduce((acc, entry) => acc + entry.value, 0);
         return sum / values.length;
     }
@@ -408,7 +408,7 @@ class APMMonitoring {
     getErrorRate() {
         const totalInteractions = this.metrics.userInteractions.length;
         const totalErrors = this.metrics.errors.length;
-        
+
         if (totalInteractions === 0) return 0;
         return totalErrors / totalInteractions;
     }
@@ -417,12 +417,12 @@ class APMMonitoring {
     isPerformanceGood() {
         const summary = this.getPerformanceSummary();
         const errorRate = this.getErrorRate();
-        
+
         return {
             pageLoad: summary.pageLoadTime <= this.thresholds.pageLoadTime,
             memory: !summary.memoryUsage || summary.memoryUsage.used <= this.thresholds.memoryUsage,
             errors: errorRate <= this.thresholds.errorRate,
-            overall: summary.pageLoadTime <= this.thresholds.pageLoadTime && 
+            overall: summary.pageLoadTime <= this.thresholds.pageLoadTime &&
                     errorRate <= this.thresholds.errorRate
         };
     }

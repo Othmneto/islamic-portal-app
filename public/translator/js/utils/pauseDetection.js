@@ -11,7 +11,7 @@ export class PauseDetector {
             maxPauseTime: 10000,         // Maximum pause time before timeout
             ...options
         };
-        
+
         this.lastInputTime = 0;
         this.pauseTimeout = null;
         this.isPaused = false;
@@ -25,7 +25,7 @@ export class PauseDetector {
     startMonitoring(input) {
         const now = Date.now();
         this.lastInputTime = now;
-        
+
         // Clear existing timeout
         if (this.pauseTimeout) {
             clearTimeout(this.pauseTimeout);
@@ -83,7 +83,7 @@ export class PauseDetector {
         if (timeSinceLastInput >= this.options.pauseThreshold) {
             this.isPaused = true;
             console.log('⏸️ [PauseDetector] Pause detected after', timeSinceLastInput, 'ms');
-            
+
             // Notify all listeners
             this.notifyListeners('pause', {
                 input: input,

@@ -266,21 +266,21 @@ const jsAddition = `  <!-- Global Navbar JavaScript -->
 // Function to add navbar to a page
 function addNavbarToPage(pageName) {
   const filePath = path.join(__dirname, '..', 'public', pageName);
-  
+
   if (!fs.existsSync(filePath)) {
     console.log(`❌ File not found: ${pageName}`);
     return false;
   }
-  
+
   try {
     let content = fs.readFileSync(filePath, 'utf8');
-    
+
     // Check if navbar already exists
     if (content.includes('global-navbar')) {
       console.log(`⏭️  Navbar already exists in: ${pageName}`);
       return true;
     }
-    
+
     // Determine the active page for highlighting
     let activeClass = '';
     if (pageName.includes('qibla')) activeClass = 'qibla';
@@ -297,7 +297,7 @@ function addNavbarToPage(pageName) {
     else if (pageName.includes('login')) activeClass = 'login';
     else if (pageName.includes('register')) activeClass = 'register';
     else if (pageName.includes('security-dashboard')) activeClass = 'security';
-    
+
     // Create navbar with active class
     let navbarWithActive = navbarHTML;
     if (activeClass) {
@@ -318,7 +318,7 @@ function addNavbarToPage(pageName) {
         'register': 'Register',
         'security': 'Security'
       };
-      
+
       const activeText = activeMap[activeClass];
       if (activeText) {
         navbarWithActive = navbarWithActive.replace(
@@ -327,7 +327,7 @@ function addNavbarToPage(pageName) {
         );
       }
     }
-    
+
     // Add CSS to head
     if (content.includes('<head>')) {
       content = content.replace(
@@ -335,7 +335,7 @@ function addNavbarToPage(pageName) {
         `$1${cssAddition}\n$2`
       );
     }
-    
+
     // Add navbar after body tag
     if (content.includes('<body>')) {
       content = content.replace(
@@ -343,7 +343,7 @@ function addNavbarToPage(pageName) {
         `$1\n${navbarWithActive}\n`
       );
     }
-    
+
     // Wrap main content in page-content div
     if (content.includes('<body>') && !content.includes('page-content')) {
       // Find the first content after body and navbar
@@ -355,7 +355,7 @@ function addNavbarToPage(pageName) {
         content = content.replace(bodyMatch[0], content.match(/<body[^>]*>[\s\S]*?<\/header>/)[0] + wrappedContent);
       }
     }
-    
+
     // Add JavaScript before closing body tag
     if (content.includes('</body>')) {
       content = content.replace(
@@ -363,12 +363,12 @@ function addNavbarToPage(pageName) {
         `$1\n${jsAddition}\n$2`
       );
     }
-    
+
     // Write the updated content
     fs.writeFileSync(filePath, content, 'utf8');
     console.log(`✅ Added navbar to: ${pageName}`);
     return true;
-    
+
   } catch (error) {
     console.error(`❌ Error updating ${pageName}:`, error.message);
     return false;

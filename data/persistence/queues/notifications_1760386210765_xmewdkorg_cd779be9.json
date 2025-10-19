@@ -1,0 +1,119 @@
+{
+  "value": {
+    "id": "notifications_1760386210765_xmewdkorg",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/cOCllPr_USU:APA91bFfBqzxWzp-PXjhcDGCk6dGExeVTRDvTl1WfCf_UbP1uBCnu99sV23IeecASj22zb0FkyaGLWzhdFwvNaS6x77u2AaXk_X8KKP2kAO7Wkvc2X61g9pvFl-6nvxAzOfVlbo_yuzz",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BBD-QCo-OrVTguH7gfi5083SaboxbngoSwCe7Vsc_rCiqk6pIOsiCuxJ78Ykc0N_E5uhf5zFF33YIPI0NESotwE",
+            "auth": "8QHZa97-2T0r9stL5GskSQ"
+          }
+        },
+        "location": {
+          "lat": 25.264268165896837,
+          "lon": 55.32180741031562,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "_id": "68ed580ed1d07b6dfb1a309d",
+        "__v": 0,
+        "createdAt": "2025-10-13T19:50:39.141Z",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "tz": "Asia/Dubai",
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "updatedAt": "2025-10-13T20:00:00.933Z",
+        "userId": "6888c9391815657294913e8d"
+      },
+      "payload": {
+        "title": "🌅 Maghrib Prayer Time",
+        "body": "It's time for Maghrib prayer\n\"Prayer is better than sleep\"\n📍 Dubai, United Arab Emirates\n🕐 6:30 PM",
+        "icon": "/images/prayers/maghrib-icon.svg",
+        "badge": "/images/prayers/maghrib-icon.svg",
+        "color": "#FF4500",
+        "tag": "maghrib-Tue Oct 14 2025",
+        "requireInteraction": true,
+        "vibrate": [
+          300,
+          100,
+          300,
+          100,
+          300
+        ],
+        "data": {
+          "url": "/prayer-time.html",
+          "prayer": "maghrib",
+          "type": "prayer",
+          "time": "6:30 PM",
+          "location": "Dubai, United Arab Emirates",
+          "category": "prayer-reminders",
+          "timestamp": "2025-10-13T20:10:10.765Z",
+          "userTimezone": "Asia/Dubai",
+          "audioFile": "/audio/adhan.mp3"
+        },
+        "actions": [
+          {
+            "action": "mark_prayed",
+            "title": "✅ Mark as Prayed"
+          },
+          {
+            "action": "snooze",
+            "title": "⏰ Snooze 5 min"
+          },
+          {
+            "action": "view_times",
+            "title": "🕐 View All Times"
+          }
+        ],
+        "audioFile": "/audio/adhan.mp3"
+      }
+    },
+    "options": {
+      "concurrency": 20,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 1000
+      },
+      "delay": 0,
+      "priority": 10
+    },
+    "timestamp": 1760386210765,
+    "status": "completed",
+    "attempts": 1,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-13T20:10:10.765Z",
+    "processedAt": "2025-10-13T20:10:10.961Z",
+    "finishedAt": 1760386210961,
+    "failedReason": null,
+    "result": {
+      "success": true,
+      "jobId": "notifications_1760386210765_xmewdkorg",
+      "processingTime": 196
+    }
+  },
+  "timestamp": 1760386210961,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760386210765_xmewdkorg"
+}

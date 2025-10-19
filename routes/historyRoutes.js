@@ -4,11 +4,11 @@ const { ObjectId } = require('mongodb'); // Needed for ID validation
 const { Parser } = require('json2csv');
 const PDFDocument = require('pdfkit');
 const { deleteFromMemory } = require('../text-to-speech');
-const { 
-    getHistory, 
-    deleteHistoryItems, 
-    updateFavoriteStatus, 
-    incrementReplayCount 
+const {
+    getHistory,
+    deleteHistoryItems,
+    updateFavoriteStatus,
+    incrementReplayCount
 } = require('../utils/storage');
 
 const router = express.Router();
@@ -47,7 +47,7 @@ router.get('/', async (req, res) => {
             favoritesOnly: req.query.favoritesOnly === 'true',
             sessionId: req.query.sessionId || ''
         };
-        
+
         const { total, data } = await getHistory(options);
 
         res.json({
@@ -104,7 +104,7 @@ router.patch('/:id/favorite', async (req, res) => {
         }
         // This operation is simplified; we'd need to fetch the current status to toggle it.
         // Assuming the frontend sends the desired state:
-        const { isFavorite } = req.body; 
+        const { isFavorite } = req.body;
         if (typeof isFavorite !== 'boolean') {
              return res.status(400).json({ error: 'isFavorite must be true or false.' });
         }

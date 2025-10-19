@@ -89,7 +89,7 @@ class PartialTranslationService {
             const partialTranslation = await this.translateWithFastModel(text, fromLang, toLang);
             if (partialTranslation) {
                 translationCache.cacheTranslation(text, fromLang, toLang, partialTranslation, 0.7, userId);
-                
+
                 // Save to database as partial translation
                 if (userId && sessionId) {
                     await this.savePartialTranslation(text, partialTranslation, fromLang, toLang, userId, sessionId);
@@ -114,7 +114,7 @@ class PartialTranslationService {
     // Translate single word using dictionary lookup
     async translateWord(word, fromLang, toLang) {
         const normalizedWord = word.trim().toLowerCase();
-        
+
         // Simple word mapping for common words
         const wordMappings = {
             'ar-en': {
@@ -174,7 +174,7 @@ class PartialTranslationService {
 
         const mappingKey = `${fromLang}-${toLang}`;
         const mappings = wordMappings[mappingKey];
-        
+
         if (mappings && mappings[normalizedWord]) {
             return mappings[normalizedWord];
         }
@@ -186,9 +186,9 @@ class PartialTranslationService {
     async translateWithFastModel(text, fromLang, toLang) {
         try {
             const startTime = Date.now();
-            
+
             const prompt = `Translate this text from ${fromLang} to ${toLang}. Provide only the translation, no explanations: "${text}"`;
-            
+
             const completion = await this.openai.chat.completions.create({
                 model: "gpt-5", // Using GPT-5 for all translations
                 messages: [
@@ -207,7 +207,7 @@ class PartialTranslationService {
 
             const processingTime = Date.now() - startTime;
             const translated = completion.choices[0].message.content.trim();
-            
+
             return {
                 translated,
                 processingTime

@@ -27,7 +27,7 @@ export class DebounceManager {
             const now = Date.now();
             const lastCallTime = this.lastCallTimes.get(key) || 0;
             const timeSinceLastCall = now - lastCallTime;
-            
+
             // Performance optimization: skip if called too frequently
             if (timeSinceLastCall < 100) { // Minimum 100ms between calls
                 return;

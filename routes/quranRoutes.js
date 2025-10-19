@@ -42,14 +42,14 @@ router.get('/quran/chapter/:id', async (req, res) => {
         if (isNaN(surahId)) {
             return res.status(400).json({ error: 'Invalid Surah ID.' });
         }
-        
+
         const collection = await getCollection('quran_verses');
         const verses = await collection.find({ surah_id: surahId }).sort({ verse_id: 1 }).toArray();
-        
+
         if (!verses) {
             return res.status(404).json([]); // Return empty array to prevent frontend errors
         }
-        
+
         res.json(verses);
 
     } catch (error) {
@@ -64,9 +64,9 @@ router.get('/hadith/collections', async (req, res) => {
     try {
         const hadithCollection = await getCollection('hadiths');
         const collections = await hadithCollection.distinct('collection_name');
-        res.json(collections.map(c => ({ 
-            id: c.toLowerCase().replace(/ /g, '-'), 
-            name: c 
+        res.json(collections.map(c => ({
+            id: c.toLowerCase().replace(/ /g, '-'),
+            name: c
         })));
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch Hadith collections.' });
@@ -109,15 +109,15 @@ router.get('/search', async (req, res) => {
 
             const namespace = pineconeIndex.namespace(collectionName);
             const queryResponse = await namespace.query({ topK: 5, vector });
-            
+
             const matchIds = queryResponse.matches.map(match => match.id);
             // For Quran, IDs are strings. For Hadith, they might be ObjectIDs.
             // This handles both cases, but assumes string IDs for simplicity based on source files.
             results = await collection.find({ _id: { $in: matchIds } }).toArray();
 
         } else { // Keyword search
-            const searchFields = source === 'quran' 
-                ? [{ "translations.text": { $regex: q, $options: 'i' } }] 
+            const searchFields = source === 'quran'
+                ? [{ "translations.text": { $regex: q, $options: 'i' } }]
                 : [{ "text_english": { $regex: q, $options: 'i' } }, { "explanation": { $regex: q, $options: 'i' } }];
 
             results = await collection.find({
@@ -127,7 +127,7 @@ router.get('/search', async (req, res) => {
                 ]
             }).limit(10).toArray();
         }
-        
+
         res.json(results);
 
     } catch (error) {
@@ -159,12 +159,12 @@ router.post('/bookmarks', async (req, res) => {
     if (!sessionId || !type || !refId) {
         return res.status(400).json({ error: "Missing required fields for bookmark." });
     }
-    
+
     try {
         const collection = await getCollection('bookmarks');
-        
+
         const existing = await collection.findOne({ sessionId, refId });
-        
+
         if (existing) {
             await collection.deleteOne({ _id: existing._id });
             return res.status(200).json({ message: 'Bookmark removed.', bookmarked: false });

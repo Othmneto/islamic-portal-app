@@ -15,7 +15,7 @@ export class LanguageDetection {
             'على', 'إبراهيم', 'وعلى', 'آل', 'إبراهيم', 'إنك', 'حميد', 'مجيد',
             'اللهم', 'بارك', 'على', 'محمد', 'وعلى', 'آل', 'محمد', 'كما', 'باركت',
             'على', 'إبراهيم', 'وعلى', 'آل', 'إبراهيم', 'إنك', 'حميد', 'مجيد',
-            
+
             // English Islamic terms
             'allah', 'muhammad', 'islam', 'muslim', 'quran', 'hadith', 'sunnah',
             'prayer', 'salah', 'fasting', 'ramadan', 'hajj', 'umrah', 'zakat',
@@ -37,7 +37,7 @@ export class LanguageDetection {
             'authentic', 'genuine', 'true', 'correct', 'right', 'proper',
             'suitable', 'appropriate', 'fitting', 'becoming', 'worthy', 'deserving'
         ]);
-        
+
         this.languagePatterns = {
             arabic: /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/,
             english: /[a-zA-Z]/,
@@ -60,7 +60,7 @@ export class LanguageDetection {
             swahili: /[a-zA-Z\u00C0-\u017F]/,
             hausa: /[a-zA-Z\u00C0-\u017F]/
         };
-        
+
         this.contextMemory = new Map();
         this.maxContextLength = 10;
     }
@@ -82,12 +82,12 @@ export class LanguageDetection {
 
         // Check for Islamic content first
         const isIslamic = this.isIslamicContent(cleanText);
-        
+
         // Score each language pattern
         for (const [lang, pattern] of Object.entries(this.languagePatterns)) {
             const matches = (cleanText.match(pattern) || []).length;
             const score = matches / cleanText.length;
-            
+
             if (score > maxScore) {
                 maxScore = score;
                 detectedLanguage = lang;
@@ -115,14 +115,14 @@ export class LanguageDetection {
      */
     isIslamicContent(text) {
         const cleanText = text.toLowerCase().trim();
-        
+
         // If text is too short, reject it
         if (cleanText.length < 2) {
             return false;
         }
-        
+
         const words = cleanText.split(/\s+/);
-        
+
         // Check for explicit Islamic keywords first
         let islamicWordCount = 0;
         for (const word of words) {
@@ -130,10 +130,10 @@ export class LanguageDetection {
                 islamicWordCount++;
             }
         }
-        
+
         // Check for Arabic script (more strict)
         const hasArabicScript = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
-        
+
         // Check for common Islamic phrases
         const islamicPhrases = [
             'bismillah', 'alhamdulillah', 'subhanallah', 'astaghfirullah',
@@ -142,7 +142,7 @@ export class LanguageDetection {
             'prayer', 'salah', 'quran', 'hadith', 'islam', 'muslim',
             'allah', 'muhammad', 'prophet', 'mosque', 'masjid'
         ];
-        
+
         let hasIslamicPhrase = false;
         for (const phrase of islamicPhrases) {
             if (cleanText.includes(phrase)) {
@@ -150,13 +150,13 @@ export class LanguageDetection {
                 break;
             }
         }
-        
+
         // More strict criteria:
         // 1. Must have Arabic script OR
         // 2. Must have at least 30% Islamic words OR
         // 3. Must contain explicit Islamic phrases
         const islamicRatio = islamicWordCount / words.length;
-        
+
         return hasArabicScript || islamicRatio >= 0.3 || hasIslamicPhrase;
     }
 
@@ -169,7 +169,7 @@ export class LanguageDetection {
         // Allow all content for now - remove strict Islamic-only validation
         // This was causing issues with normal text input including spaces
         const detection = this.detectLanguage(text);
-        
+
         return {
             valid: true,
             reason: 'Content is suitable for translation',
@@ -188,7 +188,7 @@ export class LanguageDetection {
     getLanguageSuggestions(text, currentLang) {
         const detection = this.detectLanguage(text);
         const suggestions = [];
-        
+
         if (detection.language === 'arabic') {
             suggestions.push(
                 { code: 'en', name: 'English', confidence: 95 },
@@ -205,7 +205,7 @@ export class LanguageDetection {
                 { code: 'tr', name: 'Turkish', confidence: 80 }
             );
         }
-        
+
         return suggestions.filter(s => s.code !== currentLang);
     }
 
@@ -220,9 +220,9 @@ export class LanguageDetection {
             language: language,
             timestamp: Date.now()
         };
-        
+
         this.contextMemory.set(text, context);
-        
+
         // Limit context memory size
         if (this.contextMemory.size > this.maxContextLength) {
             const oldestKey = this.contextMemory.keys().next().value;
@@ -241,7 +241,7 @@ export class LanguageDetection {
             .slice(-3) // Last 3 translations
             .map(ctx => ctx.text)
             .join(' ');
-            
+
         return contexts;
     }
 

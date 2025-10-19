@@ -54,13 +54,13 @@ export class ToastManager {
 
   show(message, type = 'info', duration = 3500, options = {}) {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const toast = document.createElement('div');
     toast.id = id;
     toast.className = `toast ${type}`;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
-    
+
     // Add icon based on type
     const icon = this.getIcon(type);
     if (icon) {
@@ -161,11 +161,11 @@ export class TranslationItem {
     item.className = 'translation-item';
     item.setAttribute('role', 'listitem');
     item.setAttribute('data-translation-id', this.data.id);
-    
+
     const timestamp = new Date(this.data.timestamp || Date.now());
     const timeString = timestamp.toLocaleTimeString();
     const dateString = timestamp.toLocaleDateString();
-    
+
     item.innerHTML = `
       <div class="translation-item-header">
         <div class="lang-badge" title="${this.data.from} → ${this.data.to}">
@@ -198,10 +198,10 @@ export class TranslationItem {
         </div>
       ` : ''}
     `;
-    
+
     // Add event listeners
     this.setupEventListeners(item);
-    
+
     return item;
   }
 
@@ -317,16 +317,16 @@ export class ProgressIndicator {
 
   update(progress, text = '') {
     if (!this.isVisible) return;
-    
+
     this.progress = Math.max(0, Math.min(100, progress));
-    
+
     const progressBar = this.container.querySelector('.progress-bar');
     const progressText = this.container.querySelector('.progress-text');
-    
+
     if (progressBar) {
       progressBar.style.width = `${this.progress}%`;
     }
-    
+
     if (progressText) {
       progressText.textContent = text || `${Math.round(this.progress)}%`;
     }
@@ -351,7 +351,7 @@ export class SkeletonLoader {
   show() {
     const skeleton = document.createElement('div');
     skeleton.className = 'loading-skeleton';
-    
+
     switch (this.type) {
       case 'text':
         skeleton.innerHTML = `
@@ -373,7 +373,7 @@ export class SkeletonLoader {
         `).join('');
         break;
     }
-    
+
     this.container.appendChild(skeleton);
   }
 
@@ -400,7 +400,7 @@ export class TextCounter {
     this.textarea.addEventListener('input', () => {
       this.updateCounter();
     });
-    
+
     this.textarea.addEventListener('paste', () => {
       setTimeout(() => this.updateCounter(), 10);
     });
@@ -409,9 +409,9 @@ export class TextCounter {
   updateCounter() {
     const length = this.textarea.value.length;
     const remaining = this.maxLength - length;
-    
+
     this.counterElement.textContent = `${length} characters`;
-    
+
     if (remaining < 100) {
       this.counterElement.style.color = 'var(--warn)';
     } else if (remaining < 0) {

@@ -10,7 +10,7 @@ class DatabaseManager {
         this.connectionRetries = 0;
         this.maxRetries = 5;
         this.retryDelay = 5000; // 5 seconds
-        
+
         // Connection pool configuration
         this.poolConfig = {
             maxPoolSize: parseInt(process.env.MONGO_MAX_POOL_SIZE) || 10,
@@ -35,7 +35,7 @@ class DatabaseManager {
     async connect() {
         try {
             console.log('🔄 Database: Connecting to MongoDB...');
-            
+
             const mongoOptions = {
                 ...this.poolConfig,
                 useNewUrlParser: true,
@@ -48,7 +48,7 @@ class DatabaseManager {
 
             this.setupEventHandlers();
             this.logConnectionStats();
-            
+
             console.log('✅ Database: Connected to MongoDB successfully');
             return this.connection;
         } catch (error) {
@@ -97,10 +97,10 @@ class DatabaseManager {
      */
     async handleConnectionError(error) {
         this.connectionRetries++;
-        
+
         if (this.connectionRetries < this.maxRetries) {
             console.log(`🔄 Database: Retrying connection (${this.connectionRetries}/${this.maxRetries}) in ${this.retryDelay}ms...`);
-            
+
             setTimeout(async () => {
                 try {
                     await this.connect();
@@ -170,7 +170,7 @@ class DatabaseManager {
     logConnectionStats() {
         const status = this.getConnectionStatus();
         const poolStats = this.getPoolStats();
-        
+
         console.log('📊 Database: Connection Statistics');
         console.log(`   Status: ${status.isConnected ? 'Connected' : 'Disconnected'}`);
         console.log(`   Host: ${status.host}:${status.port}`);
@@ -185,7 +185,7 @@ class DatabaseManager {
      */
     async gracefulShutdown(signal) {
         console.log(`\n🔄 Database: Received ${signal}. Starting graceful shutdown...`);
-        
+
         try {
             if (this.connection) {
                 await mongoose.connection.close();
@@ -213,7 +213,7 @@ class DatabaseManager {
 
             // Simple ping to check connection
             await mongoose.connection.db.admin().ping();
-            
+
             return {
                 status: 'healthy',
                 message: 'Database connection is healthy',
@@ -239,15 +239,15 @@ class DatabaseManager {
             // Get current connection stats
             const admin = mongoose.connection.db.admin();
             const serverStatus = await admin.serverStatus();
-            
+
             // Adjust pool size based on current connections
             const currentConnections = serverStatus.connections?.current || 0;
             const maxConnections = serverStatus.connections?.available || 100;
-            
+
             if (currentConnections > maxConnections * 0.8) {
                 console.log('⚠️ Database: High connection usage detected, consider increasing pool size');
             }
-            
+
             return {
                 currentConnections,
                 maxConnections,

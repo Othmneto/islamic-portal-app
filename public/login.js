@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   urlParams.set('v', currentTime);
   urlParams.set('r', randomId);
   window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
-  
+
   const loginForm = document.getElementById('login-form');
   const messageDiv = document.getElementById('message') || document.getElementById('login-message');
   const oauthErrorDiv = document.getElementById('oauth-error-message');
@@ -31,14 +31,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check if user is already logged in (but only if not coming from OAuth callback)
   const existingToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
   const isOAuthCallback = urlParams.get('token') || urlParams.get('code');
-  
+
   console.log('🔍 [Login] Auth check:', {
     existingToken: !!existingToken,
     isOAuthCallback: !!isOAuthCallback,
     tokenManagerAvailable: !!window.tokenManager,
     tokenManagerAuthenticated: window.tokenManager ? window.tokenManager.isAuthenticated() : false
   });
-  
+
   // Only redirect if we have a valid, non-expired token
   if (existingToken && !isOAuthCallback) {
     try {
@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const payload = JSON.parse(atob(existingToken.split('.')[1]));
       const now = Math.floor(Date.now() / 1000);
       const isExpired = payload.exp && payload.exp < now;
-      
+
       if (!isExpired) {
         console.log('✅ Frontend: User already logged in with valid token, redirecting to home');
         window.location.href = '/index.html';
@@ -80,20 +80,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Handle OAuth error messages from URL parameters
   const oauthError = urlParams.get('error');
   const token = urlParams.get('token');
-  
+
   // Only log if there's actually an OAuth error or token
   if (oauthError || token) {
     console.log('🔍 Frontend: OAuth error from URL:', oauthError);
     console.log('🔍 Frontend: Token from URL:', token ? 'PRESENT' : 'NOT PRESENT');
     console.log('🔍 Frontend: All URL parameters:', Object.fromEntries(urlParams.entries()));
   }
-  
+
   // If we have a token, it means OAuth was successful, so clear any error messages
   if (token && oauthErrorDiv) {
     console.log('✅ Frontend: OAuth success detected, clearing error messages');
     oauthErrorDiv.style.display = 'none';
     oauthErrorDiv.textContent = '';
-    
+
     // Clear URL parameters to prevent error from persisting
     if (window.history.replaceState) {
       const url = new URL(window.location);
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       window.history.replaceState({}, document.title, url);
     }
   }
-  
+
   // Also clear any error messages if we're on a success page (like profile.html)
   if (window.location.pathname.includes('profile') && oauthErrorDiv) {
     console.log('✅ Frontend: On profile page, clearing any OAuth error messages');
@@ -178,11 +178,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const emailEl = document.getElementById('email') || document.getElementById('login-email');
     const passEl  = document.getElementById('password') || document.getElementById('login-password');
+    const rememberMeEl = document.getElementById('rememberMe');
 
     const email = emailEl?.value?.trim() || '';
     const password = passEl?.value || '';
+    const rememberMe = rememberMeEl ? rememberMeEl.checked : false;
 
-    console.log('🔍 Login attempt:', { email, passwordLength: password.length, csrfToken: csrfToken ? 'present' : 'missing' });
+    console.log('🔍 Login attempt:', { email, passwordLength: password.length, rememberMe, csrfToken: csrfToken ? 'present' : 'missing' });
 
     if (!email || !password) {
       setMessage('Please enter your email and password.');
@@ -197,11 +199,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         headers['X-CSRF-Token'] = csrfToken;
       }
 
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth-cookie/login', {
         method: 'POST',
         headers,
         credentials: 'include', // <-- ensure session cookie is set
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, rememberMe }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -212,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const msg = data?.message || data?.msg || 'Login failed.';
         console.error('❌ Login failed:', { status: res.status, message: msg, data });
         setMessage(msg);
-        
+
         // Handle email verification requirement
         if (data.requiresVerification) {
           addResendVerificationButton(data.email);
@@ -233,6 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           localStorage.removeItem('token');
           localStorage.removeItem('jwt');
         }
+        console.log('✅ [Login] Tokens saved successfully (rememberMe:', data.rememberMe, ')');
       } else if (data.token) {
         // Legacy support for old API responses
         localStorage.setItem('accessToken', data.token);
@@ -253,7 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (window.globalNavbar) {
         window.globalNavbar.updateAuthStatus();
       }
-      
+
       // Also trigger global navbar update
       if (window.updateNavbarState) {
         window.updateNavbarState({
@@ -264,7 +267,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       // Load user's authentication methods
       await loadUserAuthMethods(data.user.id);
-      
+
       // Show account linking section
       showAccountLinking();
 
@@ -312,11 +315,11 @@ function addResendVerificationButton(email) {
   resendButton.textContent = 'Resend Verification Email';
   resendButton.className = 'btn btn-secondary';
   resendButton.style.marginTop = '10px';
-  
+
   resendButton.addEventListener('click', async () => {
     resendButton.textContent = 'Sending...';
     resendButton.disabled = true;
-    
+
     try {
       const response = await fetch('/api/auth/resend-verification', {
         method: 'POST',
@@ -327,7 +330,7 @@ function addResendVerificationButton(email) {
       });
 
       const data = await response.json();
-      
+
       if (response.ok) {
         setMessage('Verification email sent successfully! Please check your inbox.', true);
       } else {
@@ -358,7 +361,7 @@ async function loadUserAuthMethods(userId) {
         'Authorization': `Bearer ${token}`
       }
     });
-    
+
     if (response.ok) {
       const data = await response.json();
       displayAuthMethods(data.authMethods);
@@ -371,24 +374,24 @@ async function loadUserAuthMethods(userId) {
 function displayAuthMethods(authMethods) {
   const authMethodsDiv = document.getElementById('auth-methods');
   if (!authMethodsDiv) return;
-  
+
   authMethodsDiv.innerHTML = '';
-  
+
   Object.entries(authMethods).forEach(([provider, isConnected]) => {
     if (provider === 'email') return; // Skip email as it's always connected for logged-in users
-    
+
     const methodDiv = document.createElement('div');
     methodDiv.className = `auth-method ${isConnected ? 'connected' : ''}`;
-    
+
     const icon = getProviderIcon(provider);
     const name = getProviderName(provider);
-    
+
     methodDiv.innerHTML = `
       <i class="${icon}"></i>
       <span>${name}</span>
       ${isConnected ? '<i class="fas fa-check"></i>' : ''}
     `;
-    
+
     authMethodsDiv.appendChild(methodDiv);
   });
 }
@@ -429,7 +432,7 @@ async function handleOAuthSuccess(token, refreshToken = null) {
     // Decode token to get user info
     const payload = JSON.parse(atob(token.split('.')[1]));
     const userId = payload.user.id;
-    
+
     // Store tokens using the new token management system
     if (window.tokenManager && refreshToken) {
       window.tokenManager.saveTokens(token, refreshToken);
@@ -440,24 +443,24 @@ async function handleOAuthSuccess(token, refreshToken = null) {
         localStorage.setItem('refreshToken', refreshToken);
       }
     }
-    
+
     // Store user data
     localStorage.setItem('user', JSON.stringify(payload.user));
     localStorage.setItem('userData', JSON.stringify(payload.user)); // For navbar compatibility
-    
+
     // Update navbar if it exists
     if (window.globalNavbar) {
       window.globalNavbar.updateAuthStatus();
     }
-    
+
     setMessage('OAuth login successful! Loading account options...', true);
-    
+
     // Load user's authentication methods
     await loadUserAuthMethods(userId);
-    
+
     // Show account linking section
     showAccountLinking();
-    
+
     // Check if user needs username setup
     if (payload.user.needsUsernameSetup) {
       setTimeout(() => {
@@ -479,12 +482,12 @@ async function handleOAuthSuccess(token, refreshToken = null) {
 window.linkOAuthAccount = async function(provider) {
   const button = document.getElementById(`link-${provider}`);
   if (!button) return;
-  
+
   const originalText = button.innerHTML;
-  
+
   button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Linking...';
   button.disabled = true;
-  
+
   try {
     // Redirect to OAuth provider
     window.location.href = `/api/auth/${provider}`;

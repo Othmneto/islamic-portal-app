@@ -14,7 +14,7 @@ router.get('/account-info', auth, async (req, res) => {
     try {
         console.log('👤 [Account Management] Getting account info for user:', req.user.id);
         const user = await User.findById(req.user.id).select('-password -passwordHistory');
-        
+
         if (!user) {
             console.log('❌ [Account Management] User not found:', req.user.id);
             return res.status(404).json({ error: 'User not found' });
@@ -64,7 +64,7 @@ router.get('/account-info', auth, async (req, res) => {
 router.post('/email-notifications', auth, async (req, res) => {
     try {
         const { enabled } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -84,7 +84,7 @@ router.post('/email-notifications', auth, async (req, res) => {
                 specialAnnouncements: false
             };
         }
-        
+
         // Update the specialAnnouncements field
         user.notificationPreferences.specialAnnouncements = enabled;
 
@@ -99,8 +99,8 @@ router.post('/email-notifications', auth, async (req, res) => {
             description: `Email notifications ${enabled ? 'enabled' : 'disabled'}`
         });
 
-        res.json({ 
-            success: true, 
+        res.json({
+            success: true,
             message: `Email notifications ${enabled ? 'enabled' : 'disabled'}`,
             enabled: enabled
         });
@@ -127,14 +127,14 @@ router.post('/unlink-google', auth, async (req, res) => {
         // Check if user has other auth methods
         const hasOtherAuth = user.authProvider !== 'google' || user.microsoftId;
         if (!hasOtherAuth) {
-            return res.status(400).json({ 
-                error: 'Cannot unlink Google account. Please link another authentication method first.' 
+            return res.status(400).json({
+                error: 'Cannot unlink Google account. Please link another authentication method first.'
             });
         }
 
         const oldGoogleId = user.googleId;
         user.googleId = undefined;
-        
+
         // Update auth provider if it was Google
         if (user.authProvider === 'google') {
             user.authProvider = user.microsoftId ? 'microsoft' : 'local';
@@ -151,9 +151,9 @@ router.post('/unlink-google', auth, async (req, res) => {
             description: 'Google account unlinked from user account'
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Google account unlinked successfully' 
+        res.json({
+            success: true,
+            message: 'Google account unlinked successfully'
         });
     } catch (error) {
         console.error('Error unlinking Google account:', error);
@@ -178,14 +178,14 @@ router.post('/unlink-microsoft', auth, async (req, res) => {
         // Check if user has other auth methods
         const hasOtherAuth = user.authProvider !== 'microsoft' || user.googleId;
         if (!hasOtherAuth) {
-            return res.status(400).json({ 
-                error: 'Cannot unlink Microsoft account. Please link another authentication method first.' 
+            return res.status(400).json({
+                error: 'Cannot unlink Microsoft account. Please link another authentication method first.'
             });
         }
 
         const oldMicrosoftId = user.microsoftId;
         user.microsoftId = undefined;
-        
+
         // Update auth provider if it was Microsoft
         if (user.authProvider === 'microsoft') {
             user.authProvider = user.googleId ? 'google' : 'local';
@@ -202,9 +202,9 @@ router.post('/unlink-microsoft', auth, async (req, res) => {
             description: 'Microsoft account unlinked from user account'
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Microsoft account unlinked successfully' 
+        res.json({
+            success: true,
+            message: 'Microsoft account unlinked successfully'
         });
     } catch (error) {
         console.error('Error unlinking Microsoft account:', error);
@@ -218,7 +218,7 @@ router.post('/unlink-microsoft', auth, async (req, res) => {
 router.post('/enable-biometric', auth, async (req, res) => {
     try {
         const { credential, type, verified } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -245,9 +245,9 @@ router.post('/enable-biometric', auth, async (req, res) => {
                 description: 'OAuth-based biometric authentication enabled for user'
             });
 
-            res.json({ 
-                success: true, 
-                message: 'Biometric authentication enabled successfully (OAuth-based)' 
+            res.json({
+                success: true,
+                message: 'Biometric authentication enabled successfully (OAuth-based)'
             });
         } else if (type === 'password-based' && verified) {
             // For password-verified users
@@ -269,9 +269,9 @@ router.post('/enable-biometric', auth, async (req, res) => {
                 description: 'Password-based biometric authentication enabled for user'
             });
 
-            res.json({ 
-                success: true, 
-                message: 'Biometric authentication enabled successfully (Password-based)' 
+            res.json({
+                success: true,
+                message: 'Biometric authentication enabled successfully (Password-based)'
             });
         } else if (credential) {
             // For WebAuthn credentials
@@ -298,9 +298,9 @@ router.post('/enable-biometric', auth, async (req, res) => {
                 description: 'WebAuthn biometric authentication enabled for user'
             });
 
-            res.json({ 
-                success: true, 
-                message: 'Biometric authentication enabled successfully (WebAuthn)' 
+            res.json({
+                success: true,
+                message: 'Biometric authentication enabled successfully (WebAuthn)'
             });
         } else {
             return res.status(400).json({ error: 'Invalid biometric authentication data' });
@@ -334,9 +334,9 @@ router.post('/disable-biometric', auth, async (req, res) => {
             description: 'Biometric authentication disabled for user'
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Biometric authentication disabled successfully' 
+        res.json({
+            success: true,
+            message: 'Biometric authentication disabled successfully'
         });
     } catch (error) {
         console.error('Error disabling biometric authentication:', error);
@@ -350,7 +350,7 @@ router.post('/disable-biometric', auth, async (req, res) => {
 router.post('/change-password', auth, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
-        
+
         if (!currentPassword || !newPassword) {
             return res.status(400).json({ error: 'Current password and new password are required' });
         }
@@ -402,9 +402,9 @@ router.post('/change-password', auth, async (req, res) => {
             description: 'User password changed successfully'
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Password changed successfully' 
+        res.json({
+            success: true,
+            message: 'Password changed successfully'
         });
     } catch (error) {
         console.error('Error changing password:', error);
@@ -418,7 +418,7 @@ router.post('/change-password', auth, async (req, res) => {
 router.get('/security-events', auth, async (req, res) => {
     try {
         const { page = 1, limit = 20 } = req.query;
-        
+
         // This would typically query a security events collection
         // For now, return a placeholder response
         const securityEvents = {
@@ -444,7 +444,7 @@ router.get('/security-events', auth, async (req, res) => {
 router.delete('/account', auth, async (req, res) => {
     try {
         const { password } = req.body;
-        
+
         if (!password) {
             return res.status(400).json({ error: 'Password is required to delete account' });
         }
@@ -478,9 +478,9 @@ router.delete('/account', auth, async (req, res) => {
             description: 'User account deleted'
         });
 
-        res.json({ 
-            success: true, 
-            message: 'Account deleted successfully' 
+        res.json({
+            success: true,
+            message: 'Account deleted successfully'
         });
     } catch (error) {
         console.error('Error deleting account:', error);

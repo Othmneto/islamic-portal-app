@@ -61,6 +61,15 @@ const userSchema = new mongoose.Schema(
     microsoftRefreshToken: { type: String, sparse: true },
     microsoftTokenExpiry: { type: Date, sparse: true },
 
+    // Location tracking for persistent authentication
+    lastKnownLocation: {
+      lat: { type: Number },
+      lon: { type: Number },
+      accuracy: { type: Number, default: 0 },
+      timestamp: { type: Date, default: Date.now },
+      isDefault: { type: Boolean, default: false }
+    },
+
     // Calendar events
     calendarEvents: [{
       id: { type: String, required: true },
@@ -92,7 +101,7 @@ const userSchema = new mongoose.Schema(
     // For OAuth users, username is set after initial login
     username: {
       type: String,
-      required: function() { 
+      required: function() {
         // Only require username for local auth users or if explicitly set
         return this.authProvider === 'local' || this.username !== undefined;
       },
@@ -118,7 +127,7 @@ const userSchema = new mongoose.Schema(
     emailVerificationExpires: Date,
     passwordResetToken: String,
     passwordResetExpires: Date,
-    
+
     // Profile fields
     firstName: String,
     lastName: String,
@@ -136,14 +145,14 @@ const userSchema = new mongoose.Schema(
       selectedAdhanSrc: { type: String, default: '/audio/adhan.mp3' },
       adhanVolume: { type: Number, default: 1.0, min: 0, max: 1 }
     },
-    
+
     // Activity tracking
     translationCount: { type: Number, default: 0 },
     loginCount: { type: Number, default: 0 },
     timeSpent: { type: Number, default: 0 }, // in seconds
     favoritesCount: { type: Number, default: 0 },
     prayerLogCount: { type: Number, default: 0 },
-    
+
     // Privacy settings
     privacySettings: {
       analyticsEnabled: { type: Boolean, default: true },
@@ -156,7 +165,7 @@ const userSchema = new mongoose.Schema(
       researchData: { type: Boolean, default: false },
       publicProfile: { type: Boolean, default: false }
     },
-    
+
     // Remember me settings
     rememberMeSettings: {
       rememberMeEnabled: { type: Boolean, default: true },
@@ -170,7 +179,7 @@ const userSchema = new mongoose.Schema(
       prayerTimesCache: { type: Boolean, default: true },
       userPreferences: { type: Boolean, default: true }
     },
-    
+
     // Security fields
     lastLogin: Date,
     lastLoginIP: String,
@@ -186,7 +195,7 @@ const userSchema = new mongoose.Schema(
         used: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now }
     }],
-    
+
     // Biometric authentication
     biometricEnabled: { type: Boolean, default: false },
     biometricType: { type: String, enum: ['webauthn', 'password-based', 'oauth-based'], default: null },
@@ -194,7 +203,7 @@ const userSchema = new mongoose.Schema(
         type: mongoose.Schema.Types.Mixed,
         default: null
     },
-    
+
     // MFA settings
     mfa: {
       totpEnabled: { type: Boolean, default: false },
@@ -274,11 +283,17 @@ const userSchema = new mongoose.Schema(
 // Hash password on change
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password') || !this.password) return next();
+  
+  // Check if password is already hashed (starts with $2a$ or $2b$)
+  if (this.password.startsWith('$2a$') || this.password.startsWith('$2b$')) {
+    return next();
+  }
+  
   try {
     // Use 12 salt rounds for production security
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(this.password, salt);
-    
+
     // Add current password to history before updating
     if (this.passwordHistory && this.passwordHistory.length > 0) {
       this.passwordHistory.push(this.password);
@@ -289,7 +304,7 @@ userSchema.pre('save', async function (next) {
     } else {
       this.passwordHistory = [this.password];
     }
-    
+
     this.password = hashedPassword;
     this.passwordChangedAt = new Date();
     next();
@@ -318,14 +333,14 @@ userSchema.methods.incrementLoginAttempts = function() {
       $set: { failedLoginAttempts: 1 }
     });
   }
-  
+
   const updates = { $inc: { failedLoginAttempts: 1 } };
-  
+
   // Lock account after 5 failed attempts for 2 hours
   if (this.failedLoginAttempts + 1 >= 5 && !this.isAccountLocked()) {
     updates.$set = { accountLockedUntil: Date.now() + 2 * 60 * 60 * 1000 }; // 2 hours
   }
-  
+
   return this.updateOne(updates);
 };
 
@@ -337,7 +352,7 @@ userSchema.methods.resetLoginAttempts = function() {
 
 userSchema.methods.isPasswordInHistory = async function(newPassword) {
   if (this.passwordHistory.length === 0) return false;
-  
+
   for (const oldPassword of this.passwordHistory) {
     if (await bcrypt.compare(newPassword, oldPassword)) {
       return true;
@@ -359,7 +374,7 @@ userSchema.methods.setPasswordExpiration = function() {
 
 // Check if account needs password change
 userSchema.methods.needsPasswordChange = function() {
-  return this.isPasswordExpired() || 
+  return this.isPasswordExpired() ||
          (this.lastPasswordChange && (Date.now() - this.lastPasswordChange.getTime()) > 90 * 24 * 60 * 60 * 1000);
 };
 

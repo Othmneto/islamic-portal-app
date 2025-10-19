@@ -577,3 +577,215 @@ a:hover { text-decoration: underline; }
   outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
+
+/* -------------------- Notification Status Dashboard -------------------- */
+.notification-status-panel {
+  background: var(--secondary-bg);
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.status-header {
+  padding: 15px 20px;
+  background: var(--accent-color);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.status-header:hover {
+  background: var(--accent-color);
+  opacity: 0.9;
+}
+
+.status-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.toggle-icon {
+  transition: transform 0.3s ease;
+  font-size: 14px;
+}
+
+.status-header.collapsed .toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.status-content {
+  max-height: 1000px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.status-content.collapsed {
+  max-height: 0;
+}
+
+.status-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.status-section:last-child {
+  border-bottom: none;
+}
+
+.status-section h4 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.schedule-info .info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.schedule-info .info-row:last-child {
+  border-bottom: none;
+}
+
+.info-row .label {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.info-row .value {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  padding: 10px;
+  border-left: 3px solid var(--accent-color);
+  background: var(--tertiary-bg);
+  margin-bottom: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.history-item.failed {
+  border-left-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.history-item-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.history-item-prayer {
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--text-primary);
+}
+
+.history-item-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.history-item-type {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.history-item-error {
+  font-size: 11px;
+  color: #ef4444;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.no-history {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 20px;
+}
+
+.loading {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 20px;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.status-indicator {
+  font-size: 12px;
+}
+
+.status-indicator.connected {
+  color: #10b981;
+}
+
+.status-indicator.disconnected {
+  color: #ef4444;
+}
+
+.status-indicator.connecting {
+  color: #f59e0b;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.loading {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 20px;
+}
+
+.no-history {
+  text-align: center;
+  color: var(--text-secondary);
+  font-style: italic;
+  padding: 20px;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  
+  .status-section {
+    padding: 15px;
+  }
+  
+  .notification-status-panel {
+    margin: 15px 0;
+  }
+}

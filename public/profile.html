@@ -387,5 +387,27 @@
   </script>
 
     <script src="/js/navbar-enhancements.js"></script>
+    
+    <!-- Enhanced Authentication System -->
+    <script src="/js/cross-tab-sync.js"></script>
+    <script src="/js/cache-manager.js"></script>
+    <script src="/js/tokenManager.js"></script>
+    
+    <!-- Service Worker token relay -->
+    <script>
+      if (navigator.serviceWorker) {
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          try {
+            const data = event.data || {};
+            if (data && data.type === 'GET_TOKEN' && event.ports && event.ports[0]) {
+              const token = localStorage.getItem('accessToken') || null;
+              event.ports[0].postMessage({ token });
+            }
+          } catch (err) {
+            console.error('[Page] SW message handler error', err);
+          }
+        });
+      }
+    </script>
 </body>
 </html>

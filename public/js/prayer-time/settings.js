@@ -19,7 +19,7 @@ export class PrayerTimesSettings {
   // Load settings
   async load() {
     console.log("[Settings] Loading settings...");
-    
+
     // Try to load from server first
     const serverSettings = await this.loadFromServer();
     if (serverSettings) {
@@ -33,7 +33,7 @@ export class PrayerTimesSettings {
 
     // Apply settings to UI
     this.updateUI();
-    
+
     // Migration support
     this.handleLegacyMigration();
   }
@@ -57,7 +57,7 @@ export class PrayerTimesSettings {
       if (response.ok) {
         const data = await response.json();
         const serverSettings = data.preferences || {};
-        
+
         // Merge with notification preferences
         const notificationResponse = await fetch("/api/user/notification-preferences", {
           headers: {
@@ -69,7 +69,7 @@ export class PrayerTimesSettings {
         if (notificationResponse.ok) {
           const notificationData = await notificationResponse.json();
           const notificationPrefs = notificationData.preferences || {};
-          
+
           return {
             calculationMethod: serverSettings.calculationMethod || "auto",
             madhab: serverSettings.madhab || "auto",
@@ -89,7 +89,7 @@ export class PrayerTimesSettings {
             }
           };
         }
-        
+
         return {
           calculationMethod: serverSettings.calculationMethod || "auto",
           madhab: serverSettings.madhab || "auto",
@@ -141,7 +141,7 @@ export class PrayerTimesSettings {
     this.core.state.settings.audioEnabled = settings.audioEnabled !== false;
     this.core.state.settings.selectedAdhanSrc = settings.selectedAdhanSrc || "/audio/adhan.mp3";
     this.core.state.settings.adhanVolume = settings.adhanVolume || 1.0;
-    
+
     if (settings.prayerReminders) {
       this.core.state.settings.prayerReminders = settings.prayerReminders;
     }
@@ -202,12 +202,22 @@ export class PrayerTimesSettings {
   // Save settings
   async save() {
     console.log("[Settings] Saving settings:", this.core.state.settings);
-    
+
     // Save to localStorage immediately for responsiveness
     this.saveToLocalStorage();
-    
-    // Save to server in background
-    this.saveToServer();
+
+    // Debounce server save to prevent rapid API calls
+    this.debouncedServerSave();
+  }
+
+  // Debounced server save
+  debouncedServerSave() {
+    if (this._saveTimeout) {
+      clearTimeout(this._saveTimeout);
+    }
+    this._saveTimeout = setTimeout(async () => {
+      await this.performServerSave();
+    }, 1000); // 1 second debounce
   }
 
   // Save to localStorage
@@ -233,11 +243,11 @@ export class PrayerTimesSettings {
       if (this._saveTimeout) {
         clearTimeout(this._saveTimeout);
       }
-      
+
       this._saveTimeout = setTimeout(async () => {
         await this.performServerSave();
       }, 1000); // Wait 1 second before saving to server
-      
+
     } catch (error) {
       console.warn("[Settings] Failed to save to server:", error);
     }
@@ -299,6 +309,8 @@ export class PrayerTimesSettings {
 
       if (preferencesResponse.ok && notificationResponse.ok) {
         console.log("[Settings] Settings saved to server successfully");
+        // Note: Removed automatic reload to prevent infinite loops
+        // Settings are already in sync since we just saved them
       } else {
         console.warn("[Settings] Some server saves failed:", {
           preferences: preferencesResponse.status,

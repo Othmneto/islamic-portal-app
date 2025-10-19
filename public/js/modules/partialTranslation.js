@@ -44,7 +44,7 @@ export class PartialTranslation {
             }
 
             const data = await response.json();
-            
+
             if (data.success && data.data) {
                 // Cache the result
                 this.partialCache.set(cacheKey, {
@@ -66,7 +66,7 @@ export class PartialTranslation {
     async getDebouncedPartialTranslation(text, fromLang, toLang, userId = null, sessionId = null, delay = 300) {
         return new Promise((resolve) => {
             clearTimeout(this.debounceTimeout);
-            
+
             this.debounceTimeout = setTimeout(async () => {
                 const result = await this.getPartialTranslation(text, fromLang, toLang, userId, sessionId);
                 resolve(result);
@@ -285,8 +285,8 @@ export class PartialTranslation {
     // Get authentication token
     getAuthToken() {
         // Try to get token from localStorage or sessionStorage
-        return localStorage.getItem('authToken') || 
-               sessionStorage.getItem('authToken') || 
+        return localStorage.getItem('authToken') ||
+               sessionStorage.getItem('authToken') ||
                this.getTokenFromCookie();
     }
 

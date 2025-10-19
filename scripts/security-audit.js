@@ -26,7 +26,7 @@ class SecurityAuditor {
     async makeRequest(endpoint, method = 'GET', data = null, headers = {}) {
         return new Promise((resolve, reject) => {
             const url = new URL(endpoint, this.baseUrl);
-            
+
             const options = {
                 hostname: url.hostname,
                 port: url.port || (url.protocol === 'https:' ? 443 : 80),
@@ -58,7 +58,7 @@ class SecurityAuditor {
             if (data) {
                 req.write(JSON.stringify(data));
             }
-            
+
             req.end();
         });
     }
@@ -71,14 +71,14 @@ class SecurityAuditor {
             recommendation,
             timestamp: new Date().toISOString()
         });
-        
+
         this.results.vulnerabilities.push({
             severity,
             category,
             description,
             recommendation
         });
-        
+
         // Reduce security score based on severity
         switch (severity) {
             case 'CRITICAL':
@@ -98,7 +98,7 @@ class SecurityAuditor {
 
     async testSQLInjection() {
         console.log('🔍 [Security] Testing SQL injection vulnerabilities...');
-        
+
         const sqlPayloads = [
             "'; DROP TABLE users; --",
             "' OR '1'='1",
@@ -117,7 +117,7 @@ class SecurityAuditor {
                 });
 
                 this.results.totalTests++;
-                
+
                 if (response.statusCode === 500) {
                     this.addVulnerability(
                         'CRITICAL',
@@ -138,7 +138,7 @@ class SecurityAuditor {
 
     async testXSSVulnerabilities() {
         console.log('🔍 [Security] Testing XSS vulnerabilities...');
-        
+
         const xssPayloads = [
             '<script>alert("XSS")</script>',
             '<img src="x" onerror="alert(\'XSS\')">',
@@ -158,8 +158,8 @@ class SecurityAuditor {
                 });
 
                 this.results.totalTests++;
-                
-                if (response.body.includes('<script>') || 
+
+                if (response.body.includes('<script>') ||
                     response.body.includes('javascript:') ||
                     response.body.includes('onerror') ||
                     response.body.includes('onload')) {
@@ -182,7 +182,7 @@ class SecurityAuditor {
 
     async testAuthenticationSecurity() {
         console.log('🔍 [Security] Testing authentication security...');
-        
+
         // Test weak password acceptance
         const weakPasswords = [
             '123',
@@ -201,7 +201,7 @@ class SecurityAuditor {
                 });
 
                 this.results.totalTests++;
-                
+
                 if (response.statusCode === 200) {
                     this.addVulnerability(
                         'HIGH',
@@ -236,7 +236,7 @@ class SecurityAuditor {
                 });
 
                 this.results.totalTests++;
-                
+
                 if (response.statusCode === 200) {
                     this.addVulnerability(
                         'MEDIUM',
@@ -257,7 +257,7 @@ class SecurityAuditor {
 
     async testRateLimiting() {
         console.log('🔍 [Security] Testing rate limiting...');
-        
+
         const requests = [];
         for (let i = 0; i < 200; i++) {
             requests.push(
@@ -273,7 +273,7 @@ class SecurityAuditor {
         const rateLimited = responses.filter(r => r.statusCode === 429).length;
 
         this.results.totalTests++;
-        
+
         if (rateLimited === 0) {
             this.addVulnerability(
                 'HIGH',
@@ -290,12 +290,12 @@ class SecurityAuditor {
 
     async testSecurityHeaders() {
         console.log('🔍 [Security] Testing security headers...');
-        
+
         try {
             const response = await this.makeRequest('/api/text-translation/health');
-            
+
             this.results.totalTests++;
-            
+
             const requiredHeaders = [
                 'x-content-type-options',
                 'x-frame-options',
@@ -304,7 +304,7 @@ class SecurityAuditor {
             ];
 
             const missingHeaders = requiredHeaders.filter(header => !response.headers[header]);
-            
+
             if (missingHeaders.length > 0) {
                 this.addVulnerability(
                     'MEDIUM',
@@ -324,7 +324,7 @@ class SecurityAuditor {
 
     async testPathTraversal() {
         console.log('🔍 [Security] Testing path traversal vulnerabilities...');
-        
+
         const pathTraversalPayloads = [
             '../../../etc/passwd',
             '..\\..\\..\\windows\\system32\\drivers\\etc\\hosts',
@@ -335,9 +335,9 @@ class SecurityAuditor {
         for (const payload of pathTraversalPayloads) {
             try {
                 const response = await this.makeRequest(`/api/files/${payload}`);
-                
+
                 this.results.totalTests++;
-                
+
                 if (response.statusCode === 200 && response.body.includes('root:')) {
                     this.addVulnerability(
                         'CRITICAL',
@@ -358,7 +358,7 @@ class SecurityAuditor {
 
     async testCSRFProtection() {
         console.log('🔍 [Security] Testing CSRF protection...');
-        
+
         try {
             const response = await this.makeRequest('/api/text-translation/translate', 'POST', {
                 sourceText: 'Test text',
@@ -369,7 +369,7 @@ class SecurityAuditor {
             });
 
             this.results.totalTests++;
-            
+
             if (response.statusCode === 200) {
                 this.addVulnerability(
                     'HIGH',
@@ -389,12 +389,12 @@ class SecurityAuditor {
 
     async testDataExposure() {
         console.log('🔍 [Security] Testing data exposure...');
-        
+
         try {
             const response = await this.makeRequest('/api/text-translation/health');
-            
+
             this.results.totalTests++;
-            
+
             // Check for sensitive information in response
             const sensitivePatterns = [
                 /password/i,
@@ -407,7 +407,7 @@ class SecurityAuditor {
 
             const body = response.body.toLowerCase();
             const exposedData = sensitivePatterns.filter(pattern => pattern.test(body));
-            
+
             if (exposedData.length > 0) {
                 this.addVulnerability(
                     'MEDIUM',
@@ -427,9 +427,9 @@ class SecurityAuditor {
 
     async runComprehensiveAudit() {
         console.log('🔒 [Security] Starting comprehensive security audit...\n');
-        
+
         const startTime = performance.now();
-        
+
         await this.testSQLInjection();
         await this.testXSSVulnerabilities();
         await this.testAuthenticationSecurity();
@@ -438,10 +438,10 @@ class SecurityAuditor {
         await this.testPathTraversal();
         await this.testCSRFProtection();
         await this.testDataExposure();
-        
+
         const endTime = performance.now();
         const totalTime = endTime - startTime;
-        
+
         this.printResults(totalTime);
     }
 
@@ -453,11 +453,11 @@ class SecurityAuditor {
         console.log(`✅ Passed: ${this.results.passedTests}`);
         console.log(`❌ Failed: ${this.results.failedTests}`);
         console.log(`🎯 Security Score: ${Math.max(0, this.securityScore)}/100`);
-        
+
         if (this.vulnerabilities.length > 0) {
             console.log(`\n🚨 [Vulnerabilities] Found ${this.vulnerabilities.length} issues:`);
             console.log('-'.repeat(60));
-            
+
             this.vulnerabilities.forEach((vuln, index) => {
                 console.log(`${index + 1}. [${vuln.severity}] ${vuln.category}`);
                 console.log(`   Description: ${vuln.description}`);
@@ -467,7 +467,7 @@ class SecurityAuditor {
         } else {
             console.log('\n✅ [Security] No vulnerabilities found!');
         }
-        
+
         console.log('='.repeat(60));
     }
 }

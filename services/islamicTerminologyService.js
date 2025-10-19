@@ -620,7 +620,7 @@ class IslamicTerminologyService {
         try {
             // Normalize the Arabic term
             const normalizedTerm = this.normalizeArabicText(arabicTerm);
-            
+
             // Get base translation
             const termData = this.terminology[normalizedTerm];
             if (!termData) {
@@ -629,10 +629,10 @@ class IslamicTerminologyService {
 
             // Normalize target language
             const normalizedLang = this.languageMappings[targetLanguage.toLowerCase()] || targetLanguage.toLowerCase();
-            
+
             // Get translation
             let translation = termData[normalizedLang];
-            
+
             // Apply context rules if available
             if (this.contextRules[context] && this.contextRules[context][normalizedTerm]) {
                 translation = this.contextRules[context][normalizedTerm];
@@ -653,7 +653,7 @@ class IslamicTerminologyService {
     findIslamicTerms(text) {
         const foundTerms = [];
         const normalizedText = this.normalizeArabicText(text);
-        
+
         for (const term in this.terminology) {
             if (normalizedText.includes(term)) {
                 foundTerms.push({
@@ -663,7 +663,7 @@ class IslamicTerminologyService {
                 });
             }
         }
-        
+
         return foundTerms;
     }
 
@@ -678,10 +678,10 @@ class IslamicTerminologyService {
         try {
             let processedText = text;
             const foundTerms = this.findIslamicTerms(text);
-            
+
             // Sort by position (reverse order to avoid index shifting)
             foundTerms.sort((a, b) => b.position - a.position);
-            
+
             for (const termInfo of foundTerms) {
                 const translation = this.getTranslation(termInfo.term, targetLanguage, context);
                 if (translation) {
@@ -690,7 +690,7 @@ class IslamicTerminologyService {
                     processedText = before + translation + after;
                 }
             }
-            
+
             return processedText;
         } catch (error) {
             console.error('[IslamicTerminologyService] Error replacing terms:', error);
@@ -721,14 +721,14 @@ class IslamicTerminologyService {
     getConfidenceScore(arabicTerm, targetLanguage) {
         const normalizedTerm = this.normalizeArabicText(arabicTerm);
         const termData = this.terminology[normalizedTerm];
-        
+
         if (!termData) {
             return 0;
         }
-        
+
         const normalizedLang = this.languageMappings[targetLanguage.toLowerCase()] || targetLanguage.toLowerCase();
         const hasTranslation = !!termData[normalizedLang];
-        
+
         return hasTranslation ? 1.0 : 0.5;
     }
 
@@ -740,11 +740,11 @@ class IslamicTerminologyService {
     getAvailableLanguages(arabicTerm) {
         const normalizedTerm = this.normalizeArabicText(arabicTerm);
         const termData = this.terminology[normalizedTerm];
-        
+
         if (!termData) {
             return [];
         }
-        
+
         return Object.keys(termData);
     }
 
@@ -765,20 +765,20 @@ class IslamicTerminologyService {
     getStatistics() {
         try {
             console.log('📊 [IslamicTerminologyService] Getting database statistics...');
-            
+
             const totalTerms = Object.keys(this.terminology).length;
             const allLanguages = new Set();
-            
+
             for (const term in this.terminology) {
                 Object.keys(this.terminology[term]).forEach(lang => allLanguages.add(lang));
             }
-            
+
             const stats = {
                 totalTerms,
                 supportedLanguages: Array.from(allLanguages),
                 totalTranslations: Object.values(this.terminology).reduce((sum, term) => sum + Object.keys(term).length, 0)
             };
-            
+
             console.log('✅ [IslamicTerminologyService] Statistics retrieved:', stats);
             return stats;
         } catch (error) {
@@ -799,7 +799,7 @@ class IslamicTerminologyService {
     getAllTerms() {
         try {
             console.log('📚 [IslamicTerminologyService] Getting all terms...');
-            
+
             const allTerms = Object.entries(this.terminology).map(([key, term]) => ({
                 id: key,
                 arabic: term.arabic || key,
@@ -808,10 +808,10 @@ class IslamicTerminologyService {
                 source: term.source || 'Islamic Terminology Database',
                 lastUpdated: term.lastUpdated || new Date().toISOString()
             }));
-            
+
             console.log('✅ [IslamicTerminologyService] Retrieved', allTerms.length, 'terms');
             return allTerms;
-            
+
         } catch (error) {
             console.error('❌ [IslamicTerminologyService] Error getting all terms:', error);
             return [];

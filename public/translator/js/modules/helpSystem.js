@@ -9,10 +9,10 @@ export class HelpSystem {
         this.tooltips = new Map();
         this.tutorials = new Map();
         this.isInitialized = false;
-        
+
         this.init();
     }
-    
+
     init() {
         this.setupHelpTopics();
         this.setupTooltips();
@@ -20,7 +20,7 @@ export class HelpSystem {
         this.setupHelpUI();
         this.isInitialized = true;
     }
-    
+
     /**
      * Setup help topics
      */
@@ -47,7 +47,7 @@ export class HelpSystem {
                 </ul>
             `
         });
-        
+
         this.helpTopics.set('features', {
             title: 'Features',
             content: `
@@ -69,7 +69,7 @@ export class HelpSystem {
                 <p>Full support for right-to-left languages like Arabic and Hebrew.</p>
             `
         });
-        
+
         this.helpTopics.set('troubleshooting', {
             title: 'Troubleshooting',
             content: `
@@ -97,7 +97,7 @@ export class HelpSystem {
                 </ul>
             `
         });
-        
+
         this.helpTopics.set('accessibility', {
             title: 'Accessibility',
             content: `
@@ -117,7 +117,7 @@ export class HelpSystem {
             `
         });
     }
-    
+
     /**
      * Setup tooltips
      */
@@ -149,7 +149,7 @@ export class HelpSystem {
                 position: 'left'
             }
         ];
-        
+
         tooltipElements.forEach(tooltip => {
             this.tooltips.set(tooltip.selector, {
                 content: tooltip.content,
@@ -157,7 +157,7 @@ export class HelpSystem {
             });
         });
     }
-    
+
     /**
      * Setup tutorials
      */
@@ -192,7 +192,7 @@ export class HelpSystem {
                 }
             ]
         });
-        
+
         this.tutorials.set('advanced-features', {
             title: 'Advanced Features Tutorial',
             steps: [
@@ -219,7 +219,7 @@ export class HelpSystem {
             ]
         });
     }
-    
+
     /**
      * Setup help UI
      */
@@ -229,7 +229,7 @@ export class HelpSystem {
         this.createTooltipSystem();
         this.createTutorialOverlay();
     }
-    
+
     /**
      * Create help button
      */
@@ -255,11 +255,11 @@ export class HelpSystem {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
         `;
-        
+
         button.addEventListener('click', () => this.showHelpModal());
         document.body.appendChild(button);
     }
-    
+
     /**
      * Create help modal
      */
@@ -279,7 +279,7 @@ export class HelpSystem {
             align-items: center;
             z-index: 1001;
         `;
-        
+
         const modalContent = document.createElement('div');
         modalContent.className = 'help-modal-content';
         modalContent.style.cssText = `
@@ -292,40 +292,40 @@ export class HelpSystem {
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         `;
-        
+
         // Create help modal content programmatically
         const header = document.createElement('div');
         header.className = 'help-header';
-        
+
         const title = document.createElement('h2');
         title.textContent = 'Help & Documentation';
-        
+
         const closeBtn = document.createElement('button');
         closeBtn.className = 'close-button';
         closeBtn.setAttribute('aria-label', 'Close help modal');
         closeBtn.textContent = '×';
-        
+
         header.appendChild(title);
         header.appendChild(closeBtn);
-        
+
         const content = document.createElement('div');
         content.className = 'help-content';
-        
+
         const sidebar = document.createElement('div');
         sidebar.className = 'help-sidebar';
-        
+
         const nav = document.createElement('nav');
         nav.className = 'help-nav';
-        
+
         const ul = document.createElement('ul');
-        
+
         const navItems = [
             { href: '#getting-started', text: 'Getting Started', active: true },
             { href: '#features', text: 'Features', active: false },
             { href: '#troubleshooting', text: 'Troubleshooting', active: false },
             { href: '#accessibility', text: 'Accessibility', active: false }
         ];
-        
+
         navItems.forEach(item => {
             const li = document.createElement('li');
             const a = document.createElement('a');
@@ -335,30 +335,30 @@ export class HelpSystem {
             li.appendChild(a);
             ul.appendChild(li);
         });
-        
+
         nav.appendChild(ul);
         sidebar.appendChild(nav);
-        
+
         const main = document.createElement('div');
         main.className = 'help-main';
-        
+
         const contentArea = document.createElement('div');
         contentArea.id = 'help-content-area';
-        
+
         main.appendChild(contentArea);
         content.appendChild(sidebar);
         content.appendChild(main);
-        
+
         modalContent.appendChild(header);
         modalContent.appendChild(content);
-        
+
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
-        
+
         // Add event listeners
         this.setupHelpModalEvents();
     }
-    
+
     /**
      * Setup help modal events
      */
@@ -366,21 +366,21 @@ export class HelpSystem {
         const modal = document.getElementById('help-modal');
         const closeButton = modal.querySelector('.close-button');
         const navLinks = modal.querySelectorAll('.help-nav-link');
-        
+
         closeButton.addEventListener('click', () => this.hideHelpModal());
-        
+
         navLinks.forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
                 const topic = link.getAttribute('href').substring(1);
                 this.showHelpTopic(topic);
-                
+
                 // Update active link
                 navLinks.forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
             });
         });
-        
+
         // Close modal on background click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -388,7 +388,7 @@ export class HelpSystem {
             }
         });
     }
-    
+
     /**
      * Create tooltip system
      */
@@ -408,34 +408,34 @@ export class HelpSystem {
             opacity: 0;
             transition: opacity 0.3s ease;
         `;
-        
+
         document.body.appendChild(tooltip);
-        
+
         // Add tooltip events
         this.setupTooltipEvents();
     }
-    
+
     /**
      * Setup tooltip events
      */
     setupTooltipEvents() {
         const tooltip = document.getElementById('tooltip');
-        
+
         document.addEventListener('mouseover', (e) => {
             const element = e.target;
             const selector = this.getElementSelector(element);
             const tooltipData = this.tooltips.get(selector);
-            
+
             if (tooltipData) {
                 this.showTooltip(element, tooltipData.content, tooltipData.position);
             }
         });
-        
+
         document.addEventListener('mouseout', (e) => {
             this.hideTooltip();
         });
     }
-    
+
     /**
      * Create tutorial overlay
      */
@@ -453,7 +453,7 @@ export class HelpSystem {
             display: none;
             z-index: 1003;
         `;
-        
+
         const tutorialContent = document.createElement('div');
         tutorialContent.className = 'tutorial-content';
         tutorialContent.style.cssText = `
@@ -464,11 +464,11 @@ export class HelpSystem {
             max-width: 300px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         `;
-        
+
         overlay.appendChild(tutorialContent);
         document.body.appendChild(overlay);
     }
-    
+
     /**
      * Show help modal
      */
@@ -476,11 +476,11 @@ export class HelpSystem {
         const modal = document.getElementById('help-modal');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        
+
         // Show first topic
         this.showHelpTopic('getting-started');
     }
-    
+
     /**
      * Hide help modal
      */
@@ -489,7 +489,7 @@ export class HelpSystem {
         modal.style.display = 'none';
         document.body.style.overflow = '';
     }
-    
+
     /**
      * Show help topic
      */
@@ -499,18 +499,18 @@ export class HelpSystem {
             const contentArea = document.getElementById('help-content-area');
             // Clear existing content
             contentArea.innerHTML = '';
-            
+
             // Create a temporary div to parse the HTML content
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = topic.content;
-            
+
             // Move all child nodes to the content area
             while (tempDiv.firstChild) {
                 contentArea.appendChild(tempDiv.firstChild);
             }
         }
     }
-    
+
     /**
      * Show tooltip
      */
@@ -518,12 +518,12 @@ export class HelpSystem {
         const tooltip = document.getElementById('tooltip');
         tooltip.textContent = content;
         tooltip.style.opacity = '1';
-        
+
         const rect = element.getBoundingClientRect();
         const tooltipRect = tooltip.getBoundingClientRect();
-        
+
         let top, left;
-        
+
         switch (position) {
             case 'top':
                 top = rect.top - tooltipRect.height - 8;
@@ -542,11 +542,11 @@ export class HelpSystem {
                 left = rect.right + 8;
                 break;
         }
-        
+
         tooltip.style.top = `${top}px`;
         tooltip.style.left = `${left}px`;
     }
-    
+
     /**
      * Hide tooltip
      */
@@ -554,7 +554,7 @@ export class HelpSystem {
         const tooltip = document.getElementById('tooltip');
         tooltip.style.opacity = '0';
     }
-    
+
     /**
      * Start tutorial
      */
@@ -566,7 +566,7 @@ export class HelpSystem {
             this.showTutorialStep();
         }
     }
-    
+
     /**
      * Show tutorial step
      */
@@ -575,22 +575,22 @@ export class HelpSystem {
             this.hideTutorial();
             return;
         }
-        
+
         const step = this.currentTutorial.steps[this.currentStep];
         const target = document.querySelector(step.target);
-        
+
         if (target) {
             this.showTutorialOverlay(target, step.content, step.position);
         }
     }
-    
+
     /**
      * Show tutorial overlay
      */
     showTutorialOverlay(target, content, position) {
         const overlay = document.getElementById('tutorial-overlay');
         const tutorialContent = overlay.querySelector('.tutorial-content');
-        
+
         tutorialContent.innerHTML = `
             <div class="tutorial-step">
                 <p>${content}</p>
@@ -600,29 +600,29 @@ export class HelpSystem {
                 </div>
             </div>
         `;
-        
+
         // Position overlay
         const rect = target.getBoundingClientRect();
         tutorialContent.style.top = `${rect.top}px`;
         tutorialContent.style.left = `${rect.left}px`;
-        
+
         overlay.style.display = 'block';
-        
+
         // Add event listeners
         const prevBtn = tutorialContent.querySelector('.tutorial-prev');
         const nextBtn = tutorialContent.querySelector('.tutorial-next');
-        
+
         prevBtn.addEventListener('click', () => {
             this.currentStep--;
             this.showTutorialStep();
         });
-        
+
         nextBtn.addEventListener('click', () => {
             this.currentStep++;
             this.showTutorialStep();
         });
     }
-    
+
     /**
      * Hide tutorial
      */
@@ -632,7 +632,7 @@ export class HelpSystem {
         this.currentTutorial = null;
         this.currentStep = 0;
     }
-    
+
     /**
      * Get element selector
      */
@@ -640,14 +640,14 @@ export class HelpSystem {
         if (element.id) {
             return `#${element.id}`;
         }
-        
+
         if (element.className) {
             return `.${element.className.split(' ')[0]}`;
         }
-        
+
         return element.tagName.toLowerCase();
     }
-    
+
     /**
      * Get help status
      */

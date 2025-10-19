@@ -2,7 +2,7 @@
 
 /**
  * Clear Rate Limiting Cache
- * 
+ *
  * This script clears the in-memory rate limiting cache by restarting the server.
  * Use this when you've hit the rate limit during testing.
  */
@@ -20,7 +20,7 @@ exec(killCommand, (error, stdout, stderr) => {
     console.error('❌ Error killing Node processes:', error);
     return;
   }
-  
+
   console.log('✅ Node.js processes terminated');
   console.log('🚀 You can now restart the server with: node server.js');
   console.log('📝 Rate limiting cache has been cleared');

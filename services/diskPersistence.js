@@ -17,13 +17,13 @@ class DiskPersistence {
     this.maxFileSize = options.maxFileSize || 10 * 1024 * 1024; // 10MB
     this.retryAttempts = options.retryAttempts || 3;
     this.retryDelay = options.retryDelay || 100;
-    
+
     // In-memory cache for hot data
     this.cache = new Map();
     this.dirtyKeys = new Set();
     this.syncTimer = null;
     this.isShuttingDown = false;
-    
+
     // Statistics
     this.stats = {
       reads: 0,
@@ -42,19 +42,19 @@ class DiskPersistence {
     try {
       // Ensure base directory exists
       await fs.mkdir(this.baseDir, { recursive: true });
-      
+
       // Create subdirectories
       await fs.mkdir(path.join(this.baseDir, 'queues'), { recursive: true });
       await fs.mkdir(path.join(this.baseDir, 'cache'), { recursive: true });
       await fs.mkdir(path.join(this.baseDir, 'ratelimits'), { recursive: true });
       await fs.mkdir(path.join(this.baseDir, 'backup'), { recursive: true });
-      
+
       // Start periodic sync
       this.startSyncTimer();
-      
+
       // Load existing data on startup
       await this.loadFromDisk();
-      
+
       console.log(`💾 [DiskPersistence] Initialized with base directory: ${this.baseDir}`);
       return true;
     } catch (error) {
@@ -79,13 +79,13 @@ class DiskPersistence {
       // Read from disk
       const filePath = this.getFilePath(key, category);
       const data = await this.readFromFile(filePath);
-      
+
       if (data !== null) {
         this.cache.set(cacheKey, data);
         this.stats.cacheMisses++;
         this.stats.reads++;
       }
-      
+
       return data;
     } catch (error) {
       console.error(`❌ [DiskPersistence] Get failed for ${key}:`, error);
@@ -132,15 +132,15 @@ class DiskPersistence {
   async delete(key, category = 'cache') {
     try {
       const cacheKey = `${category}:${key}`;
-      
+
       // Remove from cache
       this.cache.delete(cacheKey);
       this.dirtyKeys.delete(cacheKey);
-      
+
       // Remove from disk
       const filePath = this.getFilePath(key, category);
       await this.deleteFile(filePath);
-      
+
       return true;
     } catch (error) {
       console.error(`❌ [DiskPersistence] Delete failed for ${key}:`, error);
@@ -170,7 +170,7 @@ class DiskPersistence {
     try {
       const categoryDir = path.join(this.baseDir, category);
       const files = await fs.readdir(categoryDir);
-      
+
       // Remove from cache
       for (const key of this.cache.keys()) {
         if (key.startsWith(`${category}:`)) {
@@ -178,12 +178,12 @@ class DiskPersistence {
           this.dirtyKeys.delete(key);
         }
       }
-      
+
       // Remove from disk
       for (const file of files) {
         await fs.unlink(path.join(categoryDir, file));
       }
-      
+
       return true;
     } catch (error) {
       console.error(`❌ [DiskPersistence] Clear failed for ${category}:`, error);
@@ -210,16 +210,16 @@ class DiskPersistence {
   async shutdown() {
     try {
       this.isShuttingDown = true;
-      
+
       // Stop sync timer
       if (this.syncTimer) {
         clearInterval(this.syncTimer);
         this.syncTimer = null;
       }
-      
+
       // Final sync
       await this.syncAllToDisk();
-      
+
       console.log('💾 [DiskPersistence] Shutdown completed');
       return true;
     } catch (error) {
@@ -246,13 +246,13 @@ class DiskPersistence {
     try {
       const data = await fs.readFile(filePath, 'utf8');
       const parsed = JSON.parse(data);
-      
+
       // Check TTL
       if (parsed.ttl && Date.now() > parsed.timestamp + parsed.ttl) {
         await this.deleteFile(filePath);
         return null;
       }
-      
+
       return parsed;
     } catch (error) {
       if (error.code !== 'ENOENT') {
@@ -267,7 +267,7 @@ class DiskPersistence {
       // Ensure directory exists
       const dir = path.dirname(filePath);
       await fs.mkdir(dir, { recursive: true });
-      
+
       const jsonData = JSON.stringify(data, null, 2);
       await fs.writeFile(filePath, jsonData, 'utf8');
       return true;
@@ -298,12 +298,12 @@ class DiskPersistence {
         const categoryDir = path.join(this.baseDir, category);
         try {
           const files = await fs.readdir(categoryDir);
-          
+
           for (const file of files) {
             if (file.endsWith('.json')) {
               const key = file.replace('.json', '');
               const data = await this.readFromFile(path.join(categoryDir, file));
-              
+
               if (data) {
                 const cacheKey = `${category}:${key}`;
                 this.cache.set(cacheKey, data);

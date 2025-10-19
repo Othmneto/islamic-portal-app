@@ -10,7 +10,7 @@ export class TranslationMemory {
             accuracyScore: 0,
             improvementRate: 0
         };
-        
+
         // Load existing memory from localStorage
         this.loadMemory();
     }
@@ -22,7 +22,7 @@ export class TranslationMemory {
      */
     addToMemory(translation, userFeedback = 'good') {
         const key = this.generateMemoryKey(translation.original, translation.fromLang, translation.toLang);
-        
+
         const memoryEntry = {
             id: translation.id,
             original: translation.original,
@@ -46,7 +46,7 @@ export class TranslationMemory {
             existing.lastUsed = Date.now();
             existing.userFeedback = userFeedback;
             existing.confidence = Math.max(existing.confidence, translation.confidence || 0);
-            
+
             // Update alternatives if provided
             if (translation.alternatives && translation.alternatives.length > 0) {
                 existing.alternatives = this.mergeAlternatives(existing.alternatives, translation.alternatives);
@@ -57,10 +57,10 @@ export class TranslationMemory {
 
         // Update learning data
         this.updateLearningData(translation, userFeedback);
-        
+
         // Save to localStorage
         this.saveMemory();
-        
+
         console.log('🧠 [TranslationMemory] Added to memory:', key, userFeedback);
     }
 
@@ -74,17 +74,17 @@ export class TranslationMemory {
     getFromMemory(original, fromLang, toLang) {
         const key = this.generateMemoryKey(original, fromLang, toLang);
         const entry = this.memory.get(key);
-        
+
         if (entry) {
             // Update usage statistics
             entry.usageCount++;
             entry.lastUsed = Date.now();
             this.saveMemory();
-            
+
             console.log('🧠 [TranslationMemory] Retrieved from memory:', key);
             return entry;
         }
-        
+
         return null;
     }
 
@@ -98,12 +98,12 @@ export class TranslationMemory {
     findSimilarTranslations(original, fromLang, toLang) {
         const similar = [];
         const originalWords = original.toLowerCase().split(/\s+/);
-        
+
         for (const [key, entry] of this.memory.entries()) {
             if (entry.fromLang === fromLang && entry.toLang === toLang) {
                 const entryWords = entry.original.toLowerCase().split(/\s+/);
                 const similarity = this.calculateSimilarity(originalWords, entryWords);
-                
+
                 if (similarity > 0.3) { // 30% similarity threshold
                     similar.push({
                         ...entry,
@@ -113,7 +113,7 @@ export class TranslationMemory {
                 }
             }
         }
-        
+
         // Sort by similarity and usage count
         return similar.sort((a, b) => {
             const scoreA = a.similarity * 0.7 + (a.usageCount / 100) * 0.3;
@@ -131,10 +131,10 @@ export class TranslationMemory {
     calculateSimilarity(words1, words2) {
         const set1 = new Set(words1);
         const set2 = new Set(words2);
-        
+
         const intersection = new Set([...set1].filter(x => set2.has(x)));
         const union = new Set([...set1, ...set2]);
-        
+
         return intersection.size / union.size;
     }
 
@@ -158,7 +158,7 @@ export class TranslationMemory {
      */
     mergeAlternatives(existing, newAlternatives) {
         const merged = [...existing];
-        
+
         for (const alt of newAlternatives) {
             const exists = merged.find(e => e.text === alt.text);
             if (!exists) {
@@ -168,7 +168,7 @@ export class TranslationMemory {
                 exists.confidence = Math.max(exists.confidence, alt.confidence || 0);
             }
         }
-        
+
         // Sort by confidence and remove duplicates
         return merged
             .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
@@ -182,16 +182,16 @@ export class TranslationMemory {
      */
     updateLearningData(translation, feedback) {
         this.performanceMetrics.totalTranslations++;
-        
+
         if (feedback === 'bad' || feedback === 'alternative') {
             this.performanceMetrics.userCorrections++;
         }
-        
+
         // Update accuracy score
-        this.performanceMetrics.accuracyScore = 
-            ((this.performanceMetrics.totalTranslations - this.performanceMetrics.userCorrections) / 
+        this.performanceMetrics.accuracyScore =
+            ((this.performanceMetrics.totalTranslations - this.performanceMetrics.userCorrections) /
              this.performanceMetrics.totalTranslations) * 100;
-        
+
         // Track learning patterns
         const patternKey = `${translation.fromLang}-${translation.toLang}`;
         if (!this.learningData.has(patternKey)) {
@@ -202,20 +202,20 @@ export class TranslationMemory {
                 preferredStyles: new Map()
             });
         }
-        
+
         const pattern = this.learningData.get(patternKey);
         pattern.totalTranslations++;
-        
+
         if (feedback === 'bad' || feedback === 'alternative') {
             pattern.corrections++;
         }
-        
+
         // Learn from context
         if (translation.context) {
             const contextKey = `${patternKey}-${translation.context}`;
             pattern.commonPatterns.set(contextKey, (pattern.commonPatterns.get(contextKey) || 0) + 1);
         }
-        
+
         // Learn from style preferences
         if (translation.alternatives && translation.alternatives.length > 0) {
             for (const alt of translation.alternatives) {
@@ -235,7 +235,7 @@ export class TranslationMemory {
     getUserPreferences(fromLang, toLang) {
         const key = `${fromLang}-${toLang}`;
         const pattern = this.learningData.get(key);
-        
+
         if (!pattern) {
             return {
                 preferredStyle: 'formal',
@@ -243,7 +243,7 @@ export class TranslationMemory {
                 accuracyScore: 0
             };
         }
-        
+
         // Find most preferred style
         let preferredStyle = 'formal';
         let maxStyleCount = 0;
@@ -253,13 +253,13 @@ export class TranslationMemory {
                 preferredStyle = style;
             }
         }
-        
+
         // Find most common contexts
         const commonContexts = Array.from(pattern.commonPatterns.entries())
             .sort((a, b) => b[1] - a[1])
             .slice(0, 3)
             .map(([context, count]) => context.split('-').pop());
-        
+
         return {
             preferredStyle: preferredStyle,
             commonContexts: commonContexts,
@@ -290,14 +290,14 @@ export class TranslationMemory {
     clearOldMemory(maxAge = 30 * 24 * 60 * 60 * 1000) {
         const cutoff = Date.now() - maxAge;
         let removed = 0;
-        
+
         for (const [key, entry] of this.memory.entries()) {
             if (entry.lastUsed < cutoff && entry.usageCount < 3) {
                 this.memory.delete(key);
                 removed++;
             }
         }
-        
+
         console.log(`🧠 [TranslationMemory] Cleared ${removed} old memory entries`);
         this.saveMemory();
     }
@@ -316,7 +316,7 @@ export class TranslationMemory {
                 preferredStyles: Array.from(value.preferredStyles.entries())
             };
         }
-        
+
         return {
             memory: Array.from(this.memory.entries()),
             learningData: serializableLearningData,
@@ -346,7 +346,7 @@ export class TranslationMemory {
         if (data.performanceMetrics) {
             this.performanceMetrics = { ...this.performanceMetrics, ...data.performanceMetrics };
         }
-        
+
         this.saveMemory();
         console.log('🧠 [TranslationMemory] Memory data imported successfully');
     }
@@ -365,14 +365,14 @@ export class TranslationMemory {
                     preferredStyles: Array.from(value.preferredStyles.entries())
                 };
             }
-            
+
             const memoryData = {
                 memory: Array.from(this.memory.entries()),
                 learningData: serializableLearningData,
                 performanceMetrics: this.performanceMetrics,
                 lastSaved: Date.now()
             };
-            
+
             localStorage.setItem('translationMemory', JSON.stringify(memoryData));
         } catch (error) {
             console.warn('Failed to save translation memory:', error);
@@ -387,7 +387,7 @@ export class TranslationMemory {
             const saved = localStorage.getItem('translationMemory');
             if (saved) {
                 const data = JSON.parse(saved);
-                
+
                 if (data.memory) {
                     this.memory = new Map(data.memory);
                 }
@@ -404,7 +404,7 @@ export class TranslationMemory {
                 if (data.performanceMetrics) {
                     this.performanceMetrics = { ...this.performanceMetrics, ...data.performanceMetrics };
                 }
-                
+
                 console.log('🧠 [TranslationMemory] Memory loaded successfully');
             }
         } catch (error) {
@@ -424,7 +424,7 @@ export class TranslationMemory {
             accuracyScore: 0,
             improvementRate: 0
         };
-        
+
         this.saveMemory();
         console.log('🧠 [TranslationMemory] All memory cleared');
     }

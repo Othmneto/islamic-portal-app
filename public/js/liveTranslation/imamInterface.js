@@ -15,23 +15,23 @@ class ImamInterface {
         this.sessionStartTime = null;
         this.durationInterval = null;
         this.translationCount = 0;
-        
+
         // Get token
         this.token = localStorage.getItem('accessToken') || localStorage.getItem('authToken');
-        
+
         // Initialize UI elements
         this.initializeElements();
-        
+
         // Check authentication
         if (!this.token) {
             alert('Please login to create a translation session');
             window.location.href = '/login.html';
             return;
         }
-        
+
         // Setup event listeners
         this.setupEventListeners();
-        
+
         console.log('✅ [ImamInterface] Initialized');
     }
 
@@ -43,7 +43,7 @@ class ImamInterface {
         this.sessionDescription = document.getElementById('sessionDescription');
         this.sessionPassword = document.getElementById('sessionPassword');
         this.createSessionBtn = document.getElementById('createSessionBtn');
-        
+
         // Active session section
         this.activeSession = document.getElementById('activeSession');
         this.sessionIdDisplay = document.getElementById('sessionIdDisplay');
@@ -55,12 +55,12 @@ class ImamInterface {
         this.totalTranslations = document.getElementById('totalTranslations');
         this.waveform = document.getElementById('waveform');
         this.translationFeed = document.getElementById('translationFeed');
-        
+
         // Control buttons
         this.startBroadcastBtn = document.getElementById('startBroadcastBtn');
         this.pauseBroadcastBtn = document.getElementById('pauseBroadcastBtn');
         this.endSessionBtn = document.getElementById('endSessionBtn');
-        
+
         // Generate waveform bars
         this.generateWaveformBars();
     }
@@ -88,22 +88,22 @@ class ImamInterface {
      */
     connectWebSocket() {
         console.log('🔌 [ImamInterface] Connecting to WebSocket...');
-        
+
         // Check if Socket.IO is loaded
         if (typeof io === 'undefined') {
             console.error('❌ [ImamInterface] Socket.IO not loaded!');
             throw new Error('Socket.IO library not loaded. Please refresh the page.');
         }
-        
+
         console.log('✅ [ImamInterface] Socket.IO is available');
         console.log('🔑 [ImamInterface] Using token:', this.token ? 'Present (' + this.token.substring(0, 20) + '...)' : 'Missing');
-        
+
         this.socket = io({
             auth: {
                 token: this.token
             }
         });
-        
+
         console.log('✅ [ImamInterface] Socket instance created');
 
         this.socket.on('connect', () => {
@@ -115,7 +115,7 @@ class ImamInterface {
             console.log('❌ [ImamInterface] WebSocket disconnected');
             this.updateConnectionStatus(false);
         });
-        
+
         // Authentication error
         this.socket.on('connect_error', (error) => {
             console.error('❌ [ImamInterface] Connection error:', error.message);
@@ -188,7 +188,7 @@ class ImamInterface {
     async createSession() {
         try {
             this.createSessionBtn.disabled = true;
-            
+
             const sessionData = {
                 title: this.sessionTitle.value || 'Live Translation Session',
                 sourceLanguage: this.sourceLanguage.value,
@@ -229,16 +229,16 @@ class ImamInterface {
     showActiveSession() {
         this.setupSection.classList.add('hidden');
         this.activeSession.classList.remove('hidden');
-        
+
         // Display session ID
         this.sessionIdDisplay.textContent = this.sessionId;
-        
+
         // Generate QR code
         this.generateQRCode();
-        
+
         // Start duration timer
         this.startDurationTimer();
-        
+
         // Update stats periodically
         setInterval(() => this.fetchSessionStats(), 5000);
     }
@@ -248,7 +248,7 @@ class ImamInterface {
      */
     generateQRCode() {
         const joinUrl = `${window.location.origin}/live-translation-worshipper.html?session=${this.sessionId}`;
-        
+
         QRCode.toCanvas(
             document.createElement('canvas'),
             joinUrl,
@@ -283,14 +283,14 @@ class ImamInterface {
     async startBroadcast() {
         try {
             console.log('🎤 [ImamInterface] Starting broadcast...');
-            
+
             // Request microphone access
-            const stream = await navigator.mediaDevices.getUserMedia({ 
+            const stream = await navigator.mediaDevices.getUserMedia({
                 audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true
-                } 
+                }
             });
 
             // Setup audio context for visualization
@@ -303,27 +303,27 @@ class ImamInterface {
 
             // Accumulate audio chunks for complete WebM file
             const audioChunks = [];
-            
+
             this.mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0 && this.isBroadcasting) {
                     audioChunks.push(event.data);
                     console.log(`📦 [ImamInterface] Collected chunk ${audioChunks.length}: ${event.data.size} bytes`);
                 }
             };
-            
+
             // When recording stops (every 3 seconds), combine and send complete WebM
             this.mediaRecorder.onstop = async () => {
                 if (audioChunks.length > 0 && this.isBroadcasting) {
                     // Combine all chunks into a single complete WebM file
                     const completeBlob = new Blob(audioChunks, { type: 'audio/webm;codecs=opus' });
                     console.log(`📤 [ImamInterface] Sending complete WebM: ${completeBlob.size} bytes (from ${audioChunks.length} chunks)`);
-                    
+
                     // Send complete WebM file
                     await this.sendAudioChunk(completeBlob);
-                    
+
                     // Clear chunks for next recording
                     audioChunks.length = 0;
-                    
+
                     // Restart recording immediately
                     if (this.isBroadcasting && this.mediaRecorder) {
                         console.log('▶️ [ImamInterface] Restarting recorder for next chunk...');
@@ -334,7 +334,7 @@ class ImamInterface {
 
             // Start recording
             this.mediaRecorder.start();
-            
+
             // Stop and restart every 1.5 seconds for faster processing (optimized for speed)
             this.recordingInterval = setInterval(() => {
                 if (this.isBroadcasting && this.mediaRecorder && this.mediaRecorder.state === 'recording') {
@@ -343,13 +343,13 @@ class ImamInterface {
                     // onstop will handle sending and restarting
                 }
             }, 1500); // Reduced from 3000ms to 1500ms for faster response
-            
+
             // Notify server
             this.socket.emit('imam:startBroadcast', { sessionId: this.sessionId });
-            
+
             this.sessionStartTime = Date.now();
             this.isRecording = true;
-            
+
             console.log('✅ [ImamInterface] Recording started');
 
         } catch (error) {
@@ -366,17 +366,17 @@ class ImamInterface {
         this.analyser = this.audioContext.createAnalyser();
         const source = this.audioContext.createMediaStreamSource(stream);
         source.connect(this.analyser);
-        
+
         this.analyser.fftSize = 128;
         const bufferLength = this.analyser.frequencyBinCount;
         const dataArray = new Uint8Array(bufferLength);
-        
+
         const visualize = () => {
             if (!this.isRecording) return;
-            
+
             requestAnimationFrame(visualize);
             this.analyser.getByteFrequencyData(dataArray);
-            
+
             const bars = this.waveform.querySelectorAll('.waveform-bar');
             bars.forEach((bar, i) => {
                 const value = dataArray[i] || 0;
@@ -384,7 +384,7 @@ class ImamInterface {
                 bar.style.height = Math.max(height, 5) + 'px';
             });
         };
-        
+
         visualize();
     }
 
@@ -395,15 +395,15 @@ class ImamInterface {
         try {
             const arrayBuffer = await blob.arrayBuffer();
             const base64 = this.arrayBufferToBase64(arrayBuffer);
-            
+
             this.socket.emit('imam:audioChunk', {
                 sessionId: this.sessionId,
                 audioData: base64,
                 format: 'webm'
             });
-            
+
             console.log(`📡 [ImamInterface] Sent audio chunk: ${blob.size} bytes`);
-            
+
         } catch (error) {
             console.error('❌ [ImamInterface] Error sending audio:', error);
         }
@@ -430,21 +430,21 @@ class ImamInterface {
             this.mediaRecorder.stop();
             this.isRecording = false;
             this.isBroadcasting = false;
-            
+
             // Clear recording interval
             if (this.recordingInterval) {
                 clearInterval(this.recordingInterval);
                 this.recordingInterval = null;
             }
-            
+
             // Stop audio visualization
             if (this.audioContext) {
                 this.audioContext.close();
             }
-            
+
             this.socket.emit('imam:pauseBroadcast', { sessionId: this.sessionId });
             this.updateBroadcastUI();
-            
+
             console.log('⏸️ [ImamInterface] Broadcast paused');
         }
     }
@@ -554,31 +554,31 @@ class ImamInterface {
     addTranslationToFeed(data) {
         const item = document.createElement('div');
         item.className = 'translation-item';
-        
+
         const original = document.createElement('div');
         original.className = 'translation-original';
         original.textContent = `🎤 ${data.original.text}`;
-        
+
         const targets = document.createElement('div');
         targets.className = 'translation-targets';
-        
+
         data.translations.forEach(t => {
             const badge = document.createElement('span');
             badge.className = 'translation-target';
             badge.textContent = t.language.toUpperCase();
             targets.appendChild(badge);
         });
-        
+
         item.appendChild(original);
         item.appendChild(targets);
-        
+
         // Clear placeholder
         if (this.translationFeed.querySelector('p')) {
             this.translationFeed.innerHTML = '';
         }
-        
+
         this.translationFeed.insertBefore(item, this.translationFeed.firstChild);
-        
+
         // Limit to 20 items
         const items = this.translationFeed.querySelectorAll('.translation-item');
         if (items.length > 20) {
@@ -604,9 +604,9 @@ class ImamInterface {
             animation: slideIn 0.3s ease;
         `;
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.remove();
         }, 3000);

@@ -18,6 +18,7 @@ const { z } = require("zod");
 const PushSubscription = require("../models/PushSubscription");
 const User = require("../models/User");
 const logger = require("../utils/logger");
+const authMiddleware = require("../middleware/auth");
 const { env } = require("../config");
 const { sendNotification } = require("../services/notificationService"); // Delayed queue-based send for snooze
 
@@ -102,6 +103,9 @@ router.get("/vapid-public-key", (_req, res) => {
   res.type("text/plain").send(env.VAPID_PUBLIC_KEY);
 });
 
+// ✅ SECURITY FIX: Protect all subsequent routes with authentication
+router.use(authMiddleware);
+
 /** Subscribe or update (saves nested `subscription` exactly as sent) */
 router.post("/subscribe", async (req, res) => {
   try {
@@ -130,24 +134,52 @@ router.post("/subscribe", async (req, res) => {
     const userId = req.user?._id || req.user?.id || null;
     const s = body.subscription;
 
-    // Clean up any existing records with null endpoints globally
-    await PushSubscription.deleteMany({ 
-      "subscription.endpoint": { $in: [null, ""] } 
+    // Validate subscription endpoint
+    if (!s || !s.endpoint || typeof s.endpoint !== 'string' || s.endpoint.trim() === '') {
+      console.error("[subscribe] Invalid subscription endpoint:", s);
+      return res.status(400).json({
+        error: "ValidationError",
+        message: "Valid subscription endpoint is required"
+      });
+    }
+
+    // Clean up any existing records with null/empty endpoints globally
+    await PushSubscription.deleteMany({
+      "subscription.endpoint": { $in: [null, "", undefined] }
     });
 
-    // Delete any existing subscription for this user first
-    await PushSubscription.deleteMany({ userId });
+    // Use upsert to handle existing subscriptions properly
+    const doc = await PushSubscription.findOneAndUpdate(
+      { "subscription.endpoint": s.endpoint },
+      {
+        $set: {
+          userId: userId || null,
+          subscription: {
+            endpoint: s.endpoint,
+            expirationTime: typeof s.expirationTime === "number" ? s.expirationTime : null,
+            keys: {
+              p256dh: String(s.keys?.p256dh || ""),
+              auth: String(s.keys?.auth || "")
+            }
+          },
+          tz: body.tz || "UTC",
+          preferences: body.preferences || undefined,
+          location: body.location || undefined,
+          ua: req.headers["user-agent"] || "",
+          isActive: true, // Mark subscription as active
+          lastHealthCheck: new Date(),
+          healthCheckFailures: 0,
+          updatedAt: new Date(),
+        },
+        $setOnInsert: { createdAt: new Date() },
+      },
+      { upsert: true, new: true }
+    );
 
-    // Create a new subscription
-    const doc = await PushSubscription.create({
-      userId,
-      subscription: s,
-      tz: body.tz,
-      preferences: body.preferences || undefined,
-      location: body.location || undefined,
-      ua: req.headers["user-agent"] || "",
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    console.log("[/api/notifications/subscribe] Subscription saved successfully:", {
+      id: doc._id,
+      endpoint: doc.subscription?.endpoint,
+      userId: doc.userId
     });
 
     return res.status(200).json({ ok: true, id: doc._id });
@@ -156,6 +188,16 @@ router.post("/subscribe", async (req, res) => {
       console.error("[subscribe] ValidationError:", e.errors);
       return res.status(400).json({ error: "ValidationError", details: e.errors });
     }
+
+    // Handle duplicate key errors specifically
+    if (e.code === 11000) {
+      console.error("[subscribe] Duplicate key error:", e.message);
+      return res.status(409).json({
+        error: "DuplicateSubscription",
+        message: "Subscription already exists for this endpoint"
+      });
+    }
+
     console.error("[subscribe] UnexpectedError:", e);
     console.error("[subscribe] Error stack:", e.stack);
     return res.status(500).json({ error: "UnexpectedError", message: e.message });
@@ -172,13 +214,13 @@ router.post("/unsubscribe", async (req, res) => {
 
     // Delete all subscriptions for this user
     const result = await PushSubscription.deleteMany({ userId });
-    
+
     console.log(`[unsubscribe] Deleted ${result.deletedCount} subscriptions for user ${userId}`);
-    
-    return res.status(200).json({ 
-      ok: true, 
+
+    return res.status(200).json({
+      ok: true,
       deletedCount: result.deletedCount,
-      message: "Successfully unsubscribed from notifications" 
+      message: "Successfully unsubscribed from notifications"
     });
   } catch (e) {
     console.error("[unsubscribe] UnexpectedError:", e);
@@ -436,8 +478,8 @@ router.post("/test-immediate", async (req, res) => {
     // Send immediate notification
     await sendNotification(subscription, testPayload);
 
-    res.status(200).json({ 
-      ok: true, 
+    res.status(200).json({
+      ok: true,
       message: "Test notification sent immediately",
       payload: testPayload
     });
@@ -448,5 +490,5 @@ router.post("/test-immediate", async (req, res) => {
 });
 
 module.exports = router;
- 
+
 // NOTE: debug route is defined earlier to ensure it's registered before export

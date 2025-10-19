@@ -30,10 +30,10 @@ const getNisabValues = async (currency = 'USD') => {
             axios.get(silverApiUrl, { headers }),
             axios.get(exchangeRateUrl)
         ]);
-        
+
         const goldPriceInUSD = goldResponse.data.price;
         const silverPriceInUSD = silverResponse.data.price;
-        
+
         const exchangeRates = exchangeResponse.data.conversion_rates;
         const targetRate = exchangeRates[currency.toUpperCase()];
         if (!targetRate) {

@@ -35,7 +35,7 @@ const logger = (_lg && (_lg.logger || _lg)) || console;
 
 //         // Use unified auth service (ip and userAgent will be set in the callback route)
 //         const user = await unifiedAuthService.createOrUpdateUserFromOAuth(profile, 'google');
-        
+
 //         logger.info?.('Google OAuth: user found/created', { userId: user._id, email });
 //         return done(null, user);
 //       } catch (error) {

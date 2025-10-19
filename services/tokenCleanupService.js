@@ -15,10 +15,10 @@ class TokenCleanupService {
     }
 
     console.log('🧹 Starting token cleanup service...');
-    
+
     // Run cleanup immediately
     this.runCleanup();
-    
+
     // Schedule periodic cleanup
     this.cleanupInterval = setInterval(() => {
       this.runCleanup();
@@ -39,7 +39,7 @@ class TokenCleanupService {
     try {
       console.log('🧹 Running token cleanup...');
       const deletedCount = await TokenBlacklist.cleanupExpired();
-      
+
       if (deletedCount > 0) {
         console.log(`✅ Token cleanup completed: ${deletedCount} expired tokens removed`);
       } else {

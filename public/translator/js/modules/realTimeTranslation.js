@@ -13,12 +13,12 @@ export class RealTimeTranslation {
         this.isTranslating = false;
         this.currentRequest = null;
         this.partialResults = new Map();
-        
+
         // Performance optimization - request deduplication
         this.pendingRequests = new Map();
         this.requestCache = new Map();
         this.cacheTimeout = 30000; // 30 seconds cache
-        
+
         // Initialize utilities with optimized values for accuracy & performance
         this.debounceManager = new DebounceManager();
         this.pauseDetector = new PauseDetector({
@@ -41,13 +41,13 @@ export class RealTimeTranslation {
      */
     enable() {
         if (this.isEnabled) return;
-        
+
         console.log('🚀 [RealTimeTranslation] Enabling real-time translation...');
         this.isEnabled = true;
-        
+
         // Add pause detection listener
         this.pauseDetector.addListener('pause', this.handlePause);
-        
+
         // Show real-time status
         this.updateStatus('Real-time translation enabled', 'info');
         this.updateStatusDisplay('Active');
@@ -59,19 +59,19 @@ export class RealTimeTranslation {
      */
     disable() {
         if (!this.isEnabled) return;
-        
+
         console.log('🛑 [RealTimeTranslation] Disabling real-time translation...');
         this.isEnabled = false;
-        
+
         // Cancel any pending translations
         this.cancelCurrentTranslation();
-        
+
         // Clear partial results
         this.partialResults.clear();
-        
+
         // Stop pause detection
         this.pauseDetector.stop();
-        
+
         this.updateStatus('Real-time translation disabled', 'info');
         this.updateStatusDisplay('Ready');
         console.log('✅ [RealTimeTranslation] Real-time translation disabled');
@@ -93,22 +93,22 @@ export class RealTimeTranslation {
      */
     handleInput(event) {
         if (!this.isEnabled) return;
-        
+
         const text = event.target.value; // Don't trim - preserve spaces
         console.log('📝 [RealTimeTranslation] Input changed:', text);
-        
+
         // Re-enable pause detection with space input fix
         this.pauseDetector.updateInput(text);
-        
+
         // Cancel previous translation if still running
         this.cancelCurrentTranslation();
-        
+
         // Only translate if text meets minimum requirements
         if (text.length < 3) {
             this.clearPartialResults();
             return;
         }
-        
+
         // Check if content is Islamic before processing
         if (this.textTranslator.languageDetection) {
             const validation = this.textTranslator.languageDetection.validateContent(text);
@@ -119,7 +119,7 @@ export class RealTimeTranslation {
                 return;
             }
         }
-        
+
         // Re-enable real-time translation with space input fix
         this.startDebouncedTranslation(text);
         console.log('📝 [RealTimeTranslation] Real-time translation enabled with space input fix');
@@ -131,7 +131,7 @@ export class RealTimeTranslation {
      */
     startDebouncedTranslation(text) {
         console.log('⏱️ [RealTimeTranslation] Starting debounced translation...');
-        
+
         // Create debounced translation function with optimized timing
         const debouncedTranslate = this.debounceManager.debounce(
             'realtime-translation',
@@ -139,7 +139,7 @@ export class RealTimeTranslation {
             300, // 300ms debounce - optimal for responsiveness
             { leading: false, trailing: true }
         );
-        
+
         // Execute debounced translation
         debouncedTranslate();
     }
@@ -150,9 +150,9 @@ export class RealTimeTranslation {
      */
     handlePause(data) {
         if (!this.isEnabled) return;
-        
+
         console.log('⏸️ [RealTimeTranslation] Pause detected, triggering final translation...');
-        
+
         // Check if content is Islamic before processing
         if (this.textTranslator.languageDetection) {
             const validation = this.textTranslator.languageDetection.validateContent(data.input);
@@ -163,7 +163,7 @@ export class RealTimeTranslation {
                 return;
             }
         }
-        
+
         this.translateFinal(data.input);
     }
 
@@ -173,25 +173,25 @@ export class RealTimeTranslation {
      */
     async translatePartial(text) {
         if (!this.isEnabled || this.isTranslating) return;
-        
+
         console.log('🔄 [RealTimeTranslation] Translating partial text...');
-        
+
         try {
             this.isTranslating = true;
             this.updateStatus('Translating...', 'info');
             this.updateStatusDisplay('Translating...', 'translating');
-            
+
             // Show partial translation indicator
             this.showPartialIndicator();
-            
+
             // Make translation request
             const result = await this.makeTranslationRequest(text, true);
-            
+
             if (result && result.success) {
                 this.displayPartialResult(result);
                 console.log('✅ [RealTimeTranslation] Partial translation completed');
             }
-            
+
         } catch (error) {
             console.error('❌ [RealTimeTranslation] Partial translation failed:', error);
             this.updateStatus('Translation failed', 'error');
@@ -206,26 +206,26 @@ export class RealTimeTranslation {
      */
     async translateFinal(text) {
         if (!this.isEnabled) return;
-        
+
         console.log('🎯 [RealTimeTranslation] Translating final text...');
-        
+
         try {
             this.isTranslating = true;
             this.updateStatus('Finalizing translation...', 'info');
             this.updateStatusDisplay('Finalizing...', 'translating');
-            
+
             // Make final translation request
             const result = await this.makeTranslationRequest(text, false);
-            
+
             if (result && result.success) {
                 this.displayFinalResult(result);
                 console.log('✅ [RealTimeTranslation] Final translation completed');
             }
-            
+
         } catch (error) {
             console.error('❌ [RealTimeTranslation] Final translation failed:', error);
             this.updateStatus('Translation failed', 'error');
-            
+
             // Handle the error gracefully without throwing
             try {
                 // Try to display a fallback result
@@ -256,7 +256,7 @@ export class RealTimeTranslation {
         const sourceLang = this.textTranslator.elements.sourceLanguage?.value || 'auto';
         const targetLang = this.textTranslator.elements.targetLanguage?.value || 'en';
         const requestKey = `${text}-${sourceLang}-${targetLang}-${isPartial}`;
-        
+
         // Check cache first
         if (this.requestCache.has(requestKey)) {
             const cached = this.requestCache.get(requestKey);
@@ -266,27 +266,27 @@ export class RealTimeTranslation {
             }
             this.requestCache.delete(requestKey);
         }
-        
+
         // Check if request is already pending
         if (this.pendingRequests.has(requestKey)) {
             console.log('📦 [RealTimeTranslation] Request already pending, waiting...');
             return this.pendingRequests.get(requestKey);
         }
-        
+
         console.log('📡 [RealTimeTranslation] Making translation request:', {
             text: text.substring(0, 50) + '...',
             sourceLang,
             targetLang,
             isPartial
         });
-        
+
         // Create new request
         const requestPromise = this.executeTranslationRequest(text, sourceLang, targetLang, isPartial);
         this.pendingRequests.set(requestKey, requestPromise);
-        
+
         try {
             const result = await requestPromise;
-            
+
             // Cache successful results
             if (result.success) {
                 this.requestCache.set(requestKey, {
@@ -294,7 +294,7 @@ export class RealTimeTranslation {
                     timestamp: Date.now()
                 });
             }
-            
+
             return result;
         } finally {
             // Clean up pending request
@@ -326,15 +326,15 @@ export class RealTimeTranslation {
                     isPartial: isPartial
                 })
             });
-            
+
             const data = await response.json();
             console.log('📦 [RealTimeTranslation] Translation response:', data);
-            
+
             return data;
-            
+
         } catch (error) {
             console.error('❌ [RealTimeTranslation] Translation request failed:', error);
-            
+
             // Return a fallback response instead of throwing
             return {
                 success: false,
@@ -363,13 +363,13 @@ export class RealTimeTranslation {
                 isError: true,
                 timestamp: new Date()
             };
-            
+
             this.showPartialTranslation(fallbackData);
             return;
         }
-        
+
         if (!result.success || !result.translatedText) return;
-        
+
         const partialData = {
             original: result.original,
             translated: result.translatedText,
@@ -379,13 +379,13 @@ export class RealTimeTranslation {
             isPartial: true,
             timestamp: new Date()
         };
-        
+
         // Store partial result
         this.partialResults.set('current', partialData);
-        
+
         // Display in UI
         this.showPartialTranslation(partialData);
-        
+
         console.log('📝 [RealTimeTranslation] Partial result displayed:', partialData);
     }
 
@@ -395,7 +395,7 @@ export class RealTimeTranslation {
      */
     displayFinalResult(result) {
         console.log('🎯 [RealTimeTranslation] displayFinalResult called with:', result);
-        
+
         if (result.fallback) {
             // Show fallback message
             const fallbackData = {
@@ -408,16 +408,16 @@ export class RealTimeTranslation {
                 isError: true,
                 timestamp: new Date()
             };
-            
+
             this.showFinalTranslation(fallbackData);
             return;
         }
-        
+
         if (!result.success || !result.translatedText) {
             console.log('❌ [RealTimeTranslation] Invalid result data, returning early');
             return;
         }
-        
+
         const finalData = {
             original: result.original,
             translated: result.translatedText,
@@ -427,13 +427,13 @@ export class RealTimeTranslation {
             isPartial: false,
             timestamp: new Date()
         };
-        
+
         // Clear partial results
         this.partialResults.clear();
-        
+
         // Display final translation
         this.showFinalTranslation(finalData);
-        
+
         console.log('🎯 [RealTimeTranslation] Final result displayed:', finalData);
     }
 
@@ -444,7 +444,7 @@ export class RealTimeTranslation {
     showPartialTranslation(data) {
         // Create or update partial translation element
         let partialElement = document.getElementById('partial-translation');
-        
+
         if (!partialElement) {
             partialElement = document.createElement('div');
             partialElement.id = 'partial-translation';
@@ -459,7 +459,7 @@ export class RealTimeTranslation {
                     <div class="partial-translated">${data.translated}</div>
                 </div>
             `;
-            
+
             // Insert before results container
             const resultsContainer = this.textTranslator.elements.resultsContainer;
             if (resultsContainer) {
@@ -482,7 +482,7 @@ export class RealTimeTranslation {
         if (partialElement) {
             partialElement.remove();
         }
-        
+
         // Create final translation item
         const translationData = {
             id: Date.now(),
@@ -494,7 +494,7 @@ export class RealTimeTranslation {
             timestamp: data.timestamp,
             favorite: false
         };
-        
+
         // Use existing translation item creation
         if (this.textTranslator.handleTranslationResult) {
             this.textTranslator.handleTranslationResult(translationData);
@@ -543,10 +543,10 @@ export class RealTimeTranslation {
             this.currentRequest.abort();
             this.currentRequest = null;
         }
-        
+
         // Cancel debounced translation
         this.debounceManager.cancel('realtime-translation');
-        
+
         this.isTranslating = false;
     }
 
@@ -557,7 +557,7 @@ export class RealTimeTranslation {
      */
     updateStatus(message, type = 'info') {
         console.log(`📊 [RealTimeTranslation] Status: ${message}`);
-        
+
         // Update status in UI if available
         if (this.textTranslator.updateConnectionStatus) {
             this.textTranslator.updateConnectionStatus(message, type);
@@ -600,12 +600,12 @@ export class RealTimeTranslation {
         this.disable();
         this.debounceManager.cancelAll();
         this.pauseDetector.reset();
-        
+
         // Remove event listeners
         if (this.textTranslator.elements.sourceText) {
             this.textTranslator.elements.sourceText.removeEventListener('input', this.handleInput);
         }
-        
+
         console.log('🧹 [RealTimeTranslation] Destroyed');
     }
 }

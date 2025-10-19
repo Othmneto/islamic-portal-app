@@ -1,0 +1,109 @@
+{
+  "value": {
+    "id": "notif:6888c9391815657294913e8d:68eb99130dffdffea5bcbbc2:asr:reminder:20251012",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "_id": "68eb99130dffdffea5bcbbc2",
+        "userId": "6888c9391815657294913e8d",
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/c7e3U3l2TAA:APA91bGS0wS3TB7glAr0JP_BbcbJk8ihkDKoQE2k1zdF7lnVeluu0M9ycAX-ds1fjZlyuBImNRIiuyWPEwNVYqLA19622vB-M233YAGb9d7WNUZQarE5Dp2VlHP8qgb0WCu2P6gnnl77",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BDRc8_7rJuZMXoUeq9sr2x9LumIAOQjrnxlseLW5Hp99tAB82pkUXz18L8CYvi575B6lL1v4fkeRsFoC_-RuN20",
+            "auth": "NKFNLLlCfjO0XytbU5sgZA"
+          }
+        },
+        "tz": "Asia/Dubai",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "location": {
+          "lat": 25.26428870586797,
+          "lon": 55.3217779422983,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "createdAt": "2025-10-12T12:03:31.487Z",
+        "updatedAt": "2025-10-12T12:03:31.487Z",
+        "__v": 0
+      },
+      "payload": {
+        "title": "⏰ 10 min until 🌤️ Asr Prayer Time",
+        "body": "Prepare for Asr prayer\n📍 Your location\n🕐 3:59 PM",
+        "icon": "/images/prayers/asr-icon.svg",
+        "badge": "/images/prayers/asr-icon.svg",
+        "color": "#FF8C00",
+        "tag": "reminder-asr-10min",
+        "requireInteraction": false,
+        "data": {
+          "url": "/prayer-time.html",
+          "prayer": "asr",
+          "time": "3:59 PM",
+          "location": "Your location",
+          "category": "pre-prayer-reminders",
+          "isReminder": true,
+          "minutesBefore": 10,
+          "timestamp": "2025-10-12T12:20:44.414Z",
+          "audioFile": "/audio/adhan.mp3"
+        },
+        "actions": [
+          {
+            "action": "view_times",
+            "title": "🕐 View Prayer Times"
+          },
+          {
+            "action": "prepare",
+            "title": "🧘 Prepare for Prayer"
+          }
+        ],
+        "category": "pre-prayer-reminders",
+        "priority": "normal",
+        "audioFile": "/audio/adhan.mp3"
+      }
+    },
+    "options": {
+      "concurrency": 5,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 2000
+      },
+      "delay": 1695999.999999999,
+      "jobId": "notif:6888c9391815657294913e8d:68eb99130dffdffea5bcbbc2:asr:reminder:20251012"
+    },
+    "timestamp": 1760271644414,
+    "status": "completed",
+    "attempts": 1,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-12T12:20:44.414Z",
+    "processedAt": "2025-10-12T12:49:01.488Z",
+    "finishedAt": 1760273341488,
+    "failedReason": null,
+    "result": {
+      "success": true,
+      "jobId": "notif:6888c9391815657294913e8d:68eb99130dffdffea5bcbbc2:asr:reminder:20251012"
+    }
+  },
+  "timestamp": 1760273341488,
+  "ttl": null,
+  "category": "queues",
+  "key": "notif:6888c9391815657294913e8d:68eb99130dffdffea5bcbbc2:asr:reminder:20251012"
+}

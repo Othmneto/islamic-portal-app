@@ -79,11 +79,11 @@ document.addEventListener('DOMContentLoaded', () => {
         resendButton.textContent = 'Resend Verification Email';
         resendButton.className = 'btn btn-secondary';
         resendButton.style.marginTop = '10px';
-        
+
         resendButton.addEventListener('click', async () => {
             resendButton.textContent = 'Sending...';
             resendButton.disabled = true;
-            
+
             try {
                 const response = await fetch('/api/auth/resend-verification', {
                     method: 'POST',
@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 const data = await response.json();
-                
+
                 if (response.ok) {
                     displayMessage('Verification email sent successfully! Please check your inbox.', true);
                 } else {

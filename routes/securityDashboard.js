@@ -9,7 +9,7 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
   try {
     const { timeframe = '24h' } = req.query;
     const dashboardData = await securityMonitor.getDashboardData(timeframe);
-    
+
     res.json({
       success: true,
       data: dashboardData,
@@ -28,12 +28,12 @@ router.get('/dashboard', authMiddleware, async (req, res) => {
 // Get recent security events
 router.get('/events', authMiddleware, async (req, res) => {
   try {
-    const { 
-      page = 1, 
-      limit = 50, 
-      eventType, 
-      severity, 
-      timeframe = '24h' 
+    const {
+      page = 1,
+      limit = 50,
+      eventType,
+      severity,
+      timeframe = '24h'
     } = req.query;
 
     const timeframes = {
@@ -44,7 +44,7 @@ router.get('/events', authMiddleware, async (req, res) => {
     };
 
     const startTime = new Date(Date.now() - (timeframes[timeframe] || timeframes['24h']));
-    
+
     const query = {
       timestamp: { $gte: startTime }
     };
@@ -90,7 +90,7 @@ router.get('/events', authMiddleware, async (req, res) => {
 router.get('/stats', authMiddleware, async (req, res) => {
   try {
     const { timeframe = '24h' } = req.query;
-    
+
     const timeframes = {
       '1h': 60 * 60 * 1000,
       '24h': 24 * 60 * 60 * 1000,
@@ -99,7 +99,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
     };
 
     const startTime = new Date(Date.now() - (timeframes[timeframe] || timeframes['24h']));
-    
+
     // Get basic statistics
     const totalEvents = await SecurityEvent.countDocuments({
       timestamp: { $gte: startTime }
@@ -160,7 +160,7 @@ router.get('/stats', authMiddleware, async (req, res) => {
 router.get('/risk-analysis', authMiddleware, async (req, res) => {
   try {
     const { timeframe = '24h' } = req.query;
-    
+
     const timeframes = {
       '1h': 60 * 60 * 1000,
       '24h': 24 * 60 * 60 * 1000,
@@ -169,7 +169,7 @@ router.get('/risk-analysis', authMiddleware, async (req, res) => {
     };
 
     const startTime = new Date(Date.now() - (timeframes[timeframe] || timeframes['24h']));
-    
+
     // Get high-risk events
     const highRiskEvents = await SecurityEvent.find({
       timestamp: { $gte: startTime },
@@ -179,14 +179,14 @@ router.get('/risk-analysis', authMiddleware, async (req, res) => {
     // Get suspicious IPs
     const suspiciousIPs = await SecurityEvent.aggregate([
       { $match: { timestamp: { $gte: startTime } } },
-      { $group: { 
-        _id: '$ipAddress', 
+      { $group: {
+        _id: '$ipAddress',
         count: { $sum: 1 },
         avgRiskScore: { $avg: '$riskScore' },
         maxRiskScore: { $max: '$riskScore' },
         eventTypes: { $addToSet: '$eventType' }
       }},
-      { $match: { 
+      { $match: {
         $or: [
           { count: { $gte: 5 } },
           { avgRiskScore: { $gte: 50 } },
@@ -199,14 +199,14 @@ router.get('/risk-analysis', authMiddleware, async (req, res) => {
 
     // Get geographic analysis (if location data available)
     const geographicAnalysis = await SecurityEvent.aggregate([
-      { 
-        $match: { 
+      {
+        $match: {
           timestamp: { $gte: startTime },
           'location.country': { $exists: true }
-        } 
+        }
       },
-      { $group: { 
-        _id: '$location.country', 
+      { $group: {
+        _id: '$location.country',
         count: { $sum: 1 },
         avgRiskScore: { $avg: '$riskScore' }
       }},
@@ -275,7 +275,7 @@ router.post('/events/:eventId/resolve', authMiddleware, async (req, res) => {
 router.get('/alerts', authMiddleware, async (req, res) => {
   try {
     const { resolved = false } = req.query;
-    
+
     const alerts = await SecurityEvent.find({
       resolved: resolved === 'true',
       severity: { $in: ['HIGH', 'CRITICAL'] }

@@ -4,16 +4,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('notification-settings-form');
     const messageDiv = document.getElementById('settings-message');
     // Get token from multiple possible sources (consistent with other pages)
-    const token = localStorage.getItem('authToken') || 
-                  localStorage.getItem('token') || 
-                  localStorage.getItem('jwt') || 
+    const token = localStorage.getItem('authToken') ||
+                  localStorage.getItem('token') ||
+                  localStorage.getItem('jwt') ||
                   localStorage.getItem('access_token');
 
     // ------------------------------- Logout Functionality -------------------------------
     // Logout button
     document.getElementById('logout-btn')?.addEventListener('click', async (event) => {
         event.preventDefault();
-        
+
         // Show confirmation dialog
         if (confirm('Are you sure you want to logout?')) {
             // Show loading state
@@ -21,15 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalText = logoutBtn.innerHTML;
             logoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging out...';
             logoutBtn.disabled = true;
-            
+
             try {
                 // Call enhanced logout function
                 const success = await logout();
-                
+
                 if (success) {
                     // Show success message
                     alert('You have been logged out successfully.');
-                    
+
                     // Redirect to home page
                     window.location.href = 'index.html';
                 } else {

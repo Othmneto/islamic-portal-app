@@ -16,7 +16,7 @@ class SmartSuggestions {
     // Generate smart suggestions for translation
     async generateSuggestions(text, fromLang, toLang, context = '') {
         const cacheKey = `${text}_${fromLang}_${toLang}`;
-        
+
         if (this.suggestionCache.has(cacheKey)) {
             return this.suggestionCache.get(cacheKey);
         }
@@ -32,7 +32,7 @@ class SmartSuggestions {
 
         // Cache suggestions
         this.suggestionCache.set(cacheKey, suggestions);
-        
+
         // Clean cache if too large
         if (this.suggestionCache.size > 100) {
             const firstKey = this.suggestionCache.keys().next().value;
@@ -45,7 +45,7 @@ class SmartSuggestions {
     // Translation suggestions based on memory
     async getTranslationSuggestions(text, fromLang, toLang) {
         const similarMemories = await this.memory.findSimilarConversations(text, 5);
-        
+
         return similarMemories.map(memory => ({
             type: this.suggestionTypes.TRANSLATION,
             original: memory.memory.originalText,
@@ -263,10 +263,10 @@ class SmartSuggestions {
 
         const langCode = this.getLanguageCode(fromLang);
         if (commonWords[langCode]) {
-            const matches = commonWords[langCode].filter(w => 
+            const matches = commonWords[langCode].filter(w =>
                 w.toLowerCase().startsWith(word.toLowerCase())
             );
-            
+
             matches.forEach(match => {
                 completions.push({
                     type: 'completion',
@@ -310,13 +310,13 @@ class SmartSuggestions {
         // Store in localStorage
         const feedbacks = JSON.parse(localStorage.getItem('suggestionFeedbacks') || '[]');
         feedbacks.push(feedbackData);
-        
+
         if (feedbacks.length > 1000) {
             feedbacks.splice(0, feedbacks.length - 1000);
         }
-        
+
         localStorage.setItem('suggestionFeedbacks', JSON.stringify(feedbacks));
-        
+
         // Update user preferences based on feedback
         this.updatePreferences(suggestionId, feedback);
     }

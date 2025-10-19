@@ -34,10 +34,10 @@ class GeolocationService {
 
             // Get location from API
             const location = await this.fetchLocationFromAPI(ip);
-            
+
             // Cache the result
             await this.cacheLocation(ip, location);
-            
+
             return location;
         } catch (error) {
             console.error('❌ Geolocation: Error getting location:', error);
@@ -83,7 +83,7 @@ class GeolocationService {
             try {
                 const url = service.url.replace('{ip}', ip);
                 const response = await axios.get(url, { timeout: 5000 });
-                
+
                 if (response.status === 200) {
                     const location = service.parser(response.data);
                     if (location) {
@@ -190,13 +190,13 @@ class GeolocationService {
     async trackUserLocation(userId, ip, userAgent) {
         try {
             const location = await this.getLocation(ip);
-            
+
             // Store user location history
             await this.storeUserLocation(userId, location, userAgent);
-            
+
             // Check for suspicious location
             await this.checkSuspiciousLocation(userId, location);
-            
+
             return location;
         } catch (error) {
             console.error('❌ Geolocation: Error tracking user location:', error);
@@ -232,13 +232,13 @@ class GeolocationService {
     async checkSuspiciousLocation(userId, currentLocation) {
         try {
             const locations = await this.getUserLocationHistory(userId);
-            
+
             if (locations.length < 2) {
                 return; // Not enough data
             }
 
             const now = Date.now();
-            const recentLocations = locations.filter(loc => 
+            const recentLocations = locations.filter(loc =>
                 now - loc.timestamp <= 24 * 60 * 60 * 1000 // Last 24 hours
             );
 
@@ -350,7 +350,7 @@ class GeolocationService {
     async getLocationStats(userId) {
         try {
             const locations = await this.getUserLocationHistory(userId);
-            
+
             if (locations.length === 0) {
                 return {
                     totalLocations: 0,

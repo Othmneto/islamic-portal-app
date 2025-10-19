@@ -14,18 +14,18 @@ export class VoiceInput {
         this.continuousMode = false;
         this.interimResults = true;
         this.maxAlternatives = 3;
-        
+
         // Voice input state
         this.voiceInputHistory = [];
         this.currentTranscript = '';
         this.finalTranscript = '';
         this.interimTranscript = '';
-        
+
         // Audio feedback
         this.audioContext = null;
         this.audioFeedback = true;
         this.visualFeedback = true;
-        
+
         // Language mapping
         this.languageMap = {
             'en': 'en-US',
@@ -47,7 +47,7 @@ export class VoiceInput {
             'ha': 'ha-NG',
             'ber': 'ber-DZ'
         };
-        
+
         this.init();
     }
 
@@ -56,7 +56,7 @@ export class VoiceInput {
      */
     init() {
         console.log('🎤 [VoiceInput] Initializing voice input...');
-        
+
         if (!this.isSupported) {
             console.warn('🎤 [VoiceInput] Speech recognition not supported in this browser');
             this.showUnsupportedMessage();
@@ -66,7 +66,7 @@ export class VoiceInput {
         this.setupSpeechRecognition();
         this.setupAudioFeedback();
         this.setupEventListeners();
-        
+
         console.log('🎤 [VoiceInput] Voice input initialized successfully');
     }
 
@@ -76,13 +76,13 @@ export class VoiceInput {
     setupSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
-        
+
         // Configure recognition settings
         this.recognition.continuous = this.continuousMode;
         this.recognition.interimResults = this.interimResults;
         this.recognition.maxAlternatives = this.maxAlternatives;
         this.recognition.lang = this.currentLanguage;
-        
+
         // Event handlers
         this.recognition.onstart = this.handleStart.bind(this);
         this.recognition.onresult = this.handleResult.bind(this);
@@ -126,7 +126,7 @@ export class VoiceInput {
      */
     async startListening(options = {}) {
         console.log('🎤 [VoiceInput] Starting voice input...');
-        
+
         if (!this.isSupported) {
             this.showUnsupportedMessage();
             return false;
@@ -140,29 +140,29 @@ export class VoiceInput {
         try {
             // Request microphone permission
             await this.requestMicrophonePermission();
-            
+
             // Update language if provided
             if (options.language) {
                 this.updateLanguage(options.language);
             }
-            
+
             // Clear previous results
             this.clearTranscripts();
-            
+
             // Start recognition
             this.recognition.start();
             this.isListening = true;
             this.isPaused = false;
-            
+
             // Show visual feedback
             this.showListeningIndicator();
-            
+
             // Play start sound
             this.playStartSound();
-            
+
             console.log('🎤 [VoiceInput] Voice input started');
             return true;
-            
+
         } catch (error) {
             console.error('🎤 [VoiceInput] Failed to start voice input:', error);
             this.handleError({ error: 'start_failed', message: error.message });
@@ -175,7 +175,7 @@ export class VoiceInput {
      */
     stopListening() {
         console.log('🎤 [VoiceInput] Stopping voice input...');
-        
+
         if (!this.isListening) {
             return;
         }
@@ -183,13 +183,13 @@ export class VoiceInput {
         this.recognition.stop();
         this.isListening = false;
         this.isPaused = false;
-        
+
         // Hide visual feedback
         this.hideListeningIndicator();
-        
+
         // Play stop sound
         this.playStopSound();
-        
+
         console.log('🎤 [VoiceInput] Voice input stopped');
     }
 
@@ -237,7 +237,7 @@ export class VoiceInput {
      */
     updateLanguage(languageCode) {
         const speechLang = this.languageMap[languageCode] || languageCode;
-        
+
         if (this.recognition && speechLang !== this.currentLanguage) {
             console.log('🎤 [VoiceInput] Updating language to:', speechLang);
             this.currentLanguage = speechLang;
@@ -287,35 +287,35 @@ export class VoiceInput {
      */
     handleResult(event) {
         console.log('🎤 [VoiceInput] Recognition result received');
-        
+
         let interimTranscript = '';
         let finalTranscript = '';
-        
+
         // Process results
         for (let i = event.resultIndex; i < event.results.length; i++) {
             const result = event.results[i];
             const transcript = result[0].transcript;
-            
+
             if (result.isFinal) {
                 finalTranscript += transcript;
             } else {
                 interimTranscript += transcript;
             }
         }
-        
+
         // Update transcripts
         this.interimTranscript = interimTranscript;
         this.finalTranscript += finalTranscript;
         this.currentTranscript = this.finalTranscript + this.interimTranscript;
-        
+
         // Update UI
         this.updateTranscriptDisplay();
-        
+
         // Handle final results
         if (finalTranscript) {
             this.handleFinalTranscript(finalTranscript);
         }
-        
+
         // Trigger events
         this.triggerEvent('voiceResult', {
             interim: interimTranscript,
@@ -329,14 +329,14 @@ export class VoiceInput {
      */
     handleFinalTranscript(transcript) {
         console.log('🎤 [VoiceInput] Final transcript:', transcript);
-        
+
         // Add to history
         this.voiceInputHistory.push({
             transcript,
             timestamp: new Date(),
             language: this.currentLanguage
         });
-        
+
         // Trigger event for main translator to handle
         this.triggerEvent('voiceFinal', { transcript });
     }
@@ -346,13 +346,13 @@ export class VoiceInput {
      */
     handleError(event) {
         console.error('🎤 [VoiceInput] Recognition error:', event.error);
-        
+
         this.isListening = false;
         this.isPaused = false;
         this.hideListeningIndicator();
-        
+
         let errorMessage = 'Voice input error occurred';
-        
+
         switch (event.error) {
             case 'no-speech':
                 errorMessage = 'No speech detected. Please try again.';
@@ -373,7 +373,7 @@ export class VoiceInput {
                 errorMessage = 'Failed to start voice input.';
                 break;
         }
-        
+
         this.showErrorMessage(errorMessage);
         this.triggerEvent('voiceError', { error: event.error, message: errorMessage });
     }
@@ -383,11 +383,11 @@ export class VoiceInput {
      */
     handleEnd() {
         console.log('🎤 [VoiceInput] Recognition ended');
-        
+
         this.isListening = false;
         this.isPaused = false;
         this.hideListeningIndicator();
-        
+
         // Auto-restart if in continuous mode
         if (this.continuousMode && !this.isPaused) {
             setTimeout(() => {
@@ -396,7 +396,7 @@ export class VoiceInput {
                 }
             }, 100);
         }
-        
+
         this.triggerEvent('voiceEnd');
     }
 
@@ -594,7 +594,7 @@ export class VoiceInput {
      */
     playStartSound() {
         if (!this.audioFeedback || !this.audioContext) return;
-        
+
         this.playTone(800, 0.1, 'sine');
     }
 
@@ -603,7 +603,7 @@ export class VoiceInput {
      */
     playStopSound() {
         if (!this.audioFeedback || !this.audioContext) return;
-        
+
         this.playTone(400, 0.1, 'sine');
     }
 
@@ -612,7 +612,7 @@ export class VoiceInput {
      */
     playPauseSound() {
         if (!this.audioFeedback || !this.audioContext) return;
-        
+
         this.playTone(600, 0.05, 'sine');
     }
 
@@ -621,7 +621,7 @@ export class VoiceInput {
      */
     playResumeSound() {
         if (!this.audioFeedback || !this.audioContext) return;
-        
+
         this.playTone(700, 0.05, 'sine');
     }
 
@@ -630,19 +630,19 @@ export class VoiceInput {
      */
     playTone(frequency, duration, type = 'sine') {
         if (!this.audioContext) return;
-        
+
         const oscillator = this.audioContext.createOscillator();
         const gainNode = this.audioContext.createGain();
-        
+
         oscillator.connect(gainNode);
         gainNode.connect(this.audioContext.destination);
-        
+
         oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
         oscillator.type = type;
-        
+
         gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
         gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
-        
+
         oscillator.start(this.audioContext.currentTime);
         oscillator.stop(this.audioContext.currentTime + duration);
     }

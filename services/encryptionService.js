@@ -11,7 +11,7 @@ class EncryptionService {
         this.ivLength = 16; // 128 bits
         this.tagLength = 16; // 128 bits
         this.saltLength = 32; // 256 bits
-        
+
         // Initialize with environment variables or generate new keys
         this.masterKey = this.initializeMasterKey();
         this.encryptionKeys = new Map(); // Cache for derived keys
@@ -25,7 +25,7 @@ class EncryptionService {
         if (envKey && envKey.length === 64) { // 32 bytes in hex
             return Buffer.from(envKey, 'hex');
         }
-        
+
         // Generate new master key
         const newKey = crypto.randomBytes(this.keyLength);
         console.warn('⚠️ [EncryptionService] Generated new master key. Set ENCRYPTION_MASTER_KEY environment variable for production.');
@@ -37,7 +37,7 @@ class EncryptionService {
      */
     deriveKey(userId, context = 'translation') {
         const keyId = `${userId}_${context}`;
-        
+
         if (this.encryptionKeys.has(keyId)) {
             return this.encryptionKeys.get(keyId);
         }
@@ -69,7 +69,7 @@ class EncryptionService {
             const plaintext = JSON.stringify(translationData);
             let encrypted = cipher.update(plaintext, 'utf8', 'hex');
             encrypted += cipher.final('hex');
-            
+
             const tag = cipher.getAuthTag();
 
             return {
@@ -119,7 +119,7 @@ class EncryptionService {
 
             let encrypted = cipher.update(text, 'utf8', 'hex');
             encrypted += cipher.final('hex');
-            
+
             const tag = cipher.getAuthTag();
 
             return {
@@ -208,7 +208,7 @@ class EncryptionService {
 
             let encrypted = cipher.update(fileBuffer);
             encrypted = Buffer.concat([encrypted, cipher.final()]);
-            
+
             const tag = cipher.getAuthTag();
 
             return {

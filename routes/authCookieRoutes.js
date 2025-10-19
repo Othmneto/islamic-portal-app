@@ -4,6 +4,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
+const sessionManagementService = require('../services/sessionManagementService');
 const { CSRF_COOKIE_NAME, verifyCsrf } = require('../middleware/csrfMiddleware'); // single source of truth
 const { logger } = require('../config/logger');
 const { env } = require('../config');
@@ -35,6 +36,7 @@ const loginSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email address'),
     password: z.string().min(1, 'Password is required'),
+    rememberMe: z.boolean().optional().default(false),
   }),
 });
 
@@ -46,18 +48,19 @@ const loginSchema = z.object({
  * - Prevents session fixation via req.session.regenerate
  * - Sets session user & userId for cookie/session flows
  * - Issues a JWT for Bearer flows (mobile/3rd-party). Browsers should ignore it.
+ * - NEW: Supports Remember Me with dynamic session lifetime
  */
 async function handleLogin(req, res) {
   try {
-    const { email, password } = req.body; // already validated by zod middleware
+    const { email, password, rememberMe = false } = req.body; // already validated by zod middleware
 
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Create JWT for Bearer clients
-    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    // Create session and issue tokens using sessionManagementService
+    const sessionResult = await sessionManagementService.createSessionRememberMeAware(user, req, rememberMe);
 
     // Regenerate to prevent session fixation
     req.session.regenerate((err) => {
@@ -66,24 +69,26 @@ async function handleLogin(req, res) {
         return res.status(500).json({ message: 'Could not log you in. Please try again.' });
       }
 
-      // Persist minimal user info server-side
-      req.session.userId = user._id;
-      req.session.user = {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-      };
+      // Persist minimal user info server-side and set cookie lifetime dynamically
+      req.session.userId = sessionResult.user.id;
+      req.session.rememberMe = rememberMe;
+      if (rememberMe) {
+        req.session.cookie.maxAge = 90 * 24 * 60 * 60 * 1000; // 90 days
+      } else {
+        // no maxAge -> session cookie (expires on browser close)
+        req.session.cookie.maxAge = undefined;
+      }
+
+      logger.info(`[Auth] User ${sessionResult.user.id} logged in (rememberMe: ${rememberMe})`);
 
       return res.status(200).json({
         message: 'Login successful',
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username,
-          role: user.role,
-        },
-        // IMPORTANT: Web SPA should ignore this and rely on the HttpOnly session cookie.
-        token,
+        user: sessionResult.user,
+        token: sessionResult.accessToken,
+        refreshToken: sessionResult.refreshToken,
+        rememberMe: rememberMe,
+        sessionId: sessionResult.sessionId,
+        expiresIn: sessionResult.expiresIn
       });
     });
   } catch (error) {

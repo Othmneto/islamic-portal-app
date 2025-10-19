@@ -11,7 +11,7 @@ const IslamicTerminologyService = require('./islamicTerminologyService');
 class ContentScheduler {
     constructor() {
         console.log('🔧 [ContentScheduler] Initializing constructor...');
-        
+
         try {
             console.log('🕷️ [ContentScheduler] Creating WebScraperService...');
             this.webScraper = new WebScraperService();
@@ -20,7 +20,7 @@ class ContentScheduler {
             console.error('❌ [ContentScheduler] Error creating WebScraperService:', error);
             this.webScraper = null;
         }
-        
+
         try {
             console.log('📚 [ContentScheduler] Creating IslamicTerminologyService...');
             this.terminologyService = new IslamicTerminologyService();
@@ -29,16 +29,16 @@ class ContentScheduler {
             console.error('❌ [ContentScheduler] Error creating IslamicTerminologyService:', error);
             this.terminologyService = null;
         }
-        
+
         this.isRunning = false;
         console.log('✅ [ContentScheduler] Constructor completed');
         this.scheduledJobs = new Map();
-        
+
         // Scraping schedules
         this.schedules = {
             // Every 6 hours - frequent updates
             frequent: '0 */6 * * *',
-            // Every 12 hours - moderate updates  
+            // Every 12 hours - moderate updates
             moderate: '0 */12 * * *',
             // Daily at 2 AM - comprehensive updates
             daily: '0 2 * * *',
@@ -57,12 +57,12 @@ class ContentScheduler {
                 console.log('🔄 [ContentScheduler] Re-creating WebScraperService...');
                 this.webScraper = new WebScraperService();
             }
-            
+
             // Initialize webScraper if it has an initialize method
             if (this.webScraper && typeof this.webScraper.initialize === 'function') {
                 await this.webScraper.initialize();
             }
-            
+
             console.log('✅ [ContentScheduler] Initialized successfully');
             return true;
         } catch (error) {
@@ -110,16 +110,16 @@ class ContentScheduler {
     async startImmediateScraping() {
         try {
             console.log('🚀 [ContentScheduler] Starting immediate scraping...');
-            
+
             // Ensure webScraper is available
             const webScraper = this.ensureWebScraper();
-            
+
             console.log('🔍 [ContentScheduler] Web scraper status:', {
                 hasWebScraper: !!webScraper,
                 webScraperType: typeof webScraper,
                 hasStartMethod: webScraper && typeof webScraper.startScraping === 'function'
             });
-            
+
             if (webScraper && typeof webScraper.startScraping === 'function') {
                 const result = await webScraper.startScraping();
                 console.log('✅ [ContentScheduler] Immediate scraping started:', result);
@@ -144,10 +144,10 @@ class ContentScheduler {
     async stopImmediateScraping() {
         try {
             console.log('⏹️ [ContentScheduler] Stopping immediate scraping...');
-            
+
             // Ensure webScraper is available
             const webScraper = this.ensureWebScraper();
-            
+
             if (webScraper && typeof webScraper.stopScraping === 'function') {
                 const result = await webScraper.stopScraping();
                 console.log('✅ [ContentScheduler] Immediate scraping stopped:', result);
@@ -190,12 +190,12 @@ class ContentScheduler {
      */
     async runFrequentScraping() {
         console.log('📰 [ContentScheduler] Running frequent scraping (news & current events)...');
-        
+
         try {
             // Scrape only news and current content
             await this.webScraper.scrapeIslamicNews();
             await this.webScraper.processScrapedContent();
-            
+
             console.log('✅ [ContentScheduler] Frequent scraping completed');
         } catch (error) {
             console.error('❌ [ContentScheduler] Frequent scraping failed:', error);
@@ -208,12 +208,12 @@ class ContentScheduler {
      */
     async runModerateScraping() {
         console.log('🎤 [ContentScheduler] Running moderate scraping (Khutbah & articles)...');
-        
+
         try {
             await this.webScraper.scrapeKhutbahContent();
             await this.webScraper.scrapeGeneralIslamicContent();
             await this.webScraper.processScrapedContent();
-            
+
             console.log('✅ [ContentScheduler] Moderate scraping completed');
         } catch (error) {
             console.error('❌ [ContentScheduler] Moderate scraping failed:', error);
@@ -226,12 +226,12 @@ class ContentScheduler {
      */
     async runDailyScraping() {
         console.log('🔄 [ContentScheduler] Running daily comprehensive scraping...');
-        
+
         try {
             await this.webScraper.startComprehensiveScraping();
             await this.updateTerminologyDatabase();
             await this.generateContentReport();
-            
+
             console.log('✅ [ContentScheduler] Daily scraping completed');
         } catch (error) {
             console.error('❌ [ContentScheduler] Daily scraping failed:', error);
@@ -244,16 +244,16 @@ class ContentScheduler {
      */
     async runWeeklyScraping() {
         console.log('🔍 [ContentScheduler] Running weekly deep scraping...');
-        
+
         try {
             // Full comprehensive scraping
             await this.webScraper.startComprehensiveScraping();
-            
+
             // Deep analysis and database optimization
             await this.performDeepAnalysis();
             await this.optimizeTerminologyDatabase();
             await this.generateWeeklyReport();
-            
+
             console.log('✅ [ContentScheduler] Weekly scraping completed');
         } catch (error) {
             console.error('❌ [ContentScheduler] Weekly scraping failed:', error);
@@ -265,15 +265,15 @@ class ContentScheduler {
      */
     async updateTerminologyDatabase() {
         console.log('🔄 [ContentScheduler] Updating terminology database...');
-        
+
         try {
             // Process all scraped content and extract new terms
             await this.webScraper.processScrapedContent();
-            
+
             // Get updated statistics
             const stats = this.terminologyService.getStatistics();
             console.log(`📊 [ContentScheduler] Database updated: ${stats.totalTerms} terms, ${stats.supportedLanguages.length} languages`);
-            
+
         } catch (error) {
             console.error('❌ [ContentScheduler] Database update failed:', error);
         }
@@ -284,19 +284,19 @@ class ContentScheduler {
      */
     async performDeepAnalysis() {
         console.log('🔍 [ContentScheduler] Performing deep content analysis...');
-        
+
         try {
             // Analyze content patterns
             const analysis = await this.analyzeContentPatterns();
-            
+
             // Identify trending topics
             const trendingTopics = await this.identifyTrendingTopics();
-            
+
             // Update content recommendations
             await this.updateContentRecommendations(analysis, trendingTopics);
-            
+
             console.log('✅ [ContentScheduler] Deep analysis completed');
-            
+
         } catch (error) {
             console.error('❌ [ContentScheduler] Deep analysis failed:', error);
         }
@@ -344,13 +344,13 @@ class ContentScheduler {
      */
     async optimizeTerminologyDatabase() {
         console.log('⚡ [ContentScheduler] Optimizing terminology database...');
-        
+
         try {
             // Remove duplicate terms
             // Merge similar terms
             // Update confidence scores
             // Clean up unused terms
-            
+
             console.log('✅ [ContentScheduler] Database optimization completed');
         } catch (error) {
             console.error('❌ [ContentScheduler] Database optimization failed:', error);
@@ -362,11 +362,11 @@ class ContentScheduler {
      */
     async generateContentReport() {
         console.log('📊 [ContentScheduler] Generating content report...');
-        
+
         try {
             const stats = this.webScraper.getStats();
             const terminologyStats = this.terminologyService.getStatistics();
-            
+
             const report = {
                 timestamp: new Date().toISOString(),
                 scrapingStats: stats,
@@ -378,9 +378,9 @@ class ContentScheduler {
                     'Monitor trending Islamic topics'
                 ]
             };
-            
+
             console.log('📈 [ContentScheduler] Content report generated:', report);
-            
+
         } catch (error) {
             console.error('❌ [ContentScheduler] Report generation failed:', error);
         }
@@ -391,7 +391,7 @@ class ContentScheduler {
      */
     async generateWeeklyReport() {
         console.log('📊 [ContentScheduler] Generating weekly report...');
-        
+
         try {
             const report = {
                 timestamp: new Date().toISOString(),
@@ -403,9 +403,9 @@ class ContentScheduler {
                     databaseOptimized: true
                 }
             };
-            
+
             console.log('📈 [ContentScheduler] Weekly report generated');
-            
+
         } catch (error) {
             console.error('❌ [ContentScheduler] Weekly report failed:', error);
         }
@@ -416,12 +416,12 @@ class ContentScheduler {
      */
     stopScheduledScraping() {
         console.log('⏹️ [ContentScheduler] Stopping all scheduled jobs...');
-        
+
         for (const [name, job] of this.scheduledJobs) {
             job.stop();
             console.log(`⏹️ [ContentScheduler] Stopped ${name} job`);
         }
-        
+
         this.scheduledJobs.clear();
         this.isRunning = false;
         console.log('✅ [ContentScheduler] All jobs stopped');
@@ -433,13 +433,13 @@ class ContentScheduler {
     getStatus() {
         try {
             console.log('📊 [ContentScheduler] Getting scheduler status...');
-            
+
             // Ensure webScraper is available
             const webScraper = this.ensureWebScraper();
-            
+
             console.log('🔍 [ContentScheduler] Web scraper available:', !!webScraper);
             console.log('🔍 [ContentScheduler] Terminology service available:', !!this.terminologyService);
-            
+
             let scraperStats = {
                 totalSites: 0,
                 successfulScrapes: 0,
@@ -456,7 +456,7 @@ class ContentScheduler {
                 },
                 error: 'Web scraper not available'
             };
-            
+
             if (webScraper) {
                 try {
                     console.log('🕷️ [ContentScheduler] Getting scraper statistics...');
@@ -484,14 +484,14 @@ class ContentScheduler {
             } else {
                 console.warn('⚠️ [ContentScheduler] Web scraper not available');
             }
-            
+
             const status = {
                 isRunning: this.isRunning,
                 activeJobs: Array.from(this.scheduledJobs.keys()),
                 schedules: this.schedules,
                 scraperStats: scraperStats
             };
-            
+
             console.log('✅ [ContentScheduler] Final status:', status);
             return status;
         } catch (error) {
@@ -520,11 +520,11 @@ class ContentScheduler {
      */
     async runImmediateScraping() {
         console.log('🚀 [ContentScheduler] Running immediate scraping...');
-        
+
         try {
             await this.webScraper.startComprehensiveScraping();
             await this.updateTerminologyDatabase();
-            
+
             console.log('✅ [ContentScheduler] Immediate scraping completed');
             return true;
         } catch (error) {

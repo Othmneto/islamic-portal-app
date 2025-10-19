@@ -77,7 +77,7 @@ export class TranslationAlternatives {
      */
     async getAlternatives(text, fromLang, toLang) {
         const cacheKey = `${text}-${fromLang}-${toLang}`;
-        
+
         // Check cache first
         if (this.alternatives.has(cacheKey)) {
             return this.alternatives.get(cacheKey);
@@ -105,10 +105,10 @@ export class TranslationAlternatives {
 
         // Sort by confidence and user preferences
         const sortedAlternatives = this.sortAlternatives(alternatives, text);
-        
+
         // Cache the results
         this.alternatives.set(cacheKey, sortedAlternatives);
-        
+
         return sortedAlternatives;
     }
 
@@ -121,7 +121,7 @@ export class TranslationAlternatives {
      */
     async generateApiAlternatives(text, fromLang, toLang) {
         const alternatives = [];
-        
+
         try {
             // Generate with different styles/contexts
             const styles = [
@@ -181,11 +181,11 @@ export class TranslationAlternatives {
                 // First by user preference score
                 const aPreference = this.getUserPreferenceScore(a, originalText);
                 const bPreference = this.getUserPreferenceScore(b, originalText);
-                
+
                 if (aPreference !== bPreference) {
                     return bPreference - aPreference;
                 }
-                
+
                 // Then by confidence
                 return (b.confidence || 0) - (a.confidence || 0);
             })
@@ -200,24 +200,24 @@ export class TranslationAlternatives {
      */
     getUserPreferenceScore(alternative, originalText) {
         let score = 0;
-        
+
         // Boost score for Islamic phrases
         if (alternative.source === 'islamic-phrase') {
             score += 20;
         }
-        
+
         // Boost score for preferred styles
         const preferredStyles = this.userPreferences.get('preferredStyles') || ['traditional', 'formal'];
         if (preferredStyles.includes(alternative.style)) {
             score += 10;
         }
-        
+
         // Boost score for previously selected alternatives
         const selectedAlternatives = this.userPreferences.get('selectedAlternatives') || new Set();
         if (selectedAlternatives.has(alternative.text)) {
             score += 15;
         }
-        
+
         return score;
     }
 
@@ -232,12 +232,12 @@ export class TranslationAlternatives {
         const selectedAlternatives = this.userPreferences.get('selectedAlternatives') || new Set();
         selectedAlternatives.add(selectedAlternative);
         this.userPreferences.set('selectedAlternatives', selectedAlternatives);
-        
+
         // Record preferred style
         const preferredStyles = this.userPreferences.get('preferredStyles') || new Set();
         preferredStyles.add(style);
         this.userPreferences.set('preferredStyles', preferredStyles);
-        
+
         // Save to localStorage
         this.savePreferences();
     }

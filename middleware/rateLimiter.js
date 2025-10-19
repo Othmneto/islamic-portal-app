@@ -12,14 +12,14 @@ const RATE_LIMITS = {
   register: { windowMs: 60 * 60 * 1000, max: 3, message: 'Too many registration attempts' },
   passwordReset: { windowMs: 60 * 60 * 1000, max: 3, message: 'Too many password reset attempts' },
   emailVerification: { windowMs: 60 * 60 * 1000, max: 5, message: 'Too many email verification attempts' },
-  
+
   // OAuth endpoints
   oauth: { windowMs: 15 * 60 * 1000, max: 50, message: 'Too many OAuth attempts' },
-  
+
   // API endpoints
   api: { windowMs: 15 * 60 * 1000, max: 100, message: 'Too many API requests' },
   translation: { windowMs: 60 * 1000, max: 20, message: 'Too many translation requests' },
-  
+
   // General endpoints
   general: { windowMs: 15 * 60 * 1000, max: 200, message: 'Too many requests' }
 };
@@ -124,14 +124,14 @@ const rateLimiters = {
   register: createRateLimiter(RATE_LIMITS.register),
   passwordReset: createRateLimiter(RATE_LIMITS.passwordReset),
   emailVerification: createRateLimiter(RATE_LIMITS.emailVerification),
-  
+
   // OAuth rate limiters
   oauth: createRateLimiter(RATE_LIMITS.oauth),
-  
+
   // API rate limiters
   api: createRateLimiter(RATE_LIMITS.api),
   translation: createRateLimiter(RATE_LIMITS.translation),
-  
+
   // General rate limiter
   general: createRateLimiter(RATE_LIMITS.general)
 };
@@ -161,12 +161,12 @@ const dynamicRateLimiter = (req, res, next) => {
 const ipRateLimiter = (whitelist = []) => {
   return (req, res, next) => {
     const clientIP = req.ip || 'unknown';
-    
+
     // Skip rate limiting for whitelisted IPs
     if (whitelist.includes(clientIP)) {
       return next();
     }
-    
+
     return rateLimiters.general(req, res, next);
   };
 };
@@ -202,7 +202,7 @@ const userRateLimiter = (options = {}) => {
 const endpointRateLimiter = (endpoint, options = {}) => {
   const defaultOptions = RATE_LIMITS[endpoint] || RATE_LIMITS.general;
   const mergedOptions = { ...defaultOptions, ...options };
-  
+
   return createRateLimiter(mergedOptions);
 };
 
@@ -222,7 +222,7 @@ const burstRateLimiter = (options = {}) => {
     try {
       const key = `burst:${req.ip || 'unknown'}`;
       const now = Date.now();
-      
+
       // Check burst limit
       const burstKey = `${key}:burst:${Math.floor(now / burstWindowMs)}`;
       const burstCount = await get(burstKey) || '0';

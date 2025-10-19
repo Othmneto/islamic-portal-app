@@ -17,7 +17,7 @@ async function testUserModel() {
                 password: '123456',
                 authProvider: 'local'
             });
-            
+
             await user.validate();
             console.log('❌ Weak password validation failed - password was accepted');
         } catch (error) {
@@ -34,7 +34,7 @@ async function testUserModel() {
                 password: 'Password123@',
                 authProvider: 'local'
             });
-            
+
             await user.validate();
             console.log('✅ Strong password validation working - password was accepted');
         } catch (error) {

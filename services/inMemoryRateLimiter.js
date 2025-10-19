@@ -25,11 +25,11 @@ class InMemoryRateLimiter {
     this.counters = new Map(); // key -> { count, resetTime, window }
     this.blacklist = new Set(); // blacklisted keys
     this.violations = new Map(); // key -> violation count
-    
+
     // Cleanup timers
     this.cleanupTimer = null;
     this.syncTimer = null;
-    
+
     // Statistics
     this.stats = {
       totalRequests: 0,
@@ -75,9 +75,18 @@ class InMemoryRateLimiter {
 
         // Check if limit exceeded
         if (counter.count >= this.options.max) {
-          await this.handleRateLimitExceeded(key, req, res);
-          this.stats.blockedRequests++;
-          return this.sendRateLimitResponse(res, counter.count, counter.resetTime);
+          // Check if the window has actually expired
+          if (now >= counter.resetTime) {
+            // Window has expired, reset the counter
+            counter.count = 0;
+            counter.resetTime = (window + 1) * this.options.windowMs;
+            this.counters.set(windowKey, counter);
+          } else {
+            // Still within the window, block the request
+            await this.handleRateLimitExceeded(key, req, res);
+            this.stats.blockedRequests++;
+            return this.sendRateLimitResponse(res, counter.count, counter.resetTime);
+          }
         }
 
         // Increment counter
@@ -104,7 +113,7 @@ class InMemoryRateLimiter {
     const now = Date.now();
     const window = Math.floor(now / this.options.windowMs);
     const windowKey = `${key}:${window}`;
-    
+
     const counter = this.counters.get(windowKey);
     return counter && counter.count >= this.options.max;
   }
@@ -116,7 +125,7 @@ class InMemoryRateLimiter {
     const now = Date.now();
     const window = Math.floor(now / this.options.windowMs);
     const windowKey = `${key}:${window}`;
-    
+
     const counter = this.counters.get(windowKey);
     return counter ? counter.count : 0;
   }
@@ -128,7 +137,7 @@ class InMemoryRateLimiter {
     const now = Date.now();
     const window = Math.floor(now / this.options.windowMs);
     const windowKey = `${key}:${window}`;
-    
+
     this.counters.delete(windowKey);
     this.violations.delete(key);
     this.blacklist.delete(key);
@@ -139,7 +148,7 @@ class InMemoryRateLimiter {
    */
   blacklistKey(key, duration = 24 * 60 * 60 * 1000) { // 24 hours default
     this.blacklist.add(key);
-    
+
     // Auto-remove from blacklist after duration
     setTimeout(() => {
       this.blacklist.delete(key);
@@ -182,7 +191,7 @@ class InMemoryRateLimiter {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = null;
     }
-    
+
     if (this.syncTimer) {
       clearInterval(this.syncTimer);
       this.syncTimer = null;
@@ -224,7 +233,7 @@ class InMemoryRateLimiter {
 
   sendRateLimitResponse(res, count, resetTime) {
     const remaining = Math.max(0, this.options.max - count);
-    
+
     if (this.options.standardHeaders) {
       res.set({
         'X-RateLimit-Limit': this.options.max,
@@ -241,16 +250,24 @@ class InMemoryRateLimiter {
       });
     }
 
+    const retryAfter = Math.max(0, Math.ceil((resetTime - Date.now()) / 1000));
+
     return res.status(429).json({
+      success: false,
       error: 'Too Many Requests',
       message: this.options.message,
-      retryAfter: Math.ceil((resetTime - Date.now()) / 1000)
+      retryAfter: retryAfter,
+      details: {
+        limit: this.options.max,
+        windowMs: this.options.windowMs,
+        resetTime: new Date(resetTime).toISOString()
+      }
     });
   }
 
   setRateLimitHeaders(res, count, resetTime) {
     const remaining = Math.max(0, this.options.max - count);
-    
+
     if (this.options.standardHeaders) {
       res.set({
         'X-RateLimit-Limit': this.options.max,
@@ -273,7 +290,7 @@ class InMemoryRateLimiter {
       console.warn('[InMemoryRateLimiter] Cannot start cleanup timer: options not initialized');
       return;
     }
-    
+
     this.cleanupTimer = setInterval(() => {
       this.cleanup();
     }, this.options.windowMs); // Cleanup every window
@@ -289,10 +306,10 @@ class InMemoryRateLimiter {
     if (!this.options || !this.options.windowMs) {
       return; // Skip cleanup if options are not properly initialized
     }
-    
+
     const now = Date.now();
     const currentWindow = Math.floor(now / this.options.windowMs);
-    
+
     // Remove expired counters
     for (const [key, counter] of this.counters.entries()) {
       if (counter && counter.window && counter.window < currentWindow - 1) { // Keep current and previous window
@@ -314,15 +331,15 @@ class InMemoryRateLimiter {
       // Sync counters
       const countersData = Object.fromEntries(this.counters);
       await diskPersistence.set('rate_limit_counters', countersData, 'ratelimits');
-      
+
       // Sync violations
       const violationsData = Object.fromEntries(this.violations);
       await diskPersistence.set('rate_limit_violations', violationsData, 'ratelimits');
-      
+
       // Sync blacklist
       const blacklistData = Array.from(this.blacklist);
       await diskPersistence.set('rate_limit_blacklist', blacklistData, 'ratelimits');
-      
+
       // Sync stats
       await diskPersistence.set('rate_limit_stats', this.stats, 'ratelimits');
     } catch (error) {
@@ -337,19 +354,19 @@ class InMemoryRateLimiter {
       if (countersData) {
         this.counters = new Map(Object.entries(countersData));
       }
-      
+
       // Load violations
       const violationsData = await diskPersistence.get('rate_limit_violations', 'ratelimits');
       if (violationsData) {
         this.violations = new Map(Object.entries(violationsData));
       }
-      
+
       // Load blacklist
       const blacklistData = await diskPersistence.get('rate_limit_blacklist', 'ratelimits');
       if (blacklistData && Array.isArray(blacklistData)) {
         this.blacklist = new Set(blacklistData);
       }
-      
+
       // Load stats
       const statsData = await diskPersistence.get('rate_limit_stats', 'ratelimits');
       if (statsData) {

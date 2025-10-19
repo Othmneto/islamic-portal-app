@@ -9,9 +9,9 @@ const TokenBlacklist = require('../models/TokenBlacklist');
 const socketAuth = async (socket, next) => {
     try {
         // Extract token from handshake auth or headers
-        const token = socket.handshake.auth?.token || 
+        const token = socket.handshake.auth?.token ||
                      socket.handshake.headers?.authorization?.split(' ')[1];
-        
+
         if (!token) {
             return next(new Error('Authentication token required'));
         }
@@ -24,14 +24,14 @@ const socketAuth = async (socket, next) => {
 
         // Verify JWT token
         const payload = jwt.verify(token, process.env.JWT_SECRET);
-        
+
         // Attach user info to socket (multiple formats for compatibility)
         socket.user = {
             id: payload.sub || payload.id || payload.userId,
             email: payload.email,
             role: payload.role || 'user'
         };
-        
+
         // Also attach directly for easier access in handlers
         socket.userId = socket.user.id;
         socket.userEmail = socket.user.email;

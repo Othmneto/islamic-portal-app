@@ -9,12 +9,12 @@ const router = express.Router();
 router.post('/clear-all-tokens', requireAuth, async (req, res) => {
     try {
         console.log('🗑️ Clearing OAuth tokens for user:', req.user.id);
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ 
-                success: false, 
-                error: "User not found" 
+            return res.status(404).json({
+                success: false,
+                error: "User not found"
             });
         }
 
@@ -67,8 +67,8 @@ router.post('/clear-all-tokens', requireAuth, async (req, res) => {
 
     } catch (error) {
         console.error('❌ Error clearing OAuth tokens:', error);
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             error: "Failed to clear OAuth tokens",
             details: error.message
         });

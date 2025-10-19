@@ -5,7 +5,7 @@ const { securityMonitor } = require('../services/securityMonitor');
 const extractClientInfo = (req) => {
   // Enhanced IP extraction with better error handling
   let ip = 'unknown';
-  
+
   try {
     // Try multiple sources for IP address
     if (req.ip) {
@@ -27,12 +27,12 @@ const extractClientInfo = (req) => {
     } else if (req.headers['cf-connecting-ip']) {
       ip = req.headers['cf-connecting-ip'];
     }
-    
+
     // Clean up IP address (remove IPv6 prefix if present)
     if (ip && ip.startsWith('::ffff:')) {
       ip = ip.substring(7);
     }
-    
+
     // Validate IP format
     if (ip && ip !== 'unknown' && !isValidIP(ip)) {
       console.warn('⚠️ Invalid IP address detected:', ip);
@@ -45,7 +45,7 @@ const extractClientInfo = (req) => {
 
   const userAgent = req.get('User-Agent') || 'unknown';
   const referer = req.get('Referer') || 'unknown';
-  
+
   return {
     ip: ip, // Fixed: Changed from ipAddress to ip for consistency
     ipAddress: ip, // Keep both for backward compatibility
@@ -70,29 +70,29 @@ const extractClientInfo = (req) => {
 // Helper function to validate IP address
 const isValidIP = (ip) => {
   if (!ip || typeof ip !== 'string') return false;
-  
+
   // IPv4 regex
   const ipv4Regex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-  
+
   // IPv6 regex (simplified)
   const ipv6Regex = /^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-  
+
   return ipv4Regex.test(ip) || ipv6Regex.test(ip) || ip === 'localhost' || ip === '127.0.0.1';
 };
 
 // Sanitize request body to remove sensitive data
 const sanitizeRequestBody = (body) => {
   if (!body || typeof body !== 'object') return body;
-  
+
   const sanitized = { ...body };
   const sensitiveFields = ['password', 'token', 'secret', 'key', 'auth'];
-  
+
   Object.keys(sanitized).forEach(key => {
     if (sensitiveFields.some(field => key.toLowerCase().includes(field))) {
       sanitized[key] = '[REDACTED]';
     }
   });
-  
+
   return sanitized;
 };
 
@@ -107,7 +107,7 @@ const securityLogger = (options = {}) => {
 
     // Extract client information
     const clientInfo = extractClientInfo(req);
-    
+
     // Add security context to request
     req.securityContext = {
       ...clientInfo,
@@ -132,7 +132,7 @@ const securityLogger = (options = {}) => {
 const logAuthEvent = async (eventType, req, additionalData = {}) => {
   try {
     const clientInfo = extractClientInfo(req);
-    
+
     const eventData = {
       eventType,
       userId: req.user?.id || null,
@@ -160,7 +160,7 @@ const logAuthEvent = async (eventType, req, additionalData = {}) => {
 const logSecurityViolation = async (violationType, req, details = {}) => {
   try {
     const clientInfo = extractClientInfo(req);
-    
+
     const eventData = {
       eventType: violationType,
       userId: req.user?.id || null,

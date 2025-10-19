@@ -15,7 +15,7 @@ class BundleManager {
     // Dynamic module loading with code splitting
     async loadModule(moduleName, options = {}) {
         const startTime = performance.now();
-        
+
         // Check if already loaded
         if (this.loadedModules.has(moduleName)) {
             this.performanceMetrics.cacheHits++;
@@ -34,10 +34,10 @@ class BundleManager {
             const module = await this.importModule(moduleName, options);
             this.loadedModules.add(moduleName);
             this.moduleCache.set(moduleName, module);
-            
+
             const loadTime = performance.now() - startTime;
             this.performanceMetrics.loadTimes[moduleName] = loadTime;
-            
+
             console.log(`Module ${moduleName} loaded in ${loadTime.toFixed(2)}ms`);
             return module;
         } catch (error) {
@@ -54,7 +54,7 @@ class BundleManager {
             'translator': () => import('./modules/translator.js'),
             'voice-input': () => import('./modules/voiceInput.js'),
             'real-time': () => import('./modules/realTime.js'),
-            
+
             // Feature modules
             'prayer-times': () => import('./modules/prayerTimes.js'),
             'qibla': () => import('./modules/qibla.js'),
@@ -62,13 +62,13 @@ class BundleManager {
             'duas': () => import('./modules/duas.js'),
             'names': () => import('./modules/names.js'),
             'zakat': () => import('./modules/zakat.js'),
-            
+
             // Utility modules
             'analytics': () => import('./modules/analytics.js'),
             'notifications': () => import('./modules/notifications.js'),
             'settings': () => import('./modules/settings.js'),
             'i18n': () => import('./modules/i18n.js'),
-            
+
             // Advanced modules
             'ai-assistant': () => import('./modules/aiAssistant.js'),
             'conversation-memory': () => import('./modules/conversationMemory.js'),
@@ -108,8 +108,8 @@ class BundleManager {
         ];
 
         console.log('Preloading critical modules...');
-        const preloadPromises = criticalModules.map(module => 
-            this.loadModule(module).catch(err => 
+        const preloadPromises = criticalModules.map(module =>
+            this.loadModule(module).catch(err =>
                 console.warn(`Failed to preload ${module}:`, err)
             )
         );
@@ -176,7 +176,7 @@ class BundleManager {
         if (element) {
             element.style.opacity = '0.6';
             element.style.pointerEvents = 'none';
-            
+
             const indicator = document.createElement('div');
             indicator.className = 'bundle-loading-indicator';
             indicator.innerHTML = 'Loading...';
@@ -200,7 +200,7 @@ class BundleManager {
         if (element) {
             element.style.opacity = '1';
             element.style.pointerEvents = 'auto';
-            
+
             const indicator = element.querySelector('.bundle-loading-indicator');
             if (indicator) {
                 indicator.remove();
@@ -226,7 +226,7 @@ class BundleManager {
             `;
             element.style.position = 'relative';
             element.appendChild(errorIndicator);
-            
+
             setTimeout(() => {
                 if (errorIndicator.parentNode) {
                     errorIndicator.remove();

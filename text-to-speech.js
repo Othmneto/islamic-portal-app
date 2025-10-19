@@ -11,7 +11,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const elevenlabs = new ElevenLabsClient({ apiKey: process.env.ELEVEN_API_KEY });
 
 // <<< FIX: The 'environment' property has been removed as it's not a valid key for your library version >>>
-const pinecone = new Pinecone({ 
+const pinecone = new Pinecone({
     apiKey: process.env.PINECONE_API_KEY
 });
 const pineconeIndex = pinecone.index('shaikh-translator');
@@ -48,16 +48,16 @@ function analyzeIslamicContext(text) {
     ];
 
     const textLower = text.toLowerCase();
-    const foundKeywords = islamicKeywords.filter(keyword => 
+    const foundKeywords = islamicKeywords.filter(keyword =>
         textLower.includes(keyword.toLowerCase())
     );
-    
-    const foundArabicTerms = arabicIslamicTerms.filter(term => 
+
+    const foundArabicTerms = arabicIslamicTerms.filter(term =>
         text.includes(term)
     );
 
     const islamicScore = (foundKeywords.length + foundArabicTerms.length) / Math.max(text.split(' ').length, 1);
-    
+
     return {
         hasIslamicContent: foundKeywords.length > 0 || foundArabicTerms.length > 0,
         islamicKeywords: foundKeywords,
@@ -72,21 +72,21 @@ function calculateTranslationConfidence(originalText, translatedText, targetLang
     // Basic confidence calculation based on text length and complexity
     const originalLength = originalText.length;
     const translatedLength = translatedText.length;
-    
+
     // Length ratio should be reasonable (not too short or too long)
     const lengthRatio = translatedLength / originalLength;
     const lengthConfidence = lengthRatio > 0.3 && lengthRatio < 3 ? 1 : 0.5;
-    
+
     // Text complexity (more complex = lower confidence)
     const complexity = originalText.split(' ').length;
     const complexityConfidence = complexity > 20 ? 0.8 : complexity > 10 ? 0.9 : 1;
-    
+
     // Language-specific confidence adjustments
     const languageConfidence = getLanguageConfidence(targetLanguage);
-    
+
     // Overall confidence (0-1 scale)
     const overallConfidence = (lengthConfidence + complexityConfidence + languageConfidence) / 3;
-    
+
     return Math.min(Math.max(overallConfidence, 0.1), 1.0);
 }
 
@@ -104,7 +104,7 @@ function getLanguageConfidence(targetLanguage) {
         'Japanese': 0.80,
         'Chinese': 0.82
     };
-    
+
     return languageConfidenceMap[targetLanguage] || 0.85;
 }
 
@@ -155,14 +155,14 @@ async function deleteFromMemory(id, sessionId) {
 // --- Enhanced Translation & Transcription Functions with GPT-5 ---
 async function translateText(text, from, toLanguages, voiceId, sessionId) {
     console.log('Translating text:', text.substring(0, 50) + '...');
-    
+
     const context = await getRelevantContext(text, sessionId);
     const fromLanguage = from === 'auto' ? 'the detected language' : from;
     const translationResults = [];
 
     // Enhanced Islamic context analysis
     const islamicContext = analyzeIslamicContext(text);
-    
+
     for (const to of toLanguages) {
         let prompt;
         if (context) {
@@ -179,18 +179,18 @@ async function translateText(text, from, toLanguages, voiceId, sessionId) {
         const completion = await openai.chat.completions.create({
             model: 'gpt-5', // Updated to GPT-5
             messages: [
-                { 
-                    role: 'system', 
-                    content: 'You are a professional translator. Provide accurate, direct translations without filtering or censoring content. Translate exactly what is given to you.' 
+                {
+                    role: 'system',
+                    content: 'You are a professional translator. Provide accurate, direct translations without filtering or censoring content. Translate exactly what is given to you.'
                 },
                 { role: 'user', content: prompt }
             ],
             max_completion_tokens: 1000
         });
-        
+
         let translatedText = completion.choices[0].message.content.replace(/"/g, '').trim();
         console.log('Translation result:', translatedText);
-        
+
         // If translation is empty, try a simpler approach
         if (!translatedText || translatedText === '') {
             console.log('Empty translation, trying simpler prompt...');
@@ -205,7 +205,7 @@ async function translateText(text, from, toLanguages, voiceId, sessionId) {
             });
             const simpleTranslation = simpleCompletion.choices[0].message.content.replace(/"/g, '').trim();
             console.log('Simple translation result:', simpleTranslation);
-            
+
             if (simpleTranslation && simpleTranslation !== '') {
                 translatedText = simpleTranslation;
             } else {
@@ -218,14 +218,14 @@ async function translateText(text, from, toLanguages, voiceId, sessionId) {
                 }
             }
         }
-        
+
         // Skip audio generation for text-only mode
         if (voiceId === 'text-only') {
             console.log(`🎵 Skipping audio generation for text-only mode`);
         } else {
             console.log(`🎵 Generating audio for ${to} with voice ${voiceId}`);
-            const audioResult = await elevenlabs.textToSpeech.convert(voiceId, { 
-                text: translatedText, 
+            const audioResult = await elevenlabs.textToSpeech.convert(voiceId, {
+                text: translatedText,
                 model_id: "eleven_multilingual_v2",
                 voice_settings: {
                     stability: 0.5,
@@ -237,29 +237,29 @@ async function translateText(text, from, toLanguages, voiceId, sessionId) {
             const audioBuffer = await streamToBuffer(audioResult);
             console.log(`✅ Audio generated successfully for ${to} (${audioBuffer.length} bytes)`);
         }
-        
+
         const confidence = calculateTranslationConfidence(text, translatedText, to);
-        
-        const result = { 
-            translatedText, 
-            audioBuffer, 
-            toLanguage: to, 
+
+        const result = {
+            translatedText,
+            audioBuffer,
+            toLanguage: to,
             context,
             islamicContext,
             confidence,
             model: 'gpt-5'
         };
-        
+
         translationResults.push(result);
     }
-    
+
     console.log('Translation completed for', translationResults.length, 'languages');
     return translationResults;
 }
 
 async function transcribeAudioFile(filePath, from, toLanguages, voiceId, sessionId) {
     console.log('Transcribing audio file:', filePath);
-    
+
     const transcriptionOptions = {
         file: fs.createReadStream(filePath),
         model: "whisper-1",
@@ -271,28 +271,28 @@ async function transcribeAudioFile(filePath, from, toLanguages, voiceId, session
             transcriptionOptions.language = langMap[from];
         }
     }
-    
+
     const transcription = await openai.audio.transcriptions.create(transcriptionOptions);
     console.log('Transcribed text:', transcription.text);
-    
+
     const originalText = transcription.text;
     const detectedLang = transcription.language;
-    
+
     // Enhanced transcription with confidence and Islamic context
     const islamicContext = analyzeIslamicContext(originalText);
     const transcriptionConfidence = calculateTranscriptionConfidence(transcription);
-    
+
     const translationResults = await translateText(originalText, detectedLang, toLanguages, voiceId, sessionId);
-    
-    const result = { 
-        originalText, 
-        detectedLang, 
+
+    const result = {
+        originalText,
+        detectedLang,
         translationResults,
         islamicContext,
         transcriptionConfidence,
         model: 'whisper-1'
     };
-    
+
     console.log('Audio transcription and translation completed');
     return result;
 }
@@ -302,29 +302,29 @@ function calculateTranscriptionConfidence(transcription) {
     // Basic confidence based on transcription quality indicators
     const text = transcription.text;
     const duration = transcription.duration || 1; // fallback to 1 second
-    
+
     // Length confidence (reasonable text length for duration)
     const wordsPerSecond = text.split(' ').length / duration;
     const lengthConfidence = wordsPerSecond > 0.5 && wordsPerSecond < 5 ? 1 : 0.7;
-    
+
     // Language detection confidence
     const languageConfidence = transcription.language_probability || 0.8;
-    
+
     // Text quality (no excessive repetition or gibberish)
     const uniqueWords = new Set(text.toLowerCase().split(' ')).size;
     const totalWords = text.split(' ').length;
     const qualityConfidence = totalWords > 0 ? uniqueWords / totalWords : 0.5;
-    
+
     // Overall confidence
     const overallConfidence = (lengthConfidence + languageConfidence + qualityConfidence) / 3;
-    
+
     return Math.min(Math.max(overallConfidence, 0.1), 1.0);
 }
 
-module.exports = { 
-    translateText, 
-    transcribeAudioFile, 
-    saveToMemory, 
+module.exports = {
+    translateText,
+    transcribeAudioFile,
+    saveToMemory,
     deleteFromMemory,
-	pineconeIndex 
+	pineconeIndex
 };

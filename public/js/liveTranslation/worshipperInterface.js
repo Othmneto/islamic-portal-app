@@ -13,22 +13,22 @@ class WorshipperInterface {
         this.isPlayingAudio = false;
         this.volume = 0.8;
         this.translationData = []; // Translation history data array
-        
+
         // Get token
         this.token = localStorage.getItem('accessToken') || localStorage.getItem('authToken');
-        
+
         // Initialize UI elements
         this.initializeElements();
-        
+
         // Check for session ID in URL
         this.checkURLParams();
-        
+
         // Setup event listeners
         this.setupEventListeners();
-        
+
         // Initialize Audio Context
         this.initializeAudioContext();
-        
+
         console.log('✅ [WorshipperInterface] Initialized');
     }
 
@@ -39,9 +39,9 @@ class WorshipperInterface {
         this.targetLanguageSelect = document.getElementById('targetLanguage');
         this.sessionPasswordInput = document.getElementById('sessionPassword');
         this.joinBtn = document.getElementById('joinBtn');
-        
+
         console.log('🔍 [WorshipperInterface] Join button found:', this.joinBtn);
-        
+
         // Active session section
         this.activeSession = document.getElementById('activeSession');
         this.connectionStatus = document.getElementById('connectionStatus');
@@ -60,7 +60,7 @@ class WorshipperInterface {
     checkURLParams() {
         const params = new URLSearchParams(window.location.search);
         const sessionId = params.get('session');
-        
+
         if (sessionId) {
             this.sessionIdInput.value = sessionId;
         }
@@ -69,7 +69,7 @@ class WorshipperInterface {
     setupEventListeners() {
         console.log('👂 [WorshipperInterface] Setting up event listeners...');
         console.log('👂 [WorshipperInterface] Join button:', this.joinBtn);
-        
+
         if (this.joinBtn) {
             this.joinBtn.addEventListener('click', () => {
                 console.log('🖱️ [WorshipperInterface] Join button clicked!');
@@ -79,17 +79,17 @@ class WorshipperInterface {
         } else {
             console.error('❌ [WorshipperInterface] Join button not found!');
         }
-        
+
         if (this.leaveSessionBtn) {
             this.leaveSessionBtn.addEventListener('click', () => this.leaveSession());
         }
-        
+
         // Volume control
         this.volumeSlider.addEventListener('input', (e) => {
             this.volume = e.target.value / 100;
             this.volumeValue.textContent = e.target.value + '%';
         });
-        
+
         // Enter key to join
         this.sessionIdInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -111,16 +111,16 @@ class WorshipperInterface {
      */
     connectWebSocket() {
         console.log('🔌 [WorshipperInterface] Connecting to WebSocket...');
-        
+
         // Check if Socket.IO is loaded
         if (typeof io === 'undefined') {
             console.error('❌ [WorshipperInterface] Socket.IO not loaded!');
             alert('Socket.IO library not loaded. Please refresh the page.');
             return;
         }
-        
+
         console.log('✅ [WorshipperInterface] Socket.IO is available');
-        
+
         this.socket = io({
             auth: {
                 token: this.token
@@ -130,7 +130,7 @@ class WorshipperInterface {
         this.socket.on('connect', () => {
             console.log('✅ [WorshipperInterface] WebSocket connected');
             this.updateConnectionStatus(true);
-            
+
             // Join the session after connection
             this.sendJoinRequest();
         });
@@ -140,7 +140,7 @@ class WorshipperInterface {
             this.updateConnectionStatus(false);
             this.showNotification('Connection lost. Reconnecting...', 'warning');
         });
-        
+
         // Authentication error
         this.socket.on('connect_error', (error) => {
             console.error('❌ [WorshipperInterface] Connection error:', error.message);
@@ -221,7 +221,7 @@ class WorshipperInterface {
     async joinSession() {
         try {
             this.joinBtn.disabled = true;
-            
+
             this.sessionId = this.sessionIdInput.value.trim().toUpperCase();
             this.targetLanguage = this.targetLanguageSelect.value;
             const password = this.sessionPasswordInput.value;
@@ -249,7 +249,7 @@ class WorshipperInterface {
      */
     sendJoinRequest() {
         const targetLanguageName = this.targetLanguageSelect.options[this.targetLanguageSelect.selectedIndex].text.split('(')[0].trim();
-        
+
         this.socket.emit('worshipper:joinSession', {
             sessionId: this.sessionId,
             targetLanguage: this.targetLanguage,
@@ -264,7 +264,7 @@ class WorshipperInterface {
     showActiveSession() {
         this.joinSection.classList.add('hidden');
         this.activeSession.classList.remove('hidden');
-        
+
         // Monitor connection quality
         setInterval(() => this.updateConnectionQuality(), 5000);
     }
@@ -275,24 +275,24 @@ class WorshipperInterface {
     async handleTranslation(data) {
         try {
             console.log('🎯 [WorshipperInterface] Processing translation:', data);
-            
+
             // Hide loading, show content
             this.loadingIndicator.classList.add('hidden');
             this.translationContent.classList.remove('hidden');
-            
+
             // Display original text
             this.originalText.innerHTML = `
                 <strong>${data.original.languageName || data.original.language}:</strong> 
                 ${data.original.text}
             `;
-            
+
             // Display translated text
             const translatedText = data.translation.text?.text || data.translation.text;
             this.translatedText.textContent = translatedText;
-            
+
             // Add to history
             this.addToHistory(data.original.text, translatedText);
-            
+
             // Play audio if available
             if (data.translation.audioBase64) {
                 await this.playTranslationAudio(data.translation.audioBase64);
@@ -305,7 +305,7 @@ class WorshipperInterface {
                     this.audioIndicator.classList.remove('hidden');
                 }, 3000);
             }
-            
+
         } catch (error) {
             console.error('❌ [WorshipperInterface] Error handling translation:', error);
         }
@@ -317,48 +317,48 @@ class WorshipperInterface {
     async playTranslationAudio(audioBase64) {
         try {
             console.log('🔊 [WorshipperInterface] Playing audio...');
-            
+
             // Show audio indicator
             this.audioIndicator.classList.remove('hidden');
-            
+
             // Decode base64 to array buffer
             const binaryString = atob(audioBase64);
             const bytes = new Uint8Array(binaryString.length);
             for (let i = 0; i < binaryString.length; i++) {
                 bytes[i] = binaryString.charCodeAt(i);
             }
-            
+
             // Decode audio data
             const audioBuffer = await this.audioContext.decodeAudioData(bytes.buffer);
-            
+
             // Create audio source
             const source = this.audioContext.createBufferSource();
             source.buffer = audioBuffer;
-            
+
             // Create gain node for volume control
             const gainNode = this.audioContext.createGain();
             gainNode.gain.value = this.volume;
-            
+
             // Connect nodes
             source.connect(gainNode);
             gainNode.connect(this.audioContext.destination);
-            
+
             // Play audio
             source.start(0);
-            
+
             // Hide indicator when done
             source.onended = () => {
                 setTimeout(() => {
                     this.audioIndicator.classList.add('hidden');
                 }, 500);
             };
-            
+
             console.log('✅ [WorshipperInterface] Audio playing');
-            
+
         } catch (error) {
             console.error('❌ [WorshipperInterface] Error playing audio:', error);
             this.audioIndicator.classList.add('hidden');
-            
+
             // Fallback: try using HTML5 Audio
             try {
                 const audio = new Audio('data:audio/webm;base64,' + audioBase64);
@@ -379,14 +379,14 @@ class WorshipperInterface {
             translated,
             timestamp: new Date()
         };
-        
+
         this.translationData.unshift(historyItem);
-        
+
         // Limit history to 50 items
         if (this.translationData.length > 50) {
             this.translationData.pop();
         }
-        
+
         // Update UI
         this.renderHistory();
     }
@@ -399,25 +399,25 @@ class WorshipperInterface {
         if (this.translationData.length > 0) {
             this.translationHistoryElement.innerHTML = '';
         }
-        
+
         this.translationData.forEach(item => {
             const div = document.createElement('div');
             div.className = 'history-item';
-            
+
             const time = document.createElement('div');
             time.className = 'history-time';
             time.textContent = item.timestamp.toLocaleTimeString();
-            
+
             const text = document.createElement('div');
             text.className = 'history-text';
             text.textContent = item.translated;
-            
+
             div.appendChild(time);
             div.appendChild(text);
-            
+
             this.translationHistoryElement.appendChild(div);
         });
-        
+
         // Limit displayed items to 20
         const items = this.translationHistoryElement.querySelectorAll('.history-item');
         if (items.length > 20) {
@@ -446,15 +446,15 @@ class WorshipperInterface {
     updateConnectionQuality() {
         // Simple latency check
         const startTime = Date.now();
-        
+
         this.socket.emit('ping', { timestamp: startTime });
-        
+
         this.socket.once('pong', (data) => {
             const latency = Date.now() - startTime;
-            
+
             let quality = 'excellent';
             let className = 'quality-excellent';
-            
+
             if (latency > 100) {
                 quality = 'good';
                 className = 'quality-good';
@@ -467,10 +467,10 @@ class WorshipperInterface {
                 quality = 'poor';
                 className = 'quality-poor';
             }
-            
+
             this.qualityIndicator.className = className;
             this.qualityIndicator.textContent = `${quality.charAt(0).toUpperCase() + quality.slice(1)} (${latency}ms)`;
-            
+
             // Send quality report to server
             this.socket.emit('worshipper:connectionQuality', {
                 sessionId: this.sessionId,
@@ -490,7 +490,7 @@ class WorshipperInterface {
             });
             this.socket.disconnect();
         }
-        
+
         window.location.reload();
     }
 
@@ -512,9 +512,9 @@ class WorshipperInterface {
             animation: slideIn 0.3s ease;
         `;
         notification.textContent = message;
-        
+
         document.body.appendChild(notification);
-        
+
         setTimeout(() => {
             notification.remove();
         }, 3000);

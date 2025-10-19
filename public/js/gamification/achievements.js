@@ -257,16 +257,16 @@ export class PrayerAchievements {
   // Check and update achievements based on prayer data
   checkAchievements(prayerData) {
     const newUnlocks = [];
-    
+
     Object.keys(this.achievements).forEach(achievementId => {
       const achievement = this.achievements[achievementId];
       const currentProgress = this.getProgress(achievementId);
-      
+
       if (currentProgress.unlocked) return; // Already unlocked
-      
+
       const progress = this.calculateProgress(achievement, prayerData);
       const isUnlocked = progress >= achievement.requirement.value;
-      
+
       if (isUnlocked) {
         this.userAchievements[achievementId] = {
           unlocked: true,
@@ -283,46 +283,46 @@ export class PrayerAchievements {
         };
       }
     });
-    
+
     if (newUnlocks.length > 0) {
       this.saveUserAchievements();
     }
-    
+
     return newUnlocks;
   }
 
   // Calculate progress for a specific achievement
   calculateProgress(achievement, prayerData) {
     const { type, value, period } = achievement.requirement;
-    
+
     switch (type) {
       case 'fajr_streak':
         return this.calculateFajrStreak(prayerData);
-      
+
       case 'perfect_day':
         return this.calculatePerfectDays(prayerData);
-      
+
       case 'perfect_week':
         return this.calculatePerfectWeeks(prayerData);
-      
+
       case 'perfect_month':
         return this.calculatePerfectMonths(prayerData);
-      
+
       case 'consistency':
         return this.calculateConsistency(prayerData, period);
-      
+
       case 'total_prayers':
         return this.calculateTotalPrayers(prayerData);
-      
+
       case 'first_prayer':
         return this.calculateFirstPrayer(prayerData);
-      
+
       case 'comeback':
         return this.calculateComeback(prayerData);
-      
+
       case 'isha_streak':
         return this.calculateIshaStreak(prayerData);
-      
+
       default:
         return 0;
     }
@@ -331,16 +331,16 @@ export class PrayerAchievements {
   // Helper methods for calculating different achievement types
   calculateFajrStreak(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const today = new Date();
     let streak = 0;
-    
+
     // Check consecutive days from today backwards
     for (let i = 0; i < 365; i++) { // Check up to a year
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
       const dateKey = this.formatDateKey(checkDate);
-      
+
       const dayPrayers = prayerData[dateKey] || [];
       if (dayPrayers.includes('fajr')) {
         streak++;
@@ -348,150 +348,150 @@ export class PrayerAchievements {
         break; // Streak broken
       }
     }
-    
+
     return streak;
   }
 
   calculatePerfectDays(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     let perfectDays = 0;
     Object.values(prayerData).forEach(dayPrayers => {
       if (Array.isArray(dayPrayers) && dayPrayers.length === 5) {
         perfectDays++;
       }
     });
-    
+
     return perfectDays;
   }
 
   calculatePerfectWeeks(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const today = new Date();
     let perfectWeeks = 0;
-    
+
     // Check consecutive weeks from today backwards
     for (let week = 0; week < 52; week++) { // Check up to a year
       const weekStart = new Date(today);
       weekStart.setDate(today.getDate() - (week * 7) - today.getDay());
-      
+
       let weekPerfect = true;
       for (let day = 0; day < 7; day++) {
         const checkDate = new Date(weekStart);
         checkDate.setDate(weekStart.getDate() + day);
         const dateKey = this.formatDateKey(checkDate);
-        
+
         const dayPrayers = prayerData[dateKey] || [];
         if (dayPrayers.length !== 5) {
           weekPerfect = false;
           break;
         }
       }
-      
+
       if (weekPerfect) {
         perfectWeeks++;
       } else {
         break; // Perfect week streak broken
       }
     }
-    
+
     return perfectWeeks;
   }
 
   calculatePerfectMonths(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const today = new Date();
     let perfectMonths = 0;
-    
+
     // Check consecutive months from today backwards
     for (let month = 0; month < 12; month++) {
       const checkMonth = new Date(today);
       checkMonth.setMonth(today.getMonth() - month);
-      
+
       let monthPerfect = true;
       const daysInMonth = new Date(checkMonth.getFullYear(), checkMonth.getMonth() + 1, 0).getDate();
-      
+
       for (let day = 1; day <= daysInMonth; day++) {
         const checkDate = new Date(checkMonth.getFullYear(), checkMonth.getMonth(), day);
         const dateKey = this.formatDateKey(checkDate);
-        
+
         const dayPrayers = prayerData[dateKey] || [];
         if (dayPrayers.length !== 5) {
           monthPerfect = false;
           break;
         }
       }
-      
+
       if (monthPerfect) {
         perfectMonths++;
       } else {
         break; // Perfect month streak broken
       }
     }
-    
+
     return perfectMonths;
   }
 
   calculateConsistency(prayerData, period) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const today = new Date();
     const startDate = new Date(today);
     startDate.setDate(today.getDate() - period);
-    
+
     let totalDays = 0;
     let prayedDays = 0;
-    
+
     for (let i = 0; i < period; i++) {
       const checkDate = new Date(startDate);
       checkDate.setDate(startDate.getDate() + i);
       const dateKey = this.formatDateKey(checkDate);
-      
+
       totalDays++;
       const dayPrayers = prayerData[dateKey] || [];
       if (dayPrayers.length > 0) {
         prayedDays++;
       }
     }
-    
+
     return totalDays > 0 ? Math.round((prayedDays / totalDays) * 100) : 0;
   }
 
   calculateTotalPrayers(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     let totalPrayers = 0;
     Object.values(prayerData).forEach(dayPrayers => {
       if (Array.isArray(dayPrayers)) {
         totalPrayers += dayPrayers.length;
       }
     });
-    
+
     return totalPrayers;
   }
 
   calculateFirstPrayer(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const totalPrayers = this.calculateTotalPrayers(prayerData);
     return totalPrayers > 0 ? 1 : 0;
   }
 
   calculateComeback(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const today = new Date();
     let breakDays = 0;
     let comebackDays = 0;
-    
+
     // Check for a 7-day break followed by return
     for (let i = 0; i < 30; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
       const dateKey = this.formatDateKey(checkDate);
-      
+
       const dayPrayers = prayerData[dateKey] || [];
       if (dayPrayers.length === 0) {
         breakDays++;
@@ -502,22 +502,22 @@ export class PrayerAchievements {
         breakDays = 0;
       }
     }
-    
+
     return comebackDays > 0 ? 1 : 0;
   }
 
   calculateIshaStreak(prayerData) {
     if (!prayerData || typeof prayerData !== 'object') return 0;
-    
+
     const today = new Date();
     let streak = 0;
-    
+
     // Check consecutive days from today backwards
     for (let i = 0; i < 365; i++) {
       const checkDate = new Date(today);
       checkDate.setDate(today.getDate() - i);
       const dateKey = this.formatDateKey(checkDate);
-      
+
       const dayPrayers = prayerData[dateKey] || [];
       if (dayPrayers.includes('isha')) {
         streak++;
@@ -525,7 +525,7 @@ export class PrayerAchievements {
         break; // Streak broken
       }
     }
-    
+
     return streak;
   }
 

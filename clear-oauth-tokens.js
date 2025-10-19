@@ -12,7 +12,7 @@ async function clearOAuthTokens() {
         // Find user by email
         const userEmail = 'ahmedothmanofff@gmail.com'; // Your email from the logs
         console.log(`🔍 Looking for user: ${userEmail}`);
-        
+
         const user = await User.findOne({ email: userEmail });
         if (!user) {
             console.log('❌ User not found');

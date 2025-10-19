@@ -20,7 +20,7 @@ class MFAService {
     generateSecret(user) {
         try {
             console.log('🔐 [MFA] Generating TOTP secret for user:', user.email);
-            
+
             const secret = speakeasy.generateSecret({
                 name: `${this.issuer} (${user.email})`,
                 issuer: this.issuer,
@@ -112,7 +112,7 @@ class MFAService {
         try {
             console.log('🔐 [MFA] Enabling MFA for user:', userId);
             console.log('🔐 [MFA] Verifying token with secret:', secret ? 'provided' : 'not provided');
-            
+
             // Verify the token first
             if (!this.verifyToken(secret, token)) {
                 console.log('❌ [MFA] Invalid token provided during MFA setup');
@@ -281,7 +281,7 @@ class MFAService {
         }
 
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-        return user.backupCodes.some(backupCode => 
+        return user.backupCodes.some(backupCode =>
             backupCode.code === hashedToken && !backupCode.used
         );
     }
@@ -291,7 +291,7 @@ class MFAService {
      */
     async useBackupCode(user, token) {
         const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
-        const backupCode = user.backupCodes.find(code => 
+        const backupCode = user.backupCodes.find(code =>
             code.code === hashedToken && !code.used
         );
 

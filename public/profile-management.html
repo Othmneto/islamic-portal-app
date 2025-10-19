@@ -751,6 +751,29 @@
                                 <span class="slider"></span>
                             </label>
                         </div>
+                        
+                        <!-- Pre-Prayer Reminder Minutes -->
+                        <div class="preference-item" style="flex-direction: column; align-items: flex-start;">
+                            <div class="preference-info" style="margin-bottom: 15px;">
+                                <h4>⏰ Pre-Prayer Reminder</h4>
+                                <p>Get notified before prayer time (0 = disabled)</p>
+                            </div>
+                            <div class="form-group" style="width: 100%; margin-bottom: 0;">
+                                <label for="reminderMinutes">Minutes Before Prayer:</label>
+                                <select id="reminderMinutes" class="form-control">
+                                    <option value="0">Disabled (No reminder)</option>
+                                    <option value="5">5 minutes before</option>
+                                    <option value="10">10 minutes before</option>
+                                    <option value="15">15 minutes before</option>
+                                    <option value="20">20 minutes before</option>
+                                    <option value="30">30 minutes before</option>
+                                </select>
+                                <small style="color: #6c757d; display: block; margin-top: 8px;">
+                                    📱 You'll receive a reminder notification before each prayer time to help you prepare.
+                                </small>
+                            </div>
+                        </div>
+                        
                         <div class="preference-item">
                             <div class="preference-info">
                                 <h4>Special Announcements</h4>
@@ -1064,6 +1087,12 @@
             document.getElementById('emailNotifications').checked = user.notificationPreferences?.emailNotifications || false;
             document.getElementById('prayerReminders').checked = user.notificationPreferences?.prayerReminders || false;
             document.getElementById('specialAnnouncements').checked = user.notificationPreferences?.specialAnnouncements || false;
+            
+            // Set pre-prayer reminder minutes
+            const reminderMinutes = user.notificationPreferences?.reminderMinutes || 0;
+            document.getElementById('reminderMinutes').value = reminderMinutes;
+            console.log('⏰ [Profile Management] Loaded reminder minutes:', reminderMinutes);
+            
             document.getElementById('theme').value = user.preferences?.theme || 'light';
             document.getElementById('language').value = user.preferences?.language || 'en';
             document.getElementById('timezone').value = user.preferences?.timezone || 'UTC';
@@ -1230,8 +1259,11 @@
             const notificationPreferences = {
                 emailNotifications: document.getElementById('emailNotifications').checked,
                 prayerReminders: document.getElementById('prayerReminders').checked,
-                specialAnnouncements: document.getElementById('specialAnnouncements').checked
+                specialAnnouncements: document.getElementById('specialAnnouncements').checked,
+                reminderMinutes: parseInt(document.getElementById('reminderMinutes').value) || 0
             };
+            
+            console.log('⏰ [Profile Management] Saving reminder minutes:', notificationPreferences.reminderMinutes);
             
             try {
                 const response = await makeAuthenticatedRequest('/api/user/preferences', {

@@ -10,24 +10,24 @@ const requireEmailVerification = async (req, res, next) => {
     try {
         // Check if user is authenticated (should be set by authMiddleware)
         if (!req.user) {
-            return res.status(401).json({ 
+            return res.status(401).json({
                 msg: 'Authentication required',
-                requiresAuth: true 
+                requiresAuth: true
             });
         }
 
         // Get fresh user data from database
         const user = await User.findById(req.user.id);
         if (!user) {
-            return res.status(404).json({ 
+            return res.status(404).json({
                 msg: 'User not found',
-                requiresAuth: true 
+                requiresAuth: true
             });
         }
 
         // Check if email is verified
         if (!user.isVerified) {
-            return res.status(403).json({ 
+            return res.status(403).json({
                 msg: 'Email verification required',
                 requiresVerification: true,
                 email: user.email,
@@ -39,8 +39,8 @@ const requireEmailVerification = async (req, res, next) => {
         next();
     } catch (error) {
         console.error('Email verification middleware error:', error);
-        res.status(500).json({ 
-            msg: 'Server error during email verification check' 
+        res.status(500).json({
+            msg: 'Server error during email verification check'
         });
     }
 };

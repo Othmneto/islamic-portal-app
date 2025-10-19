@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notification Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 4px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <h1>🔔 Notification System Test</h1>
+    
+    <div class="test-section">
+        <h3>1. Check Notification Permission</h3>
+        <button onclick="checkPermission()">Check Permission</button>
+        <div id="permission-status" class="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>2. Request Notification Permission</h3>
+        <button onclick="requestPermission()">Request Permission</button>
+        <div id="request-status" class="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>3. Test Browser Notification</h3>
+        <button onclick="testBrowserNotification()">Send Test Notification</button>
+        <div id="browser-test-status" class="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>4. Test Service Worker</h3>
+        <button onclick="testServiceWorker()">Test Service Worker</button>
+        <div id="sw-status" class="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>5. Test Push Subscription</h3>
+        <button onclick="testPushSubscription()">Test Push Subscription</button>
+        <div id="push-status" class="status"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>6. Test Server Notification</h3>
+        <button onclick="testServerNotification()">Send Server Notification</button>
+        <div id="server-test-status" class="status"></div>
+    </div>
+
+    <script>
+        // Check notification permission
+        function checkPermission() {
+            const status = document.getElementById('permission-status');
+            const permission = Notification.permission;
+            
+            let className = 'info';
+            let message = `Permission: ${permission}`;
+            
+            if (permission === 'granted') {
+                className = 'success';
+                message += ' ✅ Notifications are allowed';
+            } else if (permission === 'denied') {
+                className = 'error';
+                message += ' ❌ Notifications are blocked';
+            } else {
+                className = 'info';
+                message += ' ⚠️ Permission not requested yet';
+            }
+            
+            status.className = `status ${className}`;
+            status.textContent = message;
+        }
+
+        // Request notification permission
+        async function requestPermission() {
+            const status = document.getElementById('request-status');
+            
+            try {
+                const permission = await Notification.requestPermission();
+                let className = 'info';
+                let message = `Permission requested: ${permission}`;
+                
+                if (permission === 'granted') {
+                    className = 'success';
+                    message += ' ✅ Permission granted!';
+                } else if (permission === 'denied') {
+                    className = 'error';
+                    message += ' ❌ Permission denied';
+                } else {
+                    className = 'info';
+                    message += ' ⚠️ Permission dismissed';
+                }
+                
+                status.className = `status ${className}`;
+                status.textContent = message;
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `Error requesting permission: ${error.message}`;
+            }
+        }
+
+        // Test browser notification
+        function testBrowserNotification() {
+            const status = document.getElementById('browser-test-status');
+            
+            if (Notification.permission !== 'granted') {
+                status.className = 'status error';
+                status.textContent = '❌ Notification permission not granted';
+                return;
+            }
+            
+            try {
+                const notification = new Notification('Test Notification', {
+                    body: 'This is a test notification from the browser',
+                    icon: '/icons/icon-192x192.png',
+                    badge: '/icons/icon-72x72.png',
+                    tag: 'test-notification',
+                    requireInteraction: true,
+                    actions: [
+                        { action: 'view', title: 'View' },
+                        { action: 'close', title: 'Close' }
+                    ]
+                });
+                
+                notification.onclick = () => {
+                    console.log('Test notification clicked');
+                    notification.close();
+                };
+                
+                status.className = 'status success';
+                status.textContent = '✅ Test notification sent successfully';
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `❌ Error sending notification: ${error.message}`;
+            }
+        }
+
+        // Test service worker
+        async function testServiceWorker() {
+            const status = document.getElementById('sw-status');
+            
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        status.className = 'status success';
+                        status.textContent = '✅ Service Worker is registered and active';
+                    } else {
+                        status.className = 'status error';
+                        status.textContent = '❌ No Service Worker registered';
+                    }
+                } else {
+                    status.className = 'status error';
+                    status.textContent = '❌ Service Worker not supported';
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `❌ Error checking Service Worker: ${error.message}`;
+            }
+        }
+
+        // Test push subscription
+        async function testPushSubscription() {
+            const status = document.getElementById('push-status');
+            
+            try {
+                if ('serviceWorker' in navigator && 'PushManager' in window) {
+                    const registration = await navigator.serviceWorker.getRegistration();
+                    if (registration) {
+                        const subscription = await registration.pushManager.getSubscription();
+                        if (subscription) {
+                            status.className = 'status success';
+                            status.textContent = '✅ Push subscription active';
+                        } else {
+                            status.className = 'status info';
+                            status.textContent = '⚠️ No push subscription found';
+                        }
+                    } else {
+                        status.className = 'status error';
+                        status.textContent = '❌ No Service Worker registered';
+                    }
+                } else {
+                    status.className = 'status error';
+                    status.textContent = '❌ Push API not supported';
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `❌ Error checking push subscription: ${error.message}`;
+            }
+        }
+
+        // Test server notification
+        async function testServerNotification() {
+            const status = document.getElementById('server-test-status');
+            
+            try {
+                // Get auth token
+                const token = localStorage.getItem('accessToken');
+                if (!token) {
+                    status.className = 'status error';
+                    status.textContent = '❌ No auth token found. Please login first.';
+                    return;
+                }
+
+                // Send test notification request to server
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Server Notification',
+                        body: 'This is a test notification sent from the server',
+                        icon: '/icons/icon-192x192.png'
+                    })
+                });
+
+                if (response.ok) {
+                    status.className = 'status success';
+                    status.textContent = '✅ Test notification sent to server successfully';
+                } else {
+                    const error = await response.text();
+                    status.className = 'status error';
+                    status.textContent = `❌ Server error: ${error}`;
+                }
+            } catch (error) {
+                status.className = 'status error';
+                status.textContent = `❌ Error sending test notification: ${error.message}`;
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkPermission();
+            testServiceWorker();
+            testPushSubscription();
+        });
+    </script>
+</body>
+</html>

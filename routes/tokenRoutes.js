@@ -20,25 +20,25 @@ router.post('/refresh', async (req, res) => {
             });
         }
 
-        console.log('🔄 [Token Refresh] Attempting to refresh token...');
-        
-        const result = await sessionManagementService.refreshAccessToken(refreshToken);
-        
-        console.log('✅ [Token Refresh] Token refreshed successfully');
-        
+        console.log('🔄 [Token Refresh] Attempting hashed rotation...');
+
+        const result = await sessionManagementService.rotateRefreshTokenHashedRotation(refreshToken);
+
+        console.log('✅ [Token Refresh] Token refreshed and rotated successfully');
+
         res.json({
             success: true,
             message: 'Token refreshed successfully',
             data: {
                 accessToken: result.accessToken,
-                refreshToken: result.refreshToken,
+                refreshToken: result.newRefreshToken, // New rotated token
                 expiresIn: result.expiresIn,
                 sessionId: result.sessionId
             }
         });
     } catch (error) {
         console.error('❌ [Token Refresh] Error:', error.message);
-        
+
         res.status(401).json({
             success: false,
             message: error.message || 'Failed to refresh token',
@@ -64,7 +64,7 @@ router.post('/validate', async (req, res) => {
         }
 
         const tokenInfo = sessionManagementService.getTokenInfo(accessToken);
-        
+
         if (!tokenInfo) {
             return res.status(401).json({
                 success: false,
@@ -86,7 +86,7 @@ router.post('/validate', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ [Token Validate] Error:', error.message);
-        
+
         res.status(401).json({
             success: false,
             message: 'Token validation failed',
@@ -112,15 +112,15 @@ router.post('/auto-refresh', async (req, res) => {
         }
 
         console.log('🔄 [Auto Refresh] Checking if token needs refresh...');
-        
+
         const result = await sessionManagementService.autoRefreshToken(accessToken, refreshToken);
-        
+
         if (result.needsRefresh) {
             console.log('✅ [Auto Refresh] Token refreshed successfully');
         } else {
             console.log('ℹ️ [Auto Refresh] Token does not need refresh');
         }
-        
+
         res.json({
             success: true,
             message: result.needsRefresh ? 'Token refreshed successfully' : 'Token is still valid',
@@ -133,7 +133,7 @@ router.post('/auto-refresh', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ [Auto Refresh] Error:', error.message);
-        
+
         res.status(401).json({
             success: false,
             message: error.message || 'Auto refresh failed',
@@ -159,9 +159,9 @@ router.get('/session-stats/:userId', async (req, res) => {
         }
 
         console.log(`📊 [Session Stats] Getting stats for user: ${userId}`);
-        
+
         const stats = await sessionManagementService.getSessionStats(userId);
-        
+
         res.json({
             success: true,
             message: 'Session statistics retrieved successfully',
@@ -169,7 +169,7 @@ router.get('/session-stats/:userId', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ [Session Stats] Error:', error.message);
-        
+
         res.status(500).json({
             success: false,
             message: 'Failed to retrieve session statistics',
@@ -195,9 +195,9 @@ router.post('/invalidate', async (req, res) => {
         }
 
         console.log(`🚫 [Session Invalidate] Invalidating session: ${sessionId}`);
-        
+
         const result = await sessionManagementService.invalidateSession(sessionId);
-        
+
         res.json({
             success: true,
             message: 'Session invalidated successfully',
@@ -205,7 +205,7 @@ router.post('/invalidate', async (req, res) => {
         });
     } catch (error) {
         console.error('❌ [Session Invalidate] Error:', error.message);
-        
+
         res.status(500).json({
             success: false,
             message: 'Failed to invalidate session',

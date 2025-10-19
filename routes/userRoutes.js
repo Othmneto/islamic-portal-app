@@ -5,6 +5,7 @@ const express = require("express");
 const User = require("../models/User");
 const authMiddleware = require("../middleware/auth");
 const { validate, z } = require("../middleware/validate");
+const moment = require("moment-timezone");
 
 // Prefer project logger if available; fall back to console
 let logger = console;
@@ -30,6 +31,10 @@ const locationBodySchema = z.object({
   lng: z
     .coerce.number()
     .refine((v) => Number.isFinite(v) && v >= -180 && v <= 180, "lng must be between -180 and 180"),
+  timezone: z.string().trim().optional().refine((tz) => {
+    if (!tz) return true; // Optional field
+    return moment.tz.zone(tz) !== null;
+  }, "Invalid timezone"),
 });
 const locationSchema = z.object({ body: locationBodySchema });
 
@@ -49,6 +54,7 @@ const preferencesBodySchema = z
     calculationMethod: z.string().trim().min(1).optional(),
     madhab: z.string().trim().min(1).optional(),
     prayerReminders: perPrayerSchema.optional(),
+    reminderMinutes: z.coerce.number().min(0).max(60).optional(),
     theme: z.enum(['light', 'dark', 'auto']).optional(),
     language: z.string().trim().min(2).max(10).optional(),
     is24Hour: z.coerce.boolean().optional(),
@@ -115,17 +121,24 @@ const savedLocationParamSchema = z.object({
  */
 router.put("/location", authMiddleware, validate(locationSchema), async (req, res) => {
   try {
-    const { city, country, lat, lng } = req.body;
+    const { city, country, lat, lng, timezone } = req.body;
+
+    const updateData = {
+      "location.city": city || null,
+      "location.country": country || null,
+      "location.lat": Number(lat),
+      "location.lon": Number(lng),
+    };
+
+    // Add timezone if provided
+    if (timezone) {
+      updateData.timezone = timezone;
+    }
 
     await User.findByIdAndUpdate(
       req.user.id,
       {
-        $set: {
-          "location.city": city || null,
-          "location.country": country || null,
-          "location.lat": Number(lat),
-          "location.lon": Number(lng),
-        },
+        $set: updateData,
         // Clean any old GeoJSON field if present
         $unset: { "location.coordinates": "" },
       },
@@ -163,10 +176,11 @@ router.get("/preferences", authMiddleware, async (req, res) => {
  */
 router.put("/preferences", authMiddleware, validate(preferencesSchema), async (req, res) => {
   try {
-    const { 
-      calculationMethod, 
-      madhab, 
+    const {
+      calculationMethod,
+      madhab,
       prayerReminders,
+      reminderMinutes,
       theme,
       language,
       is24Hour,
@@ -182,6 +196,11 @@ router.put("/preferences", authMiddleware, validate(preferencesSchema), async (r
     }
     if (typeof madhab !== "undefined") {
       $set["preferences.madhab"] = madhab;
+    }
+
+    // Notification preferences
+    if (typeof reminderMinutes !== "undefined") {
+      $set["notificationPreferences.reminderMinutes"] = reminderMinutes;
     }
 
     // UI preferences
@@ -218,6 +237,11 @@ router.put("/preferences", authMiddleware, validate(preferencesSchema), async (r
     }
 
     await User.findByIdAndUpdate(req.user.id, { $set });
+
+    // Emit event for dynamic scheduler updates
+    const eventEmitter = require('../services/eventEmitter');
+    eventEmitter.emit('userPreferencesChanged', req.user.id);
+
     return res.json({ success: true, message: "Preferences updated" });
   } catch (error) {
     logger.error?.("Error updating preferences", error);
@@ -232,8 +256,8 @@ router.put("/preferences", authMiddleware, validate(preferencesSchema), async (r
 router.get("/notification-preferences", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id).select("notificationPreferences preferences timezone").lean();
-    return res.json({ 
-      success: true, 
+    return res.json({
+      success: true,
       preferences: {
         enabled: user?.notificationPreferences?.enabled || false,
         reminderMinutes: user?.notificationPreferences?.reminderMinutes || 0,
@@ -290,6 +314,11 @@ router.put("/notification-preferences", authMiddleware, validate(notificationPre
     }
 
     await User.findByIdAndUpdate(req.user.id, { $set });
+
+    // Emit event for dynamic scheduler updates
+    const eventEmitter = require('../services/eventEmitter');
+    eventEmitter.emit('userPreferencesChanged', req.user.id);
+
     return res.json({ success: true, message: "Notification preferences updated" });
   } catch (error) {
     logger.error?.("Error updating notification preferences", error);
@@ -389,9 +418,9 @@ router.post("/clear-microsoft-tokens", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
       });
     }
 
@@ -413,9 +442,9 @@ router.post("/clear-microsoft-tokens", authMiddleware, async (req, res) => {
 
   } catch (error) {
     logger.error("Error clearing Microsoft tokens:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: "Failed to clear Microsoft tokens" 
+    res.status(500).json({
+      success: false,
+      error: "Failed to clear Microsoft tokens"
     });
   }
 });
@@ -428,9 +457,9 @@ router.post("/clear-google-tokens", authMiddleware, async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     if (!user) {
-      return res.status(404).json({ 
-        success: false, 
-        error: "User not found" 
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
       });
     }
 
@@ -452,9 +481,9 @@ router.post("/clear-google-tokens", authMiddleware, async (req, res) => {
 
   } catch (error) {
     logger.error("Error clearing Google tokens:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: "Failed to clear Google tokens" 
+    res.status(500).json({
+      success: false,
+      error: "Failed to clear Google tokens"
     });
   }
 });

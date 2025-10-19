@@ -70,7 +70,7 @@ class OAuthCalendarSyncService {
             // Set sync lock
             this.setSyncLock(user._id, 'google');
             console.log('📤 [OAuth Sync] Syncing local events to Google Calendar...');
-            
+
             if (!user.calendarEvents || user.calendarEvents.length === 0) {
                 console.log('📤 [OAuth Sync] No local events to sync');
                 return { eventsCreated: 0, eventsUpdated: 0, eventsSkipped: 0 };
@@ -82,10 +82,10 @@ class OAuthCalendarSyncService {
 
             // Get primary calendar ID
             const primaryCalendar = await this.getGooglePrimaryCalendar(user.googleAccessToken);
-            
+
             // Get existing Google events to check for duplicates
             const existingGoogleEvents = await this.getGoogleCalendarEvents(user.googleAccessToken, primaryCalendar.id);
-            
+
             for (const localEvent of user.calendarEvents) {
                 try {
                     // Skip external events (they came from Google)
@@ -142,13 +142,13 @@ class OAuthCalendarSyncService {
     async syncGoogleEventsToLocal(user) {
         try {
             console.log('📥 [OAuth Sync] Syncing Google Calendar events to local...');
-            
+
             // Get primary calendar
             const primaryCalendar = await this.getGooglePrimaryCalendar(user.googleAccessToken);
-            
+
             // Get events from Google Calendar
             const googleEvents = await this.getGoogleCalendarEvents(user.googleAccessToken, primaryCalendar.id);
-            
+
             let eventsCreated = 0;
             let eventsUpdated = 0;
             let eventsSkipped = 0;
@@ -201,13 +201,13 @@ class OAuthCalendarSyncService {
                     'Authorization': `Bearer ${accessToken}`
                 }
             });
-            
+
             // Find primary calendar
             const primaryCalendar = response.data.items.find(cal => cal.primary);
             if (!primaryCalendar) {
                 throw new Error('Primary calendar not found');
             }
-            
+
             return primaryCalendar;
         } catch (error) {
             console.error('❌ [OAuth Sync] Error getting primary calendar:', error);
@@ -246,11 +246,11 @@ class OAuthCalendarSyncService {
         try {
             // Get user's timezone - try to detect from the date or use a reasonable default
             const userTimezone = localEvent.timezone || 'Asia/Dubai'; // Default to Dubai timezone since you're in UAE
-            
+
             // Format dates properly for Google Calendar - preserve local time
             const formatDateForGoogle = (date) => {
                 if (!date) return null;
-                
+
                 // Create a date string in the user's timezone without timezone conversion
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -258,10 +258,10 @@ class OAuthCalendarSyncService {
                 const hours = String(date.getHours()).padStart(2, '0');
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 const seconds = String(date.getSeconds()).padStart(2, '0');
-                
+
                 // Format as ISO string but without timezone conversion
                 const dateTimeString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-                
+
                 return {
                     dateTime: dateTimeString,
                     timeZone: userTimezone
@@ -313,20 +313,20 @@ class OAuthCalendarSyncService {
         try {
             // Get user's timezone - same as create method
             const userTimezone = localEvent.timezone || 'Asia/Dubai';
-            
+
             // Format dates properly for Google Calendar - preserve local time
             const formatDateForGoogle = (date) => {
                 if (!date) return null;
-                
+
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 const hours = String(date.getHours()).padStart(2, '0');
                 const minutes = String(date.getMinutes()).padStart(2, '0');
                 const seconds = String(date.getSeconds()).padStart(2, '0');
-                
+
                 const dateTimeString = `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`;
-                
+
                 return {
                     dateTime: dateTimeString,
                     timeZone: userTimezone
@@ -389,7 +389,7 @@ class OAuthCalendarSyncService {
     async refreshGoogleToken(user) {
         try {
             console.log('🔄 [OAuth Sync] Refreshing Google OAuth token for user:', user.email);
-            
+
             if (!user.googleRefreshToken) {
                 throw new Error('Google refresh token not found');
             }
@@ -401,16 +401,23 @@ class OAuthCalendarSyncService {
                 grant_type: 'refresh_token'
             });
 
-            const { access_token, expires_in } = response.data;
-            
+            const { access_token, expires_in, refresh_token } = response.data;
+
             // Update user with new token
             user.googleAccessToken = access_token;
+            // For persistent auth, we still track expiry for OAuth provider limits
             user.googleTokenExpiry = new Date(Date.now() + (expires_in * 1000));
+
+            // Update refresh token if provided (Google sometimes issues new refresh tokens)
+            if (refresh_token) {
+                user.googleRefreshToken = refresh_token;
+            }
+
             await user.save();
-            
+
             console.log('✅ [OAuth Sync] Google token refreshed successfully');
             return access_token;
-            
+
         } catch (error) {
             console.error('❌ [OAuth Sync] Google token refresh failed:', error.message);
             throw new Error('Failed to refresh Google token. Please re-authorize.');
@@ -421,7 +428,7 @@ class OAuthCalendarSyncService {
     async refreshMicrosoftToken(user) {
         try {
             console.log('🔄 [OAuth Sync] Refreshing Microsoft OAuth token for user:', user.email);
-            
+
             if (!user.microsoftRefreshToken) {
                 throw new Error('Microsoft refresh token not found');
             }
@@ -434,16 +441,23 @@ class OAuthCalendarSyncService {
                 scope: 'openid email profile User.Read Calendars.Read Calendars.ReadWrite'
             });
 
-            const { access_token, expires_in } = response.data;
-            
+            const { access_token, expires_in, refresh_token } = response.data;
+
             // Update user with new token
             user.microsoftAccessToken = access_token;
+            // For persistent auth, we still track expiry for OAuth provider limits
             user.microsoftTokenExpiry = new Date(Date.now() + (expires_in * 1000));
+
+            // Update refresh token if provided (Microsoft sometimes issues new refresh tokens)
+            if (refresh_token) {
+                user.microsoftRefreshToken = refresh_token;
+            }
+
             await user.save();
-            
+
             console.log('✅ [OAuth Sync] Microsoft token refreshed successfully');
             return access_token;
-            
+
         } catch (error) {
             console.error('❌ [OAuth Sync] Microsoft token refresh failed:', error.message);
             throw new Error('Failed to refresh Microsoft token. Please re-authorize.');
@@ -460,9 +474,9 @@ class OAuthCalendarSyncService {
     async syncWithGoogle(userId) {
         try {
             console.log('🔄 [OAuth Sync] Starting two-way Google Calendar sync for user:', userId);
-            
+
             const user = await User.findById(userId);
-            
+
             console.log('🔍 [OAuth Sync] Google sync - Token check:', {
                 userId: userId,
                 hasUser: !!user,
@@ -470,7 +484,7 @@ class OAuthCalendarSyncService {
                 tokenValue: user?.googleAccessToken ? user.googleAccessToken.substring(0, 20) + '...' : 'null/undefined',
                 tokenLength: user?.googleAccessToken?.length || 0
             });
-            
+
             if (!user || !user.googleAccessToken || user.googleAccessToken.trim() === '') {
                 throw new Error('Google OAuth token not found');
             }
@@ -521,9 +535,9 @@ class OAuthCalendarSyncService {
     async syncWithMicrosoft(userId) {
         try {
             console.log('🔄 [OAuth Sync] Starting two-way Microsoft Calendar sync for user:', userId);
-            
+
             const user = await User.findById(userId);
-            
+
             console.log('🔍 [OAuth Sync] Microsoft sync - Token check:', {
                 userId: userId,
                 hasUser: !!user,
@@ -531,7 +545,7 @@ class OAuthCalendarSyncService {
                 tokenValue: user?.microsoftAccessToken ? user.microsoftAccessToken.substring(0, 20) + '...' : 'null/undefined',
                 tokenLength: user?.microsoftAccessToken?.length || 0
             });
-            
+
             if (!user || !user.microsoftAccessToken || user.microsoftAccessToken.trim() === '') {
                 throw new Error('Microsoft OAuth token not found');
             }
@@ -554,10 +568,10 @@ class OAuthCalendarSyncService {
             // Perform two-way sync
             const localToMicrosoftResult = await this.syncLocalEventsToMicrosoft(user);
             console.log('📤 [OAuth Sync] Local to Microsoft sync result:', localToMicrosoftResult);
-            
+
             const microsoftToLocalResult = await this.syncMicrosoftEventsToLocal(user);
             console.log('📥 [OAuth Sync] Microsoft to local sync result:', microsoftToLocalResult);
-            
+
             user.lastMicrosoftSync = new Date();
             await user.save();
 
@@ -725,7 +739,7 @@ class OAuthCalendarSyncService {
             // Set sync lock
             this.setSyncLock(user._id, 'microsoft');
             console.log('📤 [OAuth Sync] Syncing local events to Microsoft Calendar for user:', user._id);
-            
+
             const primaryCalendar = await this.getMicrosoftPrimaryCalendar(user.microsoftAccessToken);
             if (!primaryCalendar) {
                 throw new Error('No Microsoft primary calendar found');
@@ -796,7 +810,7 @@ class OAuthCalendarSyncService {
     async syncMicrosoftEventsToLocal(user) {
         try {
             console.log('📥 [OAuth Sync] Syncing Microsoft events to local calendar for user:', user._id);
-            
+
             const primaryCalendar = await this.getMicrosoftPrimaryCalendar(user.microsoftAccessToken);
             if (!primaryCalendar) {
                 throw new Error('No Microsoft primary calendar found');
@@ -808,7 +822,7 @@ class OAuthCalendarSyncService {
 
             for (const microsoftEvent of microsoftEvents) {
                 try {
-                    const existingEvent = user.calendarEvents.find(event => 
+                    const existingEvent = user.calendarEvents.find(event =>
                         event.microsoftEventId === microsoftEvent.id
                     );
 
@@ -947,29 +961,29 @@ class OAuthCalendarSyncService {
 
         const localStartDate = new Date(localEvent.startDate);
         const localEndDate = new Date(localEvent.endDate);
-        
+
         // Allow 5 minutes tolerance for time differences
         const timeTolerance = 5 * 60 * 1000; // 5 minutes in milliseconds
-        
+
         // Check if event was created recently (within last 10 minutes) to avoid linking to old events
         const recentThreshold = 10 * 60 * 1000; // 10 minutes
         const now = Date.now();
 
         for (const existingEvent of existingEvents) {
             // Check if existing event was created recently
-            const existingCreatedTime = provider === 'google' 
+            const existingCreatedTime = provider === 'google'
                 ? new Date(existingEvent.created || existingEvent.start.dateTime).getTime()
                 : new Date(existingEvent.createdDateTime || existingEvent.start.dateTime).getTime();
-            
+
             if (now - existingCreatedTime > recentThreshold) {
                 continue; // Skip events older than 10 minutes
             }
             // Compare titles (case insensitive, trimmed)
             const localTitle = localEvent.title?.trim().toLowerCase() || '';
-            const existingTitle = provider === 'google' 
+            const existingTitle = provider === 'google'
                 ? (existingEvent.summary?.trim().toLowerCase() || '')
                 : (existingEvent.subject?.trim().toLowerCase() || '');
-            
+
             if (localTitle !== existingTitle) {
                 continue;
             }
@@ -978,7 +992,7 @@ class OAuthCalendarSyncService {
             const existingStartDate = provider === 'google'
                 ? new Date(existingEvent.start.dateTime || existingEvent.start.date)
                 : new Date(existingEvent.start.dateTime);
-            
+
             const startTimeDiff = Math.abs(localStartDate.getTime() - existingStartDate.getTime());
             if (startTimeDiff > timeTolerance) {
                 continue;
@@ -989,7 +1003,7 @@ class OAuthCalendarSyncService {
                 const existingEndDate = provider === 'google'
                     ? new Date(existingEvent.end.dateTime || existingEvent.end.date)
                     : new Date(existingEvent.end.dateTime);
-                
+
                 const endTimeDiff = Math.abs(localEndDate.getTime() - existingEndDate.getTime());
                 if (endTimeDiff > timeTolerance) {
                     continue;
@@ -1008,7 +1022,7 @@ class OAuthCalendarSyncService {
     async pushToGoogle(userId, events) {
         try {
             console.log('📤 [OAuth Sync] Pushing events to Google Calendar for user:', userId);
-            
+
             const user = await User.findById(userId);
             if (!user || !user.googleAccessToken) {
                 throw new Error('Google OAuth token not found');
@@ -1017,7 +1031,7 @@ class OAuthCalendarSyncService {
             // Get primary calendar
             const calendars = await this.getGoogleCalendars(user.googleAccessToken);
             const primaryCalendar = calendars.find(cal => cal.primary) || calendars[0];
-            
+
             if (!primaryCalendar) {
                 throw new Error('No Google calendar found');
             }
@@ -1046,7 +1060,7 @@ class OAuthCalendarSyncService {
     async pushToMicrosoft(userId, events) {
         try {
             console.log('📤 [OAuth Sync] Pushing events to Microsoft Calendar for user:', userId);
-            
+
             const user = await User.findById(userId);
             if (!user || !user.microsoftAccessToken) {
                 throw new Error('Microsoft OAuth token not found');
@@ -1055,7 +1069,7 @@ class OAuthCalendarSyncService {
             // Get primary calendar
             const calendars = await this.getMicrosoftCalendars(user.microsoftAccessToken);
             const primaryCalendar = calendars.find(cal => cal.isDefaultCalendar) || calendars[0];
-            
+
             if (!primaryCalendar) {
                 throw new Error('No Microsoft calendar found');
             }
@@ -1151,15 +1165,15 @@ class OAuthCalendarSyncService {
     async twoWaySync(userId, provider) {
         try {
             console.log('🔄 [OAuth Sync] Starting two-way sync for provider:', provider);
-            
+
             if (provider === 'google') {
                 // Pull from Google
                 await this.syncWithGoogle(userId);
-                
+
                 // Get user's local events
                 const user = await User.findById(userId);
                 const localEvents = user.calendarEvents.filter(event => !event.isExternal);
-                
+
                 // Push local events to Google
                 if (localEvents.length > 0) {
                     await this.pushToGoogle(userId, localEvents);
@@ -1167,11 +1181,11 @@ class OAuthCalendarSyncService {
             } else if (provider === 'microsoft') {
                 // Pull from Microsoft
                 await this.syncWithMicrosoft(userId);
-                
+
                 // Get user's local events
                 const user = await User.findById(userId);
                 const localEvents = user.calendarEvents.filter(event => !event.isExternal);
-                
+
                 // Push local events to Microsoft
                 if (localEvents.length > 0) {
                     await this.pushToMicrosoft(userId, localEvents);
@@ -1191,7 +1205,7 @@ class OAuthCalendarSyncService {
     async syncIslamicEvents(userId, provider, latitude, longitude, country = 'AE') {
         try {
             console.log('🕌 [OAuth Sync] Starting Islamic events sync for provider:', provider);
-            
+
             const user = await User.findById(userId);
             if (!user) {
                 throw new Error('User not found');

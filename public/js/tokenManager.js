@@ -1,4 +1,4 @@
-// Token Management Service for Frontend
+// Token Management Service for Frontend - Enhanced with Remember Me & Sliding Renewal
 class TokenManager {
     constructor() {
         this.accessToken = null;
@@ -6,15 +6,63 @@ class TokenManager {
         this.refreshTimer = null;
         this.isRefreshing = false;
         this.refreshPromise = null;
-    this.authenticated = false;
-        
+        this.authenticated = false;
+
         // Load tokens from localStorage
         this.loadTokens();
-        
+
         // Start auto-refresh timer
         this.startAutoRefresh();
-        
-        console.log('🔑 [TokenManager] Initialized');
+
+        console.log('🔑 [TokenManager] Initialized with Remember Me support');
+    }
+
+    /**
+     * Base64url decode helper (correctly handles JWT payloads)
+     */
+    b64urlDecode(str) {
+        // Add padding if needed
+        str += '='.repeat((4 - str.length % 4) % 4);
+        // Replace URL-safe characters
+        str = str.replace(/-/g, '+').replace(/_/g, '/');
+        return atob(str);
+    }
+
+    /**
+     * Decode JWT and assess staleness
+     */
+    decodeJwtAndAssessStaleness(token) {
+        if (!token) return null;
+
+        try {
+            const parts = token.split('.');
+            if (parts.length !== 3) return null;
+
+            const payload = JSON.parse(this.b64urlDecode(parts[1]));
+            const now = Math.floor(Date.now() / 1000);
+
+            // Calculate staleness
+            const issuedAt = payload.iat || 0;
+            const expiresAt = payload.exp || 0;
+            const tokenLifetime = expiresAt - issuedAt;
+            const tokenAge = now - issuedAt;
+            const stalenessRatio = tokenLifetime > 0 ? tokenAge / tokenLifetime : 0;
+
+            return {
+                payload,
+                issuedAt,
+                expiresAt,
+                tokenLifetime,
+                tokenAge,
+                stalenessRatio,
+                isExpired: expiresAt > 0 && now >= expiresAt,
+                needsRefresh: stalenessRatio > 0.5, // Refresh at 50% lifetime
+                userId: payload.sub || payload.user?.id || payload.userId
+            };
+        } catch (error) {
+            console.error('❌ [TokenManager] Error decoding JWT:', error);
+            return null;
+        }
     }
 
     /**
@@ -22,13 +70,12 @@ class TokenManager {
      */
     loadTokens() {
         try {
-            // Prefer unified keys; fall back to legacy keys if present
             this.accessToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
             this.refreshToken = localStorage.getItem('refreshToken');
-            
+
             // Validate token if it exists
             if (this.accessToken) {
-                const tokenInfo = this.getTokenInfo();
+                const tokenInfo = this.decodeJwtAndAssessStaleness(this.accessToken);
                 if (tokenInfo && !tokenInfo.isExpired) {
                     this.authenticated = true;
                     console.log('🔑 [TokenManager] Valid tokens loaded from storage');
@@ -53,14 +100,14 @@ class TokenManager {
         try {
             this.accessToken = accessToken;
             this.refreshToken = refreshToken || localStorage.getItem('refreshToken') || 'session';
-            
+
             localStorage.setItem('accessToken', accessToken);
             localStorage.setItem('refreshToken', this.refreshToken);
             // Clean up legacy keys for consistency
             localStorage.removeItem('authToken');
             localStorage.removeItem('token');
             localStorage.removeItem('jwt');
-            
+
             console.log('🔑 [TokenManager] Tokens saved to storage');
             this.authenticated = true;
             this.updateNavbarState();
@@ -77,13 +124,13 @@ class TokenManager {
             this.accessToken = null;
             this.refreshToken = null;
             this.authenticated = false;
-            
+
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('authToken');
             localStorage.removeItem('token');
             localStorage.removeItem('jwt');
-            
+
             console.log('🔑 [TokenManager] Tokens cleared');
             this.updateNavbarState();
         } catch (error) {
@@ -120,46 +167,38 @@ class TokenManager {
             return null;
         }
 
-        try {
-            const payload = JSON.parse(atob(this.accessToken.split('.')[1]));
-            const now = Math.floor(Date.now() / 1000);
-            const expiresAt = payload.exp;
-            const timeUntilExpiry = (expiresAt - now) * 1000;
-            
-            return {
-                expiresAt: new Date(expiresAt * 1000),
-                timeUntilExpiry: timeUntilExpiry,
-                isExpired: timeUntilExpiry <= 0,
-                needsRefresh: timeUntilExpiry <= (15 * 60 * 1000), // 15 minutes
-                userId: payload.user?.id || payload.userId
-            };
-        } catch (error) {
-            console.error('❌ [TokenManager] Error parsing token:', error);
-            return null;
-        }
+        const tokenInfo = this.decodeJwtAndAssessStaleness(this.accessToken);
+        if (!tokenInfo) return null;
+
+        return {
+            expiresAt: tokenInfo.expiresAt,
+            timeUntilExpiry: tokenInfo.expiresAt > 0 ? tokenInfo.expiresAt - Math.floor(Date.now() / 1000) : null,
+            isExpired: tokenInfo.isExpired,
+            needsRefresh: tokenInfo.needsRefresh,
+            userId: tokenInfo.userId,
+            stalenessRatio: tokenInfo.stalenessRatio
+        };
     }
 
     /**
-     * Refresh access token
+     * Proactive refresh access token
      */
-    async refreshAccessToken() {
-        if (!this.refreshToken) {
-            throw new Error('No refresh token available');
+    async refreshAccessTokenProactively() {
+        if (!this.refreshToken || this.isRefreshing) {
+            return { accessToken: this.accessToken, needsRefresh: false };
         }
 
-        // Prevent multiple simultaneous refresh attempts
-        if (this.isRefreshing) {
+        // Prevent concurrent refresh attempts
+        if (this.refreshPromise) {
             return this.refreshPromise;
         }
 
-        this.isRefreshing = true;
         this.refreshPromise = this._performRefresh();
 
         try {
             const result = await this.refreshPromise;
             return result;
         } finally {
-            this.isRefreshing = false;
             this.refreshPromise = null;
         }
     }
@@ -169,8 +208,8 @@ class TokenManager {
      */
     async _performRefresh() {
         try {
-            console.log('🔄 [TokenManager] Refreshing access token...');
-            
+            console.log('🔄 [TokenManager] Refreshing access token with rotation...');
+
             const response = await fetch('/api/token/refresh', {
                 method: 'POST',
                 headers: {
@@ -187,22 +226,23 @@ class TokenManager {
                 throw new Error(data.message || 'Token refresh failed');
             }
 
-            // Update tokens
+            // Update tokens with rotated refresh token
             this.saveTokens(data.data.accessToken, data.data.refreshToken);
-            
-            console.log('✅ [TokenManager] Access token refreshed successfully');
-            
-            // Restart auto-refresh timer
-            this.startAutoRefresh();
-            
-            return data.data;
+
+            console.log('✅ [TokenManager] Access token refreshed and rotated successfully');
+
+            return {
+                accessToken: data.data.accessToken,
+                refreshToken: data.data.refreshToken,
+                needsRefresh: false
+            };
         } catch (error) {
             console.error('❌ [TokenManager] Token refresh failed:', error);
-            
+
             // Clear tokens on refresh failure
             this.clearTokens();
             this.redirectToLogin();
-            
+
             throw error;
         }
     }
@@ -221,7 +261,7 @@ class TokenManager {
         }
 
         try {
-            await this.refreshAccessToken();
+            await this.refreshAccessTokenProactively();
             return true;
         } catch (error) {
             console.error('❌ [TokenManager] Auto-refresh failed:', error);
@@ -242,14 +282,14 @@ class TokenManager {
             return;
         }
 
-        // Check every 5 minutes
+        // Check every 2 minutes for proactive refresh
         this.refreshTimer = setInterval(async () => {
             try {
                 await this.autoRefreshToken();
             } catch (error) {
                 console.error('❌ [TokenManager] Auto-refresh error:', error);
             }
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 10 * 60 * 1000); // 10 minutes (less aggressive)
 
         console.log('⏰ [TokenManager] Auto-refresh timer started');
     }
@@ -291,10 +331,10 @@ class TokenManager {
         // If token expired, try to refresh and retry
         if (response.status === 401) {
             console.log('🔄 [TokenManager] Token expired, attempting refresh...');
-            
+
             try {
-                await this.refreshAccessToken();
-                
+                await this.refreshAccessTokenProactively();
+
                 // Retry the request with new token
                 requestOptions.headers.Authorization = `Bearer ${this.accessToken}`;
                 response = await fetch(url, requestOptions);
@@ -315,7 +355,7 @@ class TokenManager {
         if (window.updateNavbarState) {
             const tokenInfo = this.getTokenInfo();
             const user = tokenInfo ? { id: tokenInfo.userId } : null;
-            
+
             window.updateNavbarState({
                 currentUser: user,
                 isAuthenticated: this.isAuthenticated()

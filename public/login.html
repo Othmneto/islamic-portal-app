@@ -444,29 +444,7 @@
     </div>
   </header>
 
-    <header>
-        <nav class="navbar">
-            <a href="index.html" class="logo">Islamic Portal</a>
-            <ul class="nav-links">
-                <li><a href="translator.html">Translator</a></li>
-                <li><a href="prayertimes.html">Prayer Times</a></li>
-                <li><a href="explorer.html">Explorer</a></li>
-                <li><a href="duas.html">Duas</a></li>
-                <li><a href="names.html">99 Names</a></li>
-                <li><a href="zakat.html">Zakat</a></li>
-                <li><a href="converter.html">Date Converter</a></li>
-                <li><a href="analytics.html">Analytics</a></li>
-                <li><a href="history.html">History</a></li>
-                <li><a href="register.html">Register</a></li>
-            </ul>
-            <div class="theme-toggle">
-                <input type="checkbox" id="theme-switch" class="theme-switch" />
-                <label for="theme-switch" class="theme-label"></label>
-            </div>
-        </nav>
-    </header>
-
-    <main>
+    <main class="page-content">
         <section class="auth-container">
             <h2>Login to Your Account</h2>
             <form id="login-form" class="auth-form">
@@ -477,6 +455,15 @@
                 <div class="input-group">
                     <label for="login-password">Password:</label>
                     <input type="password" id="login-password" name="password" required>
+                </div>
+                <div class="input-group">
+                    <label>
+                        <input type="checkbox" id="rememberMe" name="rememberMe" checked>
+                        Keep me logged in for 90 days
+                    </label>
+                    <small style="display: block; margin-top: 5px; color: var(--text-muted); font-size: 12px;">
+                        Unchecked = session expires when browser closes
+                    </small>
                 </div>
                 <button type="submit">Login</button>
                 <div id="login-message" class="error-message"></div>

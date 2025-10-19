@@ -16,43 +16,43 @@ class LiveTextTranslator {
         this.exportManager = new ExportManager();
         this.partialTranslation = new PartialTranslation();
         this.isInitialized = false;
-        
+
         // UI Components
         this.voiceVisualizer = null;
         this.progressIndicator = new ProgressIndicator(document.getElementById('loading-spinner'));
         this.skeletonLoader = new SkeletonLoader(document.getElementById('translation-results'));
         this.currentTranslationItem = null;
-        
+
         this.init();
     }
 
     async init() {
         if (this.isInitialized) return;
-        
+
         console.log('Initializing Live Text Translator...');
-        
+
         try {
             // Initialize core translation functionality
             await this.translationCore.init();
-            
+
             // Setup history integration
             this.setupHistoryIntegration();
-            
+
             // Setup export functionality
             this.setupExportFunctionality();
-            
+
             // Setup save functionality
             this.setupSaveFunctionality();
-            
+
             // Setup UI event listeners
             this.setupUIEventListeners();
-            
+
             // Setup mobile functionality
             this.setupMobileFunctionality();
-            
+
             // Setup theme management
             this.setupThemeManagement();
-            
+
             this.isInitialized = true;
             console.log('Live Text Translator initialized successfully');
         } catch (error) {
@@ -64,11 +64,11 @@ class LiveTextTranslator {
     setupHistoryIntegration() {
         // Override the core's displayTranslation to integrate with history
         const originalDisplayTranslation = this.translationCore.displayTranslation.bind(this.translationCore);
-        
+
         this.translationCore.displayTranslation = (data) => {
             // Call original method
             originalDisplayTranslation(data);
-            
+
             // Add to history
             this.history.addTranslation({
                 original: data.original,
@@ -104,7 +104,7 @@ class LiveTextTranslator {
 
     setupSaveFunctionality() {
         const saveCurrentBtn = document.getElementById('save-current');
-        
+
         if (saveCurrentBtn) {
             saveCurrentBtn.addEventListener('click', () => this.saveCurrentTranslation());
         }
@@ -133,7 +133,7 @@ class LiveTextTranslator {
         try {
             const originalText = this.translationCore.accumulatedText;
             const translatedText = this.getLastTranslation();
-            
+
             if (!originalText.trim()) {
                 this.showError('No text to export');
                 return;
@@ -169,7 +169,7 @@ class LiveTextTranslator {
     saveCurrentTranslation() {
         const originalText = this.translationCore.accumulatedText;
         const translatedText = this.getLastTranslation();
-        
+
         if (!originalText.trim()) {
             this.updateSaveStatus('No text to save', 'error');
             return;
@@ -186,7 +186,7 @@ class LiveTextTranslator {
             });
 
             this.updateSaveStatus('Translation saved successfully!', 'success');
-            
+
             // Reset status after 3 seconds
             setTimeout(() => {
                 this.updateSaveStatus('Ready to save', 'ready');
@@ -203,21 +203,21 @@ class LiveTextTranslator {
         this.translationCore.currentPhrase = item.original;
         this.translationCore.currentLanguage = item.fromLanguage;
         this.translationCore.targetLanguage = item.toLanguage;
-        
+
         // Update UI
         const voiceLanguageSelect = document.getElementById('voice-language');
         const targetLanguageSelect = document.getElementById('target-language');
-        
+
         if (voiceLanguageSelect) {
             voiceLanguageSelect.value = item.fromLanguage;
         }
         if (targetLanguageSelect) {
             targetLanguageSelect.value = item.toLanguage;
         }
-        
+
         // Update text counter
         this.translationCore.updateTextCounter();
-        
+
         // Display the translation
         this.translationCore.displayTranslation({
             original: item.original,
@@ -278,7 +278,7 @@ class LiveTextTranslator {
     clearHistory() {
         if (this.history.clearHistory()) {
             this.updateSaveStatus('History cleared', 'success');
-            
+
             setTimeout(() => {
                 this.updateSaveStatus('Ready to save', 'ready');
             }, 2000);
@@ -351,7 +351,7 @@ class LiveTextTranslator {
         const mobileSettingsBtn = document.getElementById('mobile-settings');
         const settingsSheet = document.getElementById('settings-sheet');
         const settingsClose = document.getElementById('settings-close');
-        
+
         if (mobileSettingsBtn && settingsSheet) {
             mobileSettingsBtn.addEventListener('click', () => {
                 settingsSheet.classList.add('open');
@@ -394,7 +394,7 @@ class LiveTextTranslator {
     applyTheme(theme) {
         const root = document.documentElement;
         root.setAttribute('data-theme', theme);
-        
+
         // Update theme-specific styles
         if (theme === 'high-contrast') {
             root.style.setProperty('--brand', '#5aa2ff');
@@ -409,7 +409,7 @@ class LiveTextTranslator {
     async startVoiceInput() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            
+
             // Create voice visualizer
             const waveformContainer = document.getElementById('waveform-container');
             if (waveformContainer) {
@@ -419,11 +419,11 @@ class LiveTextTranslator {
 
             // Start voice recognition
             await this.translationCore.startVoiceInput();
-            
+
             // Update UI
             this.updateVoiceButton(true);
             this.showInfo('Voice input started');
-            
+
         } catch (error) {
             console.error('Error starting voice input:', error);
             this.showError('Failed to start voice input. Please check microphone permissions.');
@@ -434,7 +434,7 @@ class LiveTextTranslator {
         if (this.voiceVisualizer) {
             this.voiceVisualizer.stop();
         }
-        
+
         this.translationCore.stopVoiceInput();
         this.updateVoiceButton(false);
         this.showInfo('Voice input stopped');
@@ -445,7 +445,7 @@ class LiveTextTranslator {
         buttons.forEach(btn => {
             const icon = btn.querySelector('i');
             const text = btn.querySelector('span');
-            
+
             if (isListening) {
                 btn.classList.add('listening');
                 if (icon) icon.className = 'fas fa-stop';

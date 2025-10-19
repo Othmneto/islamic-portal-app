@@ -18,7 +18,7 @@ function cookieOptions() {
     secure: env.NODE_ENV === 'production',
     sameSite: 'Lax',
     path: '/',
-    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
   };
   if (env.COOKIE_DOMAIN) opts.domain = env.COOKIE_DOMAIN;
   return opts;
@@ -89,7 +89,7 @@ function verifyCsrf(req, res, next) {
   console.log('🔍 Request headers:', req.headers);
   console.log('🔍 Request cookies:', req.cookies);
   console.log('🔍 Request session:', req.session);
-  
+
   // Skip for Bearer clients (mobile/3rd-party) — they should use Authorization header
   const authHeader = req.headers.authorization || '';
   if (/^Bearer\s+/i.test(authHeader)) {

@@ -32,7 +32,7 @@ router.get('/status', auth, asyncHandler(async (req, res) => {
 router.post('/setup', auth, asyncHandler(async (req, res) => {
     const { secret, qrCodeUrl, manualEntryKey } = mfaService.generateSecret(req.user);
     const qrCodeDataUrl = await mfaService.generateQRCode({ qrCodeUrl });
-    
+
     res.json({
         success: true,
         data: {
@@ -50,7 +50,7 @@ router.post('/setup', auth, asyncHandler(async (req, res) => {
  */
 router.post('/enable', auth, asyncHandler(async (req, res) => {
     const { secret, token } = req.body;
-    
+
     if (!secret || !token) {
         return res.status(400).json({
             success: false,
@@ -72,7 +72,7 @@ router.post('/enable', auth, asyncHandler(async (req, res) => {
  */
 router.post('/disable', auth, asyncHandler(async (req, res) => {
     const { password } = req.body;
-    
+
     if (!password) {
         return res.status(400).json({
             success: false,
@@ -94,7 +94,7 @@ router.post('/disable', auth, asyncHandler(async (req, res) => {
  */
 router.post('/verify', auth, asyncHandler(async (req, res) => {
     const { token } = req.body;
-    
+
     if (!token) {
         return res.status(400).json({
             success: false,
@@ -116,7 +116,7 @@ router.post('/verify', auth, asyncHandler(async (req, res) => {
  */
 router.post('/backup-codes/regenerate', auth, asyncHandler(async (req, res) => {
     const { password } = req.body;
-    
+
     if (!password) {
         return res.status(400).json({
             success: false,
@@ -153,7 +153,7 @@ router.get('/totp/generate', auth, asyncHandler(async (req, res) => {
         const { secret, qrCodeUrl, manualEntryKey } = mfaService.generateSecret(req.user);
         console.log('📱 [MFA Routes] Generating QR code');
         const qrCodeDataUrl = await mfaService.generateQRCode({ qrCodeUrl });
-        
+
         console.log('✅ [MFA Routes] TOTP setup data generated successfully');
         res.json({
             success: true,
@@ -176,18 +176,18 @@ router.post('/totp/verify', auth, asyncHandler(async (req, res) => {
         console.log('🔐 [MFA Routes] Verifying TOTP token for user:', req.user.email);
         console.log('🔐 [MFA Routes] Token provided:', token ? 'Yes' : 'No');
         console.log('🔐 [MFA Routes] Secret provided:', secret ? 'Yes' : 'No');
-        
+
         if (!secret) {
             return res.status(400).json({
                 success: false,
                 message: 'Secret is required for token verification during setup'
             });
         }
-        
+
         // Verify token against secret (for setup)
         const isValid = mfaService.verifyToken(secret, token);
         console.log('🔐 [MFA Routes] Token verification result:', isValid);
-        
+
         if (isValid) {
             res.json({
                 success: true,
@@ -214,14 +214,14 @@ router.post('/totp/enable', auth, asyncHandler(async (req, res) => {
         console.log('🔐 [MFA Routes] Enabling MFA for user:', req.user.email);
         console.log('🔐 [MFA Routes] Token provided:', token ? 'Yes' : 'No');
         console.log('🔐 [MFA Routes] Secret provided:', secret ? 'Yes' : 'No');
-        
+
         if (!secret) {
             return res.status(400).json({
                 success: false,
                 message: 'Secret is required for MFA setup'
             });
         }
-        
+
         const result = await mfaService.enableMFA(req.user.id, secret, token);
         console.log('✅ [MFA Routes] MFA enabled successfully');
         res.json(result);
@@ -260,11 +260,11 @@ router.post('/email/verify', auth, asyncHandler(async (req, res) => {
         console.log('📧 [MFA Routes] Verifying email code for user:', req.user.email);
         console.log('📧 [MFA Routes] Code received:', code);
         console.log('📧 [MFA Routes] User ID:', req.user.id);
-        
+
         const result = await emailMfaService.verifyCode(req.user.id, code);
         console.log('✅ [MFA Routes] Email code verified successfully');
         console.log('✅ [MFA Routes] Result:', result);
-        
+
         res.json({
             success: true,
             message: 'Email code verified successfully',

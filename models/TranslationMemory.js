@@ -11,7 +11,7 @@ const translationMemorySchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
-    
+
     // Translation data
     sourceText: {
         type: String,
@@ -33,7 +33,7 @@ const translationMemorySchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    
+
     // Memory metadata
     key: {
         type: String,
@@ -48,7 +48,7 @@ const translationMemorySchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    
+
     // Context and quality
     context: {
         type: String,
@@ -64,7 +64,7 @@ const translationMemorySchema = new mongoose.Schema({
         enum: ['excellent', 'good', 'fair', 'poor'],
         default: 'good'
     },
-    
+
     // Similarity and matching
     similarity: {
         type: Number,
@@ -76,7 +76,7 @@ const translationMemorySchema = new mongoose.Schema({
         type: String,
         trim: true
     }],
-    
+
     // User feedback
     userRating: {
         type: Number,
@@ -87,7 +87,7 @@ const translationMemorySchema = new mongoose.Schema({
         type: String,
         trim: true
     },
-    
+
     // Analytics
     accessCount: {
         type: Number,
@@ -183,15 +183,15 @@ translationMemorySchema.statics.search = function(query, userId, options = {}) {
             { targetText: { $regex: query, $options: 'i' } }
         ]
     };
-    
+
     if (options.context) {
         searchQuery.context = options.context;
     }
-    
+
     if (options.isIslamic !== undefined) {
         searchQuery.isIslamic = options.isIslamic;
     }
-    
+
     return this.find(searchQuery)
         .sort({ usageCount: -1 })
         .limit(options.limit || 20);
@@ -205,12 +205,12 @@ translationMemorySchema.pre('save', function(next) {
         const keyData = `${this.sourceText}_${this.sourceLanguage}_${this.targetLanguage}`;
         this.key = crypto.createHash('md5').update(keyData).digest('hex');
     }
-    
+
     // Update lastUsed if not set
     if (!this.lastUsed) {
         this.lastUsed = new Date();
     }
-    
+
     next();
 });
 

@@ -26,7 +26,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Logout button
   document.getElementById('logout-btn')?.addEventListener('click', async (event) => {
     event.preventDefault();
-    
+
     // Show confirmation dialog
     if (confirm('Are you sure you want to logout?')) {
       // Show loading state
@@ -34,15 +34,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const originalText = logoutBtn.innerHTML;
       logoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging out...';
       logoutBtn.disabled = true;
-      
+
       try {
         // Call enhanced logout function
         const success = await logout();
-        
+
         if (success) {
           // Show success message
           alert('You have been logged out successfully.');
-          
+
           // Redirect to home page
           window.location.href = 'index.html';
         } else {
@@ -66,11 +66,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const PRAYER_LABELS = ["F", "D", "A", "M", "I"]; // Short labels for dots
   let currentMonth = new Date(); // controls visible month in the dashboard
   let userTz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  
+
   // Gamification state
   let achievements = null;
   let gamificationUI = null;
-  
+
   // Debug logging
   console.log("[Profile] Initial timezone:", userTz);
 
@@ -130,13 +130,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if (typeof getToken === 'function') {
       return getToken();
     }
-    
+
     // Fallback to old method if getToken not available
     const authToken = localStorage.getItem("authToken");
     const token = localStorage.getItem("token");
     const jwt = localStorage.getItem("jwt");
     const accessToken = localStorage.getItem("access_token");
-    
+
     // Only log token info in debug mode or when there are issues
     if (window.location.search.includes('debug') || (!authToken && !token && !jwt && !accessToken)) {
       console.log('🔍 Profile: Available tokens in localStorage:', {
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
         accessToken: accessToken ? accessToken.substring(0, 20) + '...' : 'None'
       });
     }
-    
+
     return authToken || token || jwt || accessToken;
   };
 
@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("[Profile] Available cookies:", document.cookie);
         console.log("[Profile] JWT token present:", !!token);
       }
-      
+
       // Try to refresh token first if token manager is available
       if (window.tokenManager && window.tokenManager.isAuthenticated()) {
         console.log("[Profile] Attempting token refresh...");
@@ -248,19 +248,19 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error("[Profile] Token refresh failed:", refreshError);
         }
       }
-      
+
       // Clear any expired tokens from localStorage
       localStorage.removeItem('authToken');
       localStorage.removeItem('token');
       localStorage.removeItem('jwt');
       localStorage.removeItem('access_token');
       localStorage.removeItem('userData');
-      
+
       // Clear token manager if available
       if (window.tokenManager) {
         window.tokenManager.clearTokens();
       }
-      
+
       // Show login message and redirect after delay
       if (el.dashboardRoot && !el.dashboardRoot.querySelector(".login-needed")) {
         const p = document.createElement("div");
@@ -280,7 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <a href="/login.html" class="btn btn-primary" style="margin-top: 10px;">Login Now</a>
         `;
         el.dashboardRoot.appendChild(p);
-        
+
         // Countdown and redirect
         let countdown = 5;
         const countdownEl = p.querySelector('#countdown');
@@ -303,18 +303,18 @@ document.addEventListener("DOMContentLoaded", () => {
       throw new Error(msg);
     }
 
-    try { 
+    try {
       const result = await res.json();
       // Only log success in debug mode
       if (window.location.search.includes('debug')) {
         console.log("[Profile] API call successful, data received");
       }
       return result;
-    } catch { 
+    } catch {
       if (window.location.search.includes('debug')) {
         console.log("[Profile] API call successful, no JSON data");
       }
-      return {}; 
+      return {};
     }
   }
 
@@ -616,10 +616,10 @@ document.addEventListener("DOMContentLoaded", () => {
     for (let d = 1; d <= daysInMonth; d++) {
       const dayCell = document.createElement("div");
       dayCell.className = "calendar-day";
-      
+
       // Check if this is today
-      const isToday = year === today.getFullYear() && 
-                     month === today.getMonth() && 
+      const isToday = year === today.getFullYear() &&
+                     month === today.getMonth() &&
                      d === today.getDate();
       if (isToday) {
         dayCell.classList.add("today");
@@ -648,7 +648,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const dateKey = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       const prayersForDay = normalizedLogs[dateKey] || [];
-      
+
       // Debug logging for today's date
       if (isToday) {
         console.log("[Profile] Today's date key:", dateKey);
@@ -663,12 +663,12 @@ document.addEventListener("DOMContentLoaded", () => {
           dot.classList.add("prayed");
           dot.textContent = PRAYER_LABELS[index];
         }
-        
+
         // Enhanced tooltip
         const prayerName = prayer[0].toUpperCase() + prayer.slice(1);
         const status = prayersForDay.includes(prayer) ? "✅ Prayed" : "❌ Missed";
         dot.title = `${prayerName} — ${status}`;
-        
+
         dotsContainer.appendChild(dot);
       });
 
@@ -677,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
       total.className = "day-total";
       const prayerCount = prayersForDay.length;
       total.textContent = `${prayerCount}/5`;
-      
+
       // Color coding based on completion
       if (prayerCount >= 5) {
         total.classList.add("high");
@@ -686,7 +686,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (prayerCount > 0) {
         total.classList.add("low");
       }
-      
+
       dayCell.appendChild(dotsContainer);
       dayCell.appendChild(total);
 
@@ -764,21 +764,21 @@ document.addEventListener("DOMContentLoaded", () => {
   function calculateWeeklyProgress(logs, today, timezone) {
     const weekAgo = new Date(today);
     weekAgo.setDate(today.getDate() - 6);
-    
+
     let weeklyPrayers = 0;
     let weeklyDays = 0;
-    
+
     for (let i = 0; i < 7; i++) {
       const date = new Date(weekAgo);
       date.setDate(weekAgo.getDate() + i);
       const dateKey = ymdInTimeZone(date, timezone);
-      
+
       if (logs[dateKey]) {
         weeklyPrayers += logs[dateKey].length;
         weeklyDays++;
       }
     }
-    
+
     const maxPossible = weeklyDays * 5;
     return maxPossible > 0 ? Math.round((weeklyPrayers / maxPossible) * 100) : 0;
   }
@@ -787,9 +787,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function calculateBestPrayer(logs) {
     const prayerCounts = { fajr: 0, dhuhr: 0, asr: 0, maghrib: 0, isha: 0 };
     const totalDays = Object.keys(logs).length;
-    
+
     if (totalDays === 0) return "--";
-    
+
     Object.values(logs).forEach(prayers => {
       prayers.forEach(prayer => {
         if (prayerCounts.hasOwnProperty(prayer)) {
@@ -797,10 +797,10 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
-    
+
     const bestPrayer = Object.entries(prayerCounts)
       .sort(([,a], [,b]) => b - a)[0];
-    
+
     return bestPrayer ? bestPrayer[0].charAt(0).toUpperCase() + bestPrayer[0].slice(1) : "--";
   }
 
@@ -808,7 +808,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function calculatePrayerStreak(logs, today, timezone) {
     let streak = 0;
     const currentDate = new Date(today);
-    
+
     while (true) {
       const dateKey = ymdInTimeZone(currentDate, timezone);
       if (logs[dateKey] && logs[dateKey].length > 0) {
@@ -818,26 +818,26 @@ document.addEventListener("DOMContentLoaded", () => {
         break;
       }
     }
-    
+
     return streak;
   }
 
   // Function to show day details when clicking on a calendar day
   function showDayDetails(dateKey, prayersForDay, day, month, year) {
     const date = new Date(year, month, day);
-    const dateStr = date.toLocaleDateString(undefined, { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    const dateStr = date.toLocaleDateString(undefined, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
-    
+
     const prayedCount = prayersForDay.length;
     const missedPrayers = PRAYER_NAMES.filter(prayer => !prayersForDay.includes(prayer));
-    
+
     let message = `📅 ${dateStr}\n\n`;
     message += `✅ Prayed: ${prayedCount}/5 prayers\n`;
-    
+
     if (prayedCount > 0) {
       message += `\n✅ Completed:\n`;
       prayersForDay.forEach(prayer => {
@@ -845,7 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
         message += `  • ${prayerName}\n`;
       });
     }
-    
+
     if (missedPrayers.length > 0) {
       message += `\n❌ Missed:\n`;
       missedPrayers.forEach(prayer => {
@@ -853,7 +853,7 @@ document.addEventListener("DOMContentLoaded", () => {
         message += `  • ${prayerName}\n`;
       });
     }
-    
+
     alert(message);
   }
 
@@ -862,10 +862,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const logs = await fetchMonthlyLogs(currentMonth);
     renderCalendar(currentMonth, logs);
     calculateStats(logs, currentMonth);
-    
+
     // Update gamification with prayer data
     updateGamification(logs);
-    
+
     // Debug: Check today's date in different timezones
     const today = new Date();
     const todayUTC = today.toISOString().split('T')[0];
@@ -893,23 +893,23 @@ document.addEventListener("DOMContentLoaded", () => {
   async function initGamification() {
     try {
       console.log("[Profile] Initializing gamification system");
-      
+
       // Initialize achievements system
       achievements = new PrayerAchievements();
-      
+
       // Initialize gamification UI
       gamificationUI = new GamificationUI(achievements);
-      
+
       // Create and insert gamification section
       const gamificationSection = gamificationUI.createGamificationSection();
       const existingSection = document.getElementById('gamification-section');
       if (existingSection) {
         existingSection.innerHTML = gamificationSection.innerHTML;
       }
-      
+
       // Initialize the UI
       gamificationUI.initialize();
-      
+
       console.log("[Profile] Gamification system initialized successfully");
     } catch (error) {
       console.error("[Profile] Gamification initialization failed:", error);
@@ -956,7 +956,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Dashboard
     wireDashboardNav();
     updateDashboard(); // Initial dashboard load (works for session or JWT)
-    
+
     // Listen for real-time prayer logs updates
     window.addEventListener('prayerLogsUpdated', (event) => {
       console.log('[Profile] Prayer logs updated via real-time service:', event.detail.logs);
@@ -989,7 +989,7 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.removeItem('prayerLogChanged');
           }
         }
-        
+
         // Also check for detailed update data
         const updateData = localStorage.getItem('prayerLogUpdate');
         if (updateData) {

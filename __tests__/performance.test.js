@@ -14,7 +14,7 @@ describe('Performance Testing Suite', () => {
     beforeAll(async () => {
         // Start server for testing
         server = app.listen(0);
-        
+
         // Create test users for load testing
         for (let i = 0; i < 50; i++) {
             testUsers.push({
@@ -57,13 +57,13 @@ describe('Performance Testing Suite', () => {
     describe('Load Testing - Concurrent Users', () => {
         test('Should handle 50 concurrent translation requests', async () => {
             const startTime = Date.now();
-            
+
             const promises = testTranslations.slice(0, 50).map(async (translation) => {
                 const response = await request(app)
                     .post('/api/text-translation/translate')
                     .send(translation)
                     .expect(200);
-                
+
                 return response.body;
             });
 
@@ -73,20 +73,20 @@ describe('Performance Testing Suite', () => {
 
             console.log(`🚀 [Performance] 50 concurrent requests completed in ${totalTime}ms`);
             console.log(`📊 [Performance] Average response time: ${totalTime / 50}ms per request`);
-            
+
             expect(results).toHaveLength(50);
             expect(totalTime).toBeLessThan(10000); // Should complete within 10 seconds
         }, 15000);
 
         test('Should handle 100 concurrent translation requests', async () => {
             const startTime = Date.now();
-            
+
             const promises = testTranslations.map(async (translation) => {
                 const response = await request(app)
                     .post('/api/text-translation/translate')
                     .send(translation)
                     .expect(200);
-                
+
                 return response.body;
             });
 
@@ -96,7 +96,7 @@ describe('Performance Testing Suite', () => {
 
             console.log(`🚀 [Performance] 100 concurrent requests completed in ${totalTime}ms`);
             console.log(`📊 [Performance] Average response time: ${totalTime / 100}ms per request`);
-            
+
             expect(results).toHaveLength(100);
             expect(totalTime).toBeLessThan(20000); // Should complete within 20 seconds
         }, 25000);
@@ -125,7 +125,7 @@ describe('Performance Testing Suite', () => {
 
             const finalMemory = process.memoryUsage();
             const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
-            
+
             console.log(`🧠 [Memory] Final memory usage: ${Math.round(finalMemory.heapUsed / 1024 / 1024)}MB`);
             console.log(`📈 [Memory] Memory increase: ${Math.round(memoryIncrease / 1024 / 1024)}MB`);
 
@@ -137,7 +137,7 @@ describe('Performance Testing Suite', () => {
     describe('Response Time Testing', () => {
         test('Translation API should respond within 2 seconds', async () => {
             const startTime = Date.now();
-            
+
             const response = await request(app)
                 .post('/api/text-translation/translate')
                 .send({
@@ -151,14 +151,14 @@ describe('Performance Testing Suite', () => {
             const responseTime = endTime - startTime;
 
             console.log(`⏱️ [Response Time] Translation completed in ${responseTime}ms`);
-            
+
             expect(responseTime).toBeLessThan(2000); // Should respond within 2 seconds
             expect(response.body.success).toBe(true);
         });
 
         test('Health check should respond within 100ms', async () => {
             const startTime = Date.now();
-            
+
             const response = await request(app)
                 .get('/api/text-translation/health')
                 .expect(200);
@@ -167,7 +167,7 @@ describe('Performance Testing Suite', () => {
             const responseTime = endTime - startTime;
 
             console.log(`⏱️ [Response Time] Health check completed in ${responseTime}ms`);
-            
+
             expect(responseTime).toBeLessThan(100); // Should respond within 100ms
         });
     });
@@ -236,7 +236,7 @@ describe('Performance Testing Suite', () => {
     describe('Error Handling Under Load', () => {
         test('Should handle errors gracefully under heavy load', async () => {
             const promises = [];
-            
+
             // Mix of valid and invalid requests
             for (let i = 0; i < 50; i++) {
                 if (i % 5 === 0) {

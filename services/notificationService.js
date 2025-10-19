@@ -3,6 +3,9 @@
 const { getNotificationQueueService } = require('../queues/notificationQueue');
 const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/User');
+const NotificationHistory = require('../models/NotificationHistory');
+const notificationRetryManager = require('./notificationRetryManager');
+const { env } = require('../config');
 const logger = require('../utils/logger');
 
 // START: New function to add a single job with an optional delay
@@ -16,27 +19,73 @@ const sendNotification = async (subscription, payload, delay = 0) => {
   if (!subscription || !payload) return;
 
   try {
-    const queueService = getNotificationQueueService();
-    if (!queueService) {
-      logger?.error?.('Notification queue service not available');
-      return;
-    }
+    // Generate unique notification ID for tracking
+    const notificationId = require('crypto').randomUUID();
 
-    const jobData = {
-      subscription: subscription.toObject ? subscription.toObject() : subscription,
-      payload,
+    // Enhanced payload with notification ID for confirmation tracking
+    const enhancedPayload = {
+      ...payload,
+      data: {
+        ...payload.data,
+        notificationId: notificationId
+      }
     };
 
-    const options = {};
-    if (delay > 0) {
-      options.delay = delay;
-    }
+    // Create notification history record
+    const notificationHistory = await NotificationHistory.create({
+      userId: subscription.userId,
+      prayerName: payload.prayerName || (payload.title?.includes('Test') ? 'test' : 'unknown'),
+      notificationType: payload.notificationType || 'main',
+      scheduledTime: new Date(),
+      sentTime: new Date(),
+      status: 'sent',
+      subscriptionId: subscription._id,
+      notificationId: notificationId,
+      timezone: subscription.tz || 'UTC'
+    });
 
-    await queueService.addPushJob(jobData, options);
-    logger?.info?.(
-      `Added notification job to queue for endpoint: ${subscription?.subscription?.endpoint || 'unknown'}`,
-      { delay }
-    );
+    // Use retry manager if enabled
+    if (env.NOTIFY_RETRY_BACKOFF_ENABLED === 'true') {
+      await notificationRetryManager.enqueueNotificationDeliveryWithIdempotency({
+        notificationId: notificationId,
+        userId: subscription.userId,
+        prayerName: payload.prayerName || (payload.title?.includes('Test') ? 'test' : 'unknown'),
+        notificationType: payload.notificationType || 'main',
+        scheduledTime: new Date(),
+        timezone: subscription.tz || 'UTC',
+        reminderMinutes: payload.reminderMinutes,
+        subscriptionId: subscription._id,
+        payload: enhancedPayload
+      });
+
+      logger?.info?.(
+        `Added notification to retry manager for endpoint: ${subscription?.subscription?.endpoint || 'unknown'}`,
+        { notificationId, delay }
+      );
+    } else {
+      // Fallback to original queue system
+      const queueService = getNotificationQueueService();
+      if (!queueService) {
+        logger?.error?.('Notification queue service not available');
+        return;
+      }
+
+      const jobData = {
+        subscription: subscription.toObject ? subscription.toObject() : subscription,
+        payload: enhancedPayload,
+      };
+
+      const options = {};
+      if (delay > 0) {
+        options.delay = delay;
+      }
+
+      await queueService.addPushJob(jobData, options);
+      logger?.info?.(
+        `Added notification job to queue for endpoint: ${subscription?.subscription?.endpoint || 'unknown'}`,
+        { notificationId, delay }
+      );
+    }
   } catch (error) {
     logger?.error?.('Failed to add notification job:', error);
   }

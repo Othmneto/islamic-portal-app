@@ -53,43 +53,43 @@ const securityHeaders = helmet({
     directives: cspDirectives,
     reportOnly: process.env.NODE_ENV !== 'production' // Report-only in development
   },
-  
+
   // HTTP Strict Transport Security
   hsts: {
     maxAge: 31536000, // 1 year
     includeSubDomains: true,
     preload: true
   },
-  
+
   // X-Frame-Options (clickjacking protection)
   frameguard: {
     action: 'deny'
   },
-  
+
   // X-Content-Type-Options (MIME type sniffing protection)
   noSniff: true,
-  
+
   // X-XSS-Protection
   xssFilter: true,
-  
+
   // Referrer Policy
   referrerPolicy: {
     policy: 'strict-origin-when-cross-origin'
   },
-  
+
   // Cross-Origin Embedder Policy
   crossOriginEmbedderPolicy: false, // Disable for compatibility
-  
+
   // Cross-Origin Opener Policy
   crossOriginOpenerPolicy: {
     policy: 'same-origin'
   },
-  
+
   // Cross-Origin Resource Policy
   crossOriginResourcePolicy: {
     policy: 'cross-origin'
   },
-  
+
   // Permissions Policy (Feature Policy)
   permissionsPolicy: {
     camera: [],
@@ -106,18 +106,18 @@ const securityHeaders = helmet({
     fullscreen: ["self"],
     pictureInPicture: []
   },
-  
+
   // Hide X-Powered-By header
   hidePoweredBy: true,
-  
+
   // DNS Prefetch Control
   dnsPrefetchControl: {
     allow: false
   },
-  
+
   // IE No Open
   ieNoOpen: true,
-  
+
   // Origin Agent Cluster
   originAgentCluster: true
 });
@@ -126,25 +126,25 @@ const securityHeaders = helmet({
 const customSecurityHeaders = (req, res, next) => {
   // Remove server information
   res.removeHeader('X-Powered-By');
-  
+
   // Add custom security headers
   res.setHeader('X-Request-ID', req.id || 'unknown');
   res.setHeader('X-Response-Time', Date.now() - req.startTime);
-  
+
   // Cache control for sensitive endpoints
   if (req.path.startsWith('/api/auth/') || req.path.startsWith('/api/user/')) {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
   }
-  
+
   // Security headers for API endpoints
   if (req.path.startsWith('/api/')) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
   }
-  
+
   next();
 };
 
@@ -152,12 +152,12 @@ const customSecurityHeaders = (req, res, next) => {
 const securityEventLogger = (req, res, next) => {
   const startTime = Date.now();
   req.startTime = startTime;
-  
+
   // Log security events
   res.on('finish', () => {
     const duration = Date.now() - startTime;
     const statusCode = res.statusCode;
-    
+
     // Log suspicious activities
     if (statusCode === 401 || statusCode === 403 || statusCode === 429) {
       console.warn(`🚨 Security Event: ${req.method} ${req.path} - ${statusCode}`, {
@@ -167,7 +167,7 @@ const securityEventLogger = (req, res, next) => {
         timestamp: new Date().toISOString()
       });
     }
-    
+
     // Log slow requests
     if (duration > 5000) { // 5 seconds
       console.warn(`🐌 Slow Request: ${req.method} ${req.path} - ${duration}ms`, {
@@ -177,7 +177,7 @@ const securityEventLogger = (req, res, next) => {
       });
     }
   });
-  
+
   next();
 };
 

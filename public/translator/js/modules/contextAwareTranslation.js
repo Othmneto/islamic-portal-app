@@ -6,7 +6,7 @@ export class ContextAwareTranslation {
         this.contextWindow = 3; // Number of previous translations to consider
         this.islamicContext = new Map();
         this.userPreferences = new Map();
-        
+
         // Initialize Islamic context patterns
         this.initializeIslamicContext();
     }
@@ -20,25 +20,25 @@ export class ContextAwareTranslation {
             responses: ['وعليكم السلام', 'أهلا وسهلا', 'مرحبا'],
             context: 'greeting'
         });
-        
+
         this.islamicContext.set('prayer', {
             patterns: ['الصلاة', 'الصلوات', 'صلاة', 'صلاة الفجر', 'صلاة الظهر', 'صلاة العصر', 'صلاة المغرب', 'صلاة العشاء'],
             responses: ['prayer', 'prayers', 'Fajr prayer', 'Dhuhr prayer', 'Asr prayer', 'Maghrib prayer', 'Isha prayer'],
             context: 'prayer'
         });
-        
+
         this.islamicContext.set('quran', {
             patterns: ['القرآن', 'القرآن الكريم', 'كتاب الله', 'الوحي'],
             responses: ['Quran', 'Holy Quran', 'Book of Allah', 'revelation'],
             context: 'quran'
         });
-        
+
         this.islamicContext.set('hadith', {
             patterns: ['الحديث', 'الأحاديث', 'السنة', 'السنن'],
             responses: ['hadith', 'hadiths', 'Sunnah', 'traditions'],
             context: 'hadith'
         });
-        
+
         this.islamicContext.set('dua', {
             patterns: ['الدعاء', 'الأدعية', 'الذكر', 'الأذكار'],
             responses: ['supplication', 'prayers', 'remembrance', 'dhikr'],
@@ -63,7 +63,7 @@ export class ContextAwareTranslation {
         };
 
         this.conversationContext.push(contextEntry);
-        
+
         // Limit context length
         if (this.conversationContext.length > this.maxContextLength) {
             this.conversationContext.shift();
@@ -77,7 +77,7 @@ export class ContextAwareTranslation {
      */
     detectContext(text) {
         const lowerText = text.toLowerCase();
-        
+
         for (const [context, data] of this.islamicContext.entries()) {
             for (const pattern of data.patterns) {
                 if (lowerText.includes(pattern.toLowerCase())) {
@@ -85,7 +85,7 @@ export class ContextAwareTranslation {
                 }
             }
         }
-        
+
         return 'general';
     }
 
@@ -101,15 +101,15 @@ export class ContextAwareTranslation {
         const relevantTranslations = this.conversationContext
             .filter(t => t.context === currentContext)
             .slice(-this.contextWindow);
-        
+
         const contextText = relevantTranslations
             .map(t => t.original)
             .join(' ');
-        
+
         const contextTranslations = relevantTranslations
             .map(t => t.translated)
             .join(' ');
-        
+
         return {
             context: currentContext,
             relevantText: contextText,
@@ -127,12 +127,12 @@ export class ContextAwareTranslation {
      */
     getContextualSuggestions(text, context) {
         const suggestions = [];
-        
+
         if (this.islamicContext.has(context)) {
             const contextData = this.islamicContext.get(context);
             suggestions.push(...contextData.responses);
         }
-        
+
         // Add common Islamic phrases based on context
         switch (context) {
             case 'greeting':
@@ -151,7 +151,7 @@ export class ContextAwareTranslation {
                 suggestions.push('supplication', 'prayer', 'invocation', 'dhikr');
                 break;
         }
-        
+
         return suggestions.slice(0, 5); // Limit to 5 suggestions
     }
 
@@ -172,7 +172,7 @@ export class ContextAwareTranslation {
             contextRelevance: this.calculateContextRelevance(text, context),
             enhancedText: this.applyContextualEnhancements(translation.translated, context)
         };
-        
+
         return enhancedTranslation;
     }
 
@@ -184,23 +184,23 @@ export class ContextAwareTranslation {
      */
     calculateContextRelevance(text, context) {
         let score = 0;
-        
+
         // Base score for having context
         if (context.contextCount > 0) {
             score += 30;
         }
-        
+
         // Boost score for matching context
         if (context.context !== 'general') {
             score += 40;
         }
-        
+
         // Boost score for similar text patterns
         const textWords = text.toLowerCase().split(/\s+/);
         const contextWords = context.relevantText.toLowerCase().split(/\s+/);
         const commonWords = textWords.filter(word => contextWords.includes(word));
         score += (commonWords.length / textWords.length) * 30;
-        
+
         return Math.min(score, 100);
     }
 
@@ -212,20 +212,20 @@ export class ContextAwareTranslation {
      */
     applyContextualEnhancements(translation, context) {
         let enhanced = translation;
-        
+
         // Add context-specific enhancements
         if (context.context === 'greeting' && !enhanced.includes('peace')) {
             enhanced = `Peace be upon you - ${enhanced}`;
         }
-        
+
         if (context.context === 'prayer' && !enhanced.toLowerCase().includes('prayer')) {
             enhanced = `Prayer: ${enhanced}`;
         }
-        
+
         if (context.context === 'quran' && !enhanced.toLowerCase().includes('quran')) {
             enhanced = `Quran: ${enhanced}`;
         }
-        
+
         return enhanced;
     }
 
@@ -237,12 +237,12 @@ export class ContextAwareTranslation {
         const contexts = [...new Set(this.conversationContext.map(t => t.context))];
         const languages = [...new Set(this.conversationContext.map(t => t.fromLang))];
         const totalTranslations = this.conversationContext.length;
-        
+
         return {
             totalTranslations,
             contexts,
             languages,
-            duration: this.conversationContext.length > 0 ? 
+            duration: this.conversationContext.length > 0 ?
                 Date.now() - this.conversationContext[0].timestamp : 0,
             mostCommonContext: this.getMostCommonContext(),
             contextDistribution: this.getContextDistribution()
@@ -258,8 +258,8 @@ export class ContextAwareTranslation {
         this.conversationContext.forEach(t => {
             contextCounts[t.context] = (contextCounts[t.context] || 0) + 1;
         });
-        
-        return Object.keys(contextCounts).reduce((a, b) => 
+
+        return Object.keys(contextCounts).reduce((a, b) =>
             contextCounts[a] > contextCounts[b] ? a : b, 'general'
         );
     }
@@ -273,7 +273,7 @@ export class ContextAwareTranslation {
         this.conversationContext.forEach(t => {
             distribution[t.context] = (distribution[t.context] || 0) + 1;
         });
-        
+
         return distribution;
     }
 
@@ -319,7 +319,7 @@ export class ContextAwareTranslation {
             maxContextLength: this.maxContextLength,
             contexts: [...new Set(this.conversationContext.map(t => t.context))],
             languages: [...new Set(this.conversationContext.map(t => t.fromLang))],
-            averageConfidence: this.conversationContext.length > 0 ? 
+            averageConfidence: this.conversationContext.length > 0 ?
                 this.conversationContext.reduce((sum, t) => sum + t.confidence, 0) / this.conversationContext.length : 0
         };
     }

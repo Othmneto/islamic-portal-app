@@ -18,7 +18,7 @@ const validateSpeakRequest = (req, res, next) => {
     if (!sessionId || typeof sessionId !== 'string') {
         return res.status(400).json({ error: 'Field "sessionId" is a required string.' });
     }
-    
+
     // If all checks pass, proceed to the next middleware or route handler
     next();
 };
@@ -48,12 +48,12 @@ const validateAutoDetectSpeakRequest = (req, res, next) => {
     } catch (e) {
         return res.status(400).json({ error: 'Field "toLang" must be a valid JSON array string.' });
     }
-    
+
     next();
 };
 
 
-module.exports = { 
+module.exports = {
     validateSpeakRequest,
     validateAutoDetectSpeakRequest
 };

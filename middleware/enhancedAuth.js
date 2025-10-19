@@ -8,8 +8,8 @@ const { env } = require('../config');
 const tokenValidationAttempts = new Map();
 
 const getClientIP = (req) => {
-  return req.ip || 
-         req.connection.remoteAddress || 
+  return req.ip ||
+         req.connection.remoteAddress ||
          req.socket.remoteAddress ||
          (req.connection.socket ? req.connection.socket.remoteAddress : null) ||
          req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
@@ -20,18 +20,18 @@ const isTokenRateLimited = (ip) => {
   const now = Date.now();
   const windowMs = 15 * 60 * 1000; // 15 minutes
   const maxAttempts = 10;
-  
+
   if (!tokenValidationAttempts.has(ip)) {
     tokenValidationAttempts.set(ip, []);
   }
-  
+
   const attempts = tokenValidationAttempts.get(ip);
   const recentAttempts = attempts.filter(timestamp => now - timestamp < windowMs);
-  
+
   if (recentAttempts.length >= maxAttempts) {
     return true;
   }
-  
+
   recentAttempts.push(now);
   tokenValidationAttempts.set(ip, recentAttempts);
   return false;
@@ -50,11 +50,11 @@ const recordTokenAttempt = (ip, success) => {
 module.exports = async function(req, res, next) {
     const clientIP = getClientIP(req);
     const startTime = Date.now();
-    
+
     // Check rate limiting for token validation
     if (isTokenRateLimited(clientIP)) {
         console.warn(`🚫 Rate limited token validation attempt from IP: ${clientIP}`);
-        return res.status(429).json({ 
+        return res.status(429).json({
             msg: 'Too many token validation attempts. Please try again later.',
             retryAfter: 900
         });
@@ -82,10 +82,10 @@ module.exports = async function(req, res, next) {
 
         // 4. Verify the token
         const decoded = jwt.verify(token, env.JWT_SECRET);
-        
+
         // 5. Extract user ID
         const userId = decoded.id || decoded.sub || decoded.user?.id;
-        
+
         if (!userId) {
             console.warn(`🚫 Invalid token structure from IP: ${clientIP}`);
             recordTokenAttempt(clientIP, false);
@@ -104,7 +104,7 @@ module.exports = async function(req, res, next) {
         if (user.isAccountLocked()) {
             console.warn(`🚫 Locked account access attempt: ${user.email} from IP: ${clientIP}`);
             recordTokenAttempt(clientIP, false);
-            return res.status(423).json({ 
+            return res.status(423).json({
                 msg: 'Account is temporarily locked due to multiple failed login attempts',
                 lockedUntil: user.accountLockedUntil,
                 lockoutTimeRemaining: user.getLockoutTimeRemaining()
@@ -115,7 +115,7 @@ module.exports = async function(req, res, next) {
         if (!user.isVerified) {
             console.warn(`🚫 Unverified account access attempt: ${user.email} from IP: ${clientIP}`);
             recordTokenAttempt(clientIP, false);
-            return res.status(403).json({ 
+            return res.status(403).json({
                 msg: 'Please verify your email before accessing the application',
                 requiresVerification: true,
                 email: user.email
@@ -126,7 +126,7 @@ module.exports = async function(req, res, next) {
         if (user.isPasswordExpired()) {
             console.warn(`🚫 Expired password access attempt: ${user.email} from IP: ${clientIP}`);
             recordTokenAttempt(clientIP, false);
-            return res.status(403).json({ 
+            return res.status(403).json({
                 msg: 'Your password has expired. Please change your password.',
                 requiresPasswordChange: true,
                 passwordExpired: true
@@ -137,7 +137,7 @@ module.exports = async function(req, res, next) {
         if (user.needsPasswordChange()) {
             console.warn(`🚫 Password change required: ${user.email} from IP: ${clientIP}`);
             recordTokenAttempt(clientIP, false);
-            return res.status(403).json({ 
+            return res.status(403).json({
                 msg: 'Your password is due for renewal. Please change your password.',
                 requiresPasswordChange: true,
                 passwordExpired: false
@@ -153,19 +153,19 @@ module.exports = async function(req, res, next) {
         // 12. Attach user to request
         req.user = user;
         req.clientIP = clientIP;
-        
+
         // 13. Record successful authentication
         recordTokenAttempt(clientIP, true);
-        
+
         // 14. Log successful authentication
         const processingTime = Date.now() - startTime;
         console.log(`✅ Successful authentication: ${user.email} from IP: ${clientIP} (${processingTime}ms)`);
-        
+
         next();
     } catch (err) {
         console.warn(`🚫 Token verification failed from IP: ${clientIP}`, err.message);
         recordTokenAttempt(clientIP, false);
-        
+
         if (err.name === 'TokenExpiredError') {
             return res.status(401).json({ msg: 'Token has expired' });
         } else if (err.name === 'JsonWebTokenError') {

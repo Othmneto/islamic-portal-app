@@ -15,10 +15,10 @@ const sendEmail = async (options) => {
       subject: options.subject,
       hasHtml: !!options.html
     });
-    
+
     // Create transporter based on environment
     let transporter;
-    
+
     if (env.NODE_ENV === 'production') {
       console.log('📧 Using production email configuration');
       // Production email service (e.g., SendGrid, Mailgun, etc.)
@@ -34,7 +34,7 @@ const sendEmail = async (options) => {
     } else {
       // Check if Gmail App Password is configured in environment
       const gmailAppPassword = env.EMAIL_PASS;
-      
+
       if (!gmailAppPassword || gmailAppPassword === 'YOUR_ACTUAL_APP_PASSWORD_HERE') {
         console.log('📧 Gmail App Password not configured, using console mode for development');
         // Development - use console logging for testing
@@ -66,7 +66,7 @@ const sendEmail = async (options) => {
         });
       }
     }
-    
+
     console.log('📧 Transporter created with config:', {
       host: transporter.options?.host || 'development-mode',
       port: transporter.options?.port || 'N/A',

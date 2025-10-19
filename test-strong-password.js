@@ -4,7 +4,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 async function testStrongPassword() {
     try {
         console.log('Testing registration with strong password...');
-        
+
         const response = await fetch('http://localhost:3000/api/auth/register', {
             method: 'POST',
             headers: {
@@ -16,12 +16,12 @@ async function testStrongPassword() {
                 password: 'Password123@'
             })
         });
-        
+
         const data = await response.json();
-        
+
         console.log('Status:', response.status);
         console.log('Response:', data);
-        
+
         if (response.status === 201) {
             console.log('✅ Strong password validation working - password accepted');
         } else if (response.status === 400 && data.requiresVerification) {
@@ -29,7 +29,7 @@ async function testStrongPassword() {
         } else {
             console.log('❌ Strong password validation not working - password rejected');
         }
-        
+
     } catch (error) {
         console.error('Error:', error.message);
     }

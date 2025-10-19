@@ -12,6 +12,7 @@ export class PrayerTimesNotifications {
     this.core = core;
     this.api = api;
     this.initializationComplete = false;
+    this.isSubscribing = false; // Prevent concurrent subscription calls
   }
 
   // Base64 to Uint8Array conversion
@@ -45,11 +46,20 @@ export class PrayerTimesNotifications {
   // Ensure subscribed
   async ensureSubscribed(reg) {
     if (!reg) throw new Error("Service worker registration is missing.");
+
+    // Clear any existing subscription to ensure we get a fresh one
     const existing = await reg.pushManager.getSubscription();
     if (existing) {
-      this.core.state.pushSubscription = existing;
-      return existing;
+      console.log("[Notifications] Unsubscribing from existing subscription to get fresh one");
+      try {
+        await existing.unsubscribe();
+        console.log("[Notifications] Successfully unsubscribed from existing subscription");
+      } catch (error) {
+        console.warn("[Notifications] Failed to unsubscribe from existing subscription:", error);
+        // Continue anyway - we'll create a new one
+      }
     }
+
     const r = await fetch("/api/notifications/vapid-public-key", { credentials: "include" });
     if (!r.ok) throw new Error("VAPID key error");
     const vapid = await r.text();
@@ -58,6 +68,7 @@ export class PrayerTimesNotifications {
       applicationServerKey: this.b64ToU8(vapid),
     });
     this.core.state.pushSubscription = sub;
+    console.log("[Notifications] Created fresh subscription");
     return sub;
   }
 
@@ -112,75 +123,108 @@ export class PrayerTimesNotifications {
 
   // Send subscription to server
   async sendSubscriptionToServer(enabled) {
-    console.log("[Notifications] Sending subscription to server, enabled:", enabled);
-    const prefs = this.getPreferences(enabled);
-    const token = this.api.getAuthToken();
-    
-    if (!token) {
-      console.warn("[Notifications] No auth token available for subscription");
-      throw new Error("Authentication required");
+    // Prevent concurrent subscription calls
+    if (this.isSubscribing) {
+      console.log("[Notifications] Subscription call already in progress, skipping");
+      return { ok: true, id: 'in_progress' };
     }
-    
-    console.log("[Notifications] Auth token available, getting CSRF...");
-    const csrf =
-      this.api.getCsrf() ||
-      (await fetch("/api/auth/csrf", { credentials: "include" })
-        .then(() => this.api.getCsrf())
-        .catch(() => null));
 
-    const headers = {
-      "Content-Type": "application/json",
-      ...(token && { Authorization: `Bearer ${token}` }),
-      ...(csrf && { "X-CSRF-Token": csrf }),
-    };
+    try {
+      this.isSubscribing = true;
+      console.log("[Notifications] Sending subscription to server, enabled:", enabled);
 
-    const body = {
-      subscription: this.core.state.pushSubscription,
-      tz: this.core.state.tz,
-      preferences: prefs,
-      location: this.core.state.coords
-        ? { lat: this.core.state.coords.lat, lon: this.core.state.coords.lon, city: this.core.state.cityLabel }
-        : null,
-    };
+      // CRITICAL: Ensure we have the latest settings before sending subscription
+      // This prevents sending stale reminderMinutes values
+      if (this.core.settings) {
+        console.log("[Notifications] Refreshing settings before subscription...");
+        const freshSettings = await this.core.settings.loadFromServer();
+        if (freshSettings) {
+          this.core.settings.applySettings(freshSettings);
+          this.core.settings.updateUI();
+          console.log("[Notifications] Settings refreshed with fresh data");
 
-    console.log("[Notifications] Sending subscription request with body:", {
-      hasSubscription: !!body.subscription,
-      tz: body.tz,
-      preferences: body.preferences,
-      hasLocation: !!body.location
-    });
+          // Small delay to ensure database update has completed
+          await new Promise(resolve => setTimeout(resolve, 100));
+        }
+      }
 
-    const res = await fetch("/api/notifications/subscribe", {
-      method: "POST",
-      headers,
-      credentials: "include",
-      body: JSON.stringify(body),
-    });
-    
-    console.log("[Notifications] Subscription response status:", res.status);
-    
-    if (!res.ok) {
-      let msg = `Subscribe failed (${res.status})`;
-      try {
-        const j = await res.json();
-        console.error("[Notifications] Subscription error response:", j);
-        msg = j.error || j.message || msg;
-      } catch {}
-      throw new Error(msg);
+      const prefs = this.getPreferences(enabled);
+      const token = this.api.getAuthToken();
+
+      if (!token) {
+        console.warn("[Notifications] No auth token available for subscription");
+        throw new Error("Authentication required");
+      }
+
+      console.log("[Notifications] Auth token available, getting CSRF...");
+      const csrf =
+        this.api.getCsrf() ||
+        (await fetch("/api/auth/csrf", { credentials: "include" })
+          .then(() => this.api.getCsrf())
+          .catch(() => null));
+
+      const headers = {
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(csrf && { "X-CSRF-Token": csrf }),
+      };
+
+      const body = {
+        subscription: this.core.state.pushSubscription,
+        tz: this.core.state.tz,
+        preferences: prefs,
+        location: this.core.state.coords
+          ? { lat: this.core.state.coords.lat, lon: this.core.state.coords.lon, city: this.core.state.cityLabel }
+          : null,
+      };
+
+      console.log("[Notifications] Sending subscription request with body:", {
+        hasSubscription: !!body.subscription,
+        tz: body.tz,
+        preferences: body.preferences,
+        hasLocation: !!body.location
+      });
+
+      const res = await fetch("/api/notifications/subscribe", {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify(body),
+      });
+
+      console.log("[Notifications] Subscription response status:", res.status);
+
+      if (!res.ok) {
+        // Handle duplicate subscription as success (409)
+        if (res.status === 409) {
+          console.log("[Notifications] Subscription already exists, treating as success");
+          return { ok: true, id: 'existing' };
+        }
+
+        let msg = `Subscribe failed (${res.status})`;
+        try {
+          const j = await res.json();
+          console.error("[Notifications] Subscription error response:", j);
+          msg = j.error || j.message || msg;
+        } catch {}
+        throw new Error(msg);
+      }
+
+      const responseData = await res.json();
+      console.log("[Notifications] Subscription successful:", responseData);
+
+      // Also update user notification preferences in profile
+      await this.updateUserNotificationPreferences(prefs);
+    } finally {
+      this.isSubscribing = false; // Reset flag
     }
-    
-    const responseData = await res.json();
-    console.log("[Notifications] Subscription successful:", responseData);
-
-    // Also update user notification preferences in profile
-    await this.updateUserNotificationPreferences(prefs);
   }
 
   // Update user notification preferences in profile
   async updateUserNotificationPreferences(prefs) {
     try {
       console.log("[Notifications] Updating user notification preferences:", prefs);
-      
+
       const response = await this.api.apiFetch("/api/user/notification-preferences", {
         method: "PUT",
         body: JSON.stringify({
@@ -193,10 +237,11 @@ export class PrayerTimesNotifications {
         }),
       });
 
-      if (response.success) {
+      const responseData = await response.json();
+      if (responseData.success) {
         console.log("[Notifications] User preferences updated successfully");
       } else {
-        console.warn("[Notifications] Failed to update user preferences:", response.error);
+        console.warn("[Notifications] Failed to update user preferences:", responseData.message || responseData.error || 'Unknown error');
       }
     } catch (error) {
       console.warn("[Notifications] Failed to update user preferences:", error);
@@ -264,7 +309,7 @@ export class PrayerTimesNotifications {
   // Check notification status
   async checkNotificationStatus() {
     if (!("serviceWorker" in navigator)) return;
-    
+
     // First try to load from server
     const serverEnabled = await this.loadNotificationStateFromServer();
     if (serverEnabled !== null) {
@@ -282,7 +327,7 @@ export class PrayerTimesNotifications {
       }
       return;
     }
-    
+
     // Fallback to local storage and service worker status
     const reg = await navigator.serviceWorker.getRegistration();
     if (!reg) {
@@ -332,13 +377,13 @@ export class PrayerTimesNotifications {
   // Send test notification
   async sendTestNotification() {
     console.log("[Notifications] Test notification requested");
-    
+
     // Prevent automatic calls during initialization
     if (!this.initializationComplete) {
       console.warn("[Notifications] Ignoring test notification call during initialization");
       return;
     }
-    
+
     try {
       const token = this.api.getAuthToken();
       if (!token) {
@@ -346,7 +391,7 @@ export class PrayerTimesNotifications {
         this.core.toast("Please login to test notifications", "error");
         return;
       }
-      
+
       console.log("[Notifications] Sending test notification request...");
       const csrf = this.api.getCsrf();
       const r = await fetch("/api/notifications/test-immediate", {
@@ -372,13 +417,13 @@ export class PrayerTimesNotifications {
   // Send test prayer notification
   async sendTestPrayerNotification() {
     console.log("[Notifications] Test prayer notification requested");
-    
+
     // Prevent automatic calls during initialization
     if (!this.initializationComplete) {
       console.warn("[Notifications] Ignoring test prayer notification call during initialization");
       return;
     }
-    
+
     try {
       const token = this.api.getAuthToken();
       const csrf = this.api.getCsrf();
@@ -404,16 +449,16 @@ export class PrayerTimesNotifications {
   setupEventListeners() {
     console.log("[Notifications] Setting up event listeners...");
     console.log("[Notifications] Notification toggle element:", this.core.el.notifToggle);
-    
+
     // Notification toggle
     this.core.el.notifToggle?.addEventListener("change", async (e) => {
       console.log("[Notifications] Notification toggle changed:", e.target.checked);
       console.log("[Notifications] Element found:", !!this.core.el.notifToggle);
       console.log("[Notifications] Element ID:", this.core.el.notifToggle?.id);
-      
+
       // Update core state
       this.core.state.settings.notificationsEnabled = e.target.checked;
-      
+
       if (e.target.checked) {
         console.log("[Notifications] Enabling notifications...");
         const ok = await this.setupNotifications();
@@ -422,7 +467,7 @@ export class PrayerTimesNotifications {
         console.log("[Notifications] Disabling notifications...");
         await this.unsubscribePush();
       }
-      
+
       // Server preferences are already updated by the subscription system above
       // No need for duplicate API call here
     });
@@ -454,7 +499,7 @@ export class PrayerTimesNotifications {
   loadPerPrayerToUI() {
     const perPrayer = this.loadPerPrayer() || this.defaultPerPrayer();
     console.log("[Notifications] Loading per-prayer settings to UI:", perPrayer);
-    
+
     if (this.core.el.alertFajr) this.core.el.alertFajr.checked = !!perPrayer.fajr;
     if (this.core.el.alertDhuhr) this.core.el.alertDhuhr.checked = !!perPrayer.dhuhr;
     if (this.core.el.alertAsr) this.core.el.alertAsr.checked = !!perPrayer.asr;
@@ -465,7 +510,7 @@ export class PrayerTimesNotifications {
   async initialize() {
     // Load per-prayer settings into UI
     this.loadPerPrayerToUI();
-    
+
     await this.checkNotificationStatus();
     this.setupEventListeners();
 
@@ -474,14 +519,14 @@ export class PrayerTimesNotifications {
     // 2. OR server state is unavailable AND localStorage says enabled AND permission is granted
     const serverEnabled = await this.loadNotificationStateFromServer();
     const localEnabled = localStorage.getItem("notificationsEnabled") === "true";
-    
+
     if (serverEnabled === true || (serverEnabled === null && localEnabled && Notification.permission === "granted")) {
       console.log("[Notifications] Auto-enabling notifications based on server/local state");
       this.setupNotifications().catch(() => {});
     } else {
       console.log("[Notifications] Not auto-enabling notifications. Server enabled:", serverEnabled, "Local enabled:", localEnabled, "Permission:", Notification.permission);
     }
-    
+
     // Mark initialization as complete
     this.initializationComplete = true;
     console.log("[Notifications] Initialization completed");

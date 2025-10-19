@@ -16,7 +16,7 @@ class EnhancedTranslationService {
         this.encryption = new EncryptionService();
         this.auditLogger = new AuditLoggingService();
         this.dbOptimizer = new DatabaseOptimizationService();
-        
+
         this.isInitialized = false;
     }
 
@@ -26,13 +26,13 @@ class EnhancedTranslationService {
     async initialize() {
         try {
             console.log('🚀 [EnhancedTranslationService] Initializing enhanced translation service...');
-            
+
         // Initialize database optimization (skip for now to avoid model issues)
         // await this.dbOptimizer.initialize();
-            
+
             // Initialize audit logging
             await this.auditLogger.initializeLogDirectory();
-            
+
             this.isInitialized = true;
             console.log('✅ [EnhancedTranslationService] Enhanced translation service initialized');
         } catch (error) {
@@ -73,10 +73,10 @@ class EnhancedTranslationService {
             // Step 3: Check cache first
             const cacheKey = this.generateCacheKey(text, sourceLang, targetLang, contextAnalysis.primaryContext);
             let cachedTranslation = await translationCache.getTranslationWithTracking(cacheKey);
-            
+
             if (cachedTranslation) {
                 console.log('⚡ [EnhancedTranslationService] Cache hit - returning cached translation');
-                
+
                 // Log cache hit
                 await this.auditLogger.logEvent('TRANSLATION_CACHED', userId, {
                     cacheKey: cacheKey.substring(0, 16) + '...',
@@ -100,10 +100,10 @@ class EnhancedTranslationService {
 
             // Step 5: Apply context-aware enhancements
             const enhancedTranslation = this.contextAware.enhanceTranslation(
-                text, 
-                translation.translated, 
-                contextAnalysis, 
-                sourceLang, 
+                text,
+                translation.translated,
+                contextAnalysis,
+                sourceLang,
                 targetLang
             );
 
@@ -113,8 +113,8 @@ class EnhancedTranslationService {
             // Step 7: Cache the result
             const cacheStrategy = this.determineCacheStrategy(contextAnalysis, domainEnhancement);
             await translationCache.setTranslationWithStrategy(
-                cacheKey, 
-                encryptedTranslation, 
+                cacheKey,
+                encryptedTranslation,
                 cacheStrategy,
                 {
                     userId: userId,
@@ -145,7 +145,7 @@ class EnhancedTranslationService {
 
         } catch (error) {
             console.error('❌ [EnhancedTranslationService] Translation failed:', error);
-            
+
             // Log translation failure
             await this.auditLogger.logEvent('TRANSLATION_FAILED', userId, {
                 error: error.message,
@@ -241,11 +241,11 @@ class EnhancedTranslationService {
         if (contextAnalysis.primaryContext === 'quranic' || contextAnalysis.primaryContext === 'hadith') {
             return 'hot'; // Islamic content gets hot cache
         }
-        
+
         if (domainEnhancement.has_domain_terms) {
             return 'warm'; // Domain-specific content gets warm cache
         }
-        
+
         return 'cold'; // General content gets cold cache
     }
 
@@ -307,12 +307,12 @@ class EnhancedTranslationService {
      * Calculate average response time
      */
     calculateAverageResponseTime(auditLogs) {
-        const translationLogs = auditLogs.filter(log => 
+        const translationLogs = auditLogs.filter(log =>
             log.actionType === 'TRANSLATION_SUCCESS' && log.details.responseTime
         );
-        
+
         if (translationLogs.length === 0) return 0;
-        
+
         const totalTime = translationLogs.reduce((sum, log) => sum + log.details.responseTime, 0);
         return totalTime / translationLogs.length;
     }
@@ -321,14 +321,14 @@ class EnhancedTranslationService {
      * Calculate cache hit rate
      */
     calculateCacheHitRate(auditLogs) {
-        const totalTranslations = auditLogs.filter(log => 
+        const totalTranslations = auditLogs.filter(log =>
             log.actionType === 'TRANSLATION_SUCCESS' || log.actionType === 'TRANSLATION_CACHED'
         ).length;
-        
-        const cachedTranslations = auditLogs.filter(log => 
+
+        const cachedTranslations = auditLogs.filter(log =>
             log.actionType === 'TRANSLATION_CACHED'
         ).length;
-        
+
         return totalTranslations > 0 ? (cachedTranslations / totalTranslations) * 100 : 0;
     }
 

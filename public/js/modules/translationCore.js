@@ -32,7 +32,7 @@ export class TranslationCore {
 
     setupSocketConnection() {
         this.socket = io();
-        
+
         this.socket.on('connect', () => {
             console.log('Connected to server');
             this.updateConnectionStatus(true);
@@ -57,7 +57,7 @@ export class TranslationCore {
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         this.recognition = new SpeechRecognition();
-        
+
         this.recognition.continuous = true;
         this.recognition.interimResults = true;
         this.recognition.lang = this.currentLanguage;
@@ -97,7 +97,7 @@ export class TranslationCore {
 
         this.recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            
+
             if (event.error === 'aborted' || event.error === 'no-speech') {
                 console.log('Recoverable error, continuing...');
                 if (this.isListening) {
@@ -114,7 +114,7 @@ export class TranslationCore {
                 }
                 return;
             }
-            
+
             this.showError(`Voice recognition error: ${event.error}`);
         };
 
@@ -199,7 +199,7 @@ export class TranslationCore {
         console.log('Cleared accumulated text');
         this.updateTextCounter();
         this.showSuccess('Text cleared - ready for new conversation');
-        
+
         const translationList = document.getElementById('translation-list');
         if (translationList) {
             translationList.innerHTML = '<div class="empty-state">No translations yet. Start speaking to see results here.</div>';
@@ -294,10 +294,10 @@ export class TranslationCore {
     // Display partial translation
     displayPartialTranslation(data) {
         console.log('Displaying partial translation:', data);
-        
+
         const translationList = document.getElementById('translation-list');
         if (!translationList) return;
-        
+
         // Remove existing partial translations
         const existingPartial = translationList.querySelector('.translation-item.partial');
         if (existingPartial) {
@@ -325,8 +325,8 @@ export class TranslationCore {
     // Get user ID for partial translations
     getUserId() {
         // Try to get user ID from various sources
-        return localStorage.getItem('userId') || 
-               sessionStorage.getItem('userId') || 
+        return localStorage.getItem('userId') ||
+               sessionStorage.getItem('userId') ||
                this.getUserIdFromToken();
     }
 
@@ -346,8 +346,8 @@ export class TranslationCore {
 
     // Get authentication token
     getAuthToken() {
-        return localStorage.getItem('authToken') || 
-               sessionStorage.getItem('authToken') || 
+        return localStorage.getItem('authToken') ||
+               sessionStorage.getItem('authToken') ||
                this.getTokenFromCookie();
     }
 
@@ -365,10 +365,10 @@ export class TranslationCore {
 
     displayTranslation(data) {
         console.log('Displaying translation:', data);
-        
+
         const translationList = document.getElementById('translation-list');
         if (!translationList) return;
-        
+
         const emptyState = translationList.querySelector('.empty-state');
         if (emptyState) {
             emptyState.remove();
@@ -403,7 +403,7 @@ export class TranslationCore {
     detectLanguage(text) {
         const arabicRegex = /[\u0600-\u06FF]/;
         const englishRegex = /[a-zA-Z]/;
-        
+
         if (arabicRegex.test(text)) return 'ar';
         if (englishRegex.test(text)) return 'en';
         return 'auto';
@@ -453,11 +453,11 @@ export class TranslationCore {
     updateTextCounter() {
         const counter = document.getElementById('counter-value');
         const counterContainer = document.getElementById('text-counter');
-        
+
         if (counter) {
             counter.textContent = `${this.accumulatedText.length} characters`;
         }
-        
+
         if (counterContainer) {
             counterContainer.style.display = this.accumulatedText.length > 0 ? 'flex' : 'none';
         }

@@ -11,7 +11,7 @@ const { EventEmitter } = require('events');
 class InMemoryQueue extends EventEmitter {
   constructor(name, options = {}) {
     super();
-    
+
     this.name = name;
     this.options = {
       concurrency: options.concurrency || 5,
@@ -22,7 +22,7 @@ class InMemoryQueue extends EventEmitter {
       delay: options.delay || 0,
       ...options
     };
-    
+
     // In-memory storage
     this.jobs = new Map(); // jobId -> job
     this.waiting = []; // waiting jobs
@@ -30,12 +30,12 @@ class InMemoryQueue extends EventEmitter {
     this.completed = []; // completed jobs
     this.failed = []; // failed jobs
     this.delayed = new Map(); // delayed jobs
-    
+
     // Processing state
     this.isProcessing = false;
     this.processor = null;
     this.workers = new Set();
-    
+
     // Statistics
     this.stats = {
       waiting: 0,
@@ -46,7 +46,7 @@ class InMemoryQueue extends EventEmitter {
       processed: 0,
       errors: 0
     };
-    
+
     // Auto-cleanup timers
     this.cleanupTimer = null;
     this.startCleanupTimer();
@@ -57,7 +57,7 @@ class InMemoryQueue extends EventEmitter {
    */
   async add(jobName, data, options = {}) {
     try {
-      const jobId = this.generateJobId();
+      const jobId = options.jobId || this.generateJobId();
       const job = {
         id: jobId,
         name: jobName,
@@ -79,7 +79,7 @@ class InMemoryQueue extends EventEmitter {
 
       // Store in memory
       this.jobs.set(jobId, job);
-      
+
       // Add to appropriate queue
       if (job.options.delay > 0) {
         this.addToDelayed(job);
@@ -87,15 +87,17 @@ class InMemoryQueue extends EventEmitter {
         this.addToWaiting(job);
       }
 
-      // Persist to disk
-      await this.persistJob(job);
+      // Persist to disk asynchronously (don't wait for it - IMMEDIATE PROCESSING!)
+      this.persistJob(job).catch(err => {
+        console.error(`⚠️ [InMemoryQueue] Async persist failed for job ${jobId}:`, err);
+      });
 
       // Emit event
       this.emit('jobAdded', job);
 
-      // Start processing if not already running
+      // Start processing IMMEDIATELY if not already running
       if (!this.isProcessing) {
-        this.startProcessing();
+        setImmediate(() => this.startProcessing());
       }
 
       return { id: jobId, name: jobName, data, options: job.options };
@@ -116,11 +118,11 @@ class InMemoryQueue extends EventEmitter {
       console.log(`📋 [InMemoryQueue] Registered legacy processor`);
       return;
     }
-    
+
     this.jobProcessors = this.jobProcessors || new Map();
     this.jobProcessors.set(jobName, processor);
     console.log(`📋 [InMemoryQueue] Registered processor for job: ${jobName}`);
-    
+
     // Start processing if not already running
     if (!this.isProcessing) {
       this.startProcessing();
@@ -128,7 +130,7 @@ class InMemoryQueue extends EventEmitter {
   }
 
   /**
-   * Start processing jobs
+   * Start processing jobs (PARALLEL - processes all jobs simultaneously)
    */
   async startProcessing() {
     if (this.isProcessing) {
@@ -139,7 +141,9 @@ class InMemoryQueue extends EventEmitter {
     this.isProcessing = true;
     this.emit('processingStarted');
 
-    while (this.isProcessing && this.waiting.length > 0) {
+    // Process ALL waiting jobs in PARALLEL (not sequential!)
+    const jobsToProcess = [];
+    while (this.waiting.length > 0) {
       const jobId = this.waiting.shift();
       if (!jobId) break;
 
@@ -149,12 +153,19 @@ class InMemoryQueue extends EventEmitter {
         continue;
       }
 
-      try {
-        await this.executeJob(job);
-      } catch (error) {
-        console.error(`❌ [InMemoryQueue] Job execution failed:`, error);
-        this.stats.errors++;
-      }
+      // Add to parallel processing array
+      jobsToProcess.push(
+        this.executeJob(job).catch(error => {
+          console.error(`❌ [InMemoryQueue] Job execution failed:`, error);
+          this.stats.errors++;
+        })
+      );
+    }
+
+    // Execute ALL jobs in parallel
+    if (jobsToProcess.length > 0) {
+      console.log(`🚀 [InMemoryQueue] Processing ${jobsToProcess.length} jobs in parallel`);
+      await Promise.all(jobsToProcess);
     }
 
     this.isProcessing = false;
@@ -223,7 +234,7 @@ class InMemoryQueue extends EventEmitter {
         const job = this.jobs.get(jobId);
         return job && (now - job.finishedAt) > grace;
       });
-      
+
       toRemove.forEach(jobId => {
         this.jobs.delete(jobId);
         this.completed = this.completed.filter(id => id !== jobId);
@@ -236,7 +247,7 @@ class InMemoryQueue extends EventEmitter {
         const job = this.jobs.get(jobId);
         return job && (now - job.finishedAt) > grace;
       });
-      
+
       toRemove.forEach(jobId => {
         this.jobs.delete(jobId);
         this.failed = this.failed.filter(id => id !== jobId);
@@ -252,7 +263,7 @@ class InMemoryQueue extends EventEmitter {
    */
   async close() {
     this.stop();
-    
+
     if (this.cleanupTimer) {
       clearInterval(this.cleanupTimer);
       this.cleanupTimer = null;
@@ -260,7 +271,7 @@ class InMemoryQueue extends EventEmitter {
 
     // Persist final state
     await this.persistQueueState();
-    
+
     this.emit('closed');
   }
 
@@ -279,18 +290,26 @@ class InMemoryQueue extends EventEmitter {
   addToDelayed(job) {
     const delay = job.options.delay;
     const executeAt = Date.now() + delay;
-    
+
     this.delayed.set(job.id, { ...job, executeAt });
     job.status = 'delayed';
     this.stats.delayed = this.delayed.size;
 
+    const delayMinutes = delay / 1000 / 60;
+    const delayHours = Math.floor(delayMinutes / 60);
+    const remainingMinutes = Math.floor(delayMinutes % 60);
+    const delayText = delayHours > 0 ? `${delayHours}h ${remainingMinutes}m` : `${delayMinutes.toFixed(1)}m`;
+
+    console.log(`⏰ [InMemoryQueue] Job ${job.id} delayed for ${delayText} (execute at: ${new Date(executeAt).toISOString()})`);
+
     // Set timeout to move to waiting
     setTimeout(() => {
       if (this.delayed.has(job.id)) {
+        console.log(`⏰ [InMemoryQueue] Moving delayed job ${job.id} to waiting queue`);
         this.delayed.delete(job.id);
         this.addToWaiting(job);
         this.stats.delayed = this.delayed.size;
-        
+
         // Start processing if not already running
         if (!this.isProcessing) {
           this.startProcessing();
@@ -368,14 +387,14 @@ class InMemoryQueue extends EventEmitter {
       const delay = this.calculateBackoffDelay(job.attempts);
       job.options.delay = delay;
       this.addToDelayed(job);
-      
+
       this.emit('jobRetry', job, error);
     } else {
       // Job failed permanently
       this.failed.push(job.id);
       job.status = 'failed';
       job.finishedAt = Date.now();
-      
+
       this.stats.failed = this.failed.length;
       this.stats.errors++;
 
@@ -391,7 +410,7 @@ class InMemoryQueue extends EventEmitter {
 
   calculateBackoffDelay(attempt) {
     const { type, delay } = this.options.backoff;
-    
+
     switch (type) {
       case 'exponential':
         return delay * Math.pow(2, attempt - 1);
@@ -408,7 +427,7 @@ class InMemoryQueue extends EventEmitter {
       const toRemove = this.completed.shift();
       this.jobs.delete(toRemove);
     }
-    
+
     if (job.status === 'failed' && this.failed.length > this.options.removeOnFail) {
       const toRemove = this.failed.shift();
       this.jobs.delete(toRemove);
@@ -433,7 +452,7 @@ class InMemoryQueue extends EventEmitter {
         stats: this.stats,
         timestamp: Date.now()
       };
-      
+
       await diskPersistence.set(`${this.name}_state`, state, 'queues', { immediate: true });
     } catch (error) {
       console.error(`❌ [InMemoryQueue] Persist state failed:`, error);
@@ -449,7 +468,7 @@ class InMemoryQueue extends EventEmitter {
         this.completed = state.completed || [];
         this.failed = state.failed || [];
         this.stats = state.stats || this.stats;
-        
+
         // Load delayed jobs
         const delayedKeys = state.delayed || [];
         for (const key of delayedKeys) {

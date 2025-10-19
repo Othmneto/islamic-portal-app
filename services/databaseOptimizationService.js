@@ -27,7 +27,7 @@ class DatabaseOptimizationService {
                 { role: 1, isVerified: 1 },
                 { lastLogin: -1, isVerified: 1 }
             ],
-            
+
             // Translation model indexes
             Translation: [
                 { userId: 1 },
@@ -44,7 +44,7 @@ class DatabaseOptimizationService {
                 { userId: 1, sourceLanguage: 1, targetLanguage: 1 },
                 { isIslamic: 1, context: 1 }
             ],
-            
+
             // Audit log indexes
             AuditLog: [
                 { userId: 1 },
@@ -60,7 +60,7 @@ class DatabaseOptimizationService {
                 { severity: 1, timestamp: -1 },
                 { riskScore: -1, timestamp: -1 }
             ],
-            
+
             // Translation memory indexes
             TranslationMemory: [
                 { userId: 1 },
@@ -105,16 +105,16 @@ class DatabaseOptimizationService {
     async initialize() {
         try {
             console.log('🔧 [DatabaseOptimizationService] Initializing database optimization...');
-            
+
             // Create indexes for all models
             await this.createIndexes();
-            
+
             // Set up query monitoring
             this.setupQueryMonitoring();
-            
+
             // Set up connection pooling
             this.setupConnectionPooling();
-            
+
             console.log('✅ [DatabaseOptimizationService] Database optimization initialized');
         } catch (error) {
             console.error('❌ [DatabaseOptimizationService] Failed to initialize:', error);
@@ -131,7 +131,7 @@ class DatabaseOptimizationService {
                 const Model = mongoose.model(modelName);
                 if (Model) {
                     console.log(`📊 [DatabaseOptimizationService] Creating indexes for ${modelName}...`);
-                    
+
                     for (const index of indexes) {
                         try {
                             await Model.collection.createIndex(index, { background: true });
@@ -199,7 +199,7 @@ class DatabaseOptimizationService {
      */
     optimizeQuery(modelName, query, options = {}) {
         const optimization = this.queryOptimizations[query.type] || {};
-        
+
         return {
             ...query,
             ...optimization.pattern,
@@ -217,7 +217,7 @@ class DatabaseOptimizationService {
         try {
             const stats = await mongoose.connection.db.stats();
             const collections = await mongoose.connection.db.listCollections().toArray();
-            
+
             const collectionStats = {};
             for (const collection of collections) {
                 const collectionName = collection.name;
@@ -278,7 +278,7 @@ class DatabaseOptimizationService {
             for (const collection of collections) {
                 const collectionName = collection.name;
                 const indexes = await mongoose.connection.db.collection(collectionName).indexes();
-                
+
                 indexStats[collectionName] = indexes.map(index => ({
                     name: index.name,
                     key: index.key,
@@ -301,10 +301,10 @@ class DatabaseOptimizationService {
     async optimizeCollection(collectionName) {
         try {
             console.log(`🔧 [DatabaseOptimizationService] Optimizing collection: ${collectionName}`);
-            
+
             // Rebuild indexes
             await mongoose.connection.db.collection(collectionName).reIndex();
-            
+
             // Compact collection (if supported)
             try {
                 await mongoose.connection.db.collection(collectionName).compact();
@@ -325,7 +325,7 @@ class DatabaseOptimizationService {
         try {
             const stats = await this.getQueryStats();
             const indexStats = await this.getIndexUsageStats();
-            
+
             return {
                 status: 'healthy',
                 timestamp: new Date().toISOString(),

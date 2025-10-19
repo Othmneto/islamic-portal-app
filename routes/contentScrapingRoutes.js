@@ -65,11 +65,11 @@ router.get('/status', async (req, res) => {
         console.log('  - Content Scheduler:', !!contentScheduler);
         console.log('  - Web Scraper:', !!webScraper);
         console.log('  - Terminology Service:', !!terminologyService);
-        
+
         let schedulerStatus = { error: 'Scheduler not available' };
         let scraperStats = { error: 'Scraper not available' };
         let terminologyStats = { error: 'Terminology service not available' };
-        
+
         // Get scheduler status
         try {
             if (contentScheduler && typeof contentScheduler.getStatus === 'function') {
@@ -83,7 +83,7 @@ router.get('/status', async (req, res) => {
             console.error('❌ [ContentScrapingRoutes] Error getting scheduler status:', error);
             schedulerStatus = { error: error.message };
         }
-        
+
         // Get scraper stats
         try {
             if (webScraper && typeof webScraper.getStats === 'function') {
@@ -97,7 +97,7 @@ router.get('/status', async (req, res) => {
             console.error('❌ [ContentScrapingRoutes] Error getting scraper stats:', error);
             scraperStats = { error: error.message };
         }
-        
+
         // Get terminology stats
         try {
             if (terminologyService && typeof terminologyService.getStatistics === 'function') {
@@ -121,7 +121,7 @@ router.get('/status', async (req, res) => {
                 timestamp: new Date().toISOString()
             }
         };
-        
+
         console.log('✅ [ContentScrapingRoutes] Final status response prepared:', response);
         res.json(response);
     } catch (error) {
@@ -142,7 +142,7 @@ router.get('/status', async (req, res) => {
 router.post('/start', async (req, res) => {
     try {
         console.log('🚀 [ContentScrapingRoutes] Starting scraping process...');
-        
+
         if (!contentScheduler) {
             console.error('❌ [ContentScrapingRoutes] Content scheduler not available');
             return res.status(500).json({
@@ -150,7 +150,7 @@ router.post('/start', async (req, res) => {
                 error: 'Content scheduler not available'
             });
         }
-        
+
         if (typeof contentScheduler.startScheduledScraping !== 'function') {
             console.error('❌ [ContentScrapingRoutes] startScheduledScraping method not available');
             return res.status(500).json({
@@ -158,10 +158,10 @@ router.post('/start', async (req, res) => {
                 error: 'Start method not available'
             });
         }
-        
+
         console.log('📅 [ContentScrapingRoutes] Calling startImmediateScraping...');
         const result = await contentScheduler.startImmediateScraping();
-        
+
         if (result.success) {
             console.log('✅ [ContentScrapingRoutes] Scraping started successfully');
             res.json({
@@ -195,7 +195,7 @@ router.post('/start', async (req, res) => {
 router.post('/stop', async (req, res) => {
     try {
         console.log('⏹️ [ContentScrapingRoutes] Stopping scraping process...');
-        
+
         if (!contentScheduler) {
             console.error('❌ [ContentScrapingRoutes] Content scheduler not available');
             return res.status(500).json({
@@ -203,7 +203,7 @@ router.post('/stop', async (req, res) => {
                 error: 'Content scheduler not available'
             });
         }
-        
+
         if (typeof contentScheduler.stopScheduledScraping !== 'function') {
             console.error('❌ [ContentScrapingRoutes] stopScheduledScraping method not available');
             return res.status(500).json({
@@ -211,10 +211,10 @@ router.post('/stop', async (req, res) => {
                 error: 'Stop method not available'
             });
         }
-        
+
         console.log('📅 [ContentScrapingRoutes] Calling stopImmediateScraping...');
         const result = await contentScheduler.stopImmediateScraping();
-        
+
         if (result.success) {
             console.log('✅ [ContentScrapingRoutes] Scraping stopped successfully');
             res.json({
@@ -248,7 +248,7 @@ router.post('/stop', async (req, res) => {
 router.get('/terminology', async (req, res) => {
     try {
         console.log('📚 [ContentScrapingRoutes] Getting terminology statistics...');
-        
+
         if (!terminologyService) {
             console.error('❌ [ContentScrapingRoutes] Terminology service not available');
             return res.status(500).json({
@@ -256,7 +256,7 @@ router.get('/terminology', async (req, res) => {
                 error: 'Terminology service not available'
             });
         }
-        
+
         if (typeof terminologyService.getStatistics !== 'function') {
             console.error('❌ [ContentScrapingRoutes] getStatistics method not available');
             return res.status(500).json({
@@ -264,11 +264,11 @@ router.get('/terminology', async (req, res) => {
                 error: 'Statistics method not available'
             });
         }
-        
+
         console.log('📊 [ContentScrapingRoutes] Calling getStatistics...');
         const stats = terminologyService.getStatistics();
         console.log('✅ [ContentScrapingRoutes] Terminology stats retrieved:', stats);
-        
+
         res.json({
             success: true,
             data: stats,
@@ -293,7 +293,7 @@ router.post('/terminology/add', async (req, res) => {
     try {
         console.log('➕ [ContentScrapingRoutes] Adding new terminology...');
         console.log('📝 [ContentScrapingRoutes] Request body:', req.body);
-        
+
         if (!terminologyService) {
             console.error('❌ [ContentScrapingRoutes] Terminology service not available');
             return res.status(500).json({
@@ -301,9 +301,9 @@ router.post('/terminology/add', async (req, res) => {
                 error: 'Terminology service not available'
             });
         }
-        
+
         const { term, translations, category } = req.body;
-        
+
         if (!term || !translations) {
             console.warn('⚠️ [ContentScrapingRoutes] Missing required fields: term, translations');
             return res.status(400).json({
@@ -311,10 +311,10 @@ router.post('/terminology/add', async (req, res) => {
                 error: 'Missing required fields: term, translations'
             });
         }
-        
+
         console.log('📚 [ContentScrapingRoutes] Adding term:', term);
         // Add terminology logic here
-        
+
         res.json({
             success: true,
             message: 'Terminology added successfully',
@@ -339,9 +339,9 @@ router.get('/terminology/search', async (req, res) => {
     try {
         console.log('🔍 [ContentScrapingRoutes] Searching terminology...');
         console.log('📝 [ContentScrapingRoutes] Query params:', req.query);
-        
+
         const { q, language } = req.query;
-        
+
         if (!q) {
             console.warn('⚠️ [ContentScrapingRoutes] Missing search query');
             return res.status(400).json({
@@ -349,21 +349,21 @@ router.get('/terminology/search', async (req, res) => {
                 error: 'Missing search query parameter'
             });
         }
-        
+
         console.log('🔍 [ContentScrapingRoutes] Searching for:', q, 'in language:', language);
-        
+
         // Mock search results for now
         const results = [
             { term: 'الصلاة', translation: 'Prayer', language: 'en', confidence: 0.95 },
             { term: 'الزكاة', translation: 'Charity', language: 'en', confidence: 0.92 },
             { term: 'الحج', translation: 'Pilgrimage', language: 'en', confidence: 0.98 }
-        ].filter(item => 
-            item.term.includes(q) || 
+        ].filter(item =>
+            item.term.includes(q) ||
             item.translation.toLowerCase().includes(q.toLowerCase())
         );
-        
+
         console.log('✅ [ContentScrapingRoutes] Search results:', results);
-        
+
         res.json({
             success: true,
             data: {
@@ -392,7 +392,7 @@ router.get('/terminology/search', async (req, res) => {
 router.get('/sites', async (req, res) => {
     try {
         console.log('🌐 [ContentScrapingRoutes] Getting scraped sites...');
-        
+
         // Mock sites data
         const sites = [
             { name: 'Quran.com', status: 'active', lastScrape: new Date().toISOString() },
@@ -400,9 +400,9 @@ router.get('/sites', async (req, res) => {
             { name: 'IslamWeb.net', status: 'active', lastScrape: new Date().toISOString() },
             { name: 'IslamQA.info', status: 'active', lastScrape: new Date().toISOString() }
         ];
-        
+
         console.log('✅ [ContentScrapingRoutes] Sites retrieved:', sites);
-        
+
         res.json({
             success: true,
             data: sites,
@@ -426,7 +426,7 @@ router.get('/sites', async (req, res) => {
 router.get('/reports', async (req, res) => {
     try {
         console.log('📊 [ContentScrapingRoutes] Getting scraping reports...');
-        
+
         const reports = {
             daily: {
                 totalScrapes: 24,
@@ -450,9 +450,9 @@ router.get('/reports', async (req, res) => {
                 updatedTerms: 180
             }
         };
-        
+
         console.log('✅ [ContentScrapingRoutes] Reports retrieved:', reports);
-        
+
         res.json({
             success: true,
             data: reports,
@@ -477,26 +477,26 @@ router.post('/translation-assistance', async (req, res) => {
     try {
         console.log('🤖 [ContentScrapingRoutes] Getting translation assistance...');
         const { term, targetLanguage = 'en', context = 'general' } = req.body;
-        
+
         if (!term) {
             return res.status(400).json({
                 success: false,
                 error: 'Term parameter is required'
             });
         }
-        
+
         console.log('🔍 [ContentScrapingRoutes] Translation request:', { term, targetLanguage, context });
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         const assistance = await webScraper.getTranslationAssistance(term, targetLanguage, context);
         console.log('✅ [ContentScrapingRoutes] Translation assistance provided');
-        
+
         res.json({
             success: true,
             data: assistance
@@ -519,26 +519,26 @@ router.post('/semantic-understanding', async (req, res) => {
     try {
         console.log('🧠 [ContentScrapingRoutes] Getting semantic understanding...');
         const { content } = req.body;
-        
+
         if (!content) {
             return res.status(400).json({
                 success: false,
                 error: 'Content parameter is required'
             });
         }
-        
+
         console.log('📄 [ContentScrapingRoutes] Analyzing content...');
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         const understanding = await webScraper.getSemanticUnderstanding(content);
         console.log('✅ [ContentScrapingRoutes] Semantic understanding completed');
-        
+
         res.json({
             success: true,
             data: understanding
@@ -560,14 +560,14 @@ router.post('/semantic-understanding', async (req, res) => {
 router.get('/learning-insights', async (req, res) => {
     try {
         console.log('🧠 [ContentScrapingRoutes] Getting learning insights...');
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         const insights = {
             patternRecognition: Object.fromEntries(webScraper.learningSystem.patternRecognition),
             translationAssistance: Object.fromEntries(webScraper.learningSystem.translationAssistance),
@@ -577,9 +577,9 @@ router.get('/learning-insights', async (req, res) => {
             knowledgeGraph: Object.fromEntries(webScraper.aiLearning.knowledgeGraph),
             translationContexts: Object.fromEntries(webScraper.aiLearning.translationContexts)
         };
-        
+
         console.log('✅ [ContentScrapingRoutes] Learning insights retrieved');
-        
+
         res.json({
             success: true,
             data: insights
@@ -601,14 +601,14 @@ router.get('/learning-insights', async (req, res) => {
 router.get('/ai-stats', async (req, res) => {
     try {
         console.log('🤖 [ContentScrapingRoutes] Getting AI learning statistics...');
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         const aiStats = {
             isAIEnabled: !!webScraper.aiLearning.openai,
             knowledgeGraphSize: webScraper.aiLearning.knowledgeGraph.size,
@@ -620,9 +620,9 @@ router.get('/ai-stats', async (req, res) => {
             religiousContextSize: webScraper.learningSystem.religiousContext.size,
             confidenceScores: Object.fromEntries(webScraper.aiLearning.confidenceScores)
         };
-        
+
         console.log('✅ [ContentScrapingRoutes] AI statistics retrieved');
-        
+
         res.json({
             success: true,
             data: aiStats
@@ -645,14 +645,14 @@ router.get('/research-data', async (req, res) => {
     try {
         console.log('🔬 [ContentScrapingRoutes] Getting research data...');
         const { category } = req.query;
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         // Mock research data for now
         const researchData = {
             linguistic: {
@@ -677,7 +677,7 @@ router.get('/research-data', async (req, res) => {
                 scholarlyCitations: 123
             }
         };
-        
+
         res.json({
             success: true,
             data: researchData
@@ -700,14 +700,14 @@ router.get('/knowledge-graph', async (req, res) => {
     try {
         console.log('🧠 [ContentScrapingRoutes] Getting knowledge graph...');
         const { filter } = req.query;
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         // Mock knowledge graph data
         const knowledgeGraph = {
             nodes: 1250,
@@ -720,7 +720,7 @@ router.get('/knowledge-graph', async (req, res) => {
                 doctrinal: 400
             }
         };
-        
+
         res.json({
             success: true,
             data: knowledgeGraph
@@ -743,14 +743,14 @@ router.get('/cross-references', async (req, res) => {
     try {
         console.log('🔗 [ContentScrapingRoutes] Getting cross-references...');
         const { confidence } = req.query;
-        
+
         if (!webScraper) {
             return res.status(500).json({
                 success: false,
                 error: 'Web scraper not available'
             });
         }
-        
+
         // Mock cross-references data
         const crossReferences = [
             {
@@ -769,7 +769,7 @@ router.get('/cross-references', async (req, res) => {
                 commonTerms: ['التفسير', 'التأويل', 'البيان', 'الشرح']
             }
         ];
-        
+
         res.json({
             success: true,
             data: crossReferences

@@ -114,7 +114,7 @@ class ContextAwareTranslationService {
             // Check for keyword matches
             for (const keyword of contextData.keywords) {
                 if (lowerText.includes(keyword.toLowerCase())) {
-                    score += contextData.priority === 'highest' ? 3 : 
+                    score += contextData.priority === 'highest' ? 3 :
                             contextData.priority === 'high' ? 2 : 1;
                     matchedKeywords.push(keyword);
                 }
@@ -253,7 +253,7 @@ class ContextAwareTranslationService {
         // Add honorifics based on context
         if (context === 'quranic_text' || context === 'hadith') {
             // Add peace be upon him for Prophet Muhammad
-            enhancedText = enhancedText.replace(/\b(prophet|muhammad|messenger)\b/gi, 
+            enhancedText = enhancedText.replace(/\b(prophet|muhammad|messenger)\b/gi,
                 (match) => `${match} (peace be upon him)`);
         }
 

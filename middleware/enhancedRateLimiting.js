@@ -26,7 +26,7 @@ const createProgressiveRateLimit = (baseConfig) => {
     handler: (req, res) => {
       const ip = req.ip || req.connection.remoteAddress || 'unknown';
       const violationCount = req.rateLimit?.violationCount || 0;
-      
+
       // Log rate limit violation
       console.warn(`🚫 Rate limit exceeded: ${ip}`, {
         violationCount,
@@ -34,7 +34,7 @@ const createProgressiveRateLimit = (baseConfig) => {
         userAgent: req.get('User-Agent'),
         timestamp: new Date().toISOString()
       });
-      
+
       // Progressive penalties
       if (violationCount >= 3) {
         blacklistedIPs.add(ip);
@@ -45,9 +45,9 @@ const createProgressiveRateLimit = (baseConfig) => {
           blacklisted: true
         });
       }
-      
+
       const retryAfter = Math.min(900, 60 * Math.pow(2, violationCount)); // Exponential backoff
-      
+
       res.status(429).json({
         error: 'Too many requests',
         retryAfter,
@@ -98,7 +98,7 @@ const apiLimiter = createProgressiveRateLimit({
   legacyHeaders: false,
   skip: (req) => {
     // Skip for static assets and health checks
-    return req.path.startsWith('/static/') || 
+    return req.path.startsWith('/static/') ||
            req.path === '/health' ||
            req.path.startsWith('/api/auth/login') ||
            req.path.startsWith('/api/auth/register');

@@ -10,12 +10,12 @@ const { env } = require('./config');
 
 // Import enhanced security middleware
 const { securityHeaders, customSecurityHeaders, securityEventLogger } = require('./middleware/enhancedSecurityHeaders');
-const { 
-    loginLimiter, 
-    registrationLimiter, 
-    passwordResetLimiter, 
-    apiLimiter, 
-    strictLimiter 
+const {
+    loginLimiter,
+    registrationLimiter,
+    passwordResetLimiter,
+    apiLimiter,
+    strictLimiter
 } = require('./middleware/enhancedRateLimiting');
 
 // Import enhanced authentication
@@ -48,7 +48,7 @@ const corsOptions = {
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
-        
+
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
@@ -105,8 +105,8 @@ app.use(express.static('public', {
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
+    res.json({
+        status: 'healthy',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         version: process.env.npm_package_version || '1.0.0'
@@ -140,7 +140,7 @@ app.use((err, req, res, next) => {
         userAgent: req.get('User-Agent'),
         timestamp: new Date().toISOString()
     });
-    
+
     res.status(500).json({
         success: false,
         error: {

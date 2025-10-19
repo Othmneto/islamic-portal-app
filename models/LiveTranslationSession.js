@@ -12,7 +12,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         unique: true,
         index: true
     },
-    
+
     // Imam (speaker) information
     imamId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -24,7 +24,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    
+
     // Session configuration
     sourceLanguage: {
         type: String,
@@ -35,7 +35,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         type: String,
         default: 'Arabic'
     },
-    
+
     // Session status
     status: {
         type: String,
@@ -43,7 +43,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         default: 'created',
         index: true
     },
-    
+
     // Session metadata
     title: {
         type: String,
@@ -53,7 +53,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    
+
     // Optional password protection
     isPasswordProtected: {
         type: Boolean,
@@ -63,7 +63,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         type: String,
         default: null
     },
-    
+
     // Timestamps
     createdAt: {
         type: Date,
@@ -82,7 +82,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     },
-    
+
     // Worshippers (listeners)
     worshippers: [{
         userId: {
@@ -128,7 +128,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
             default: 0
         }
     }],
-    
+
     // Translation history for this session
     translations: [{
         originalText: {
@@ -162,7 +162,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
             default: 0.9
         }
     }],
-    
+
     // Session analytics
     analytics: {
         totalDuration: {
@@ -199,7 +199,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
             default: 'good'
         }
     },
-    
+
     // Quality metrics
     qualityMetrics: {
         transcriptionErrors: {
@@ -223,7 +223,7 @@ const liveTranslationSessionSchema = new mongoose.Schema({
             default: 0
         }
     },
-    
+
     // Settings
     settings: {
         maxWorshippers: {
@@ -281,7 +281,7 @@ liveTranslationSessionSchema.methods.addWorshipper = function(worshipperData) {
     const existingIndex = this.worshippers.findIndex(
         w => w.userId.toString() === worshipperData.userId.toString()
     );
-    
+
     if (existingIndex >= 0) {
         // Update existing worshipper
         this.worshippers[existingIndex] = {
@@ -299,13 +299,13 @@ liveTranslationSessionSchema.methods.addWorshipper = function(worshipperData) {
         });
         this.analytics.totalWorshippersJoined += 1;
     }
-    
+
     // Update peak count
     const activeCount = this.worshippers.filter(w => w.isActive).length;
     if (activeCount > this.analytics.peakWorshippersCount) {
         this.analytics.peakWorshippersCount = activeCount;
     }
-    
+
     // Update language stats
     const langIndex = this.analytics.languagesUsed.findIndex(
         l => l.language === worshipperData.targetLanguage
@@ -318,7 +318,7 @@ liveTranslationSessionSchema.methods.addWorshipper = function(worshipperData) {
             count: 1
         });
     }
-    
+
     this.lastActivityAt = new Date();
     return this.save();
 };
@@ -327,40 +327,40 @@ liveTranslationSessionSchema.methods.removeWorshipper = function(userId) {
     const worshipper = this.worshippers.find(
         w => w.userId.toString() === userId.toString() && w.isActive
     );
-    
+
     if (worshipper) {
         worshipper.isActive = false;
         worshipper.leftAt = new Date();
         this.lastActivityAt = new Date();
         return this.save();
     }
-    
+
     return Promise.resolve(this);
 };
 
 liveTranslationSessionSchema.methods.addTranslation = function(translationData) {
     this.translations.push(translationData);
     this.analytics.totalTranslations += 1;
-    
+
     // Update average latency
     if (translationData.processingTime) {
         const totalLatency = this.analytics.averageLatency * (this.analytics.totalTranslations - 1);
         this.analytics.averageLatency = (totalLatency + translationData.processingTime) / this.analytics.totalTranslations;
     }
-    
+
     // Update average confidence
     if (translationData.confidence) {
         const totalConfidence = this.analytics.averageConfidence * (this.analytics.totalTranslations - 1);
         this.analytics.averageConfidence = (totalConfidence + translationData.confidence) / this.analytics.totalTranslations;
     }
-    
+
     this.lastActivityAt = new Date();
     return this.save();
 };
 
 liveTranslationSessionSchema.methods.updateStatus = function(status) {
     this.status = status;
-    
+
     if (status === 'active' && !this.startTime) {
         this.startTime = new Date();
     } else if (status === 'ended' && !this.endTime) {
@@ -369,7 +369,7 @@ liveTranslationSessionSchema.methods.updateStatus = function(status) {
             this.analytics.totalDuration = Math.floor((this.endTime - this.startTime) / 1000);
         }
     }
-    
+
     this.lastActivityAt = new Date();
     return this.save();
 };
@@ -403,7 +403,7 @@ liveTranslationSessionSchema.statics.findActiveByWorshipper = function(userId) {
 
 liveTranslationSessionSchema.statics.cleanupInactiveSessions = async function(hoursInactive = 24) {
     const cutoffTime = new Date(Date.now() - hoursInactive * 60 * 60 * 1000);
-    
+
     return this.updateMany(
         {
             status: { $in: ['created', 'active', 'paused'] },

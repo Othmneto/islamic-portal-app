@@ -23,13 +23,13 @@ const auditLogSchema = new mongoose.Schema({
             'USER_CREATED', 'USER_UPDATED', 'USER_DELETED', 'USER_SUSPENDED', 'USER_ACTIVATED'
         ]
     },
-    
+
     // User information
     userId: {
         type: String,
         required: true
     },
-    
+
     // Event details
     severity: {
         type: String,
@@ -41,13 +41,13 @@ const auditLogSchema = new mongoose.Schema({
         enum: ['authentication', 'translation', 'data_access', 'security', 'system', 'user_management'],
         required: true
     },
-    
+
     // Event data
     details: {
         type: Map,
         of: mongoose.Schema.Types.Mixed
     },
-    
+
     // Request information
     request: {
         method: String,
@@ -57,12 +57,12 @@ const auditLogSchema = new mongoose.Schema({
         query: Map,
         params: Map
     },
-    
+
     // Session and network
     sessionId: String,
     ipAddress: String,
     userAgent: String,
-    
+
     // Risk assessment
     riskScore: {
         type: Number,
@@ -70,7 +70,7 @@ const auditLogSchema = new mongoose.Schema({
         max: 100,
         default: 0
     },
-    
+
     // Timestamps
     timestamp: {
         type: Date,
@@ -97,13 +97,13 @@ auditLogSchema.index({ timestamp: 1 }, { expireAfterSeconds: 90 * 24 * 60 * 60 }
 // Static methods
 auditLogSchema.statics.findByUser = function(userId, startDate, endDate, limit = 100) {
     const query = { userId };
-    
+
     if (startDate || endDate) {
         query.timestamp = {};
         if (startDate) query.timestamp.$gte = new Date(startDate);
         if (endDate) query.timestamp.$lte = new Date(endDate);
     }
-    
+
     return this.find(query)
         .sort({ timestamp: -1 })
         .limit(limit);
@@ -111,13 +111,13 @@ auditLogSchema.statics.findByUser = function(userId, startDate, endDate, limit =
 
 auditLogSchema.statics.findByActionType = function(actionType, startDate, endDate, limit = 100) {
     const query = { actionType };
-    
+
     if (startDate || endDate) {
         query.timestamp = {};
         if (startDate) query.timestamp.$gte = new Date(startDate);
         if (endDate) query.timestamp.$lte = new Date(endDate);
     }
-    
+
     return this.find(query)
         .sort({ timestamp: -1 })
         .limit(limit);
@@ -125,13 +125,13 @@ auditLogSchema.statics.findByActionType = function(actionType, startDate, endDat
 
 auditLogSchema.statics.findHighRisk = function(riskThreshold = 70, startDate, endDate, limit = 100) {
     const query = { riskScore: { $gte: riskThreshold } };
-    
+
     if (startDate || endDate) {
         query.timestamp = {};
         if (startDate) query.timestamp.$gte = new Date(startDate);
         if (endDate) query.timestamp.$lte = new Date(endDate);
     }
-    
+
     return this.find(query)
         .sort({ riskScore: -1, timestamp: -1 })
         .limit(limit);
@@ -139,13 +139,13 @@ auditLogSchema.statics.findHighRisk = function(riskThreshold = 70, startDate, en
 
 auditLogSchema.statics.getStatistics = function(startDate, endDate) {
     const matchQuery = {};
-    
+
     if (startDate || endDate) {
         matchQuery.timestamp = {};
         if (startDate) matchQuery.timestamp.$gte = new Date(startDate);
         if (endDate) matchQuery.timestamp.$lte = new Date(endDate);
     }
-    
+
     return this.aggregate([
         { $match: matchQuery },
         {
@@ -193,7 +193,7 @@ auditLogSchema.statics.getStatistics = function(startDate, endDate) {
 auditLogSchema.statics.cleanupOldLogs = function(retentionDays = 90) {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
-    
+
     return this.deleteMany({
         timestamp: { $lt: cutoffDate }
     });
@@ -206,7 +206,7 @@ auditLogSchema.pre('save', function(next) {
         const crypto = require('crypto');
         this.eventId = `audit_${Date.now()}_${crypto.randomBytes(8).toString('hex')}`;
     }
-    
+
     next();
 });
 

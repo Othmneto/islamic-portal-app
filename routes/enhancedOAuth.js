@@ -49,41 +49,41 @@ const generateSecureState = () => {
 // Validate state parameter
 const validateState = (receivedState, sessionState) => {
   if (!receivedState || !sessionState) return false;
-  
+
   // Check if state matches
   if (receivedState !== sessionState.state) return false;
-  
+
   // Check if state is not too old (5 minutes)
   const stateAge = Date.now() - sessionState.timestamp;
   if (stateAge > 5 * 60 * 1000) return false;
-  
+
   return true;
 };
 
 // Microsoft OAuth with PKCE
 router.get('/microsoft', async (req, res) => {
   console.log('🔵 Enhanced Microsoft OAuth: Starting authentication');
-  
+
   if (!OAUTH_CONFIG.microsoft.clientId || !OAUTH_CONFIG.microsoft.clientSecret) {
     console.error('❌ Microsoft OAuth credentials are not set!');
     return res.redirect('/login.html?error=microsoft_credentials_missing');
   }
-  
+
   // Generate PKCE parameters
   const { codeVerifier, codeChallenge } = generatePKCE();
-  
+
   // Generate secure state
   const stateData = generateSecureState();
-  
+
   // Store in session
   if (!req.session) {
     console.error('❌ Session not available for OAuth state storage');
     return res.redirect('/login.html?error=session_required');
   }
-  
+
   req.session.oauthState = stateData;
   req.session.codeVerifier = codeVerifier;
-  
+
   // Also store in database as fallback
   try {
     const OAuthState = require('../models/OAuthState');
@@ -100,14 +100,14 @@ router.get('/microsoft', async (req, res) => {
     console.error('⚠️ [Microsoft OAuth] Failed to store state in database:', dbError);
     // Continue anyway - session should work
   }
-  
+
   console.log('🔵 Microsoft OAuth: Generated PKCE and state parameters');
   console.log('🔍 Stored in session:', {
     oauthState: !!req.session.oauthState,
     codeVerifier: !!req.session.codeVerifier,
     sessionId: req.sessionID
   });
-  
+
   const authUrl = `${OAUTH_CONFIG.microsoft.authorizationUrl}/${OAUTH_CONFIG.microsoft.tenant}/oauth2/v2.0/authorize?` +
     `client_id=${OAUTH_CONFIG.microsoft.clientId}&` +
     `response_type=code&` +
@@ -118,7 +118,7 @@ router.get('/microsoft', async (req, res) => {
     `code_challenge=${codeChallenge}&` +
     `code_challenge_method=S256&` +
     `response_mode=query`;
-  
+
   console.log('🔵 Microsoft OAuth: Redirecting to:', authUrl);
   res.redirect(authUrl);
 });
@@ -132,7 +132,7 @@ router.get('/debug-session', (req, res) => {
     codeVerifier: req.session ? !!req.session.codeVerifier : false,
     sessionKeys: req.session ? Object.keys(req.session) : null
   });
-  
+
   res.json({
     hasSession: !!req.session,
     sessionId: req.session ? req.sessionID : null,
@@ -154,9 +154,9 @@ router.get('/test-microsoft-config', (req, res) => {
     tokenUrl: OAUTH_CONFIG.microsoft.tokenUrl,
     userInfoUrl: OAUTH_CONFIG.microsoft.userInfoUrl
   };
-  
+
   console.log('🔍 [Debug] Microsoft OAuth configuration:', config);
-  
+
   res.json({
     success: true,
     config: config,
@@ -167,19 +167,19 @@ router.get('/test-microsoft-config', (req, res) => {
 // Microsoft OAuth callback with enhanced security
 router.get('/microsoft/callback', async (req, res) => {
   console.log('🔵 Enhanced Microsoft OAuth: Processing callback');
-  
+
   const { code, state, error } = req.query;
-  
+
   if (error) {
     console.error('❌ Microsoft OAuth error:', error);
     return res.redirect('/login.html?error=microsoft_oauth_error');
   }
-  
+
   if (!code || !state) {
     console.error('❌ Missing code or state parameter');
     return res.redirect('/login.html?error=missing_parameters');
   }
-  
+
   // Validate state parameter with fallback
   console.log('🔍 [Microsoft OAuth] State validation debug:', {
     hasSession: !!req.session,
@@ -188,10 +188,10 @@ router.get('/microsoft/callback', async (req, res) => {
     sessionState: req.session ? req.session.oauthState : null,
     sessionKeys: req.session ? Object.keys(req.session) : null
   });
-  
+
   let stateValid = false;
   let codeVerifier = null;
-  
+
   // Try session-based validation first
   if (req.session && validateState(state, req.session.oauthState)) {
     stateValid = true;
@@ -199,17 +199,17 @@ router.get('/microsoft/callback', async (req, res) => {
     console.log('✅ [Microsoft OAuth] State validated via session');
   } else {
     console.log('⚠️ [Microsoft OAuth] Session validation failed, trying database fallback...');
-    
+
     // Fallback: Try to find the OAuth state in the database
     try {
       const OAuthState = require('../models/OAuthState');
       const savedState = await OAuthState.findOne({ state: state });
-      
+
       if (savedState && (Date.now() - savedState.timestamp) < 5 * 60 * 1000) { // 5 minutes
         stateValid = true;
         codeVerifier = savedState.codeVerifier;
         console.log('✅ [Microsoft OAuth] State validated via database fallback');
-        
+
         // Clean up the temporary state record
         await OAuthState.deleteOne({ state: state });
       } else {
@@ -221,7 +221,7 @@ router.get('/microsoft/callback', async (req, res) => {
       stateValid = false;
     }
   }
-  
+
   if (!stateValid) {
     console.error('❌ Invalid or expired state parameter');
     console.error('🔍 [Microsoft OAuth] State validation failed:', {
@@ -231,7 +231,7 @@ router.get('/microsoft/callback', async (req, res) => {
     });
     return res.redirect('/login.html?error=invalid_state');
   }
-  
+
   try {
     // Use the code verifier from validation (session or fallback)
     if (!codeVerifier) {
@@ -239,9 +239,9 @@ router.get('/microsoft/callback', async (req, res) => {
       console.log('🔍 Session data:', req.session);
       return res.redirect('/login.html?error=missing_code_verifier');
     }
-    
+
     console.log('🔵 Microsoft OAuth: Using code verifier for token exchange');
-    
+
     // Exchange code for tokens
     const tokenResponse = await axios.post(
       `${OAUTH_CONFIG.microsoft.tokenUrl}/${OAUTH_CONFIG.microsoft.tenant}/oauth2/v2.0/token`,
@@ -259,37 +259,37 @@ router.get('/microsoft/callback', async (req, res) => {
         }
       }
     );
-    
+
     const { access_token, refresh_token, id_token } = tokenResponse.data;
-    
+
     // Verify ID token
     const decodedToken = jwt.decode(id_token);
     if (!decodedToken) {
       throw new Error('Invalid ID token');
     }
-    
+
     // Get user information
     const userResponse = await axios.get(OAUTH_CONFIG.microsoft.userInfoUrl, {
       headers: {
         'Authorization': `Bearer ${access_token}`
       }
     });
-    
+
     const userData = userResponse.data;
     console.log('🔵 Microsoft OAuth: User data received:', {
       id: userData.id,
       email: userData.mail || userData.userPrincipalName,
       name: userData.displayName
     });
-    
+
     // Find or create user
-    let user = await User.findOne({ 
+    let user = await User.findOne({
       $or: [
         { microsoftId: userData.id },
         { email: userData.mail || userData.userPrincipalName }
       ]
     });
-    
+
     if (!user) {
       // Create new user
       user = new User({
@@ -304,7 +304,7 @@ router.get('/microsoft/callback', async (req, res) => {
         microsoftRefreshToken: refresh_token,
         microsoftTokenExpiry: new Date(Date.now() + 3600 * 1000) // 1 hour from now
       });
-      
+
       await user.save();
       console.log('✅ New Microsoft user created:', user.email);
     } else {
@@ -316,7 +316,7 @@ router.get('/microsoft/callback', async (req, res) => {
       user.microsoftAccessToken = access_token;
       user.microsoftRefreshToken = refresh_token;
       user.microsoftTokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hour from now
-      
+
       console.log('🔍 Microsoft OAuth: About to save user with tokens:', {
         userId: user._id,
         email: user.email,
@@ -324,10 +324,10 @@ router.get('/microsoft/callback', async (req, res) => {
         hasRefreshToken: !!user.microsoftRefreshToken,
         tokenExpiry: user.microsoftTokenExpiry
       });
-      
+
       await user.save();
       console.log('✅ Existing Microsoft user updated:', user.email);
-      
+
       // Verify tokens were saved
       const savedUser = await User.findById(user._id);
       console.log('🔍 Microsoft OAuth: Tokens after save:', {
@@ -337,21 +337,21 @@ router.get('/microsoft/callback', async (req, res) => {
         accessTokenLength: savedUser.microsoftAccessToken ? savedUser.microsoftAccessToken.length : 0,
         refreshTokenLength: savedUser.microsoftRefreshToken ? savedUser.microsoftRefreshToken.length : 0
       });
-      
+
       // Additional verification - check if tokens are actually valid
       if (savedUser.microsoftAccessToken && savedUser.microsoftAccessToken.length > 10) {
         console.log('✅ Microsoft access token saved successfully');
       } else {
         console.log('❌ Microsoft access token NOT saved properly');
       }
-      
+
       if (savedUser.microsoftRefreshToken && savedUser.microsoftRefreshToken.length > 10) {
         console.log('✅ Microsoft refresh token saved successfully');
       } else {
         console.log('❌ Microsoft refresh token NOT saved properly');
       }
     }
-    
+
     // Generate JWT token
     const payload = {
       id: user.id,
@@ -362,12 +362,12 @@ router.get('/microsoft/callback', async (req, res) => {
       iat: Math.floor(Date.now() / 1000),
       jti: crypto.randomUUID()
     };
-    
-    const token = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });
-    
+
+    const token = jwt.sign(payload, env.JWT_SECRET); // No expiry for persistent auth
+
     // Check if this is a calendar re-authorization BEFORE clearing session data
     const isCalendarReauth = req.session.oauthState && req.session.oauthState.calendarReauth;
-    
+
     // Clear session data
     delete req.session.oauthState;
     delete req.session.codeVerifier;
@@ -376,7 +376,7 @@ router.get('/microsoft/callback', async (req, res) => {
     } else {
         res.redirect(`/authCallback.html?token=${token}&provider=microsoft`);
     }
-    
+
   } catch (error) {
     console.error('❌ Microsoft OAuth callback error:', error.message);
     res.redirect('/login.html?error=microsoft_oauth_failed');
@@ -386,34 +386,34 @@ router.get('/microsoft/callback', async (req, res) => {
 // Google OAuth with PKCE
 router.get('/google', (req, res) => {
   console.log('🔵 Enhanced Google OAuth: Starting authentication');
-  
+
   if (!OAUTH_CONFIG.google.clientId || !OAUTH_CONFIG.google.clientSecret) {
     console.error('❌ Google OAuth credentials are not set!');
     return res.redirect('/login.html?error=google_credentials_missing');
   }
-  
+
   // Generate PKCE parameters
   const { codeVerifier, codeChallenge } = generatePKCE();
-  
+
   // Generate secure state
   const stateData = generateSecureState();
-  
+
   // Store in session
   if (!req.session) {
     console.error('❌ Session not available for OAuth state storage');
     return res.redirect('/login.html?error=session_required');
   }
-  
+
   req.session.oauthState = stateData;
   req.session.codeVerifier = codeVerifier;
-  
+
   console.log('🔵 Google OAuth: Generated PKCE and state parameters');
   console.log('🔍 Stored in session:', {
     oauthState: !!req.session.oauthState,
     codeVerifier: !!req.session.codeVerifier,
     sessionId: req.sessionID
   });
-  
+
   const authUrl = `${OAUTH_CONFIG.google.authorizationUrl}?` +
     `client_id=${OAUTH_CONFIG.google.clientId}&` +
     `response_type=code&` +
@@ -425,7 +425,7 @@ router.get('/google', (req, res) => {
     `code_challenge_method=S256&` +
     `access_type=offline&` +
     `prompt=consent`;
-  
+
   console.log('🔵 Google OAuth: Redirecting to:', authUrl);
   res.redirect(authUrl);
 });
@@ -439,25 +439,25 @@ router.get('/google/callback', async (req, res) => {
     codeVerifier: !!req.session.codeVerifier,
     sessionId: req.sessionID
   });
-  
+
   const { code, state, error } = req.query;
-  
+
   if (error) {
     console.error('❌ Google OAuth error:', error);
     return res.redirect('/login.html?error=google_oauth_error');
   }
-  
+
   if (!code || !state) {
     console.error('❌ Missing code or state parameter');
     return res.redirect('/login.html?error=missing_parameters');
   }
-  
+
   // Validate state parameter
   if (!req.session || !validateState(state, req.session.oauthState)) {
     console.error('❌ Invalid or expired state parameter');
     return res.redirect('/login.html?error=invalid_state');
   }
-  
+
   try {
     // Get code verifier from session
     const codeVerifier = req.session.codeVerifier;
@@ -466,7 +466,7 @@ router.get('/google/callback', async (req, res) => {
       console.log('🔍 Session data:', req.session);
       return res.redirect('/login.html?error=missing_code_verifier');
     }
-    
+
     console.log('🔵 Google OAuth: Using code verifier for token exchange');
     console.log('🔍 [OAuth Callback] Token exchange request:', {
       client_id: OAUTH_CONFIG.google.clientId,
@@ -476,7 +476,7 @@ router.get('/google/callback', async (req, res) => {
       grant_type: 'authorization_code',
       code_verifier: codeVerifier.substring(0, 10) + '...'
     });
-    
+
     // Exchange code for tokens
     const tokenResponse = await axios.post(OAUTH_CONFIG.google.tokenUrl, {
       client_id: OAUTH_CONFIG.google.clientId,
@@ -486,44 +486,44 @@ router.get('/google/callback', async (req, res) => {
       grant_type: 'authorization_code',
       code_verifier: codeVerifier // PKCE verification
     });
-    
+
     const { access_token, refresh_token, id_token } = tokenResponse.data;
-    
+
     console.log('🔵 Google OAuth: Tokens received');
     console.log('🔍 [OAuth Callback] Token response:', {
       access_token: access_token ? access_token.substring(0, 20) + '...' : 'null',
       refresh_token: refresh_token ? refresh_token.substring(0, 20) + '...' : 'null',
       id_token: id_token ? id_token.substring(0, 20) + '...' : 'null'
     });
-    
+
     // Verify ID token
     const decodedToken = jwt.decode(id_token);
     if (!decodedToken) {
       throw new Error('Invalid ID token');
     }
-    
+
     // Get user information
     const userResponse = await axios.get(OAUTH_CONFIG.google.userInfoUrl, {
       headers: {
         'Authorization': `Bearer ${access_token}`
       }
     });
-    
+
     const userData = userResponse.data;
     console.log('🔵 Google OAuth: User data received:', {
       id: userData.id,
       email: userData.email,
       name: userData.name
     });
-    
+
     // Find or create user
-    let user = await User.findOne({ 
+    let user = await User.findOne({
       $or: [
         { googleId: userData.id },
         { email: userData.email }
       ]
     });
-    
+
     if (!user) {
       // Create new user
       user = new User({
@@ -538,12 +538,12 @@ router.get('/google/callback', async (req, res) => {
         googleRefreshToken: refresh_token,
         googleTokenExpiry: new Date(Date.now() + 3600 * 1000) // 1 hour from now
       });
-      
+
       await user.save();
       console.log('✅ New Google user created:', user.email);
       console.log('🔑 Google OAuth tokens stored with new access token');
       console.log('📅 Testing calendar permissions with new token...');
-      
+
       // Test calendar permissions immediately
       try {
         const axios = require('axios');
@@ -558,7 +558,7 @@ router.get('/google/callback', async (req, res) => {
       }
       console.log('🔑 Google OAuth tokens stored with new access token');
       console.log('📅 Testing calendar permissions with new token...');
-      
+
       // Test calendar permissions immediately
       try {
         const axios = require('axios');
@@ -573,7 +573,7 @@ router.get('/google/callback', async (req, res) => {
       }
       console.log('🔑 Google OAuth tokens stored with new access token');
       console.log('📅 Testing calendar permissions with new token...');
-      
+
       // Test calendar permissions immediately
       try {
         const axios = require('axios');
@@ -595,7 +595,7 @@ router.get('/google/callback', async (req, res) => {
       user.googleAccessToken = access_token;
       user.googleRefreshToken = refresh_token;
       user.googleTokenExpiry = new Date(Date.now() + 3600 * 1000); // 1 hour from now
-      
+
       console.log('🔍 Google OAuth: About to save user with tokens:', {
         userId: user._id,
         email: user.email,
@@ -603,10 +603,10 @@ router.get('/google/callback', async (req, res) => {
         hasRefreshToken: !!user.googleRefreshToken,
         tokenExpiry: user.googleTokenExpiry
       });
-      
+
       await user.save();
       console.log('✅ Existing Google user updated:', user.email);
-      
+
       // Verify tokens were saved
       const savedUser = await User.findById(user._id);
       console.log('🔍 Google OAuth: Tokens after save:', {
@@ -616,14 +616,14 @@ router.get('/google/callback', async (req, res) => {
         accessTokenLength: savedUser.googleAccessToken ? savedUser.googleAccessToken.length : 0,
         refreshTokenLength: savedUser.googleRefreshToken ? savedUser.googleRefreshToken.length : 0
       });
-      
+
       // Additional verification - check if tokens are actually valid
       if (savedUser.googleAccessToken && savedUser.googleAccessToken.length > 10) {
         console.log('✅ Google access token saved successfully');
       } else {
         console.log('❌ Google access token NOT saved properly');
       }
-      
+
       if (savedUser.googleRefreshToken && savedUser.googleRefreshToken.length > 10) {
         console.log('✅ Google refresh token saved successfully');
       } else {
@@ -631,7 +631,7 @@ router.get('/google/callback', async (req, res) => {
       }
     console.log('🔑 Google OAuth tokens updated with new access token');
     console.log('📅 Testing calendar permissions with new token...');
-    
+
     // Test calendar permissions immediately
     try {
       const axios = require('axios');
@@ -646,7 +646,7 @@ router.get('/google/callback', async (req, res) => {
     }
     console.log('🔑 Google OAuth tokens updated with new access token');
     console.log('📅 Testing calendar permissions with new token...');
-    
+
     // Test calendar permissions immediately
     try {
       const axios = require('axios');
@@ -661,7 +661,7 @@ router.get('/google/callback', async (req, res) => {
     }
     console.log('🔑 Google OAuth tokens updated with new access token');
     console.log('📅 Testing calendar permissions with new token...');
-    
+
     // Test calendar permissions immediately
     try {
       const axios = require('axios');
@@ -675,7 +675,7 @@ router.get('/google/callback', async (req, res) => {
       console.log('❌ Calendar permissions test failed:', calendarError.response?.status, calendarError.response?.data?.error?.message || calendarError.message);
     }
     }
-    
+
     // Generate JWT token
     const payload = {
       id: user.id,
@@ -686,22 +686,23 @@ router.get('/google/callback', async (req, res) => {
       iat: Math.floor(Date.now() / 1000),
       jti: crypto.randomUUID()
     };
-    
-    const token = jwt.sign(payload, env.JWT_SECRET, { expiresIn: '1h' });
-    
-    // Clear session data
-    delete req.session.oauthState;
-    delete req.session.codeVerifier;
-    
+
+    const token = jwt.sign(payload, env.JWT_SECRET); // No expiry for persistent auth
+
     // Redirect to frontend with token
     // Check if this is a calendar re-authorization by looking for calendar scopes in the original request
+    // IMPORTANT: determine before clearing session
     const isCalendarReauth = req.session.oauthState && req.session.oauthState.calendarReauth;
+
+    // Clear session data AFTER computing isCalendarReauth
+    delete req.session.oauthState;
+    delete req.session.codeVerifier;
     if (isCalendarReauth) {
       res.redirect(`/authCallback.html?token=${token}&provider=google&redirect=/calendar.html`);
     } else {
       res.redirect(`/authCallback.html?token=${token}&provider=google`);
     }
-    
+
   } catch (error) {
     console.error('❌ Google OAuth callback error:', error.message);
     res.redirect('/login.html?error=google_oauth_failed');
@@ -713,18 +714,18 @@ router.get('/google/calendar-reauth', (req, res) => {
   try {
     const { codeVerifier, codeChallenge } = generatePKCE();
     const { state, nonce, timestamp } = generateSecureState();
-    
+
     // Store PKCE and state in session (same structure as main OAuth)
     req.session.oauthState = { state, nonce, timestamp, calendarReauth: true };
     req.session.codeVerifier = codeVerifier;
-    
+
     console.log('🔵 Google Calendar Re-auth: Generated PKCE and state parameters');
     console.log('🔍 Stored in session:', {
       oauthState: !!req.session.oauthState,
       codeVerifier: !!req.session.codeVerifier,
       sessionId: req.sessionID
     });
-    
+
     const params = new URLSearchParams({
       client_id: OAUTH_CONFIG.google.clientId,
       redirect_uri: OAUTH_CONFIG.google.redirectUri,
@@ -736,7 +737,7 @@ router.get('/google/calendar-reauth', (req, res) => {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256'
     });
-    
+
     const authUrl = `${OAUTH_CONFIG.google.authorizationUrl}?${params.toString()}`;
     res.redirect(authUrl);
   } catch (error) {
@@ -749,11 +750,11 @@ router.get('/microsoft/calendar-reauth', async (req, res) => {
   try {
     const { codeVerifier, codeChallenge } = generatePKCE();
     const { state, nonce, timestamp } = generateSecureState();
-    
+
     // Store PKCE and state in session with calendar re-auth flag
     req.session.oauthState = { state, nonce, timestamp, calendarReauth: true };
     req.session.codeVerifier = codeVerifier;
-    
+
     // Also store in database as fallback
     try {
       const OAuthState = require('../models/OAuthState');
@@ -770,14 +771,14 @@ router.get('/microsoft/calendar-reauth', async (req, res) => {
       console.error('⚠️ [Microsoft Calendar Re-auth] Failed to store state in database:', dbError);
       // Continue anyway - session should work
     }
-    
+
     console.log('🔵 Microsoft Calendar Re-auth: Generated PKCE and state parameters');
     console.log('🔍 Stored in session:', {
       oauthState: !!req.session.oauthState,
       codeVerifier: !!req.session.codeVerifier,
       sessionId: req.sessionID
     });
-    
+
     const params = new URLSearchParams({
       client_id: OAUTH_CONFIG.microsoft.clientId,
       response_type: 'code',
@@ -789,7 +790,7 @@ router.get('/microsoft/calendar-reauth', async (req, res) => {
       code_challenge_method: 'S256',
       prompt: 'consent' // Force consent to get new permissions
     });
-    
+
     const authUrl = `${OAUTH_CONFIG.microsoft.authorizationUrl}/${OAUTH_CONFIG.microsoft.tenant}/oauth2/v2.0/authorize?${params.toString()}`;
     res.redirect(authUrl);
   } catch (error) {

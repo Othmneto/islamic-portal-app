@@ -17,7 +17,7 @@ module.exports = (io) => {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
-      
+
       if (!token) {
         logger.warn(`Unauthenticated connection attempt from ${socket.handshake.address}`);
         return next(new Error('Authentication token required'));
@@ -25,12 +25,12 @@ module.exports = (io) => {
 
       // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-      
+
       // Attach user info to socket
       socket.userId = decoded.userId;
       socket.userEmail = decoded.email;
       socket.isAuthenticated = true;
-      
+
       logger.info(`Authenticated user ${decoded.email} connected: ${socket.id}`);
       next();
     } catch (error) {
@@ -71,11 +71,11 @@ module.exports = (io) => {
         realTimeTranslationManager.initializeConversation(data.conversationId, data.sessionId, socket.userId);
         socket.join(data.conversationId);
         logger.info(`Socket ${socket.id} (${socket.userEmail}) joined conversation: ${data.conversationId}`);
-        
+
         // Notify user of successful join
-        socket.emit('conversationJoined', { 
+        socket.emit('conversationJoined', {
           conversationId: data.conversationId,
-          userId: socket.userId 
+          userId: socket.userId
         });
       } catch (error) {
         logger.error(`Error joining conversation:`, error);
@@ -94,7 +94,7 @@ module.exports = (io) => {
         // Add user context to translation data
         data.userId = socket.userId;
         data.userEmail = socket.userEmail;
-        
+
         realTimeTranslationManager.handleRealTimeTranslation(socket, data);
       } catch (error) {
         logger.error(`Error in real-time translation:`, error);

@@ -16,12 +16,16 @@
 
   <!-- Styles -->
   <link rel="stylesheet" href="prayer-time.css">
+  <link rel="stylesheet" href="css/smart-timezone.css">
   
   <!-- Include global navbar CSS -->
   <link rel="stylesheet" href="/css/global-navbar.css">
 
   <!-- Adhan.js for local fallback -->
   <script src="https://cdn.jsdelivr.net/npm/adhan@4/dist/Adhan.js"></script>
+  
+  <!-- Socket.IO for real-time updates -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
   
   <style>
     /* Add top padding to account for fixed navbar */
@@ -467,6 +471,54 @@
     </div>
   </div>
 
+  <!-- Notification Status Dashboard -->
+  <div class="notification-status-panel" id="notificationStatusPanel">
+    <div class="status-header" id="statusPanelToggle">
+      <h3>Notification Status</h3>
+      <span class="toggle-icon">▼</span>
+    </div>
+    
+    <div class="status-content" id="statusContent">
+      <!-- Current Schedule -->
+      <div class="status-section">
+        <h4>Current Schedule</h4>
+        <div class="schedule-info">
+          <div class="info-row">
+            <span class="label">Timezone:</span>
+            <span class="value" id="statusTimezone">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Reminder:</span>
+            <span class="value" id="statusReminder">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Next Prayer:</span>
+            <span class="value" id="statusNextPrayer">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Next Reminder:</span>
+            <span class="value" id="statusNextReminder">Loading...</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent History -->
+      <div class="status-section">
+        <h4>Recent Notifications</h4>
+        <div class="history-list" id="historyList">
+          <div class="loading">Loading history...</div>
+        </div>
+      </div>
+      
+      <!-- Connection Status -->
+      <div class="status-section">
+        <div class="connection-status">
+          <span class="status-indicator" id="wsStatus">●</span>
+          <span id="wsStatusText">Connecting...</span>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Floating Assistant -->
   <button id="open-assistant-btn" class="floating-btn" title="AI Assistant">
@@ -510,6 +562,29 @@
   
   <!-- Global Navbar JavaScript -->
   <script src="/js/global-navbar.js"></script>
+  
+  <!-- Cross-tab sync and cache management -->
+  <script src="/js/cross-tab-sync.js"></script>
+  <script src="/js/cache-manager.js"></script>
+  <script src="/js/tokenManager.js"></script>
+  <script src="/js/prayer-time/api.js"></script>
+  
+  <!-- Service Worker token relay -->
+  <script>
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        try {
+          const data = event.data || {};
+          if (data && data.type === 'GET_TOKEN' && event.ports && event.ports[0]) {
+            const token = localStorage.getItem('accessToken') || null;
+            event.ports[0].postMessage({ token });
+          }
+        } catch (err) {
+          console.error('[Page] SW message handler error', err);
+        }
+      });
+    }
+  </script>
   
   <script>
     // Navbar is automatically initialized by global-navbar.js

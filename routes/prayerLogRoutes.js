@@ -35,11 +35,11 @@ router.post('/', async (req, res, next) => {
     const timezone = user?.timezone || 'UTC';
     const prayerDate = moment.tz(date, 'YYYY-MM-DD', timezone).startOf('day').toDate();
 
-    console.log('🕌 Prayer logging details:', { 
-      userTimezone: timezone, 
-      inputDate: date, 
+    console.log('🕌 Prayer logging details:', {
+      userTimezone: timezone,
+      inputDate: date,
       prayerDate: prayerDate.toISOString(),
-      userId 
+      userId
     });
 
     const prayerLogEntry = await PrayerLog.findOneAndUpdate(
@@ -71,25 +71,25 @@ router.get('/today', async (req, res, next) => {
     const timezone = user?.timezone || 'UTC';
     const todayStart = moment.tz(timezone).startOf('day').toDate();
     const todayEnd   = moment.tz(timezone).endOf('day').toDate();
-    
-    console.log('🕌 Fetching today\'s prayers:', { 
-      userId, 
-      timezone, 
-      todayStart: todayStart.toISOString(), 
-      todayEnd: todayEnd.toISOString() 
+
+    console.log('🕌 Fetching today\'s prayers:', {
+      userId,
+      timezone,
+      todayStart: todayStart.toISOString(),
+      todayEnd: todayEnd.toISOString()
     });
-    
+
     const todaysLogs = await PrayerLog.find({
       userId,
       prayerDate: { $gte: todayStart, $lte: todayEnd },
       status: 'prayed',
     });
-    
+
     console.log('🕌 Found prayer logs:', todaysLogs);
-    
+
     const prayedToday = todaysLogs.map(log => log.prayerName);
     console.log('🕌 Today\'s prayed prayers:', prayedToday);
-    
+
     res.json(prayedToday);
   } catch (error) {
     console.error("Error fetching today's prayer logs:", error);

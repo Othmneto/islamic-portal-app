@@ -14,17 +14,17 @@ export class PerformanceOptimizer {
             cacheHitRate: 0,
             memoryUsage: 0
         };
-        
+
         this.init();
     }
-    
+
     init() {
         this.setupPerformanceMonitoring();
         this.setupLazyLoading();
         this.setupImageOptimization();
         this.setupBundleOptimization();
     }
-    
+
     /**
      * Setup performance monitoring
      */
@@ -33,12 +33,12 @@ export class PerformanceOptimizer {
         this.observeLCP();
         this.observeFID();
         this.observeCLS();
-        
+
         // Monitor custom metrics
         this.observeTranslationPerformance();
         this.observeMemoryUsage();
     }
-    
+
     /**
      * Observe Largest Contentful Paint (LCP)
      */
@@ -49,12 +49,12 @@ export class PerformanceOptimizer {
                 const lastEntry = entries[entries.length - 1];
                 console.log('LCP:', lastEntry.startTime);
             });
-            
+
             observer.observe({ entryTypes: ['largest-contentful-paint'] });
             this.observers.set('lcp', observer);
         }
     }
-    
+
     /**
      * Observe First Input Delay (FID)
      */
@@ -66,12 +66,12 @@ export class PerformanceOptimizer {
                     console.log('FID:', entry.processingStart - entry.startTime);
                 });
             });
-            
+
             observer.observe({ entryTypes: ['first-input'] });
             this.observers.set('fid', observer);
         }
     }
-    
+
     /**
      * Observe Cumulative Layout Shift (CLS)
      */
@@ -87,12 +87,12 @@ export class PerformanceOptimizer {
                 });
                 console.log('CLS:', clsValue);
             });
-            
+
             observer.observe({ entryTypes: ['layout-shift'] });
             this.observers.set('cls', observer);
         }
     }
-    
+
     /**
      * Observe translation performance
      */
@@ -103,16 +103,16 @@ export class PerformanceOptimizer {
             const start = performance.now();
             const response = await originalFetch(...args);
             const end = performance.now();
-            
+
             if (args[0].includes('/translate')) {
                 this.performanceMetrics.translationTime = end - start;
                 console.log(`Translation API call took ${end - start}ms`);
             }
-            
+
             return response;
         };
     }
-    
+
     /**
      * Observe memory usage
      */
@@ -123,7 +123,7 @@ export class PerformanceOptimizer {
             }, 5000);
         }
     }
-    
+
     /**
      * Setup lazy loading for images and components
      */
@@ -140,18 +140,18 @@ export class PerformanceOptimizer {
                     }
                 });
             });
-            
+
             document.querySelectorAll('img[data-src]').forEach(img => {
                 imageObserver.observe(img);
             });
-            
+
             this.observers.set('images', imageObserver);
         }
-        
+
         // Lazy load components
         this.setupComponentLazyLoading();
     }
-    
+
     /**
      * Setup component lazy loading
      */
@@ -161,7 +161,7 @@ export class PerformanceOptimizer {
                 if (entry.isIntersecting) {
                     const component = entry.target;
                     const moduleName = component.dataset.module;
-                    
+
                     if (moduleName) {
                         this.loadComponent(moduleName, component);
                         componentObserver.unobserve(component);
@@ -169,14 +169,14 @@ export class PerformanceOptimizer {
                 }
             });
         });
-        
+
         document.querySelectorAll('[data-module]').forEach(component => {
             componentObserver.observe(component);
         });
-        
+
         this.observers.set('components', componentObserver);
     }
-    
+
     /**
      * Load component dynamically
      */
@@ -190,7 +190,7 @@ export class PerformanceOptimizer {
             console.error(`Failed to load component ${moduleName}:`, error);
         }
     }
-    
+
     /**
      * Setup image optimization
      */
@@ -200,7 +200,7 @@ export class PerformanceOptimizer {
             this.optimizeImages();
         });
     }
-    
+
     /**
      * Optimize images
      */
@@ -211,17 +211,17 @@ export class PerformanceOptimizer {
             if (!img.hasAttribute('loading')) {
                 img.setAttribute('loading', 'lazy');
             }
-            
+
             // Add decoding="async" for better performance
             if (!img.hasAttribute('decoding')) {
                 img.setAttribute('decoding', 'async');
             }
-            
+
             // Optimize image format based on browser support
             this.optimizeImageFormat(img);
         });
     }
-    
+
     /**
      * Optimize image format
      */
@@ -231,14 +231,14 @@ export class PerformanceOptimizer {
             const webpSrc = img.src.replace(/\.(jpg|jpeg|png)$/i, '.webp');
             img.src = webpSrc;
         }
-        
+
         // Check for AVIF support
         if (this.supportsAVIF()) {
             const avifSrc = img.src.replace(/\.(jpg|jpeg|png)$/i, '.avif');
             img.src = avifSrc;
         }
     }
-    
+
     /**
      * Check WebP support
      */
@@ -248,7 +248,7 @@ export class PerformanceOptimizer {
         canvas.height = 1;
         return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
     }
-    
+
     /**
      * Check AVIF support
      */
@@ -258,18 +258,18 @@ export class PerformanceOptimizer {
         canvas.height = 1;
         return canvas.toDataURL('image/avif').indexOf('data:image/avif') === 0;
     }
-    
+
     /**
      * Setup bundle optimization
      */
     setupBundleOptimization() {
         // Preload critical resources
         this.preloadCriticalResources();
-        
+
         // Setup service worker for caching
         this.setupServiceWorker();
     }
-    
+
     /**
      * Preload critical resources
      */
@@ -279,7 +279,7 @@ export class PerformanceOptimizer {
             '/translator/js/utils/ui-utils.js',
             '/translator/js/text-translator.js'
         ];
-        
+
         criticalResources.forEach(resource => {
             const link = document.createElement('link');
             link.rel = 'preload';
@@ -288,7 +288,7 @@ export class PerformanceOptimizer {
             document.head.appendChild(link);
         });
     }
-    
+
     /**
      * Setup service worker
      */
@@ -303,61 +303,61 @@ export class PerformanceOptimizer {
                 });
         }
     }
-    
+
     /**
      * Debounce function calls
      */
     debounce(func, delay, key) {
         const timerKey = key || func.name;
-        
+
         if (this.debounceTimers.has(timerKey)) {
             clearTimeout(this.debounceTimers.get(timerKey));
         }
-        
+
         const timer = setTimeout(() => {
             func();
             this.debounceTimers.delete(timerKey);
         }, delay);
-        
+
         this.debounceTimers.set(timerKey, timer);
     }
-    
+
     /**
      * Throttle function calls
      */
     throttle(func, delay, key) {
         const timerKey = key || func.name;
-        
+
         if (this.throttleTimers.has(timerKey)) {
             return;
         }
-        
+
         func();
-        
+
         const timer = setTimeout(() => {
             this.throttleTimers.delete(timerKey);
         }, delay);
-        
+
         this.throttleTimers.set(timerKey, timer);
     }
-    
+
     /**
      * Optimize DOM operations
      */
     optimizeDOMOperations(operations) {
         // Use DocumentFragment for batch DOM operations
         const fragment = document.createDocumentFragment();
-        
+
         operations.forEach(operation => {
             const element = operation();
             if (element) {
                 fragment.appendChild(element);
             }
         });
-        
+
         return fragment;
     }
-    
+
     /**
      * Get performance metrics
      */
@@ -370,7 +370,7 @@ export class PerformanceOptimizer {
             memoryUsage: this.getMemoryUsage()
         };
     }
-    
+
     /**
      * Get LCP value
      */
@@ -378,7 +378,7 @@ export class PerformanceOptimizer {
         const entries = performance.getEntriesByType('largest-contentful-paint');
         return entries[entries.length - 1]?.startTime || 0;
     }
-    
+
     /**
      * Get FID value
      */
@@ -386,7 +386,7 @@ export class PerformanceOptimizer {
         const entries = performance.getEntriesByType('first-input');
         return entries[0]?.processingStart - entries[0]?.startTime || 0;
     }
-    
+
     /**
      * Get CLS value
      */
@@ -400,7 +400,7 @@ export class PerformanceOptimizer {
         });
         return clsValue;
     }
-    
+
     /**
      * Get memory usage
      */
@@ -414,7 +414,7 @@ export class PerformanceOptimizer {
         }
         return null;
     }
-    
+
     /**
      * Cleanup observers and timers
      */
@@ -422,11 +422,11 @@ export class PerformanceOptimizer {
         // Cleanup observers
         this.observers.forEach(observer => observer.disconnect());
         this.observers.clear();
-        
+
         // Cleanup timers
         this.debounceTimers.forEach(timer => clearTimeout(timer));
         this.debounceTimers.clear();
-        
+
         this.throttleTimers.forEach(timer => clearTimeout(timer));
         this.throttleTimers.clear();
     }

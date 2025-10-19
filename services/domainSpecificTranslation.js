@@ -14,7 +14,7 @@ class DomainSpecificTranslationService {
                 'Salam': { ar: 'سلام', en: 'Peace', context: 'greeting' },
                 'Barakah': { ar: 'بركة', en: 'Blessing', context: 'spiritual_concept' }
             },
-            
+
             // Prayer and worship
             worship: {
                 'Salah': { ar: 'صلاة', en: 'Prayer', context: 'worship' },
@@ -24,7 +24,7 @@ class DomainSpecificTranslationService {
                 'Dhikr': { ar: 'ذكر', en: 'Remembrance of Allah', context: 'worship' },
                 'Tasbih': { ar: 'تسبيح', en: 'Glorification', context: 'worship' }
             },
-            
+
             // Quranic terms
             quranic: {
                 'Ayat': { ar: 'آية', en: 'Verse', context: 'quranic' },
@@ -34,7 +34,7 @@ class DomainSpecificTranslationService {
                 'Tafsir': { ar: 'تفسير', en: 'Exegesis', context: 'quranic' },
                 'Mushaf': { ar: 'مصحف', en: 'Quranic Text', context: 'quranic' }
             },
-            
+
             // Hadith and Sunnah
             hadith: {
                 'Hadith': { ar: 'حديث', en: 'Hadith', context: 'hadith' },
@@ -44,7 +44,7 @@ class DomainSpecificTranslationService {
                 'Daif': { ar: 'ضعيف', en: 'Weak', context: 'hadith_grade' },
                 'Mawdu': { ar: 'موضوع', en: 'Fabricated', context: 'hadith_grade' }
             },
-            
+
             // Islamic law and jurisprudence
             fiqh: {
                 'Halal': { ar: 'حلال', en: 'Permissible', context: 'islamic_law' },
@@ -54,7 +54,7 @@ class DomainSpecificTranslationService {
                 'Wajib': { ar: 'واجب', en: 'Obligatory', context: 'islamic_law' },
                 'Fard': { ar: 'فرض', en: 'Obligatory', context: 'islamic_law' }
             },
-            
+
             // Islamic calendar and times
             calendar: {
                 'Ramadan': { ar: 'رمضان', en: 'Ramadan', context: 'islamic_month' },
@@ -134,7 +134,7 @@ class DomainSpecificTranslationService {
      */
     getDomainTranslation(term, sourceLang, targetLang, context = 'general') {
         const lowerTerm = term.toLowerCase();
-        
+
         // Search through all terminology categories
         for (const [category, terms] of Object.entries(this.islamicTerminology)) {
             for (const [key, data] of Object.entries(terms)) {
@@ -198,7 +198,7 @@ class DomainSpecificTranslationService {
             const cleanWord = word.replace(/[^\w]/g, '');
             const context = typeof detectedContext === 'string' ? detectedContext : (detectedContext?.primaryContext || 'general');
             const domainTranslation = this.getDomainTranslation(cleanWord, sourceLang, targetLang, context);
-            
+
             if (domainTranslation) {
                 enhancedWords.push(domainTranslation.translated);
                 hasDomainTerms = true;

@@ -26,9 +26,9 @@ document.addEventListener('DOMContentLoaded', () => {
         silverPriceInput.disabled = true;
         goldPriceInput.placeholder = 'Fetching live price...';
         silverPriceInput.placeholder = 'Fetching live price...';
-        
+
         const selectedCurrency = currencySelect.value;
-        
+
         try {
             const response = await fetch(`/api/zakat/nisab?currency=${selectedCurrency}`);
             if (!response.ok) {
@@ -37,15 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(err.error || 'Failed to fetch prices.');
             }
             const data = await response.json();
-            
+
             goldPriceInput.value = data.goldPricePerGram;
             silverPriceInput.value = data.silverPricePerGram;
-            
+
         } catch (error) {
             // <<<--- MODIFIED FALLBACK LOGIC START --->>>
             console.error(error);
             // 1. Show the user the error from the server.
-            alert(error.message); 
+            alert(error.message);
             // 2. Enable the input fields so the user can enter the price manually.
             goldPriceInput.disabled = false;
             silverPriceInput.disabled = false;
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             goldPriceInput.placeholder = 'Live price failed. Enter manually.';
             silverPriceInput.placeholder = 'Live price failed. Enter manually.';
             // <<<--- MODIFIED FALLBACK LOGIC END --->>>
-        } 
+        }
     }
 
     // --- Accordion Logic ---
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let totalAssets = 0;
         totalAssets += parseFloat(document.getElementById('cash-assets').value) || 0;
         totalAssets += parseFloat(document.getElementById('merchandise').value) || 0;
-        
+
         const gold24 = parseFloat(document.getElementById('gold-24').value) || 0;
         const gold22 = parseFloat(document.getElementById('gold-22').value) || 0;
         const gold21 = parseFloat(document.getElementById('gold-21').value) || 0;
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (goldPrice > 0) {
             totalAssets += (gold24 * goldPrice) + (gold22 * (goldPrice * 22/24)) + (gold21 * (goldPrice * 21/24)) + (gold18 * (goldPrice * 18/24));
         }
-        
+
         const silverGrams = parseFloat(document.getElementById('silver-grams').value) || 0;
         if (silverPrice > 0) {
             totalAssets += silverGrams * silverPrice;
@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const pricePerUnit = parseFloat(row.children[2].value) || 0;
             totalAssets += numUnits * pricePerUnit;
         });
-        
+
         totalAssets += parseFloat(document.getElementById('receivables').value) || 0;
         const liabilities = parseFloat(document.getElementById('liabilities').value) || 0;
         const netWealth = totalAssets - liabilities;
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('result-nisab').textContent = nisabValue.toFixed(2);
         document.getElementById('result-wealth').textContent = netWealth.toFixed(2);
         const finalZakatBox = document.getElementById('final-zakat-box');
-        
+
         if (netWealth >= nisabValue) {
             zakatDue = netWealth * zakatRate;
             finalZakatBox.innerHTML = 'Zakat Due: <span class="result-value"><strong>' + escapeHtml(zakatDue.toFixed(2)) + '</strong> <span>' + escapeHtml(selectedCurrency) + '</span></span>';
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formContainer.style.display = 'none';
         resultsContainer.style.display = 'block';
     });
-    
+
     recalculateBtn.addEventListener('click', () => {
         resultsContainer.style.display = 'none';
         formContainer.style.display = 'block';
@@ -176,6 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
     function initialize() {
         fetchNisabData();
     }
-    
+
     initialize();
 });

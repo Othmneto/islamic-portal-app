@@ -30,7 +30,7 @@ class HijriCalendarService {
         try {
             const dateStr = gregorianDate.toISOString().split('T')[0];
             console.log(`🌙 [Hijri Service] Converting date: ${dateStr}`);
-            
+
             // Try the primary API first
             const response = await axios.get(`${this.baseUrl}/gToH/${dateStr}`, {
                 timeout: 5000,
@@ -38,7 +38,7 @@ class HijriCalendarService {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
                 }
             });
-            
+
             if (response.data && response.data.data) {
                 const hijri = response.data.data;
                 console.log(`✅ [Hijri Service] API conversion successful: ${hijri.year}/${hijri.month.number}/${hijri.day}`);
@@ -65,7 +65,7 @@ class HijriCalendarService {
     async convertToGregorian(hijriYear, hijriMonth, hijriDay) {
         try {
             const response = await axios.get(`${this.baseUrl}/hToG/${hijriDay}/${hijriMonth}/${hijriYear}`);
-            
+
             if (response.data && response.data.data) {
                 const gregorian = response.data.data;
                 return new Date(gregorian.year, gregorian.month - 1, gregorian.day);
@@ -85,7 +85,7 @@ class HijriCalendarService {
     async getHijriMonth(year, month) {
         try {
             const response = await axios.get(`${this.baseUrl}/gToHCalendar/${month}/${year}`);
-            
+
             if (response.data && response.data.data) {
                 return response.data.data.map(day => ({
                     gregorian: new Date(day.gregorian.year, day.gregorian.month - 1, day.gregorian.day),
@@ -174,7 +174,7 @@ class HijriCalendarService {
     async getQiblaDirection(latitude, longitude) {
         try {
             const response = await axios.get(`${this.baseUrl}/qibla/${latitude}/${longitude}`);
-            
+
             if (response.data && response.data.data) {
                 return {
                     direction: response.data.data.direction,
@@ -191,11 +191,11 @@ class HijriCalendarService {
     getFallbackHijri(gregorianDate) {
         try {
             console.log('🔄 [Hijri Service] Using fallback calculation for date:', gregorianDate);
-            
+
             // More accurate approximation using known reference points
             const hijriEpoch = new Date(622, 6, 16); // July 16, 622 CE
             const daysSinceEpoch = Math.floor((gregorianDate - hijriEpoch) / (1000 * 60 * 60 * 24));
-            
+
             // Use more accurate conversion factors
             const hijriYear = Math.floor(daysSinceEpoch / 354.37) + 1;
             const hijriMonth = Math.floor((daysSinceEpoch % 354.37) / 29.53) + 1;
@@ -245,7 +245,7 @@ class HijriCalendarService {
             // Get approximate Ramadan dates
             const ramadanStart = await this.convertToGregorian(year, 9, 1);
             const ramadanEnd = await this.convertToGregorian(year, 10, 1);
-            
+
             return {
                 start: ramadanStart,
                 end: ramadanEnd,

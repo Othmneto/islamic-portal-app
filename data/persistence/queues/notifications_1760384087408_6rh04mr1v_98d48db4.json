@@ -1,0 +1,82 @@
+{
+  "value": {
+    "id": "notifications_1760384087408_6rh04mr1v",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "_id": "68ed51b2d1d07b6dfb1a2f07",
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/d0ZTK6wLkJQ:APA91bEdomOVIN2HKZaVrB1SSXghmkQ87HdZ8Gi7d1qsBtH0YG84e5AOIXBLiV5c0gfq5DtNJy5mBYrBu0BHnDChZUbtFvELN0I6e0mdNcIBhpdS5ZAYy-l2lKfZSGN_MHUqkb93DhML",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BJTjibjEdcO1gHRZLUyyqSIGMxmQwdZ3cVacHnNTJdQUBXXOWu7WB8f298gon-Zd8BTKu7sdp2ObTFT5j_MwR6s",
+            "auth": "im0Np7Xm2oy9K0N6xVGxXw"
+          }
+        },
+        "__v": 0,
+        "createdAt": "2025-10-13T19:23:31.383Z",
+        "location": {
+          "lat": 25.264268165896837,
+          "lon": 55.32180741031562,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "tz": "Asia/Dubai",
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "updatedAt": "2025-10-13T19:34:39.646Z",
+        "userId": "6888c9391815657294913e8d"
+      },
+      "payload": {
+        "title": "🧪 Test Prayer Notification",
+        "body": "This is a test notification to verify the system is working!",
+        "icon": "/icons/icon-192x192.png",
+        "badge": "/icons/badge-72x72.png",
+        "data": {
+          "url": "/prayer-time.html",
+          "type": "test",
+          "timestamp": "2025-10-13T19:34:47.408Z"
+        }
+      }
+    },
+    "options": {
+      "concurrency": 5,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 2000
+      },
+      "delay": 4000
+    },
+    "timestamp": 1760384087408,
+    "status": "failed",
+    "attempts": 4,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-13T19:34:47.408Z",
+    "processedAt": null,
+    "finishedAt": 1760384092786,
+    "failedReason": "Received unexpected response code"
+  },
+  "timestamp": 1760384092786,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760384087408_6rh04mr1v"
+}

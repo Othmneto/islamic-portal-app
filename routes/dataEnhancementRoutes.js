@@ -44,10 +44,10 @@ router.get('/usage', async (req, res) => {
         console.log('🔍 [DataEnhancementRoutes] Services available:');
         console.log('  - Terminology Service:', !!terminologyService);
         console.log('  - Web Scraper:', !!webScraper);
-        
+
         let terminologyStats = { error: 'Terminology service not available' };
         let scraperStats = { error: 'Web scraper not available' };
-        
+
         // Get terminology stats
         try {
             if (terminologyService && typeof terminologyService.getStatistics === 'function') {
@@ -61,7 +61,7 @@ router.get('/usage', async (req, res) => {
             console.error('❌ [DataEnhancementRoutes] Error getting terminology stats:', error);
             terminologyStats = { error: error.message };
         }
-        
+
         // Get scraper stats
         try {
             if (webScraper && typeof webScraper.getStats === 'function') {
@@ -75,12 +75,12 @@ router.get('/usage', async (req, res) => {
             console.error('❌ [DataEnhancementRoutes] Error getting scraper stats:', error);
             scraperStats = { error: error.message };
         }
-        
+
         // Calculate enhancement metrics
         console.log('📈 [DataEnhancementRoutes] Calculating enhancement metrics...');
         const enhancementMetrics = calculateEnhancementMetrics(terminologyStats, scraperStats);
         console.log('✅ [DataEnhancementRoutes] Enhancement metrics calculated:', enhancementMetrics);
-        
+
         const response = {
             success: true,
             data: {
@@ -90,7 +90,7 @@ router.get('/usage', async (req, res) => {
                 timestamp: new Date().toISOString()
             }
         };
-        
+
         console.log('✅ [DataEnhancementRoutes] Data usage information retrieved:', response);
         res.json(response);
     } catch (error) {
@@ -111,7 +111,7 @@ router.get('/usage', async (req, res) => {
 router.get('/translation-improvements', async (req, res) => {
     try {
         console.log('🔍 [DataEnhancementRoutes] Getting translation improvements...');
-        
+
         const improvements = {
             islamicTerms: {
                 total: terminologyService.getStatistics().totalTerms,
@@ -136,7 +136,7 @@ router.get('/translation-improvements', async (req, res) => {
                 activeSources: getActiveSources()
             }
         };
-        
+
         console.log('✅ [DataEnhancementRoutes] Translation improvements retrieved');
         res.json({
             success: true,
@@ -159,14 +159,14 @@ router.get('/translation-improvements', async (req, res) => {
 router.get('/live-feed', async (req, res) => {
     try {
         console.log('📡 [DataEnhancementRoutes] Getting live enhancement feed...');
-        
+
         const liveFeed = {
             recentActivity: generateRecentActivity(),
             systemHealth: getSystemHealth(),
             dataQuality: getDataQuality(),
             performanceMetrics: getPerformanceMetrics()
         };
-        
+
         res.json({
             success: true,
             data: liveFeed
@@ -189,11 +189,11 @@ function calculateEnhancementMetrics(terminologyStats, scraperStats) {
     const totalLanguages = (terminologyStats.supportedLanguages || []).length;
     const successfulScrapes = scraperStats.successfulScrapes || 0;
     const failedScrapes = scraperStats.failedScrapes || 0;
-    
+
     return {
         accuracyImprovement: Math.min(100, (totalTerms / 10) * 5), // 5% per 10 terms
         coverageExpansion: Math.min(100, (totalLanguages / 15) * 100), // Based on 15 target languages
-        reliabilityScore: successfulScrapes > 0 ? 
+        reliabilityScore: successfulScrapes > 0 ?
             Math.round((successfulScrapes / (successfulScrapes + failedScrapes)) * 100) : 0,
         dataFreshness: calculateDataFreshness(scraperStats.lastScrape),
         systemMaturity: calculateSystemMaturity(totalTerms, successfulScrapes),
@@ -206,11 +206,11 @@ function calculateEnhancementMetrics(terminologyStats, scraperStats) {
  */
 function calculateDataFreshness(lastScrape) {
     if (!lastScrape) return 'No data';
-    
+
     const now = new Date();
     const lastUpdate = new Date(lastScrape);
     const hoursAgo = Math.floor((now - lastUpdate) / (1000 * 60 * 60));
-    
+
     if (hoursAgo < 1) return 'Very Fresh (< 1 hour)';
     if (hoursAgo < 6) return 'Fresh (< 6 hours)';
     if (hoursAgo < 24) return 'Recent (< 24 hours)';
@@ -223,16 +223,16 @@ function calculateDataFreshness(lastScrape) {
  */
 function calculateSystemMaturity(totalTerms, successfulScrapes) {
     let maturity = 0;
-    
+
     if (totalTerms > 50) maturity += 30;
     else if (totalTerms > 20) maturity += 20;
     else if (totalTerms > 10) maturity += 10;
-    
+
     if (successfulScrapes > 100) maturity += 40;
     else if (successfulScrapes > 50) maturity += 30;
     else if (successfulScrapes > 20) maturity += 20;
     else if (successfulScrapes > 5) maturity += 10;
-    
+
     if (maturity >= 70) return 'Mature';
     if (maturity >= 40) return 'Developing';
     if (maturity >= 20) return 'Growing';
@@ -244,13 +244,13 @@ function calculateSystemMaturity(totalTerms, successfulScrapes) {
  */
 function getEnhancementAreas(totalTerms, totalLanguages) {
     const areas = [];
-    
+
     if (totalTerms < 50) areas.push('Expand Islamic terminology database');
     if (totalLanguages < 10) areas.push('Add more language support');
     if (totalTerms > 0) areas.push('Improve translation context awareness');
     if (totalTerms > 20) areas.push('Enhance cultural adaptation');
     if (totalTerms > 50) areas.push('Optimize real-time processing');
-    
+
     return areas;
 }
 

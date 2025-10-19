@@ -19,45 +19,45 @@ class AudioConversionService {
             input: ['webm', 'opus', 'ogg', 'mp3', 'm4a'],
             output: ['wav', 'mp3', 'flac']
         };
-        
+
         this.conversionStats = {
             totalConversions: 0,
             successfulConversions: 0,
             failedConversions: 0,
             totalProcessingTime: 0
         };
-        
+
         logger.info('✅ [AudioConversionService] Initialized with ffmpeg');
     }
 
     /**
      * Convert audio file to WAV format (16kHz, mono, 16-bit PCM)
      * Optimized for OpenAI Whisper API
-     * 
+     *
      * @param {string} inputPath - Path to input audio file
      * @param {Object} options - Conversion options
      * @returns {Promise<string>} - Path to converted WAV file
      */
     async convertToWAV(inputPath, options = {}) {
         const startTime = Date.now();
-        
+
         try {
             console.log('🎵 [AudioConversionService] ========== STARTING CONVERSION ==========');
             console.log('📂 [AudioConversionService] Input file:', inputPath);
-            
+
             // Verify input file exists
             const inputExists = await fs.access(inputPath).then(() => true).catch(() => false);
             if (!inputExists) {
                 throw new Error(`Input file does not exist: ${inputPath}`);
             }
-            
+
             const inputStats = await fs.stat(inputPath);
             console.log('📊 [AudioConversionService] Input file size:', inputStats.size, 'bytes');
-            
+
             // Generate output path
             const outputPath = inputPath.replace(path.extname(inputPath), '.wav');
             console.log('📂 [AudioConversionService] Output file:', outputPath);
-            
+
             // Conversion options optimized for Whisper
             const conversionOptions = {
                 sampleRate: options.sampleRate || 16000,  // Whisper prefers 16kHz
@@ -66,42 +66,42 @@ class AudioConversionService {
                 codec: 'pcm_s16le',                       // PCM signed 16-bit little-endian
                 ...options
             };
-            
+
             console.log('⚙️ [AudioConversionService] Conversion options:', conversionOptions);
-            
+
             // Perform conversion
             await this.executeConversion(inputPath, outputPath, conversionOptions);
-            
+
             // Verify output file
             const outputStats = await fs.stat(outputPath);
             console.log('✅ [AudioConversionService] Output file size:', outputStats.size, 'bytes');
-            console.log('📉 [AudioConversionService] Compression ratio:', 
+            console.log('📉 [AudioConversionService] Compression ratio:',
                 ((inputStats.size - outputStats.size) / inputStats.size * 100).toFixed(2) + '%');
-            
+
             // Update stats
             const processingTime = Date.now() - startTime;
             this.conversionStats.totalConversions++;
             this.conversionStats.successfulConversions++;
             this.conversionStats.totalProcessingTime += processingTime;
-            
+
             console.log('⏱️ [AudioConversionService] Conversion completed in', processingTime, 'ms');
             logger.info(`✅ [AudioConversionService] Converted ${path.basename(inputPath)} to WAV in ${processingTime}ms`);
-            
+
             return outputPath;
-            
+
         } catch (error) {
             this.conversionStats.failedConversions++;
-            
+
             console.error('❌ [AudioConversionService] Conversion failed:', error.message);
             logger.error('[AudioConversionService] Conversion error:', error);
-            
+
             throw new Error(`Audio conversion failed: ${error.message}`);
         }
     }
 
     /**
      * Execute ffmpeg conversion with detailed logging
-     * 
+     *
      * @param {string} inputPath - Input file path
      * @param {string} outputPath - Output file path
      * @param {Object} options - Conversion options
@@ -110,7 +110,7 @@ class AudioConversionService {
     executeConversion(inputPath, outputPath, options) {
         return new Promise((resolve, reject) => {
             console.log('🔧 [AudioConversionService] Starting ffmpeg process...');
-            
+
             const command = ffmpeg(inputPath)
                 .audioFrequency(options.sampleRate)
                 .audioChannels(options.channels)
@@ -141,7 +141,7 @@ class AudioConversionService {
                     console.error('❌ [AudioConversionService] FFmpeg stderr:', stderr);
                     reject(new Error(`FFmpeg conversion failed: ${err.message}`));
                 });
-            
+
             // Save to output path
             command.save(outputPath);
         });
@@ -149,7 +149,7 @@ class AudioConversionService {
 
     /**
      * Get audio file metadata
-     * 
+     *
      * @param {string} filePath - Path to audio file
      * @returns {Promise<Object>} - Audio metadata
      */
@@ -176,7 +176,7 @@ class AudioConversionService {
 
     /**
      * Validate audio file format
-     * 
+     *
      * @param {string} filePath - Path to audio file
      * @returns {Promise<boolean>} - True if valid
      */
@@ -184,24 +184,24 @@ class AudioConversionService {
         try {
             const metadata = await this.getAudioMetadata(filePath);
             console.log('🔍 [AudioConversionService] Audio metadata:', metadata);
-            
+
             // Check if audio stream exists
             if (!metadata.codec) {
                 throw new Error('No audio stream found in file');
             }
-            
+
             // Check duration
             if (metadata.duration <= 0 || metadata.duration > 600) { // Max 10 minutes
                 throw new Error(`Invalid audio duration: ${metadata.duration}s (max: 600s)`);
             }
-            
+
             // Check file size
             if (metadata.size <= 0 || metadata.size > 25 * 1024 * 1024) { // Max 25MB
                 throw new Error(`Invalid file size: ${metadata.size} bytes (max: 25MB)`);
             }
-            
+
             return true;
-            
+
         } catch (error) {
             logger.error('[AudioConversionService] Validation failed:', error);
             return false;
@@ -210,7 +210,7 @@ class AudioConversionService {
 
     /**
      * Clean up temporary audio files
-     * 
+     *
      * @param {string[]} filePaths - Array of file paths to delete
      * @returns {Promise<void>}
      */
@@ -223,20 +223,20 @@ class AudioConversionService {
                 console.warn('⚠️ [AudioConversionService] Failed to delete file:', filePath, error.message);
             }
         });
-        
+
         await Promise.all(deletionPromises);
     }
 
     /**
      * Get conversion statistics
-     * 
+     *
      * @returns {Object} - Conversion stats
      */
     getStats() {
         const avgProcessingTime = this.conversionStats.totalConversions > 0
             ? (this.conversionStats.totalProcessingTime / this.conversionStats.totalConversions).toFixed(2)
             : 0;
-        
+
         return {
             ...this.conversionStats,
             averageProcessingTime: parseFloat(avgProcessingTime),

@@ -11,7 +11,7 @@ export class AccessibilityManager {
         this.fontSize = 'medium';
         this.init();
     }
-    
+
     init() {
         this.createAnnouncer();
         this.setupKeyboardNavigation();
@@ -19,7 +19,7 @@ export class AccessibilityManager {
         this.setupFocusManagement();
         this.detectUserPreferences();
     }
-    
+
     /**
      * Create screen reader announcer
      */
@@ -37,7 +37,7 @@ export class AccessibilityManager {
         `;
         document.body.appendChild(this.announcer);
     }
-    
+
     /**
      * Announce text to screen readers
      */
@@ -45,14 +45,14 @@ export class AccessibilityManager {
         if (this.announcer) {
             this.announcer.setAttribute('aria-live', priority);
             this.announcer.textContent = message;
-            
+
             // Clear after announcement
             setTimeout(() => {
                 this.announcer.textContent = '';
             }, 1000);
         }
     }
-    
+
     /**
      * Setup keyboard navigation
      */
@@ -61,41 +61,41 @@ export class AccessibilityManager {
             this.handleKeyboardNavigation(e);
         });
     }
-    
+
     /**
      * Handle keyboard navigation
      */
     handleKeyboardNavigation(e) {
         if (!this.keyboardNavigation) return;
-        
+
         // Tab navigation
         if (e.key === 'Tab') {
             this.handleTabNavigation(e);
         }
-        
+
         // Arrow key navigation
         if (e.key.startsWith('Arrow')) {
             this.handleArrowNavigation(e);
         }
-        
+
         // Escape key
         if (e.key === 'Escape') {
             this.handleEscapeKey(e);
         }
-        
+
         // Enter key
         if (e.key === 'Enter') {
             this.handleEnterKey(e);
         }
     }
-    
+
     /**
      * Handle tab navigation
      */
     handleTabNavigation(e) {
         const focusableElements = this.getFocusableElements();
         const currentIndex = focusableElements.indexOf(document.activeElement);
-        
+
         if (e.shiftKey) {
             // Shift + Tab (backward)
             if (currentIndex <= 0) {
@@ -110,29 +110,29 @@ export class AccessibilityManager {
             }
         }
     }
-    
+
     /**
      * Handle arrow key navigation
      */
     handleArrowNavigation(e) {
         const currentElement = document.activeElement;
         const parent = currentElement.closest('[role="menu"], [role="listbox"], [role="grid"]');
-        
+
         if (parent) {
             e.preventDefault();
             this.navigateInContainer(parent, e.key, currentElement);
         }
     }
-    
+
     /**
      * Navigate within a container
      */
     navigateInContainer(container, direction, currentElement) {
         const focusableElements = this.getFocusableElements(container);
         const currentIndex = focusableElements.indexOf(currentElement);
-        
+
         let nextIndex = currentIndex;
-        
+
         switch (direction) {
             case 'ArrowDown':
                 nextIndex = (currentIndex + 1) % focusableElements.length;
@@ -147,10 +147,10 @@ export class AccessibilityManager {
                 nextIndex = currentIndex <= 0 ? focusableElements.length - 1 : currentIndex - 1;
                 break;
         }
-        
+
         focusableElements[nextIndex].focus();
     }
-    
+
     /**
      * Handle escape key
      */
@@ -162,18 +162,18 @@ export class AccessibilityManager {
             this.closeModal(openModal);
         }
     }
-    
+
     /**
      * Handle enter key
      */
     handleEnterKey(e) {
         const currentElement = document.activeElement;
-        
+
         // Activate buttons and links
         if (currentElement.matches('button, [role="button"], a')) {
             currentElement.click();
         }
-        
+
         // Submit forms
         if (currentElement.matches('input[type="submit"]')) {
             const form = currentElement.closest('form');
@@ -182,7 +182,7 @@ export class AccessibilityManager {
             }
         }
     }
-    
+
     /**
      * Get focusable elements
      */
@@ -199,10 +199,10 @@ export class AccessibilityManager {
             '[role="menuitem"]',
             '[role="option"]'
         ];
-        
+
         return Array.from(container.querySelectorAll(focusableSelectors.join(', ')));
     }
-    
+
     /**
      * Setup ARIA labels
      */
@@ -218,7 +218,7 @@ export class AccessibilityManager {
             '.history-item': 'Translation history item',
             '.favorite-btn': 'Add to favorites'
         };
-        
+
         Object.entries(elements).forEach(([selector, label]) => {
             const element = document.querySelector(selector);
             if (element && !element.getAttribute('aria-label')) {
@@ -226,7 +226,7 @@ export class AccessibilityManager {
             }
         });
     }
-    
+
     /**
      * Setup focus management
      */
@@ -239,7 +239,7 @@ export class AccessibilityManager {
             }
         });
     }
-    
+
     /**
      * Trap focus in modal
      */
@@ -247,7 +247,7 @@ export class AccessibilityManager {
         const focusableElements = this.getFocusableElements(modal);
         const firstElement = focusableElements[0];
         const lastElement = focusableElements[focusableElements.length - 1];
-        
+
         if (e.shiftKey) {
             if (document.activeElement === firstElement) {
                 e.preventDefault();
@@ -260,7 +260,7 @@ export class AccessibilityManager {
             }
         }
     }
-    
+
     /**
      * Detect user preferences
      */
@@ -270,20 +270,20 @@ export class AccessibilityManager {
         if (prefersReducedMotion) {
             this.enableReducedMotion();
         }
-        
+
         // Check for high contrast preference
         const prefersHighContrast = window.matchMedia('(prefers-contrast: high)').matches;
         if (prefersHighContrast) {
             this.enableHighContrast();
         }
-        
+
         // Check for color scheme preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         if (prefersDark) {
             this.enableDarkMode();
         }
     }
-    
+
     /**
      * Enable reduced motion
      */
@@ -291,7 +291,7 @@ export class AccessibilityManager {
         document.documentElement.style.setProperty('--animation-duration', '0s');
         document.documentElement.style.setProperty('--transition-duration', '0s');
     }
-    
+
     /**
      * Enable high contrast mode
      */
@@ -299,14 +299,14 @@ export class AccessibilityManager {
         this.highContrast = true;
         document.body.classList.add('high-contrast');
     }
-    
+
     /**
      * Enable dark mode
      */
     enableDarkMode() {
         document.body.classList.add('dark-mode');
     }
-    
+
     /**
      * Toggle high contrast mode
      */
@@ -315,7 +315,7 @@ export class AccessibilityManager {
         document.body.classList.toggle('high-contrast', this.highContrast);
         this.announce(`High contrast mode ${this.highContrast ? 'enabled' : 'disabled'}`);
     }
-    
+
     /**
      * Set font size
      */
@@ -326,28 +326,28 @@ export class AccessibilityManager {
             'large': '18px',
             'xlarge': '20px'
         };
-        
+
         if (sizes[size]) {
             this.fontSize = size;
             document.documentElement.style.setProperty('--base-font-size', sizes[size]);
             this.announce(`Font size set to ${size}`);
         }
     }
-    
+
     /**
      * Close modal
      */
     closeModal(modal) {
         modal.classList.remove('show');
         modal.setAttribute('aria-hidden', 'true');
-        
+
         // Return focus to trigger element
         const trigger = document.querySelector(`[aria-controls="${modal.id}"]`);
         if (trigger) {
             trigger.focus();
         }
     }
-    
+
     /**
      * Get accessibility status
      */

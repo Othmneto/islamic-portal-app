@@ -126,7 +126,7 @@ class IslamicCalendarService {
         try {
             const dateStr = gregorianDate.toISOString().split('T')[0];
             const response = await axios.get(`${this.hijriApiUrl}/${dateStr}`);
-            
+
             if (response.data && response.data.data) {
                 const hijri = response.data.data.hijri;
                 return {
@@ -152,7 +152,7 @@ class IslamicCalendarService {
         try {
             const dateStr = date.toISOString().split('T')[0];
             const method = this.prayerCalculationMethods[country] || 4;
-            
+
             const response = await axios.get(`${this.prayerTimesApiUrl}/${dateStr}`, {
                 params: {
                     latitude,
@@ -193,7 +193,7 @@ class IslamicCalendarService {
                 const hijri = await this.convertToHijri(currentDate);
                 if (hijri) {
                     const hijriKey = `${hijri.month}-${hijri.day}`;
-                    
+
                     // Check for global Islamic holidays
                     if (this.islamicHolidays[hijriKey]) {
                         const holiday = this.islamicHolidays[hijriKey];
@@ -254,10 +254,10 @@ class IslamicCalendarService {
             for (const prayer of prayers) {
                 const [time, period] = prayer.time.split(' ');
                 const [hours, minutes] = time.split(':').map(Number);
-                
+
                 let eventDate = new Date(date);
                 eventDate.setHours(hours, minutes, 0, 0);
-                
+
                 // Handle AM/PM conversion
                 if (period === 'PM' && hours !== 12) {
                     eventDate.setHours(hours + 12);
@@ -315,14 +315,14 @@ class IslamicCalendarService {
             console.log(`🕌 [IslamicCalendarService] Getting monthly events for ${year}-${month}`);
             const startDate = new Date(year, month - 1, 1);
             const endDate = new Date(year, month, 0);
-            
+
             const holidays = await this.getIslamicHolidays(startDate, endDate, country);
             console.log(`🕌 [IslamicCalendarService] Found ${holidays.length} holidays`);
-            
+
             // Create prayer events for the entire month
             const prayerEvents = [];
             const daysInMonth = new Date(year, month, 0).getDate();
-            
+
             for (let day = 1; day <= daysInMonth; day++) {
                 try {
                     const date = new Date(year, month - 1, day);
@@ -332,7 +332,7 @@ class IslamicCalendarService {
                     console.error(`Error creating prayer events for ${year}-${month}-${day}:`, error.message);
                 }
             }
-            
+
             console.log(`🕌 [IslamicCalendarService] Created ${prayerEvents.length} prayer events`);
 
             return {

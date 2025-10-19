@@ -34,14 +34,14 @@ router.get('/test', (req, res) => {
 router.post('/test-translation', async (req, res) => {
     try {
         const { text, fromLang, toLang } = req.body;
-        
+
         // Simple test translation
         const result = await translationEngine.translate(
             text || 'Hello world',
             fromLang || 'en',
             toLang || 'ar'
         );
-        
+
         res.json({
             success: true,
             message: 'Translation test successful',
@@ -64,7 +64,7 @@ router.post('/translate', validateTranslationInput, require('../controllers/text
 router.post('/translate-batch', async (req, res) => {
     try {
         const { texts, fromLang, toLang, sessionId } = req.body;
-        
+
         // Validate required fields
         if (!texts || !Array.isArray(texts) || texts.length === 0 || !toLang) {
             return res.status(400).json({
@@ -83,7 +83,7 @@ router.post('/translate-batch', async (req, res) => {
 
             try {
                 const translationResults = await translationEngine.translate(text, fromLang || 'auto', toLanguages);
-                
+
                 // Prepare results
                 const textResults = translationResults.map(result => ({
                     translatedText: result.translatedText,
@@ -208,9 +208,9 @@ router.get('/history', async (req, res) => {
 
     } catch (err) {
         console.error('[Translation History] Error:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: 'Failed to retrieve translation history' 
+            error: 'Failed to retrieve translation history'
         });
     }
 });
@@ -220,23 +220,23 @@ router.get('/stats', async (req, res) => {
     try {
         const TranslationHistory = require('../models/TranslationHistory');
         const userId = req.user?.id || 'anonymous';
-        
+
         const totalTranslations = await TranslationHistory.countDocuments({ userId });
-        const successfulTranslations = await TranslationHistory.countDocuments({ 
-            userId, 
-            error: { $exists: false } 
+        const successfulTranslations = await TranslationHistory.countDocuments({
+            userId,
+            error: { $exists: false }
         });
-        const failedTranslations = await TranslationHistory.countDocuments({ 
-            userId, 
-            error: { $exists: true } 
+        const failedTranslations = await TranslationHistory.countDocuments({
+            userId,
+            error: { $exists: true }
         });
 
         // Language pair statistics
         const languageStats = await TranslationHistory.aggregate([
             { $match: { userId, error: { $exists: false } } },
-            { $group: { 
-                _id: { from: '$from', to: '$to' }, 
-                count: { $sum: 1 } 
+            { $group: {
+                _id: { from: '$from', to: '$to' },
+                count: { $sum: 1 }
             }},
             { $sort: { count: -1 } },
             { $limit: 10 }
@@ -245,23 +245,23 @@ router.get('/stats', async (req, res) => {
         // Daily translation count (last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        
+
         const dailyStats = await TranslationHistory.aggregate([
-            { 
-                $match: { 
-                    userId, 
+            {
+                $match: {
+                    userId,
                     timestamp: { $gte: thirtyDaysAgo },
                     error: { $exists: false }
-                } 
+                }
             },
-            { 
-                $group: { 
-                    _id: { 
+            {
+                $group: {
+                    _id: {
                         year: { $year: '$timestamp' },
                         month: { $month: '$timestamp' },
                         day: { $dayOfMonth: '$timestamp' }
-                    }, 
-                    count: { $sum: 1 } 
+                    },
+                    count: { $sum: 1 }
                 }
             },
             { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
@@ -281,9 +281,9 @@ router.get('/stats', async (req, res) => {
 
     } catch (err) {
         console.error('[Translation Stats] Error:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: 'Failed to retrieve translation statistics' 
+            error: 'Failed to retrieve translation statistics'
         });
     }
 });
@@ -294,8 +294,8 @@ router.get('/export/pdf', async (req, res) => {
         const PDFDocument = require('pdfkit');
         const TranslationHistory = require('../models/TranslationHistory');
         const userId = req.user?.id || 'anonymous';
-        
-        const history = await TranslationHistory.find({ 
+
+        const history = await TranslationHistory.find({
             userId,
             error: { $exists: false } // Only successful translations
         })
@@ -309,14 +309,14 @@ router.get('/export/pdf', async (req, res) => {
 
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', 'attachment; filename="translation-history.pdf"');
-        
+
         doc.pipe(res);
 
         // Header
         doc.fontSize(20).text('Translation History', 50, 50);
         doc.fontSize(12).text(`Generated: ${new Date().toLocaleDateString()}`, 50, 80);
         doc.text(`Total Translations: ${history.length}`, 50, 100);
-        
+
         let yPosition = 130;
 
         // Content
@@ -328,23 +328,23 @@ router.get('/export/pdf', async (req, res) => {
 
             doc.fontSize(14).text(`Translation ${index + 1}`, 50, yPosition);
             yPosition += 25;
-            
+
             doc.fontSize(10).text(`From: ${entry.from} → To: ${entry.to}`, 50, yPosition);
             yPosition += 15;
-            
+
             doc.text(`Date: ${entry.timestamp.toLocaleString()}`, 50, yPosition);
             yPosition += 15;
-            
+
             doc.text('Original:', 50, yPosition);
             yPosition += 15;
             doc.text(entry.original, 70, yPosition, { width: 500 });
             yPosition += 30;
-            
+
             doc.text('Translated:', 50, yPosition);
             yPosition += 15;
             doc.text(entry.translated, 70, yPosition, { width: 500 });
             yPosition += 40;
-            
+
             doc.moveTo(50, yPosition).lineTo(550, yPosition).stroke();
             yPosition += 20;
         });
@@ -353,9 +353,9 @@ router.get('/export/pdf', async (req, res) => {
 
     } catch (err) {
         console.error('[PDF Export] Error:', err);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
-            error: 'Failed to generate PDF export' 
+            error: 'Failed to generate PDF export'
         });
     }
 });

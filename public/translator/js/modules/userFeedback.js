@@ -15,36 +15,36 @@ export class UserFeedbackSystem {
             UI: 'ui',
             PERFORMANCE: 'performance'
         };
-        
+
         // Memory leak prevention
         this.intervals = [];
         this.isDestroyed = false;
         this.sessionId = this.generateSessionId();
-        
+
         this.init();
     }
-    
+
     init() {
         this.setupFeedbackUI();
         this.setupFeedbackCollection();
         this.setupUserTesting();
         this.setupAnalytics();
     }
-    
+
     /**
      * Setup feedback UI
      */
     setupFeedbackUI() {
         // Create feedback button
         this.createFeedbackButton();
-        
+
         // Create feedback modal
         this.createFeedbackModal();
-        
+
         // Create feedback form
         this.createFeedbackForm();
     }
-    
+
     /**
      * Create feedback button
      */
@@ -70,7 +70,7 @@ export class UserFeedbackSystem {
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             transition: all 0.3s ease;
         `;
-        
+
         button.addEventListener('click', () => this.showFeedbackModal());
         button.addEventListener('mouseenter', () => {
             button.style.transform = 'scale(1.1)';
@@ -78,10 +78,10 @@ export class UserFeedbackSystem {
         button.addEventListener('mouseleave', () => {
             button.style.transform = 'scale(1)';
         });
-        
+
         document.body.appendChild(button);
     }
-    
+
     /**
      * Create feedback modal
      */
@@ -101,7 +101,7 @@ export class UserFeedbackSystem {
             align-items: center;
             z-index: 1001;
         `;
-        
+
         const modalContent = document.createElement('div');
         modalContent.className = 'feedback-modal-content';
         modalContent.style.cssText = `
@@ -114,10 +114,10 @@ export class UserFeedbackSystem {
             overflow-y: auto;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         `;
-        
+
         modal.appendChild(modalContent);
         document.body.appendChild(modal);
-        
+
         // Close modal on background click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
@@ -125,39 +125,39 @@ export class UserFeedbackSystem {
             }
         });
     }
-    
+
     /**
      * Create feedback form
      */
     createFeedbackForm() {
         const modal = document.getElementById('feedback-modal');
         const modalContent = modal.querySelector('.feedback-modal-content');
-        
+
         // Create feedback form elements programmatically to avoid innerHTML
         const header = document.createElement('div');
         header.className = 'feedback-header';
-        
+
         const title = document.createElement('h2');
         title.textContent = 'Send Feedback';
-        
+
         const closeBtn = document.createElement('button');
         closeBtn.className = 'close-button';
         closeBtn.setAttribute('aria-label', 'Close feedback modal');
         closeBtn.textContent = '×';
-        
+
         header.appendChild(title);
         header.appendChild(closeBtn);
-        
+
         const form = document.createElement('form');
         form.id = 'feedback-form';
         form.className = 'feedback-form';
-        
+
         // Create form elements
         const typeGroup = this.createFormGroup('feedback-type', 'Type of Feedback', 'select');
         const typeSelect = typeGroup.querySelector('select');
         typeSelect.name = 'type';
         typeSelect.required = true;
-        
+
         const typeOptions = [
             { value: '', text: 'Select feedback type' },
             { value: this.feedbackTypes.BUG, text: 'Bug Report' },
@@ -167,61 +167,61 @@ export class UserFeedbackSystem {
             { value: this.feedbackTypes.UI, text: 'UI/UX Issue' },
             { value: this.feedbackTypes.PERFORMANCE, text: 'Performance Issue' }
         ];
-        
+
         typeOptions.forEach(option => {
             const optionEl = document.createElement('option');
             optionEl.value = option.value;
             optionEl.textContent = option.text;
             typeSelect.appendChild(optionEl);
         });
-        
+
         const titleGroup = this.createFormGroup('feedback-title', 'Title', 'input');
         const titleInput = titleGroup.querySelector('input');
         titleInput.name = 'title';
         titleInput.required = true;
         titleInput.placeholder = 'Brief description of your feedback';
-        
+
         const descGroup = this.createFormGroup('feedback-description', 'Description', 'textarea');
         const descTextarea = descGroup.querySelector('textarea');
         descTextarea.name = 'description';
         descTextarea.required = true;
         descTextarea.placeholder = 'Please provide detailed information about your feedback';
         descTextarea.rows = 4;
-        
+
         const ratingGroup = this.createRatingGroup();
         const emailGroup = this.createFormGroup('feedback-email', 'Email (optional)', 'input');
         const emailInput = emailGroup.querySelector('input');
         emailInput.type = 'email';
         emailInput.name = 'email';
         emailInput.placeholder = 'your@email.com';
-        
+
         const actionsGroup = this.createActionsGroup();
-        
+
         form.appendChild(typeGroup);
         form.appendChild(titleGroup);
         form.appendChild(descGroup);
         form.appendChild(ratingGroup);
         form.appendChild(emailGroup);
         form.appendChild(actionsGroup);
-        
+
         modalContent.appendChild(header);
         modalContent.appendChild(form);
-        
+
         // Add event listeners
         this.setupFeedbackFormEvents();
     }
-    
+
     /**
      * Create form group element
      */
     createFormGroup(id, labelText, inputType) {
         const group = document.createElement('div');
         group.className = 'form-group';
-        
+
         const label = document.createElement('label');
         label.setAttribute('for', id);
         label.textContent = labelText;
-        
+
         let input;
         if (inputType === 'select') {
             input = document.createElement('select');
@@ -230,28 +230,28 @@ export class UserFeedbackSystem {
         } else {
             input = document.createElement('input');
         }
-        
+
         input.id = id;
-        
+
         group.appendChild(label);
         group.appendChild(input);
-        
+
         return group;
     }
-    
+
     /**
      * Create rating group
      */
     createRatingGroup() {
         const group = document.createElement('div');
         group.className = 'form-group';
-        
+
         const label = document.createElement('label');
         label.textContent = 'Overall Experience';
-        
+
         const container = document.createElement('div');
         container.className = 'rating-container';
-        
+
         const ratings = [
             { id: 'rating-1', value: '1', emoji: '😞' },
             { id: 'rating-2', value: '2', emoji: '😐' },
@@ -259,51 +259,51 @@ export class UserFeedbackSystem {
             { id: 'rating-4', value: '4', emoji: '😄' },
             { id: 'rating-5', value: '5', emoji: '🤩' }
         ];
-        
+
         ratings.forEach(rating => {
             const input = document.createElement('input');
             input.type = 'radio';
             input.id = rating.id;
             input.name = 'rating';
             input.value = rating.value;
-            
+
             const label = document.createElement('label');
             label.setAttribute('for', rating.id);
             label.textContent = rating.emoji;
-            
+
             container.appendChild(input);
             container.appendChild(label);
         });
-        
+
         group.appendChild(label);
         group.appendChild(container);
-        
+
         return group;
     }
-    
+
     /**
      * Create actions group
      */
     createActionsGroup() {
         const group = document.createElement('div');
         group.className = 'form-actions';
-        
+
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
         cancelBtn.className = 'cancel-button';
         cancelBtn.textContent = 'Cancel';
-        
+
         const submitBtn = document.createElement('button');
         submitBtn.type = 'submit';
         submitBtn.className = 'submit-button';
         submitBtn.textContent = 'Send Feedback';
-        
+
         group.appendChild(cancelBtn);
         group.appendChild(submitBtn);
-        
+
         return group;
     }
-    
+
     /**
      * Setup feedback form events
      */
@@ -312,16 +312,16 @@ export class UserFeedbackSystem {
         const form = document.getElementById('feedback-form');
         const closeButton = modal.querySelector('.close-button');
         const cancelButton = modal.querySelector('.cancel-button');
-        
+
         closeButton.addEventListener('click', () => this.hideFeedbackModal());
         cancelButton.addEventListener('click', () => this.hideFeedbackModal());
-        
+
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.submitFeedback();
         });
     }
-    
+
     /**
      * Show feedback modal
      */
@@ -329,14 +329,14 @@ export class UserFeedbackSystem {
         const modal = document.getElementById('feedback-modal');
         modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        
+
         // Focus on first input
         const firstInput = modal.querySelector('input, select, textarea');
         if (firstInput) {
             firstInput.focus();
         }
     }
-    
+
     /**
      * Hide feedback modal
      */
@@ -344,19 +344,19 @@ export class UserFeedbackSystem {
         const modal = document.getElementById('feedback-modal');
         modal.style.display = 'none';
         document.body.style.overflow = '';
-        
+
         // Reset form
         const form = document.getElementById('feedback-form');
         form.reset();
     }
-    
+
     /**
      * Submit feedback
      */
     async submitFeedback() {
         const form = document.getElementById('feedback-form');
         const formData = new FormData(form);
-        
+
         const feedback = {
             type: formData.get('type'),
             title: formData.get('title'),
@@ -368,7 +368,7 @@ export class UserFeedbackSystem {
             userAgent: navigator.userAgent,
             sessionId: this.getSessionId()
         };
-        
+
         try {
             await this.sendFeedback(feedback);
             this.showSuccessMessage();
@@ -377,7 +377,7 @@ export class UserFeedbackSystem {
             this.showErrorMessage(error.message);
         }
     }
-    
+
     /**
      * Send feedback to server
      */
@@ -390,53 +390,53 @@ export class UserFeedbackSystem {
             },
             body: JSON.stringify(feedback)
         });
-        
+
         if (!response.ok) {
             throw new Error('Failed to send feedback');
         }
-        
+
         return response.json();
     }
-    
+
     /**
      * Setup feedback collection
      */
     setupFeedbackCollection() {
         // Collect automatic feedback
         this.collectAutomaticFeedback();
-        
+
         // Collect user behavior data
         this.collectUserBehavior();
     }
-    
+
     /**
      * Collect automatic feedback
      */
     collectAutomaticFeedback() {
         // Monitor translation errors
         this.monitorTranslationErrors();
-        
+
         // Monitor performance issues
         this.monitorPerformanceIssues();
-        
+
         // Monitor user interactions
         this.monitorUserInteractions();
     }
-    
+
     /**
      * Collect user behavior data
      */
     collectUserBehavior() {
         // Track page views
         this.trackPageView();
-        
+
         // Track feature usage
         this.trackFeatureUsage();
-        
+
         // Track user interactions
         this.trackUserInteractions();
     }
-    
+
     /**
      * Collect error feedback
      * @param {string} type - Error type
@@ -444,7 +444,7 @@ export class UserFeedbackSystem {
      */
     collectErrorFeedback(type, message) {
         console.log('📊 [UserFeedback] Collecting error feedback:', { type, message });
-        
+
         const errorData = {
             type: type,
             message: message,
@@ -452,9 +452,9 @@ export class UserFeedbackSystem {
             userAgent: navigator.userAgent,
             url: window.location.href
         };
-        
+
         this.feedbackQueue.push(errorData);
-        
+
         // Send error feedback immediately
         this.sendErrorFeedback(errorData).catch(error => {
             console.warn('Failed to send error feedback:', error);
@@ -478,7 +478,7 @@ export class UserFeedbackSystem {
                     sessionId: this.sessionId
                 })
             });
-            
+
             if (response.ok) {
                 console.log('📊 [UserFeedback] Error feedback sent successfully');
             }
@@ -500,7 +500,7 @@ export class UserFeedbackSystem {
             originalError.apply(console, args);
         };
     }
-    
+
     /**
      * Monitor performance issues
      */
@@ -511,15 +511,15 @@ export class UserFeedbackSystem {
             const start = performance.now();
             const response = await originalFetch(...args);
             const end = performance.now();
-            
+
             if (end - start > 5000) { // 5 seconds
                 this.collectPerformanceFeedback(args[0], end - start);
             }
-            
+
             return response;
         };
     }
-    
+
     /**
      * Monitor user interactions
      */
@@ -531,24 +531,24 @@ export class UserFeedbackSystem {
                 this.collectInteractionFeedback('button_click', element.className);
             }
         });
-        
+
         // Track form submissions
         document.addEventListener('submit', (e) => {
             this.collectInteractionFeedback('form_submit', e.target.id);
         });
     }
-    
+
     /**
      * Setup user testing
      */
     setupUserTesting() {
         // A/B testing
         this.setupABTesting();
-        
+
         // User session recording
         this.setupSessionRecording();
     }
-    
+
     /**
      * Setup A/B testing
      */
@@ -557,7 +557,7 @@ export class UserFeedbackSystem {
         const testVariant = this.getABTestVariant();
         this.applyABTestVariant(testVariant);
     }
-    
+
     /**
      * Get A/B test variant
      */
@@ -566,13 +566,13 @@ export class UserFeedbackSystem {
         const random = Math.random();
         return variants[Math.floor(random * variants.length)];
     }
-    
+
     /**
      * Apply A/B test variant
      */
     applyABTestVariant(variant) {
         document.body.setAttribute('data-ab-variant', variant);
-        
+
         // Apply variant-specific styles
         if (variant === 'variant_a') {
             document.body.classList.add('variant-a');
@@ -580,24 +580,24 @@ export class UserFeedbackSystem {
             document.body.classList.add('variant-b');
         }
     }
-    
+
     /**
      * Setup session recording
      */
     setupSessionRecording() {
         // Record user interactions
         this.recordUserInteractions();
-        
+
         // Record performance metrics
         this.recordPerformanceMetrics();
     }
-    
+
     /**
      * Record user interactions
      */
     recordUserInteractions() {
         const interactions = [];
-        
+
         document.addEventListener('click', (e) => {
             interactions.push({
                 type: 'click',
@@ -606,7 +606,7 @@ export class UserFeedbackSystem {
                 timestamp: Date.now()
             });
         });
-        
+
         document.addEventListener('input', (e) => {
             interactions.push({
                 type: 'input',
@@ -615,7 +615,7 @@ export class UserFeedbackSystem {
                 timestamp: Date.now()
             });
         });
-        
+
         // Send interactions periodically
         const interactionInterval = setInterval(() => {
             if (this.isDestroyed) {
@@ -628,10 +628,10 @@ export class UserFeedbackSystem {
                 });
             }
         }, 30000); // Every 30 seconds
-        
+
         this.intervals.push(interactionInterval);
     }
-    
+
     /**
      * Record performance metrics
      */
@@ -641,19 +641,19 @@ export class UserFeedbackSystem {
                 clearInterval(metricsInterval);
                 return;
             }
-            
+
             const metrics = {
                 memoryUsage: performance.memory?.usedJSHeapSize || 0,
                 loadTime: performance.timing?.loadEventEnd - performance.timing?.navigationStart || 0,
                 domContentLoaded: performance.timing?.domContentLoadedEventEnd - performance.timing?.navigationStart || 0,
                 timestamp: Date.now()
             };
-            
+
             this.sendPerformanceMetrics(metrics).catch(error => {
                 console.warn('Failed to send performance metrics:', error);
             });
         }, 60000); // Every minute
-        
+
         this.intervals.push(metricsInterval);
     }
 
@@ -662,7 +662,7 @@ export class UserFeedbackSystem {
      */
     async sendUserInteractions(interactions) {
         if (!interactions || !interactions.length) return;
-        
+
         try {
             const response = await fetch('/api/user-feedback/interactions', {
                 method: 'POST',
@@ -675,7 +675,7 @@ export class UserFeedbackSystem {
                     sessionId: this.sessionId
                 })
             });
-            
+
             if (response.ok) {
                 console.log('📊 [UserFeedback] User interactions sent successfully');
             }
@@ -689,7 +689,7 @@ export class UserFeedbackSystem {
      */
     async sendPerformanceMetrics(metrics) {
         if (!metrics) return;
-        
+
         try {
             const response = await fetch('/api/user-feedback/performance', {
                 method: 'POST',
@@ -702,7 +702,7 @@ export class UserFeedbackSystem {
                     sessionId: this.sessionId
                 })
             });
-            
+
             if (response.ok) {
                 console.log('📊 [UserFeedback] Performance metrics sent successfully');
             }
@@ -710,14 +710,14 @@ export class UserFeedbackSystem {
             console.error('❌ [UserFeedback] Failed to send performance metrics:', error);
         }
     }
-    
+
     /**
      * Setup analytics
      */
     setupAnalytics() {
         // Track page views
         this.trackPageView();
-        
+
         // Track feature usage
         this.trackFeatureUsage();
     }
@@ -735,21 +735,21 @@ export class UserFeedbackSystem {
      */
     destroy() {
         this.isDestroyed = true;
-        
+
         // Clear all intervals
         this.intervals.forEach(interval => {
             clearInterval(interval);
         });
         this.intervals = [];
-        
+
         // Clear arrays
         this.feedbackQueue = [];
         this.interactions = [];
         this.performanceMetrics = [];
-        
+
         console.log('UserFeedbackSystem destroyed and cleaned up');
     }
-    
+
     /**
      * Track page view
      */
@@ -760,7 +760,7 @@ export class UserFeedbackSystem {
             timestamp: Date.now()
         });
     }
-    
+
     /**
      * Track feature usage
      */
@@ -775,7 +775,7 @@ export class UserFeedbackSystem {
             });
         });
     }
-    
+
     /**
      * Track user interactions
      */
@@ -791,7 +791,7 @@ export class UserFeedbackSystem {
                 });
             }
         });
-        
+
         // Track form submissions
         document.addEventListener('submit', (e) => {
             this.sendAnalytics('form_submit', {
@@ -800,7 +800,7 @@ export class UserFeedbackSystem {
                 timestamp: Date.now()
             });
         });
-        
+
         // Track input focus
         document.addEventListener('focus', (e) => {
             if (e.target.matches('input, textarea, select')) {
@@ -812,7 +812,7 @@ export class UserFeedbackSystem {
             }
         }, true);
     }
-    
+
     /**
      * Send analytics data
      */
@@ -833,7 +833,7 @@ export class UserFeedbackSystem {
             console.error('Failed to send analytics:', error);
         }
     }
-    
+
     /**
      * Get session ID
      */
@@ -845,7 +845,7 @@ export class UserFeedbackSystem {
         }
         return sessionId;
     }
-    
+
     /**
      * Get CSRF token
      */
@@ -853,21 +853,21 @@ export class UserFeedbackSystem {
         const meta = document.querySelector('meta[name="csrf-token"]');
         return meta ? meta.getAttribute('content') : null;
     }
-    
+
     /**
      * Show success message
      */
     showSuccessMessage() {
         this.showMessage('Thank you for your feedback!', 'success');
     }
-    
+
     /**
      * Show error message
      */
     showErrorMessage(message) {
         this.showMessage(`Error: ${message}`, 'error');
     }
-    
+
     /**
      * Show message
      */
@@ -886,9 +886,9 @@ export class UserFeedbackSystem {
             z-index: 1002;
             animation: slideIn 0.3s ease;
         `;
-        
+
         document.body.appendChild(message);
-        
+
         setTimeout(() => {
             message.remove();
         }, 3000);

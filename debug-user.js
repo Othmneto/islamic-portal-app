@@ -21,7 +21,7 @@ const run = async () => {
         }
 
         console.log(`✔️ User found. User ID: ${user._id}`);
-        
+
         if (user.location && user.location.lat && user.location.lon) {
             console.log(`✔️ User has a location saved: Lat ${user.location.lat}, Lon ${user.location.lon}`);
         } else {
@@ -39,7 +39,7 @@ const run = async () => {
         } else {
             console.log('⚠️ WARNING: NO push subscriptions are linked to this User ID in the database.');
         }
-        
+
         console.log('\n--- 3. Checking for Anonymous Subscriptions ---');
         const anonSubs = await PushSubscription.find({ userId: null }).lean();
         if (anonSubs.length > 0) {

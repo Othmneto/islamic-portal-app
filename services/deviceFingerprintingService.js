@@ -75,7 +75,7 @@ class DeviceFingerprintingService {
 
             // Generate hash
             const fingerprint = this.generateHash(fingerprintData);
-            
+
             return {
                 fingerprint: fingerprint,
                 data: fingerprintData,
@@ -118,7 +118,7 @@ class DeviceFingerprintingService {
         try {
             const key = `device_fingerprint:${userId}`;
             const deviceKey = `device:${fingerprintData.fingerprint}`;
-            
+
             // Store user's devices
             await set(deviceKey, JSON.stringify(fingerprintData), this.fingerprintExpiry);
             await set(key, fingerprintData.fingerprint, this.fingerprintExpiry);
@@ -191,13 +191,13 @@ class DeviceFingerprintingService {
     async checkSuspiciousDevice(userId, fingerprintData) {
         try {
             const devices = await this.getUserDevices(userId);
-            
+
             if (devices.length === 0) {
                 return { isSuspicious: false, reason: null };
             }
 
             // Check for similar devices
-            const similarDevices = devices.filter(device => 
+            const similarDevices = devices.filter(device =>
                 this.calculateSimilarity(device.data, fingerprintData.data) > this.suspiciousThreshold
             );
 
@@ -205,7 +205,7 @@ class DeviceFingerprintingService {
                 return {
                     isSuspicious: true,
                     reason: 'Similar device fingerprint detected',
-                    similarity: Math.max(...similarDevices.map(d => 
+                    similarity: Math.max(...similarDevices.map(d =>
                         this.calculateSimilarity(d.data, fingerprintData.data)
                     ))
                 };
@@ -213,7 +213,7 @@ class DeviceFingerprintingService {
 
             // Check for rapid device changes
             const now = Date.now();
-            const recentDevices = devices.filter(device => 
+            const recentDevices = devices.filter(device =>
                 now - device.timestamp <= 60 * 60 * 1000 // Last hour
             );
 
@@ -242,7 +242,7 @@ class DeviceFingerprintingService {
 
         for (const key of keys) {
             if (key === 'timestamp' || key === 'fingerprint') continue;
-            
+
             total++;
             if (device1[key] === device2[key]) {
                 matches++;
@@ -258,16 +258,16 @@ class DeviceFingerprintingService {
     async trackDevice(userId, req) {
         try {
             const fingerprintData = this.generateFingerprint(req);
-            
+
             // Store fingerprint
             await this.storeFingerprint(userId, fingerprintData);
-            
+
             // Check if device is known
             const isKnown = await this.isKnownDevice(userId, fingerprintData.fingerprint);
-            
+
             // Check for suspicious patterns
             const suspicious = await this.checkSuspiciousDevice(userId, fingerprintData);
-            
+
             if (suspicious.isSuspicious) {
                 await safeLogSecurityViolation('suspicious_device', {
                     userId: userId,
@@ -314,7 +314,7 @@ class DeviceFingerprintingService {
         try {
             const key = `device_fingerprint:${userId}`;
             const deviceKey = `device:${fingerprint}`;
-            
+
             await del(deviceKey);
             await del(key);
 
@@ -336,7 +336,7 @@ class DeviceFingerprintingService {
     async getDeviceStats(userId) {
         try {
             const devices = await this.getUserDevices(userId);
-            
+
             const stats = {
                 totalDevices: devices.length,
                 uniqueBrowsers: new Set(devices.map(d => d.data.userAgent)).size,

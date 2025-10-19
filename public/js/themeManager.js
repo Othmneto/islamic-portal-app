@@ -12,9 +12,9 @@ class ThemeManager {
   // Initialize theme manager
   async initialize() {
     if (this.isInitialized) return;
-    
+
     console.log('[ThemeManager] Initializing...');
-    
+
     // Load theme from server first, fallback to localStorage
     const serverTheme = await this.loadThemeFromServer();
     if (serverTheme) {
@@ -24,10 +24,10 @@ class ThemeManager {
       this.currentTheme = localStorage.getItem('theme') || 'dark';
       console.log('[ThemeManager] Loaded theme from localStorage:', this.currentTheme);
     }
-    
+
     this.applyTheme(this.currentTheme);
     this.isInitialized = true;
-    
+
     // Notify all listeners
     this.notifyListeners();
   }
@@ -91,16 +91,16 @@ class ThemeManager {
     }
 
     this.currentTheme = theme;
-    
+
     // Save to localStorage immediately
     localStorage.setItem('theme', theme);
-    
+
     // Apply theme
     this.applyTheme(theme);
-    
+
     // Save to server in background
     this.saveThemeToServer(theme);
-    
+
     // Notify listeners
     this.notifyListeners();
   }
@@ -108,19 +108,19 @@ class ThemeManager {
   // Apply theme to DOM
   applyTheme(theme) {
     const root = document.documentElement;
-    
+
     // Remove existing theme classes
     root.classList.remove('light-theme', 'dark-theme', 'auto-theme');
-    
+
     // Add new theme class
     root.classList.add(`${theme}-theme`);
-    
+
     // Set data attribute for CSS
     root.setAttribute('data-theme', theme);
-    
+
     // Update meta theme-color
     this.updateMetaThemeColor(theme);
-    
+
     console.log('[ThemeManager] Applied theme:', theme);
   }
 
@@ -132,13 +132,13 @@ class ThemeManager {
       metaThemeColor.name = 'theme-color';
       document.head.appendChild(metaThemeColor);
     }
-    
+
     const colors = {
       light: '#ffffff',
       dark: '#1a1a1a',
       auto: '#1a1a1a' // Default to dark for auto
     };
-    
+
     metaThemeColor.content = colors[theme] || colors.dark;
   }
 
@@ -176,9 +176,9 @@ class ThemeManager {
 
   // Get auth token (helper method)
   getAuthToken() {
-    return localStorage.getItem('accessToken') || 
-           localStorage.getItem('authToken') || 
-           localStorage.getItem('token') || 
+    return localStorage.getItem('accessToken') ||
+           localStorage.getItem('authToken') ||
+           localStorage.getItem('token') ||
            localStorage.getItem('jwt');
   }
 }

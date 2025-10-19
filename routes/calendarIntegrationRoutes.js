@@ -67,12 +67,12 @@ router.get('/status', requireUser, async (req, res) => {
       hasGoogleId: !!user.googleId,
       hasGoogleToken: !!user.googleAccessToken
     });
-    
+
     if (user.googleId && user.googleAccessToken) {
       integrations.email.connected = true;
       integrations.email.provider = 'google';
       integrations.email.lastSync = user.googleTokenExpiry || null;
-      
+
       console.log('✅ [Calendar Integration] Google integration enabled with OAuth tokens');
     }
 
@@ -84,7 +84,7 @@ router.get('/status', requireUser, async (req, res) => {
       microsoftIdValue: user.microsoftId,
       microsoftTokenValue: user.microsoftAccessToken ? 'EXISTS' : 'MISSING'
     });
-    
+
     if (user.microsoftId && user.microsoftAccessToken) {
       // If Google is already connected, add Microsoft as additional provider
       if (integrations.email.connected && integrations.email.provider === 'google') {
@@ -97,7 +97,7 @@ router.get('/status', requireUser, async (req, res) => {
         integrations.email.lastSync = user.microsoftTokenExpiry || null;
         console.log('✅ [Calendar Integration] Microsoft integration enabled as primary provider');
       }
-      
+
       console.log('✅ [Calendar Integration] Microsoft integration enabled with OAuth tokens');
     } else {
       console.log('❌ [Calendar Integration] Microsoft integration not available:', {
@@ -105,7 +105,7 @@ router.get('/status', requireUser, async (req, res) => {
         hasMicrosoftToken: !!user.microsoftAccessToken
       });
     }
-    
+
     console.log('📊 [Calendar Integration] Final integrations status:', integrations);
 
     res.json({ success: true, integrations });
@@ -129,9 +129,9 @@ router.post('/connect/google', requireUser, async (req, res) => {
 
     // Check if user already has Google OAuth
     if (!user.googleId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Google account not linked. Please link your Google account first.' 
+      return res.status(400).json({
+        success: false,
+        error: 'Google account not linked. Please link your Google account first.'
       });
     }
 
@@ -166,9 +166,9 @@ router.post('/connect/microsoft', requireUser, async (req, res) => {
 
     // Check if user already has Microsoft OAuth
     if (!user.microsoftId) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Microsoft account not linked. Please link your Microsoft account first.' 
+      return res.status(400).json({
+        success: false,
+        error: 'Microsoft account not linked. Please link your Microsoft account first.'
       });
     }
 
@@ -398,7 +398,7 @@ router.post('/disconnect/:type', requireUser, async (req, res) => {
   try {
     const { type } = req.params;
     const user = await User.findById(req.user._id);
-    
+
     if (!user) {
       return res.status(404).json({ success: false, error: 'User not found' });
     }
@@ -416,11 +416,11 @@ router.post('/disconnect/:type', requireUser, async (req, res) => {
         user.microsoftRefreshToken = undefined;
         user.microsoftTokenExpiry = undefined;
       }
-      
+
       await user.save();
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         message: `${type} integration disconnected successfully`
       });
     } else {

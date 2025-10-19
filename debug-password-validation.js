@@ -3,7 +3,7 @@ const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch
 
 async function testPasswordValidation() {
     console.log('🔍 Testing Password Validation...\n');
-    
+
     const testCases = [
         { password: '123456', shouldReject: true, reason: 'Too short' },
         { password: 'password', shouldReject: true, reason: 'No uppercase, number, special char' },
@@ -18,10 +18,10 @@ async function testPasswordValidation() {
         { password: 'Test123!@#', shouldReject: false, reason: 'Valid password' },
         { password: 'StrongP@ssw0rd', shouldReject: false, reason: 'Valid password' }
     ];
-    
+
     for (const testCase of testCases) {
         console.log(`Testing: "${testCase.password}" (${testCase.reason})`);
-        
+
         try {
             const response = await fetch('http://localhost:3000/api/auth/register', {
                 method: 'POST',
@@ -34,24 +34,24 @@ async function testPasswordValidation() {
                     password: testCase.password
                 })
             });
-            
+
             const data = await response.json();
-            
+
             const wasRejected = response.status === 400;
             const wasAccepted = response.status === 201 || (response.status === 400 && data.requiresVerification);
-            
+
             console.log(`  Status: ${response.status}`);
             console.log(`  Response:`, data);
             console.log(`  Expected: ${testCase.shouldReject ? 'REJECT' : 'ACCEPT'}`);
             console.log(`  Actual: ${wasRejected ? 'REJECT' : wasAccepted ? 'ACCEPT' : 'UNKNOWN'}`);
             console.log(`  Result: ${(testCase.shouldReject && wasRejected) || (!testCase.shouldReject && wasAccepted) ? '✅ CORRECT' : '❌ WRONG'}`);
             console.log('---');
-            
+
         } catch (error) {
             console.log(`  Error: ${error.message}`);
             console.log('---');
         }
-        
+
         // Wait a bit to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 100));
     }

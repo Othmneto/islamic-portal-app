@@ -18,9 +18,9 @@ function resolveParams(method = "MuslimWorldLeague", madhab = "shafii", tz = "UT
     if (/Africa\/Cairo|Egypt/i.test(tz)) {
       m = 'Egyptian';
     }
-    // DUBAI METHOD - UAE and some Gulf states
+    // UMM AL QURA METHOD - UAE (officially used)
     else if (/Asia\/Dubai|Dubai|UAE/i.test(tz)) {
-      m = 'Dubai';
+      m = 'UmmAlQura';
     }
     // KARACHI METHOD - South Asia (Pakistan, India, Bangladesh, Sri Lanka)
     else if (/Asia\/(Karachi|Kolkata|Dhaka|Colombo)|Pakistan|India|Bangladesh|Sri_Lanka/i.test(tz)) {
@@ -118,7 +118,7 @@ function normalizeArgs(...args) {
     lat = Number(o.lat ?? o.latitude);
     lon = Number(o.lon ?? o.longitude);
     timezone = o.timezone || timezone;
-    method = o.method || method;
+    method = o.method || o.calculationMethod || method;
     madhab = o.madhab || madhab;
   } else if (args[0] instanceof Date && typeof args[1] === "number" && typeof args[2] === "number") {
     // (date, lat, lon, method?, madhab?, timezone?)

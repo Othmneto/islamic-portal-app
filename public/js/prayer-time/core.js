@@ -10,7 +10,7 @@ export class PrayerTimesCore {
   constructor() {
     console.log("[Core] Initializing PrayerTimesCore");
     this.initialTZ = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-    
+
     // State
     this.state = {
       tz: this.initialTZ,               // IANA tz (updated from rich location if available)

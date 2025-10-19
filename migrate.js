@@ -6,16 +6,16 @@ const { connectToDb } = require('./utils/db');
 
 async function runMigration() {
     console.log("Starting migration from history.json to MongoDB...");
-    
+
     try {
         // 1. Connect to the database
         const db = await connectToDb();
         const collection = db.collection('history');
-        
+
         // 2. Read the old JSON file
         const historyFilePath = path.join(__dirname, 'history.json');
         const historyData = JSON.parse(await fs.readFile(historyFilePath, 'utf8'));
-        
+
         if (!historyData || historyData.length === 0) {
             console.log("history.json is empty. No migration needed.");
             process.exit(0);
@@ -28,7 +28,7 @@ async function runMigration() {
         // 4. Insert the data into the collection
         const result = await collection.insertMany(historyData);
         console.log(`✅ Successfully inserted ${result.insertedCount} documents into the 'history' collection.`);
-        
+
     } catch (error) {
         console.error("Migration failed:", error);
     } finally {

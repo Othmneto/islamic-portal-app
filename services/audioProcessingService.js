@@ -16,16 +16,16 @@ class AudioProcessingService {
         this.openai = new OpenAI({
             apiKey: process.env.OPENAI_API_KEY
         });
-        
+
         // Audio chunk buffers for each session
         this.sessionBuffers = new Map();
-        
+
         // Temporary file directory
         this.tempDir = path.join(__dirname, '..', 'temp', 'audio');
-        
+
         // Initialize temp directory
         this.initTempDir();
-        
+
         logger.info('✅ [AudioProcessingService] Initialized');
     }
 
@@ -56,17 +56,17 @@ class AudioProcessingService {
                 chunkDuration
             });
         }
-        
+
         const buffer = this.sessionBuffers.get(sessionId);
         buffer.chunks.push(chunk);
         buffer.totalSize += chunk.length;
-        
+
         // Check if we have enough audio to transcribe (based on duration or size)
         const elapsed = Date.now() - buffer.startTime;
         if (elapsed >= chunkDuration || buffer.totalSize >= 64000) { // ~64KB threshold
             return this.flushBuffer(sessionId);
         }
-        
+
         return null;
     }
 
@@ -75,14 +75,14 @@ class AudioProcessingService {
      */
     flushBuffer(sessionId) {
         const buffer = this.sessionBuffers.get(sessionId);
-        
+
         if (!buffer || buffer.chunks.length === 0) {
             return null;
         }
-        
+
         // Combine all chunks
         const combinedBuffer = Buffer.concat(buffer.chunks);
-        
+
         // Reset buffer
         this.sessionBuffers.set(sessionId, {
             chunks: [],
@@ -90,9 +90,9 @@ class AudioProcessingService {
             startTime: Date.now(),
             chunkDuration: buffer.chunkDuration
         });
-        
+
         logger.info(`📦 [AudioProcessingService] Buffer flushed for ${sessionId}: ${combinedBuffer.length} bytes`);
-        
+
         return combinedBuffer;
     }
 
@@ -104,20 +104,20 @@ class AudioProcessingService {
      */
     async transcribeAudio(audioBuffer, sourceLanguage = 'ar') {
         const startTime = Date.now();
-        
+
         try {
             console.log('🎤 [AudioProcessingService] ========== STARTING TRANSCRIPTION ==========');
             console.log('Audio buffer size:', audioBuffer.length, 'bytes');
             console.log('Source language:', sourceLanguage);
-            
+
             // Save buffer to temporary file (Whisper API requires file input)
             const tempFile = path.join(this.tempDir, `${uuidv4()}.webm`);
             await fs.writeFile(tempFile, audioBuffer);
             console.log('💾 [AudioProcessingService] Saved temp file:', tempFile);
             console.log('📊 [AudioProcessingService] File size:', (await fs.stat(tempFile)).size, 'bytes');
-            
+
             logger.info(`🎤 [AudioProcessingService] Transcribing audio: ${audioBuffer.length} bytes (${sourceLanguage})`);
-            
+
             // Convert WebM to WAV for Whisper compatibility
             console.log('🔄 [AudioProcessingService] Converting audio to WAV format...');
             const wavFile = await audioConversionService.convertToWAV(tempFile, {
@@ -126,13 +126,13 @@ class AudioProcessingService {
                 bitDepth: 16        // 16-bit PCM
             });
             console.log('✅ [AudioProcessingService] Audio converted to WAV:', wavFile);
-            
+
             // Create file stream from converted WAV
             const nodeFs = require('fs');
             const audioFile = nodeFs.createReadStream(wavFile);
-            
+
             console.log('📖 [AudioProcessingService] Created file stream from converted WAV');
-            
+
             // Prepare transcription options with optimization for speed and accuracy
             const transcriptionOptions = {
                 file: audioFile,
@@ -140,30 +140,30 @@ class AudioProcessingService {
                 response_format: 'verbose_json',
                 language: this.mapLanguageCode(sourceLanguage),
                 // Add prompt for better Arabic transcription accuracy
-                prompt: sourceLanguage === 'ar' ? 
+                prompt: sourceLanguage === 'ar' ?
                     'خطبة الجمعة، الصلاة، القرآن، الحديث' : // Friday sermon, prayer, Quran, Hadith
                     undefined,
                 temperature: 0.0 // Lower temperature for more accurate, deterministic transcription
             };
-            
+
             console.log('📤 [AudioProcessingService] Sending WAV to Whisper API...', {
                 model: transcriptionOptions.model,
                 language: transcriptionOptions.language,
                 format: transcriptionOptions.response_format,
                 fileFormat: 'WAV (16kHz, mono, 16-bit PCM)'
             });
-            
+
             // Call Whisper API
             const transcription = await this.openai.audio.transcriptions.create(transcriptionOptions);
-            
+
             // Clean up temp files (both WebM and WAV)
             await audioConversionService.cleanupFiles([tempFile, wavFile]);
             console.log('🗑️ [AudioProcessingService] Cleaned up temporary files');
-            
+
             const processingTime = Date.now() - startTime;
-            
+
             logger.info(`✅ [AudioProcessingService] Transcription completed in ${processingTime}ms: "${transcription.text}"`);
-            
+
             return {
                 text: transcription.text,
                 language: transcription.language || sourceLanguage,
@@ -172,10 +172,10 @@ class AudioProcessingService {
                 processingTime,
                 success: true
             };
-            
+
         } catch (error) {
             logger.error('[AudioProcessingService] Transcription error:', error);
-            
+
             return {
                 text: '',
                 error: error.message,
@@ -191,19 +191,19 @@ class AudioProcessingService {
     calculateConfidence(transcription) {
         // Basic confidence calculation based on available metadata
         let confidence = 0.8; // Base confidence
-        
+
         if (transcription.text && transcription.text.length > 0) {
             confidence += 0.1;
         }
-        
+
         if (transcription.language) {
             confidence += 0.05;
         }
-        
+
         if (transcription.duration && transcription.duration > 0.5) {
             confidence += 0.05;
         }
-        
+
         return Math.min(confidence, 1.0);
     }
 
@@ -228,7 +228,7 @@ class AudioProcessingService {
             'ko': 'ko',      // Korean
             'auto': undefined // Auto-detect
         };
-        
+
         return mapping[languageCode] || undefined;
     }
 
@@ -240,17 +240,17 @@ class AudioProcessingService {
     optimizeAudioQuality(audioBuffer) {
         // Basic quality optimization
         // In a production system, you might use FFmpeg for advanced processing
-        
+
         try {
             // For now, just ensure the buffer is valid
             if (!Buffer.isBuffer(audioBuffer) || audioBuffer.length === 0) {
                 throw new Error('Invalid audio buffer');
             }
-            
+
             logger.info(`✨ [AudioProcessingService] Audio optimized: ${audioBuffer.length} bytes`);
-            
+
             return audioBuffer;
-            
+
         } catch (error) {
             logger.error('[AudioProcessingService] Error optimizing audio:', error);
             return audioBuffer;
@@ -267,16 +267,16 @@ class AudioProcessingService {
     async convertAudioFormat(buffer, fromFormat, toFormat) {
         // For MVP, we'll work directly with WebM format
         // In production, you might use FFmpeg for format conversion
-        
+
         if (fromFormat === toFormat) {
             return buffer;
         }
-        
+
         logger.info(`🔄 [AudioProcessingService] Converting audio from ${fromFormat} to ${toFormat}`);
-        
+
         // Placeholder for format conversion
         // In production, integrate FFmpeg here
-        
+
         return buffer;
     }
 
@@ -287,15 +287,15 @@ class AudioProcessingService {
         if (!Buffer.isBuffer(buffer)) {
             return false;
         }
-        
+
         if (buffer.length < 100) { // Too small to be valid audio
             return false;
         }
-        
+
         if (buffer.length > 10 * 1024 * 1024) { // Larger than 10MB
             return false;
         }
-        
+
         return true;
     }
 
@@ -304,11 +304,11 @@ class AudioProcessingService {
      */
     getBufferStats(sessionId) {
         const buffer = this.sessionBuffers.get(sessionId);
-        
+
         if (!buffer) {
             return null;
         }
-        
+
         return {
             chunks: buffer.chunks.length,
             totalSize: buffer.totalSize,
@@ -341,11 +341,11 @@ class AudioProcessingService {
             const files = await fs.readdir(this.tempDir);
             const now = Date.now();
             const oneHour = 60 * 60 * 1000;
-            
+
             for (const file of files) {
                 const filePath = path.join(this.tempDir, file);
                 const stats = await fs.stat(filePath);
-                
+
                 if (now - stats.mtimeMs > oneHour) {
                     await fs.unlink(filePath);
                     logger.info(`🧹 [AudioProcessingService] Cleaned up temp file: ${file}`);
@@ -380,7 +380,7 @@ module.exports = {
     getInstance: () => {
         if (!instance) {
             instance = new AudioProcessingService();
-            
+
             // Start cleanup scheduler
             setInterval(() => {
                 instance.cleanupTempFiles();

@@ -16,7 +16,7 @@ async function getHistoryCollection() {
  */
 async function getHistory({ page = 1, limit = 10, search = '', favoritesOnly = false, sessionId = '' }) {
     const collection = await getHistoryCollection();
-    
+
     const query = {};
     if (sessionId) {
         query.sessionId = sessionId;
@@ -30,9 +30,9 @@ async function getHistory({ page = 1, limit = 10, search = '', favoritesOnly = f
             { translated: { $regex: search, $options: 'i' } }
         ];
     }
-    
+
     const skip = (page - 1) * limit;
-    
+
     const [total, data] = await Promise.all([
         collection.countDocuments(query),
         collection.find(query)
@@ -55,7 +55,7 @@ async function addHistoryEntries(entries) {
     const collection = await getHistoryCollection();
     const entriesArray = Array.isArray(entries) ? entries : [entries];
     if (entriesArray.length === 0) return;
-    
+
     // <<< FIX: Added the 'return' statement here >>>
     return await collection.insertMany(entriesArray);
 }
@@ -90,8 +90,8 @@ async function incrementReplayCount(id) {
     await collection.updateOne({ _id: new ObjectId(id) }, { $inc: { replayCount: 1 } });
 }
 
-module.exports = { 
-    getHistory, 
+module.exports = {
+    getHistory,
     addHistoryEntries,
     deleteHistoryItems,
     updateFavoriteStatus,

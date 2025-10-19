@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
    Prayer Times Page Script (Modular Version)
-   
+
    This is the main entry point that imports and coordinates all modules:
    - Core utilities and state management
    - Location services and geocoding
@@ -16,9 +16,9 @@
 
 // Import logout functions from common.js
 function getToken() {
-  return localStorage.getItem('authToken') || 
-         localStorage.getItem('token') || 
-         localStorage.getItem('jwt') || 
+  return localStorage.getItem('authToken') ||
+         localStorage.getItem('token') ||
+         localStorage.getItem('jwt') ||
          localStorage.getItem('access_token');
 }
 
@@ -35,7 +35,7 @@ function removeToken() {
 async function logout() {
   try {
     const token = getToken();
-    
+
     if (token) {
       try {
         const response = await fetch('/api/auth/logout', {
@@ -45,7 +45,7 @@ async function logout() {
             'Content-Type': 'application/json'
           }
         });
-        
+
         if (response.ok) {
           console.log('✅ Logout API call successful');
         } else if (response.status === 401) {
@@ -57,17 +57,17 @@ async function logout() {
         console.warn('⚠️ Logout API call failed:', apiError.message);
       }
     }
-    
+
     removeToken();
     sessionStorage.clear();
-    
-    document.cookie.split(";").forEach(function(c) { 
-      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+
+    document.cookie.split(";").forEach(function(c) {
+      document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
     });
-    
+
     console.log('🔓 Logout completed successfully');
     return true;
-    
+
   } catch (error) {
     console.error('❌ Logout error:', error);
     removeToken();
@@ -76,7 +76,8 @@ async function logout() {
 }
 
 import { PrayerTimesCore } from './js/prayer-time/core.js';
-import { PrayerTimesAPI } from './js/prayer-time/api.js';
+// Import PrayerTimeAPI from the global window object since ES6 modules are having issues
+const PrayerTimesAPI = window.PrayerTimesAPI || window.prayerTimeAPI?.constructor;
 import { PrayerTimesLocation } from './js/prayer-time/location.js';
 import { PrayerTimesCalculator } from './js/prayer-time/prayer-times.js';
 import { PrayerTimesAudio } from './js/prayer-time/audio.js';
@@ -85,6 +86,7 @@ import { PrayerTimesLogging } from './js/prayer-time/prayer-logging.js';
 import { PrayerTimesSettings } from './js/prayer-time/settings.js';
 import { PrayerTimesI18N } from './js/prayer-time/i18n.js';
 import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
+import { NotificationStatusDashboard } from './js/prayer-time/notification-status.js';
 
 (() => {
   document.addEventListener("DOMContentLoaded", init);
@@ -92,7 +94,7 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
   async function init() {
     "use strict";
     console.log("[Main] Initializing Prayer Times App");
-    
+
     // Initialize logout functionality
     initLogout();
 
@@ -143,29 +145,29 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
       console.log("[Main] Calculator subscription update callback triggered");
       notifications.sendSubscriptionToServer(true).catch(() => {});
     };
-    
+
     // Connect settings callbacks
     settings.onClockFormatChange = () => {
       if (core.state.times) {
         calculator.applyData({ times: core.state.times, periods: core.state.periods, dateMeta: core.state.dateMeta }, core.state.cityLabel);
       }
     };
-    settings.onMethodChange = () => {
+    settings.onMethodChange = core.debounce(() => {
       if (core.state.locationData) {
         calculator.refreshPrayerTimesByLocation(core.state.locationData);
       }
       if (core.el.notifToggle?.checked) {
         notifications.sendSubscriptionToServer(true).catch(() => {});
       }
-    };
-    settings.onMadhabChange = () => {
+    }, 500); // 500ms debounce
+    settings.onMadhabChange = core.debounce(() => {
       if (core.state.locationData) {
         calculator.refreshPrayerTimesByLocation(core.state.locationData);
       }
       if (core.el.notifToggle?.checked) {
         notifications.sendSubscriptionToServer(true).catch(() => {});
       }
-    };
+    }, 500); // 500ms debounce
     settings.onReminderChange = () => {
       if (core.el.notifToggle?.checked) {
         notifications.sendSubscriptionToServer(true).catch(() => {});
@@ -184,13 +186,13 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
           console.log("[Main] Handling PLAY_ADHAN message");
           const audioFile = event.data.audioFile || "/audio/adhan.mp3";
           const fromNotification = event.data.fromNotification || false;
-          
+
           if (fromNotification) {
             console.log("[Main] Playing adhan from notification click");
             // Show a toast notification when adhan plays from notification
             core.toast("success", "Adhan playing from notification");
           }
-          
+
           audio.playAdhan(audioFile);
         }
       });
@@ -218,6 +220,34 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
     await logging.initialize();
     uiComponents.initialize();
 
+    // Initialize notification status dashboard
+    console.log("[Main] Initializing notification status dashboard");
+    const statusDashboard = new NotificationStatusDashboard(core, api);
+
+    // Check if user is authenticated before initializing
+    const token = api.getAuthToken();
+    if (token) {
+      console.log("[Main] User authenticated, initializing notification status dashboard");
+      await statusDashboard.initialize();
+    } else {
+      console.log("[Main] User not authenticated, will retry notification status dashboard initialization");
+
+      // Retry initialization when user becomes authenticated
+      const checkAuth = setInterval(() => {
+        const newToken = api.getAuthToken();
+        if (newToken) {
+          console.log("[Main] User now authenticated, initializing notification status dashboard");
+          statusDashboard.initialize();
+          clearInterval(checkAuth);
+        }
+      }, 2000);
+
+      // Stop checking after 30 seconds
+      setTimeout(() => {
+        clearInterval(checkAuth);
+      }, 30000);
+    }
+
     // Setup location search
     console.log("[Main] Setting up location search");
     location.setupLocationSearch();
@@ -239,7 +269,7 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
       fetchAndUpdatePrayerLog: logging.fetchAndUpdatePrayerLog.bind(logging),
       logPrayerAsCompleted: logging.logPrayerAsCompleted.bind(logging),
     };
-    
+
     console.log("[Main] Prayer Times App initialization completed successfully");
   }
 
@@ -249,22 +279,22 @@ import { PrayerTimesUIComponents } from './js/prayer-time/ui-components.js';
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async (event) => {
         event.preventDefault();
-        
+
         // Show confirmation dialog
         if (confirm('Are you sure you want to logout?')) {
           // Show loading state
           const originalText = logoutBtn.innerHTML;
           logoutBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging out...';
           logoutBtn.disabled = true;
-          
+
           try {
             // Call enhanced logout function
             const success = await logout();
-            
+
             if (success) {
               // Show success message
               alert('You have been logged out successfully.');
-              
+
               // Redirect to home page
               window.location.href = 'index.html';
             } else {

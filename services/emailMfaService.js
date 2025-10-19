@@ -34,7 +34,7 @@ class EmailMFAService {
             // Check rate limiting
             const rateLimitKey = `email_mfa_rate_limit:${userId}`;
             let attempts = 0;
-            
+
             // Try disk persistence first
             const diskAttempts = await get(rateLimitKey);
 
@@ -82,7 +82,7 @@ class EmailMFAService {
             if (!diskStored) {
                 console.log('📧 [Email MFA] Disk persistence not available, storing code in memory');
                 this.memoryCodes.set(codeKey, codeData);
-                
+
                 // Store rate limit data in memory
                 const memoryRateLimitKey = `rate_limit:${userId}`;
                 const existingRateLimit = this.memoryCodes.get(memoryRateLimitKey);
@@ -95,7 +95,7 @@ class EmailMFAService {
                         createdAt: Date.now()
                     });
                 }
-                
+
                 // Clean up expired codes from memory
                 setTimeout(() => {
                     this.memoryCodes.delete(codeKey);
@@ -184,7 +184,7 @@ class EmailMFAService {
 
             // Code is valid, clean up
             await del(codeKey);
-            
+
             // Also clean up from memory storage
             this.memoryCodes.delete(codeKey);
 
@@ -212,7 +212,7 @@ class EmailMFAService {
     async sendEmail(email, code) {
         try {
             console.log(`📧 [Email MFA] Sending verification code to ${email}: ${code}`);
-            
+
             const emailOptions = {
                 to: email,
                 subject: 'Two-Factor Authentication Code - Islamic Translator',
@@ -241,7 +241,7 @@ class EmailMFAService {
                     </div>
                 `
             };
-            
+
             await sendEmail(emailOptions);
             console.log(`✅ [Email MFA] Verification code sent successfully to ${email}`);
             return true;
@@ -362,7 +362,7 @@ class EmailMFAService {
     async disableEmailMFA(userId) {
         try {
             console.log('🔧 [Email MFA] Disabling Email MFA for user:', userId);
-            
+
             const user = await User.findById(userId);
             if (!user) {
                 console.error('❌ [Email MFA] User not found for disable:', userId);

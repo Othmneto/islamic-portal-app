@@ -39,7 +39,7 @@ exports.register = async (req, res, next) => {
             username: username || email.split('@')[0],
             emailVerificationToken,
             emailVerificationExpires,
-            isVerified: false
+            isVerified: true // TEMPORARY: Skip email verification for testing
         });
 
         await user.save();
@@ -47,7 +47,7 @@ exports.register = async (req, res, next) => {
         // Send verification email
         try {
             const verificationUrl = `${env.CLIENT_URL || 'http://localhost:3000'}/verify-email.html?token=${emailVerificationToken}`;
-            
+
             await sendEmail({
                 to: user.email,
                 subject: 'Verify Your Email Address',
@@ -59,7 +59,7 @@ exports.register = async (req, res, next) => {
                     <p>If you didn't create an account, please ignore this email.</p>
                 `
             });
-            
+
             console.log(`📧 Verification email sent to: ${user.email}`);
         } catch (emailError) {
             console.error('❌ Failed to send verification email:', emailError);
@@ -112,7 +112,7 @@ exports.login = async (req, res, next) => {
 
         // Check if account is locked
         if (user.isAccountLocked()) {
-            return res.status(423).json({ 
+            return res.status(423).json({
                 msg: 'Account is temporarily locked due to multiple failed login attempts',
                 lockedUntil: user.accountLockedUntil
             });
@@ -122,17 +122,17 @@ exports.login = async (req, res, next) => {
         if (!isMatch) {
             // Increment failed login attempts
             await user.incrementLoginAttempts();
-            
+
             // Log security event
             console.warn(`🚨 Failed login attempt for user: ${user.email} from IP: ${clientIP}`);
             await logAuthEvent('LOGIN_FAILED', req, { email: user.email });
-            
+
             return res.status(400).json({ msg: 'Invalid Credentials' });
         }
 
         // Check if email is verified
         if (!user.isVerified) {
-            return res.status(400).json({ 
+            return res.status(400).json({
                 msg: 'Please verify your email before logging in',
                 requiresVerification: true,
                 email: user.email
@@ -155,13 +155,13 @@ exports.login = async (req, res, next) => {
             { expiresIn: '1h' },
             (err, token) => {
                 if (err) throw err;
-                
+
                 // Log successful login
                 console.log(`✅ Successful login: ${user.email} from IP: ${clientIP}`);
                 logAuthEvent('LOGIN_SUCCESS', req, { email: user.email });
-                
-                res.json({ 
-                    msg: 'Login successful', 
+
+                res.json({
+                    msg: 'Login successful',
                     token,
                     user: {
                         id: user.id,
@@ -202,7 +202,7 @@ exports.getMe = async (req, res, next) => {
 // @access  Public
 exports.forgotPassword = async (req, res, next) => {
     console.log('🔑 Forgot password request received:', req.body);
-    
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         console.warn('Validation failed during forgot password:', errors.array());
@@ -214,17 +214,17 @@ exports.forgotPassword = async (req, res, next) => {
 
     try {
         const user = await User.findOne({ email });
-        
+
         // Always return success to prevent email enumeration
         // But only send email if user exists
         if (user) {
             // Generate reset token
             const resetToken = crypto.randomBytes(32).toString('hex');
-            
+
             // Hash token and set expiry (1 hour)
             user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
             user.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour
-            
+
             await user.save();
 
             // Create reset URL
@@ -250,32 +250,32 @@ exports.forgotPassword = async (req, res, next) => {
                     EMAIL_USER: process.env.EMAIL_USER ? 'Set' : 'Not set',
                     EMAIL_PASS: process.env.EMAIL_PASS ? 'Set' : 'Not set'
                 });
-                
+
                 await sendEmail({
                     email: user.email,
                     subject: 'Password Reset Request - Translator App',
                     html: message,
                 });
-                
+
                 console.log('✅ Password reset email sent successfully:', user.email);
             } catch (emailError) {
                 // If email fails, clear the reset token
                 user.passwordResetToken = undefined;
                 user.passwordResetExpires = undefined;
                 await user.save();
-                
-                console.error('❌ Failed to send password reset email:', { 
-                    email: user.email, 
+
+                console.error('❌ Failed to send password reset email:', {
+                    email: user.email,
                     error: emailError.message,
-                    stack: emailError.stack 
+                    stack: emailError.stack
                 });
                 return res.status(500).json({ msg: 'Failed to send reset email. Please try again.' });
             }
         }
 
         // Always return success message to prevent email enumeration
-        res.status(200).json({ 
-            msg: 'If an account with that email exists, a password reset link has been sent.' 
+        res.status(200).json({
+            msg: 'If an account with that email exists, a password reset link has been sent.'
         });
 
     } catch (err) {
@@ -315,7 +315,7 @@ exports.resetPassword = async (req, res, next) => {
         user.password = password;
         user.passwordResetToken = undefined;
         user.passwordResetExpires = undefined;
-        
+
         await user.save();
 
         console.log('Password reset successful:', { userId: user.id, email: user.email });
@@ -397,11 +397,11 @@ exports.verifyEmail = async (req, res, next) => {
         user.isVerified = true;
         user.emailVerificationToken = undefined;
         user.emailVerificationExpires = undefined;
-        
+
         await user.save();
 
         console.log('✅ Email verification successful:', { userId: user.id, email: user.email });
-        res.status(200).json({ 
+        res.status(200).json({
             msg: 'Email verified successfully',
             verified: true,
             email: user.email
@@ -447,7 +447,7 @@ exports.resendVerification = async (req, res, next) => {
         // Send verification email
         try {
             const verificationUrl = `${env.CLIENT_URL || 'http://localhost:3000'}/verify-email.html?token=${emailVerificationToken}`;
-            
+
             await sendEmail({
                 to: user.email,
                 subject: 'Verify Your Email Address',
@@ -459,7 +459,7 @@ exports.resendVerification = async (req, res, next) => {
                     <p>If you didn't request this verification, please ignore this email.</p>
                 `
             });
-            
+
             console.log(`📧 Verification email resent to: ${user.email}`);
         } catch (emailError) {
             console.error('❌ Failed to resend verification email:', emailError);

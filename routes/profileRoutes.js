@@ -44,7 +44,7 @@ const upload = multer({
 router.get('/profile', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Getting profile for user:', req.user.id);
-        
+
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -84,10 +84,10 @@ router.get('/profile', authMiddleware, async (req, res) => {
             createdAt: user.createdAt,
             lastLogin: user.lastLogin
         };
-        
+
         console.log('👤 [Profile Routes] User data being sent:', userData);
         console.log('👤 [Profile Routes] Stats being sent:', stats);
-        
+
         res.json({
             success: true,
             user: userData,
@@ -106,9 +106,9 @@ router.put('/profile', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Updating profile for user:', req.user.id);
         console.log('👤 [Profile Routes] Update data:', req.body);
-        
+
         const { username, firstName, lastName, bio, location } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -166,7 +166,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
 router.post('/avatar', authMiddleware, upload.single('avatar'), async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Uploading avatar for user:', req.user.id);
-        
+
         if (!req.file) {
             return res.status(400).json({ error: 'No file uploaded' });
         }
@@ -214,9 +214,9 @@ router.put('/preferences', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Updating preferences for user:', req.user.id);
         console.log('👤 [Profile Routes] Preferences data:', req.body);
-        
+
         const { preferences, notificationPreferences } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -265,7 +265,7 @@ router.put('/preferences', authMiddleware, async (req, res) => {
 router.get('/activity', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Getting activity for user:', req.user.id);
-        
+
         // This would typically come from an Activity model
         // For now, we'll return mock data
         const activities = [
@@ -311,9 +311,9 @@ router.get('/activity', authMiddleware, async (req, res) => {
 router.post('/change-password', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Changing password for user:', req.user.id);
-        
+
         const { currentPassword, newPassword } = req.body;
-        
+
         if (!currentPassword || !newPassword) {
             return res.status(400).json({ error: 'Current password and new password are required' });
         }
@@ -374,7 +374,7 @@ router.post('/change-password', authMiddleware, async (req, res) => {
 router.get('/export-data', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Exporting data for user:', req.user.id);
-        
+
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -423,7 +423,7 @@ router.get('/export-data', authMiddleware, async (req, res) => {
 router.get('/privacy-settings', authMiddleware, async (req, res) => {
     try {
         console.log('🔒 [Profile Routes] Getting privacy settings for user:', req.user.id);
-        
+
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -468,9 +468,9 @@ router.put('/privacy-settings', authMiddleware, async (req, res) => {
     try {
         console.log('🔒 [Profile Routes] Updating privacy settings for user:', req.user.id);
         console.log('🔒 [Profile Routes] Privacy settings data:', req.body);
-        
+
         const { settings } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -524,7 +524,7 @@ router.put('/privacy-settings', authMiddleware, async (req, res) => {
 router.delete('/clear-translation-history', authMiddleware, async (req, res) => {
     try {
         console.log('🗑️ [Profile Routes] Clearing translation history for user:', req.user.id);
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -562,7 +562,7 @@ router.delete('/clear-translation-history', authMiddleware, async (req, res) => 
 router.get('/remember-me-settings', authMiddleware, async (req, res) => {
     try {
         console.log('💾 [Profile Routes] Getting remember me settings for user:', req.user.id);
-        
+
         const user = await User.findById(req.user.id).select('-password');
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -598,9 +598,9 @@ router.put('/remember-me-settings', authMiddleware, async (req, res) => {
     try {
         console.log('💾 [Profile Routes] Updating remember me settings for user:', req.user.id);
         console.log('💾 [Profile Routes] Remember me settings data:', req.body);
-        
+
         const { settings } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
@@ -639,7 +639,7 @@ router.put('/remember-me-settings', authMiddleware, async (req, res) => {
 router.get('/trusted-devices', authMiddleware, async (req, res) => {
     try {
         console.log('📱 [Profile Routes] Getting trusted devices for user:', req.user.id);
-        
+
         // This would typically come from a TrustedDevice model
         // For now, we'll return mock data
         const devices = [
@@ -688,12 +688,12 @@ router.get('/trusted-devices', authMiddleware, async (req, res) => {
 router.delete('/trusted-devices/:deviceId', authMiddleware, async (req, res) => {
     try {
         console.log('🚫 [Profile Routes] Revoking trusted device:', req.params.deviceId);
-        
+
         const { deviceId } = req.params;
-        
+
         // This would typically delete from a TrustedDevice model
         // For now, we'll just return success
-        
+
         await safeLogAuthEvent('TRUSTED_DEVICE_REVOKED', {
             userId: req.user.id,
             email: req.user.email,
@@ -715,7 +715,7 @@ router.delete('/trusted-devices/:deviceId', authMiddleware, async (req, res) => 
 // Helper function to calculate profile data size
 function calculateProfileDataSize(user) {
     let size = 0;
-    
+
     // Calculate size of text fields
     const textFields = [
         user.username, user.email, user.firstName, user.lastName,
@@ -723,13 +723,13 @@ function calculateProfileDataSize(user) {
         JSON.stringify(user.notificationPreferences),
         JSON.stringify(user.privacySettings)
     ];
-    
+
     textFields.forEach(field => {
         if (field) {
             size += new Blob([field]).size;
         }
     });
-    
+
     return size;
 }
 
@@ -739,9 +739,9 @@ function calculateProfileDataSize(user) {
 router.delete('/delete-account', authMiddleware, async (req, res) => {
     try {
         console.log('👤 [Profile Routes] Deleting account for user:', req.user.id);
-        
+
         const { password } = req.body;
-        
+
         const user = await User.findById(req.user.id);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });

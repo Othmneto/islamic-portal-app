@@ -62,7 +62,7 @@ export class PrayerTimesLogging {
 
       // Get user's timezone from core state or localStorage or default to Asia/Dubai
       let userTimezone = this.core?.state?.tz || localStorage.getItem('userTimezone');
-      
+
       // If not found, try to get from lastLocation
       if (!userTimezone) {
         try {
@@ -72,13 +72,13 @@ export class PrayerTimesLogging {
           console.warn('[PrayerLogging] Could not parse lastLocation:', e);
         }
       }
-      
+
       // Final fallback
       userTimezone = userTimezone || 'Asia/Dubai';
-      
+
       // Store timezone in localStorage for future use
       localStorage.setItem('userTimezone', userTimezone);
-      
+
       // Create date in user's timezone using the same method as the profile page
       const now = new Date();
       const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -88,9 +88,9 @@ export class PrayerTimesLogging {
         day: "2-digit",
       });
       const dateString = fmt.format(now);
-      
+
       console.log(`[PrayerLogging] Logging prayer for date: ${dateString} (timezone: ${userTimezone})`);
-      
+
       await this.api.apiFetch("/api/prayer-log", {
         method: "POST",
         body: JSON.stringify({
@@ -104,7 +104,7 @@ export class PrayerTimesLogging {
 
       // Ensure other tabs/pages reflect the change (e.g., Profile dashboard)
       this.fetchAndUpdatePrayerLog().catch(() => {});
-      
+
       // Trigger cross-page update for profile dashboard
       this.triggerCrossPageUpdate('prayerLogs', { prayerName, date: dateString });
     } catch (error) {
@@ -147,17 +147,17 @@ export class PrayerTimesLogging {
         timestamp: Date.now(),
         action: 'prayerLogged'
       };
-      
+
       localStorage.setItem('prayerLogUpdate', JSON.stringify(updateData));
-      
+
       // Also store a simple flag for immediate detection
       localStorage.setItem('prayerLogChanged', Date.now().toString());
-      
+
       // Dispatch custom event for same-page updates
       window.dispatchEvent(new CustomEvent('prayerLogUpdated', {
         detail: { type, data, action: 'prayerLogged' }
       }));
-      
+
       console.log('[PrayerLogging] Cross-page update triggered:', type, data);
     } catch (error) {
       console.error('[PrayerLogging] Failed to trigger cross-page update:', error);

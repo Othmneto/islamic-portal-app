@@ -8,10 +8,10 @@ function getToken() {
     if (window.tokenManager && window.tokenManager.isAuthenticated()) {
         return window.tokenManager.getAccessToken();
     }
-    
-    return localStorage.getItem('authToken') || 
-           localStorage.getItem('token') || 
-           localStorage.getItem('jwt') || 
+
+    return localStorage.getItem('authToken') ||
+           localStorage.getItem('token') ||
+           localStorage.getItem('jwt') ||
            localStorage.getItem('access_token');
 }
 
@@ -28,7 +28,7 @@ function removeToken() {
         localStorage.removeItem('access_token');
         localStorage.removeItem('refreshToken');
     }
-    
+
     // Clear any specific user data from local storage if applicable
     localStorage.removeItem('userData');
     localStorage.removeItem('userPreferences');
@@ -43,10 +43,10 @@ async function logout() {
             await window.tokenManager.logout();
             return true;
         }
-        
+
         // Fallback to old method
         const token = getToken();
-        
+
         if (token) {
             // Call logout API to log the event server-side
             try {
@@ -57,7 +57,7 @@ async function logout() {
                         'Content-Type': 'application/json'
                     }
                 });
-                
+
                 if (response.ok) {
                     console.log('✅ Logout API call successful');
                 } else if (response.status === 401) {
@@ -70,21 +70,21 @@ async function logout() {
                 // Continue with client-side logout even if API fails
             }
         }
-        
+
         // Clear all client-side data
         removeToken();
-        
+
         // Clear any session storage
         sessionStorage.clear();
-        
+
         // Clear any cookies (if any)
-        document.cookie.split(";").forEach(function(c) { 
-            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+        document.cookie.split(";").forEach(function(c) {
+            document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
         });
-        
+
         console.log('🔓 Logout completed successfully');
         return true;
-        
+
     } catch (error) {
         console.error('❌ Logout error:', error);
         // Even if there's an error, clear local data
@@ -126,21 +126,21 @@ function updateNavBar() {
         // Add event listener for logout
         logoutLink.addEventListener('click', async (event) => {
             event.preventDefault();
-            
+
             // Show confirmation dialog
             if (confirm('Are you sure you want to logout?')) {
                 // Show loading state
                 logoutLink.textContent = 'Logging out...';
                 logoutLink.style.pointerEvents = 'none';
-                
+
                 try {
                     // Call enhanced logout function
                     const success = await logout();
-                    
+
                     if (success) {
                         // Show success message
                         alert('You have been logged out successfully.');
-                        
+
                         // Redirect to home page
                         window.location.href = 'index.html';
                     } else {
@@ -163,7 +163,7 @@ function updateNavBar() {
         const registerLink = document.createElement('a');
         registerLink.href = 'register.html';
         registerLink.textContent = 'Register';
-        
+
         const loginLink = document.createElement('a');
         loginLink.href = 'login.html';
         loginLink.textContent = 'Login';
@@ -224,7 +224,7 @@ function createHistoryItemHTML(item, selectedItems = new Set()) {
     const replayCount = item.replayCount || 0;
     const replayCountHTML = `<span class="replay-count" id="replay-count-${item.id}">${replayCount}</span>`;
     const translatedTextId = `translated-text-${item.id}`;
-    
+
     return `
         <input type="checkbox" class="history-item-checkbox" data-id="${item.id}" ${isChecked}>
         <div class="history-item-content">

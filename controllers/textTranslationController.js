@@ -11,9 +11,9 @@ exports.translate = async (req, res) => {
     // Validate input
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: errors.array()[0].msg 
+        error: errors.array()[0].msg
       });
     }
 
@@ -21,29 +21,31 @@ exports.translate = async (req, res) => {
 
     // Additional validation
     if (!sourceText || sourceText.trim().length === 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Source text cannot be empty' 
+        error: 'Source text cannot be empty'
       });
     }
 
     if (sourceText.length > 5000) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Source text is too long. Maximum 5000 characters allowed.' 
+        error: 'Source text is too long. Maximum 5000 characters allowed.'
       });
     }
 
     if (sourceLanguage === targetLanguage) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
-        error: 'Source and target languages must be different' 
+        error: 'Source and target languages must be different'
       });
     }
 
     // Perform translation
+    console.log('[TranslationController] Starting translation...');
     const result = await translationEngine.translate(sourceText, sourceLanguage, targetLanguage);
-    
+    console.log('[TranslationController] Translation result:', JSON.stringify(result, null, 2));
+
     if (!result || !result.translatedText) {
       // Log failed translation attempt
       await logTranslationAttempt(req, {
@@ -53,7 +55,7 @@ exports.translate = async (req, res) => {
         error: 'Translation engine returned empty result'
       });
 
-      return res.status(400).json({ 
+      return res.status(400).json({
         success: false,
         error: 'Translation failed. Please try again with different text or check your language selection.',
         details: result?.details || null
@@ -64,7 +66,32 @@ exports.translate = async (req, res) => {
     if (result.error) {
       console.error('[TranslationController] Translation error:', result.error);
       console.error('[TranslationController] Error details:', result.details);
-      
+
+      // If it's a fallback translation with actual translated text, return it as success
+      if (result.source === 'fallback-simple' || result.source === 'fallback-dictionary') {
+        console.log('[TranslationController] Using fallback translation:', result.translatedText);
+        return res.json({
+          success: true,
+          translatedText: result.translatedText,
+          source: result.source,
+          confidence: result.confidence,
+          warning: result.warning || 'Using fallback translation - accuracy may be limited'
+        });
+      }
+
+      // If it has translated text but is marked as error, check if it's a valid fallback
+      if (result.translatedText && !result.translatedText.includes('[Translation Error')) {
+        console.log('[TranslationController] Using fallback translation with error flag:', result.translatedText);
+        return res.json({
+          success: true,
+          translatedText: result.translatedText,
+          source: result.source || 'fallback',
+          confidence: result.confidence || 0.3,
+          warning: result.warning || 'Using fallback translation - accuracy may be limited'
+        });
+      }
+
+      // For other errors, return error response
       return res.status(400).json({
         success: false,
         error: result.error,
@@ -93,7 +120,7 @@ exports.translate = async (req, res) => {
 
   } catch (err) {
     console.error('[Translation] Error:', err);
-    
+
     // Log error
     await logTranslationAttempt(req, {
       text: req.body.sourceText || '',
@@ -102,9 +129,35 @@ exports.translate = async (req, res) => {
       error: err.message
     });
 
-    res.status(500).json({ 
+    // Handle specific error types
+    if (err.response?.status === 429) {
+      return res.status(429).json({
+        success: false,
+        error: 'Too many translation requests. Please wait a moment before trying again.',
+        retryAfter: 60, // 1 minute
+        details: {
+          message: err.message,
+          status: err.response.status,
+          statusText: err.response.statusText
+        }
+      });
+    }
+
+    if (err.response?.status >= 400 && err.response?.status < 500) {
+      return res.status(400).json({
+        success: false,
+        error: 'Translation request failed. Please check your input and try again.',
+        details: {
+          message: err.message,
+          status: err.response.status,
+          statusText: err.response.statusText
+        }
+      });
+    }
+
+    res.status(500).json({
       success: false,
-      error: 'Internal server error. Please try again later.' 
+      error: 'Internal server error. Please try again later.'
     });
   }
 };
@@ -141,9 +194,9 @@ exports.getHistory = async (req, res) => {
 
   } catch (err) {
     console.error('[Translation History] Error:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to retrieve translation history' 
+      error: 'Failed to retrieve translation history'
     });
   }
 };
@@ -156,8 +209,8 @@ exports.exportPDF = async (req, res) => {
   try {
     const PDFDocument = require('pdfkit');
     const userId = req.user?.id || 'anonymous';
-    
-    const history = await TranslationHistory.find({ 
+
+    const history = await TranslationHistory.find({
       userId,
       error: { $exists: false } // Only successful translations
     })
@@ -171,14 +224,14 @@ exports.exportPDF = async (req, res) => {
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', 'attachment; filename="translation-history.pdf"');
-    
+
     doc.pipe(res);
 
     // Header
     doc.fontSize(20).text('Translation History', 50, 50);
     doc.fontSize(12).text(`Generated: ${new Date().toLocaleDateString()}`, 50, 80);
     doc.text(`Total Translations: ${history.length}`, 50, 100);
-    
+
     let yPosition = 130;
 
     // Content
@@ -190,23 +243,23 @@ exports.exportPDF = async (req, res) => {
 
       doc.fontSize(14).text(`Translation ${index + 1}`, 50, yPosition);
       yPosition += 25;
-      
+
       doc.fontSize(10).text(`From: ${entry.from} → To: ${entry.to}`, 50, yPosition);
       yPosition += 15;
-      
+
       doc.text(`Date: ${entry.timestamp.toLocaleString()}`, 50, yPosition);
       yPosition += 15;
-      
+
       doc.text('Original:', 50, yPosition);
       yPosition += 15;
       doc.text(entry.original, 70, yPosition, { width: 500 });
       yPosition += 30;
-      
+
       doc.text('Translated:', 50, yPosition);
       yPosition += 15;
       doc.text(entry.translated, 70, yPosition, { width: 500 });
       yPosition += 40;
-      
+
       doc.moveTo(50, yPosition).lineTo(550, yPosition).stroke();
       yPosition += 20;
     });
@@ -215,9 +268,9 @@ exports.exportPDF = async (req, res) => {
 
   } catch (err) {
     console.error('[PDF Export] Error:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to generate PDF export' 
+      error: 'Failed to generate PDF export'
     });
   }
 };
@@ -229,23 +282,23 @@ exports.exportPDF = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const userId = req.user?.id || 'anonymous';
-    
+
     const totalTranslations = await TranslationHistory.countDocuments({ userId });
-    const successfulTranslations = await TranslationHistory.countDocuments({ 
-      userId, 
-      error: { $exists: false } 
+    const successfulTranslations = await TranslationHistory.countDocuments({
+      userId,
+      error: { $exists: false }
     });
-    const failedTranslations = await TranslationHistory.countDocuments({ 
-      userId, 
-      error: { $exists: true } 
+    const failedTranslations = await TranslationHistory.countDocuments({
+      userId,
+      error: { $exists: true }
     });
 
     // Language pair statistics
     const languageStats = await TranslationHistory.aggregate([
       { $match: { userId, error: { $exists: false } } },
-      { $group: { 
-        _id: { from: '$from', to: '$to' }, 
-        count: { $sum: 1 } 
+      { $group: {
+        _id: { from: '$from', to: '$to' },
+        count: { $sum: 1 }
       }},
       { $sort: { count: -1 } },
       { $limit: 10 }
@@ -254,23 +307,23 @@ exports.getStats = async (req, res) => {
     // Daily translation count (last 30 days)
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
+
     const dailyStats = await TranslationHistory.aggregate([
-      { 
-        $match: { 
-          userId, 
+      {
+        $match: {
+          userId,
           timestamp: { $gte: thirtyDaysAgo },
           error: { $exists: false }
-        } 
+        }
       },
-      { 
-        $group: { 
-          _id: { 
+      {
+        $group: {
+          _id: {
             year: { $year: '$timestamp' },
             month: { $month: '$timestamp' },
             day: { $dayOfMonth: '$timestamp' }
-          }, 
-          count: { $sum: 1 } 
+          },
+          count: { $sum: 1 }
         }
       },
       { $sort: { '_id.year': 1, '_id.month': 1, '_id.day': 1 } }
@@ -290,9 +343,9 @@ exports.getStats = async (req, res) => {
 
   } catch (err) {
     console.error('[Translation Stats] Error:', err);
-    res.status(500).json({ 
+    res.status(500).json({
       success: false,
-      error: 'Failed to retrieve translation statistics' 
+      error: 'Failed to retrieve translation statistics'
     });
   }
 };

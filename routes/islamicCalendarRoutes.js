@@ -11,7 +11,7 @@ router.get('/hijri/:date', requireAuth, async (req, res) => {
     try {
         const { date } = req.params;
         const gregorianDate = new Date(date);
-        
+
         if (isNaN(gregorianDate.getTime())) {
             return res.status(400).json({
                 success: false,
@@ -20,7 +20,7 @@ router.get('/hijri/:date', requireAuth, async (req, res) => {
         }
 
         const hijri = await islamicCalendarService.convertToHijri(gregorianDate);
-        
+
         if (!hijri) {
             return res.status(500).json({
                 success: false,
@@ -52,7 +52,7 @@ router.get('/prayer-times/:date', requireAuth, async (req, res) => {
     try {
         const { date } = req.params;
         const { latitude, longitude, country } = req.query;
-        
+
         const gregorianDate = new Date(date);
         if (isNaN(gregorianDate.getTime())) {
             return res.status(400).json({
@@ -69,9 +69,9 @@ router.get('/prayer-times/:date', requireAuth, async (req, res) => {
         }
 
         const prayerTimes = await islamicCalendarService.getPrayerTimes(
-            gregorianDate, 
-            parseFloat(latitude), 
-            parseFloat(longitude), 
+            gregorianDate,
+            parseFloat(latitude),
+            parseFloat(longitude),
             country || 'AE'
         );
 
@@ -104,7 +104,7 @@ router.get('/prayer-times/:date', requireAuth, async (req, res) => {
 router.get('/holidays', requireAuth, async (req, res) => {
     try {
         const { startDate, endDate, country } = req.query;
-        
+
         if (!startDate || !endDate) {
             return res.status(400).json({
                 success: false,
@@ -114,7 +114,7 @@ router.get('/holidays', requireAuth, async (req, res) => {
 
         const start = new Date(startDate);
         const end = new Date(endDate);
-        
+
         if (isNaN(start.getTime()) || isNaN(end.getTime())) {
             return res.status(400).json({
                 success: false,
@@ -123,8 +123,8 @@ router.get('/holidays', requireAuth, async (req, res) => {
         }
 
         const holidays = await islamicCalendarService.getIslamicHolidays(
-            start, 
-            end, 
+            start,
+            end,
             country || 'AE'
         );
 
@@ -151,10 +151,10 @@ router.get('/monthly-events/:year/:month', async (req, res) => {
     try {
         const { year, month } = req.params;
         const { latitude, longitude, country } = req.query;
-        
+
         const yearNum = parseInt(year);
         const monthNum = parseInt(month);
-        
+
         if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
             return res.status(400).json({
                 success: false,
@@ -170,10 +170,10 @@ router.get('/monthly-events/:year/:month', async (req, res) => {
         }
 
         const events = await islamicCalendarService.getMonthlyIslamicEvents(
-            yearNum, 
-            monthNum, 
-            parseFloat(latitude), 
-            parseFloat(longitude), 
+            yearNum,
+            monthNum,
+            parseFloat(latitude),
+            parseFloat(longitude),
             country || 'AE'
         );
 
@@ -199,7 +199,7 @@ router.get('/monthly-events/:year/:month', async (req, res) => {
 router.post('/create-prayer-events', requireAuth, async (req, res) => {
     try {
         const { date, latitude, longitude, country } = req.body;
-        
+
         if (!date || !latitude || !longitude) {
             return res.status(400).json({
                 success: false,
@@ -281,7 +281,7 @@ router.get('/current-hijri', async (req, res) => {
     try {
         const today = new Date();
         const hijri = await islamicCalendarService.convertToHijri(today);
-        
+
         if (!hijri) {
             return res.status(500).json({
                 success: false,

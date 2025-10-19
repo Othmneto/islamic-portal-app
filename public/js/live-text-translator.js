@@ -11,7 +11,7 @@ class EnhancedLiveTranslator {
         this.accumulatedText = '';
         this.currentPhrase = '';
         this.isInitialized = false;
-        
+
         // Wait for DOM to be ready
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
@@ -22,9 +22,9 @@ class EnhancedLiveTranslator {
 
     init() {
         if (this.isInitialized) return;
-        
+
         console.log('Initializing Enhanced Live Text Translator...');
-        
+
         // Wait for the base translator to be available
         this.waitForBaseTranslator().then(() => {
             this.setupEnhancedFeatures();
@@ -41,7 +41,7 @@ class EnhancedLiveTranslator {
     async waitForBaseTranslator() {
         let attempts = 0;
         const maxAttempts = 50; // 5 seconds max wait
-        
+
         while (attempts < maxAttempts) {
             if (window.realTimeTranslation && window.realTimeTranslation.accumulatedText !== undefined) {
                 // Copy accumulated text from base translator
@@ -52,7 +52,7 @@ class EnhancedLiveTranslator {
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
-        
+
         console.warn('Base translator not found, initializing standalone mode');
     }
 
@@ -60,15 +60,15 @@ class EnhancedLiveTranslator {
         // Override the base translator's displayTranslation method
         if (window.realTimeTranslation) {
             const originalDisplayTranslation = window.realTimeTranslation.displayTranslation.bind(window.realTimeTranslation);
-            
+
             window.realTimeTranslation.displayTranslation = (data) => {
                 // Store the latest translation
                 this.lastTranslation = data.translated;
                 this.accumulatedText = data.original;
-                
+
                 // Call original method
                 originalDisplayTranslation(data);
-                
+
                 // Auto-save to history
                 this.saveTranslationToHistory();
             };
@@ -98,7 +98,7 @@ class EnhancedLiveTranslator {
     setupSaveCurrent() {
         const saveCurrentBtn = document.getElementById('save-current');
         const saveStatus = document.getElementById('save-status');
-        
+
         if (saveCurrentBtn) {
             saveCurrentBtn.addEventListener('click', () => {
                 this.saveCurrentTranslation();
@@ -113,11 +113,11 @@ class EnhancedLiveTranslator {
         }
 
         const saveStatus = document.getElementById('save-status');
-        
+
         try {
             this.saveTranslationToHistory();
             this.updateSaveStatus('Translation saved successfully!', 'success');
-            
+
             // Reset status after 3 seconds
             setTimeout(() => {
                 this.updateSaveStatus('Ready to save', 'ready');
@@ -175,7 +175,7 @@ class EnhancedLiveTranslator {
         const container = document.getElementById('progress-container');
         const fill = document.getElementById('progress-fill');
         const textEl = document.getElementById('progress-text');
-        
+
         if (container && fill && textEl) {
             container.style.display = 'block';
             fill.style.width = percentage + '%';
@@ -203,8 +203,8 @@ class EnhancedLiveTranslator {
         };
 
         // Check if this translation already exists (avoid duplicates)
-        const exists = this.translationHistory.some(item => 
-            item.original === historyItem.original && 
+        const exists = this.translationHistory.some(item =>
+            item.original === historyItem.original &&
             item.translated === historyItem.translated
         );
 
@@ -218,7 +218,7 @@ class EnhancedLiveTranslator {
     updateHistoryDisplay() {
         const historyList = document.getElementById('history-list');
         if (!historyList) return;
-        
+
         if (this.translationHistory.length === 0) {
             historyList.innerHTML = `
                 <div class="empty-state">
@@ -258,7 +258,7 @@ class EnhancedLiveTranslator {
     loadHistoryItem(item) {
         this.accumulatedText = item.original;
         this.lastTranslation = item.translated;
-        
+
         // Update base translator if available
         if (window.realTimeTranslation) {
             window.realTimeTranslation.accumulatedText = item.original;
@@ -266,23 +266,23 @@ class EnhancedLiveTranslator {
             window.realTimeTranslation.currentLanguage = item.fromLanguage;
             window.realTimeTranslation.targetLanguage = item.toLanguage;
         }
-        
+
         // Update UI
         const voiceLanguageSelect = document.getElementById('voice-language');
         const targetLanguageSelect = document.getElementById('target-language');
-        
+
         if (voiceLanguageSelect) {
             voiceLanguageSelect.value = item.fromLanguage;
         }
         if (targetLanguageSelect) {
             targetLanguageSelect.value = item.toLanguage;
         }
-        
+
         // Update text counter if available
         if (window.realTimeTranslation && window.realTimeTranslation.updateTextCounter) {
             window.realTimeTranslation.updateTextCounter();
         }
-        
+
         // Update translation display
         if (window.realTimeTranslation && window.realTimeTranslation.displayTranslation) {
             window.realTimeTranslation.displayTranslation({
@@ -301,7 +301,7 @@ class EnhancedLiveTranslator {
             return;
         }
 
-        const filteredHistory = this.translationHistory.filter(item => 
+        const filteredHistory = this.translationHistory.filter(item =>
             item.original.toLowerCase().includes(query.toLowerCase()) ||
             item.translated.toLowerCase().includes(query.toLowerCase())
         );
@@ -351,7 +351,7 @@ class EnhancedLiveTranslator {
             this.updateHistoryDisplay();
             localStorage.removeItem('translationHistory');
             this.updateSaveStatus('History cleared', 'success');
-            
+
             setTimeout(() => {
                 this.updateSaveStatus('Ready to save', 'ready');
             }, 2000);
@@ -401,21 +401,21 @@ class EnhancedLiveTranslator {
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+
             doc.setFontSize(16);
             doc.text('Translation Export', 20, 20);
-            
+
             doc.setFontSize(12);
             doc.text('Original Text:', 20, 40);
             const originalText = this.accumulatedText || 'No text available';
             doc.text(originalText, 20, 50);
-            
+
             doc.text('Translated Text:', 20, 80);
             const translatedText = this.lastTranslation || 'No translation available';
             doc.text(translatedText, 20, 90);
-            
+
             doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 120);
-            
+
             doc.save('translation-export.pdf');
             this.updateSaveStatus('PDF exported successfully!', 'success');
         } catch (error) {
@@ -442,7 +442,7 @@ ${this.lastTranslation || 'No translation available'}`;
             a.download = 'translation-export.txt';
             a.click();
             URL.revokeObjectURL(url);
-            
+
             this.updateSaveStatus('TXT exported successfully!', 'success');
         } catch (error) {
             console.error('TXT export failed:', error);
@@ -473,7 +473,7 @@ ${this.lastTranslation || 'No translation available'}`;
             a.download = 'translation-export.doc';
             a.click();
             URL.revokeObjectURL(url);
-            
+
             this.updateSaveStatus('Word document exported successfully!', 'success');
         } catch (error) {
             console.error('Word export failed:', error);

@@ -176,7 +176,7 @@ describe('Security Audit Suite', () => {
     describe('Rate Limiting Security', () => {
         test('Should enforce rate limits on translation API', async () => {
             const requests = [];
-            
+
             // Make 200 requests quickly (should trigger rate limit)
             for (let i = 0; i < 200; i++) {
                 requests.push(
@@ -191,19 +191,19 @@ describe('Security Audit Suite', () => {
             }
 
             const results = await Promise.allSettled(requests);
-            const rateLimited = results.filter(r => 
+            const rateLimited = results.filter(r =>
                 r.status === 'fulfilled' && r.value.status === 429
             ).length;
 
             console.log(`🚫 [Rate Limiting] Rate limited requests: ${rateLimited}`);
-            
+
             // Should have some rate limited requests
             expect(rateLimited).toBeGreaterThan(0);
         }, 30000);
 
         test('Should enforce rate limits on auth endpoints', async () => {
             const requests = [];
-            
+
             // Make 100 login attempts quickly
             for (let i = 0; i < 100; i++) {
                 requests.push(
@@ -217,12 +217,12 @@ describe('Security Audit Suite', () => {
             }
 
             const results = await Promise.allSettled(requests);
-            const rateLimited = results.filter(r => 
+            const rateLimited = results.filter(r =>
                 r.status === 'fulfilled' && r.value.status === 429
             ).length;
 
             console.log(`🚫 [Rate Limiting] Auth rate limited requests: ${rateLimited}`);
-            
+
             // Should have some rate limited requests
             expect(rateLimited).toBeGreaterThan(0);
         }, 20000);
@@ -296,7 +296,7 @@ describe('Security Audit Suite', () => {
 
         test('Should not log sensitive information', async () => {
             const consoleSpy = jest.spyOn(console, 'log');
-            
+
             await request(app)
                 .post('/api/auth/login')
                 .send({
@@ -307,7 +307,7 @@ describe('Security Audit Suite', () => {
             // Console logs should not contain password
             const logs = consoleSpy.mock.calls.flat().join(' ');
             expect(logs).not.toContain('SensitivePassword123!');
-            
+
             consoleSpy.mockRestore();
         });
     });
@@ -323,9 +323,9 @@ describe('Security Audit Suite', () => {
 
             const setCookieHeader = response.headers['set-cookie'];
             if (setCookieHeader) {
-                expect(setCookieHeader.some(cookie => 
-                    cookie.includes('HttpOnly') && 
-                    cookie.includes('Secure') && 
+                expect(setCookieHeader.some(cookie =>
+                    cookie.includes('HttpOnly') &&
+                    cookie.includes('Secure') &&
                     cookie.includes('SameSite')
                 )).toBe(true);
             }
@@ -359,7 +359,7 @@ describe('Security Audit Suite', () => {
     describe('API Security', () => {
         test('Should validate request size limits', async () => {
             const largeText = 'A'.repeat(1000000); // 1MB of text
-            
+
             const response = await request(app)
                 .post('/api/text-translation/translate')
                 .send({

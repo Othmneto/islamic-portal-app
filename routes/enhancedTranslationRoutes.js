@@ -48,12 +48,12 @@ router.post('/translate', [
         }
 
         const { text, sourceLang, targetLang, userId, options = {} } = req.body;
-        
+
         const enhancedTranslationService = integrationService.getEnhancedTranslationService();
         const result = await enhancedTranslationService.translateText(
-            text, 
-            sourceLang, 
-            targetLang, 
+            text,
+            sourceLang,
+            targetLang,
             userId || 'anonymous',
             options
         );
@@ -88,7 +88,7 @@ router.post('/analyze-context', [
         }
 
         const { text, sourceLang = 'en' } = req.body;
-        
+
         const contextAwareService = integrationService.getContextAwareService();
         const analysis = contextAwareService.analyzeContext(text, sourceLang);
 
@@ -126,7 +126,7 @@ router.post('/domain-enhancement', [
         }
 
         const { text, sourceLang, targetLang } = req.body;
-        
+
         const domainSpecificService = integrationService.getDomainSpecificService();
         const enhancement = domainSpecificService.enhanceTranslation(text, sourceLang, targetLang);
 
@@ -152,10 +152,10 @@ router.get('/stats/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const { startDate, endDate } = req.query;
-        
+
         const enhancedTranslationService = integrationService.getEnhancedTranslationService();
         const stats = await enhancedTranslationService.getTranslationStats(
-            userId, 
+            userId,
             startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
             endDate || new Date().toISOString()
         );
@@ -232,7 +232,7 @@ router.post('/encrypt', [
         }
 
         const { data, userId, context = 'translation' } = req.body;
-        
+
         const encryptionService = integrationService.getEncryptionService();
         const encrypted = await encryptionService.encryptTranslation(data, userId, context);
 
@@ -269,7 +269,7 @@ router.post('/decrypt', [
         }
 
         const { encryptedData, userId } = req.body;
-        
+
         const encryptionService = integrationService.getEncryptionService();
         const decrypted = await encryptionService.decryptTranslation(encryptedData, userId);
 
@@ -295,7 +295,7 @@ router.get('/audit-logs/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const { startDate, endDate, limit = 100 } = req.query;
-        
+
         const auditLoggingService = integrationService.getAuditLoggingService();
         const logs = await auditLoggingService.getUserAuditLogs(
             userId,
@@ -325,7 +325,7 @@ router.get('/audit-logs/:userId', async (req, res) => {
 router.get('/audit-stats', async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
-        
+
         const auditLoggingService = integrationService.getAuditLoggingService();
         const stats = await auditLoggingService.getAuditStatistics(
             startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago

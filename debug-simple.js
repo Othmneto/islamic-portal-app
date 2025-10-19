@@ -25,10 +25,10 @@ if (translateBtn) {
 // Test 3: Test translation function
 async function testTranslation() {
     console.log('🚀 [Debug] Testing translation...');
-    
+
     const text = sourceText?.value || 'Hello world';
     console.log('Text to translate:', text);
-    
+
     try {
         const response = await fetch('/api/text-translation/translate', {
             method: 'POST',
@@ -41,15 +41,15 @@ async function testTranslation() {
                 targetLanguage: 'ar'
             })
         });
-        
+
         const data = await response.json();
         console.log('Translation response:', data);
-        
+
         if (data.success) {
             console.log('✅ [Debug] Translation successful!');
             console.log('Original:', data.original);
             console.log('Translated:', data.translatedText);
-            
+
             // Try to display the result
             if (targetText) {
                 targetText.value = data.translatedText;

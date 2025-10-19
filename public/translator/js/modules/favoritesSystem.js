@@ -5,7 +5,7 @@ export class FavoritesSystem {
         this.categories = new Map();
         this.tags = new Map();
         this.maxFavorites = 1000; // Maximum number of favorites
-        
+
         // Load favorites from localStorage
         this.loadFavorites();
     }
@@ -22,12 +22,12 @@ export class FavoritesSystem {
             console.log('⭐ [FavoritesSystem] Translation already in favorites:', translation.id);
             return false;
         }
-        
+
         if (this.favorites.size >= this.maxFavorites) {
             console.warn('⭐ [FavoritesSystem] Maximum favorites reached');
             return false;
         }
-        
+
         const favoriteEntry = {
             id: translation.id,
             original: translation.original,
@@ -47,20 +47,20 @@ export class FavoritesSystem {
             usageCount: 0,
             lastUsed: Date.now()
         };
-        
+
         this.favorites.set(translation.id, favoriteEntry);
-        
+
         // Update categories
         this.updateCategory(category, 'add');
-        
+
         // Update tags
         for (const tag of tags) {
             this.updateTag(tag, 'add');
         }
-        
+
         // Save to localStorage
         this.saveFavorites();
-        
+
         console.log('⭐ [FavoritesSystem] Added to favorites:', translation.id, category);
         return true;
     }
@@ -76,18 +76,18 @@ export class FavoritesSystem {
             console.log('⭐ [FavoritesSystem] Translation not in favorites:', translationId);
             return false;
         }
-        
+
         // Update categories
         this.updateCategory(favorite.category, 'remove');
-        
+
         // Update tags
         for (const tag of favorite.tags) {
             this.updateTag(tag, 'remove');
         }
-        
+
         this.favorites.delete(translationId);
         this.saveFavorites();
-        
+
         console.log('⭐ [FavoritesSystem] Removed from favorites:', translationId);
         return true;
     }
@@ -108,44 +108,44 @@ export class FavoritesSystem {
      */
     getFavorites(options = {}) {
         let favorites = Array.from(this.favorites.values());
-        
+
         // Apply filters
         if (options.category) {
             favorites = favorites.filter(fav => fav.category === options.category);
         }
-        
+
         if (options.tags && options.tags.length > 0) {
-            favorites = favorites.filter(fav => 
+            favorites = favorites.filter(fav =>
                 options.tags.some(tag => fav.tags.includes(tag))
             );
         }
-        
+
         if (options.languagePair) {
-            favorites = favorites.filter(fav => 
+            favorites = favorites.filter(fav =>
                 `${fav.fromLang}-${fav.toLang}` === options.languagePair
             );
         }
-        
+
         if (options.isIslamic !== null && options.isIslamic !== undefined) {
             favorites = favorites.filter(fav => fav.isIslamic === options.isIslamic);
         }
-        
+
         if (options.searchQuery) {
             const query = options.searchQuery.toLowerCase();
-            favorites = favorites.filter(fav => 
+            favorites = favorites.filter(fav =>
                 fav.original.toLowerCase().includes(query) ||
                 fav.translated.toLowerCase().includes(query) ||
                 fav.notes.toLowerCase().includes(query)
             );
         }
-        
+
         // Sort results
         const sortBy = options.sortBy || 'addedAt';
         const sortOrder = options.sortOrder || 'desc';
-        
+
         favorites.sort((a, b) => {
             let comparison = 0;
-            
+
             switch (sortBy) {
                 case 'addedAt':
                     const aAddedAt = a.addedAt ? new Date(a.addedAt) : new Date(0);
@@ -176,10 +176,10 @@ export class FavoritesSystem {
                 default:
                     comparison = 0;
             }
-            
+
             return sortOrder === 'desc' ? -comparison : comparison;
         });
-        
+
         return favorites;
     }
 
@@ -204,13 +204,13 @@ export class FavoritesSystem {
             console.log('⭐ [FavoritesSystem] Favorite not found:', translationId);
             return false;
         }
-        
+
         // Handle category change
         if (updates.category && updates.category !== favorite.category) {
             this.updateCategory(favorite.category, 'remove');
             this.updateCategory(updates.category, 'add');
         }
-        
+
         // Handle tag changes
         if (updates.tags) {
             // Remove old tags
@@ -219,7 +219,7 @@ export class FavoritesSystem {
                     this.updateTag(tag, 'remove');
                 }
             }
-            
+
             // Add new tags
             for (const tag of updates.tags) {
                 if (!favorite.tags.includes(tag)) {
@@ -227,13 +227,13 @@ export class FavoritesSystem {
                 }
             }
         }
-        
+
         // Update favorite entry
         Object.assign(favorite, updates);
         favorite.lastModified = new Date().toISOString();
-        
+
         this.saveFavorites();
-        
+
         console.log('⭐ [FavoritesSystem] Updated favorite:', translationId);
         return true;
     }
@@ -257,13 +257,13 @@ export class FavoritesSystem {
     addTag(translationId, tag) {
         const favorite = this.favorites.get(translationId);
         if (!favorite) return false;
-        
+
         if (!favorite.tags.includes(tag)) {
             favorite.tags.push(tag);
             this.updateTag(tag, 'add');
             this.saveFavorites();
         }
-        
+
         return true;
     }
 
@@ -276,14 +276,14 @@ export class FavoritesSystem {
     removeTag(translationId, tag) {
         const favorite = this.favorites.get(translationId);
         if (!favorite) return false;
-        
+
         const index = favorite.tags.indexOf(tag);
         if (index > -1) {
             favorite.tags.splice(index, 1);
             this.updateTag(tag, 'remove');
             this.saveFavorites();
         }
-        
+
         return true;
     }
 
@@ -346,9 +346,9 @@ export class FavoritesSystem {
      * @returns {Array} Recent favorites
      */
     getRecentFavorites(limit = 10) {
-        return this.getFavorites({ 
-            sortBy: 'lastUsed', 
-            sortOrder: 'desc' 
+        return this.getFavorites({
+            sortBy: 'lastUsed',
+            sortOrder: 'desc'
         }).slice(0, limit);
     }
 
@@ -358,9 +358,9 @@ export class FavoritesSystem {
      * @returns {Array} Most used favorites
      */
     getMostUsedFavorites(limit = 10) {
-        return this.getFavorites({ 
-            sortBy: 'usageCount', 
-            sortOrder: 'desc' 
+        return this.getFavorites({
+            sortBy: 'usageCount',
+            sortOrder: 'desc'
         }).slice(0, limit);
     }
 
@@ -385,17 +385,17 @@ export class FavoritesSystem {
         const totalFavorites = this.favorites.size;
         const categories = this.categories.size;
         const tags = this.tags.size;
-        
+
         let totalUsage = 0;
         let islamicCount = 0;
         let withAlternatives = 0;
-        
+
         for (const favorite of this.favorites.values()) {
             totalUsage += favorite.usageCount;
             if (favorite.isIslamic) islamicCount++;
             if (favorite.alternatives && favorite.alternatives.length > 0) withAlternatives++;
         }
-        
+
         return {
             totalFavorites,
             categories,
@@ -414,7 +414,7 @@ export class FavoritesSystem {
      */
     updateCategory(category, action) {
         const count = this.categories.get(category) || 0;
-        
+
         if (action === 'add') {
             this.categories.set(category, count + 1);
         } else if (action === 'remove') {
@@ -433,7 +433,7 @@ export class FavoritesSystem {
      */
     updateTag(tag, action) {
         const count = this.tags.get(tag) || 0;
-        
+
         if (action === 'add') {
             this.tags.set(tag, count + 1);
         } else if (action === 'remove') {
@@ -472,7 +472,7 @@ export class FavoritesSystem {
         if (data.tags) {
             this.tags = new Map(data.tags);
         }
-        
+
         this.saveFavorites();
         console.log('⭐ [FavoritesSystem] Favorites imported successfully');
     }
@@ -499,7 +499,7 @@ export class FavoritesSystem {
                 tags: Array.from(this.tags.entries()),
                 lastSaved: Date.now()
             };
-            
+
             localStorage.setItem('favoritesSystem', JSON.stringify(favoritesData));
         } catch (error) {
             console.warn('Failed to save favorites:', error);
@@ -514,7 +514,7 @@ export class FavoritesSystem {
             const saved = localStorage.getItem('favoritesSystem');
             if (saved) {
                 const data = JSON.parse(saved);
-                
+
                 if (data.favorites) {
                     this.favorites = new Map(data.favorites);
                 }
@@ -524,7 +524,7 @@ export class FavoritesSystem {
                 if (data.tags) {
                     this.tags = new Map(data.tags);
                 }
-                
+
                 console.log('⭐ [FavoritesSystem] Favorites loaded successfully');
             }
         } catch (error) {

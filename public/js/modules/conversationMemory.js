@@ -13,7 +13,7 @@ class ConversationMemory {
     async addConversation(conversation) {
         const memoryId = this.generateMemoryId();
         const timestamp = new Date();
-        
+
         const memory = {
             id: memoryId,
             timestamp,
@@ -81,7 +81,7 @@ class ConversationMemory {
     generateSimpleEmbedding(text) {
         const words = text.toLowerCase().split(/\s+/);
         const embedding = new Array(384).fill(0); // 384-dimensional embedding
-        
+
         words.forEach(word => {
             const hash = this.simpleHash(word);
             const index = hash % 384;
@@ -208,12 +208,12 @@ class ConversationMemory {
         try {
             const stored = JSON.parse(localStorage.getItem('conversationMemory') || '[]');
             stored.push(memory);
-            
+
             // Keep only last 100 memories in localStorage
             if (stored.length > 100) {
                 stored.splice(0, stored.length - 100);
             }
-            
+
             localStorage.setItem('conversationMemory', JSON.stringify(stored));
         } catch (error) {
             console.error('Failed to persist memory:', error);
@@ -260,7 +260,7 @@ class ConversationMemory {
         // Text search
         if (query) {
             const queryLower = query.toLowerCase();
-            results = results.filter(memory => 
+            results = results.filter(memory =>
                 memory.originalText.toLowerCase().includes(queryLower) ||
                 memory.translatedText.toLowerCase().includes(queryLower)
             );
@@ -318,7 +318,7 @@ class ConversationMemory {
     // Export memories
     exportMemories(format = 'json') {
         const memories = Array.from(this.memories.values());
-        
+
         if (format === 'json') {
             return JSON.stringify(memories, null, 2);
         } else if (format === 'csv') {
@@ -328,7 +328,7 @@ class ConversationMemory {
 
     convertToCSV(memories) {
         const headers = ['id', 'timestamp', 'originalText', 'translatedText', 'fromLanguage', 'toLanguage', 'confidence'];
-        const rows = memories.map(memory => 
+        const rows = memories.map(memory =>
             headers.map(header => `"${memory[header] || ''}"`).join(',')
         );
         return [headers.join(','), ...rows].join('\n');

@@ -6,28 +6,28 @@ async function testOAuthTokens() {
     // Connect to MongoDB
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/translator-backend');
     console.log('✅ Connected to MongoDB');
-    
+
     // Find the user
     const user = await User.findOne({ email: 'ahmedothmanofff@gmail.com' });
-    
+
     if (!user) {
       console.log('❌ User not found');
       return;
     }
-    
+
     console.log('👤 User found:', user.email);
     console.log('🔑 Google OAuth tokens:');
     console.log('  - googleAccessToken:', !!user.googleAccessToken);
     console.log('  - googleRefreshToken:', !!user.googleRefreshToken);
     console.log('  - googleTokenExpiry:', user.googleTokenExpiry);
     console.log('  - googleId:', user.googleId);
-    
+
     console.log('🔑 Microsoft OAuth tokens:');
     console.log('  - microsoftAccessToken:', !!user.microsoftAccessToken);
     console.log('  - microsoftRefreshToken:', !!user.microsoftRefreshToken);
     console.log('  - microsoftTokenExpiry:', user.microsoftTokenExpiry);
     console.log('  - microsoftId:', user.microsoftId);
-    
+
     // Test Google Calendar API access
     if (user.googleAccessToken) {
       console.log('\n🧪 Testing Google Calendar API access...');
@@ -44,7 +44,7 @@ async function testOAuthTokens() {
         console.log('❌ Google Calendar API access failed:', error.response?.status, error.response?.data?.error?.message || error.message);
       }
     }
-    
+
     // Test Microsoft Graph API access
     if (user.microsoftAccessToken) {
       console.log('\n🧪 Testing Microsoft Graph API access...');
@@ -61,7 +61,7 @@ async function testOAuthTokens() {
         console.log('❌ Microsoft Graph API access failed:', error.response?.status, error.response?.data?.error?.message || error.message);
       }
     }
-    
+
   } catch (error) {
     console.error('❌ Error:', error.message);
   } finally {

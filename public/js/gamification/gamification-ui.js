@@ -42,7 +42,7 @@ export class GamificationUI {
         <button class="category-btn" data-category="special">Special</button>
       </div>
     `;
-    
+
     return section;
   }
 
@@ -51,14 +51,14 @@ export class GamificationUI {
     const grid = document.getElementById('achievements-grid');
     if (!grid) return;
 
-    const achievements = category === 'all' 
+    const achievements = category === 'all'
       ? Object.values(this.achievements.achievements)
       : this.achievements.getAchievementsByCategory(category);
 
     grid.innerHTML = achievements.map(achievement => {
       const progress = this.achievements.getProgress(achievement.id);
       const isUnlocked = progress.unlocked;
-      const progressPercent = achievement.requirement.value > 0 
+      const progressPercent = achievement.requirement.value > 0
         ? Math.min((progress.progress / achievement.requirement.value) * 100, 100)
         : 0;
 
@@ -104,7 +104,7 @@ export class GamificationUI {
   showAchievementDetails(achievementId) {
     const achievement = this.achievements.achievements[achievementId];
     const progress = this.achievements.getProgress(achievementId);
-    
+
     if (!achievement) return;
 
     const modal = document.createElement('div');
@@ -165,7 +165,7 @@ export class GamificationUI {
   updateUserLevel() {
     const level = this.achievements.getUserLevel();
     const totalPoints = this.achievements.getTotalPoints();
-    
+
     const levelNumber = document.getElementById('user-level-number');
     const levelName = document.getElementById('user-level-name');
     const progressFill = document.getElementById('level-progress-fill');
@@ -180,7 +180,7 @@ export class GamificationUI {
     const pointsForCurrentLevel = this.getPointsForLevel(level.level);
     const pointsForNextLevel = this.getPointsForLevel(level.level + 1);
     const progressPercent = ((totalPoints - pointsForCurrentLevel) / (pointsForNextLevel - pointsForCurrentLevel)) * 100;
-    
+
     if (progressFill) progressFill.style.width = `${Math.min(progressPercent, 100)}%`;
   }
 
@@ -234,7 +234,7 @@ export class GamificationUI {
         document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
         // Add active class to clicked button
         btn.classList.add('active');
-        
+
         // Filter achievements
         const category = btn.dataset.category;
         this.renderAchievements(category);
@@ -245,30 +245,30 @@ export class GamificationUI {
   // Initialize the gamification UI
   initialize() {
     console.log("[GamificationUI] Initializing UI components");
-    
+
     // Update user level
     this.updateUserLevel();
-    
+
     // Render achievements
     this.renderAchievements();
-    
+
     // Add category filters
     this.addCategoryFilters();
-    
+
     console.log("[GamificationUI] UI components initialized");
   }
 
   // Update achievements when new prayer data is available
   updateAchievements(prayerData) {
     console.log("[GamificationUI] Updating achievements with new prayer data");
-    
+
     const newUnlocks = this.achievements.checkAchievements(prayerData);
-    
+
     // Show unlock animations for new achievements
     newUnlocks.forEach(achievement => {
       this.showAchievementUnlock(achievement);
     });
-    
+
     // Update UI
     this.updateUserLevel();
     this.renderAchievements();

@@ -14,7 +14,7 @@ class TranslationCache {
         this.cache = new Map();
         this.maxSize = 10000; // Maximum cache entries
         this.defaultTTL = 30 * 60 * 1000; // 30 minutes default TTL
-        
+
         // Performance monitoring
         this.stats = {
             hits: 0,
@@ -47,7 +47,7 @@ class TranslationCache {
             ['الله يهديك', 'May Allah guide you'],
             ['الله يغفر لك', 'May Allah forgive you'],
             ['الله يرحمك', 'May Allah have mercy on you'],
-            
+
             // English to Arabic
             ['Peace be upon you', 'السلام عليكم'],
             ['And peace be upon you too', 'وعليكم السلام'],
@@ -77,7 +77,7 @@ class TranslationCache {
     getCachedTranslation(text, fromLang, toLang) {
         const startTime = Date.now();
         this.stats.totalRequests++;
-        
+
         // Check common phrases first
         const commonPhrase = this.getCommonPhrase(text, fromLang, toLang);
         if (commonPhrase) {
@@ -94,7 +94,7 @@ class TranslationCache {
         // Check cache
         const cacheKey = this.generateCacheKey(text, fromLang, toLang);
         const cached = this.cache.get(cacheKey);
-        
+
         if (cached && this.isValidCacheEntry(cached)) {
             this.stats.hits++;
             this.updateStats(startTime);
@@ -142,7 +142,7 @@ class TranslationCache {
     // Get common Islamic phrase translation
     getCommonPhrase(text, fromLang, toLang) {
         const normalizedText = text.trim().toLowerCase();
-        
+
         // Direct lookup
         if (this.islamicPhrases.has(normalizedText)) {
             return this.islamicPhrases.get(normalizedText);
@@ -191,14 +191,14 @@ class TranslationCache {
     // Clear cache for specific user
     clearUserCache(userId) {
         let cleared = 0;
-        
+
         for (const [key, entry] of this.cache.entries()) {
             if (entry.data && entry.data.userId === userId) {
                 this.cache.delete(key);
                 cleared++;
             }
         }
-        
+
         logger.info(`Cleared ${cleared} cached translations for user ${userId}`);
         return cleared;
     }
@@ -206,7 +206,7 @@ class TranslationCache {
     // Update performance statistics
     updateStats(startTime) {
         const responseTime = Date.now() - startTime;
-        this.stats.averageResponseTime = 
+        this.stats.averageResponseTime =
             (this.stats.averageResponseTime * (this.stats.totalRequests - 1) + responseTime) / this.stats.totalRequests;
         this.stats.cacheSize = this.cache.size;
     }
@@ -235,7 +235,7 @@ class TranslationCache {
         } else {
             translatedText = String(translation);
         }
-        
+
         this.cacheTranslation(text, fromLang, toLang, translatedText, confidence, userId);
     }
 
@@ -249,18 +249,18 @@ class TranslationCache {
     cleanExpiredEntries() {
         const now = Date.now();
         let cleaned = 0;
-        
+
         for (const [key, entry] of this.cache.entries()) {
             if (entry.expires <= now) {
                 this.cache.delete(key);
                 cleaned++;
             }
         }
-        
+
         if (cleaned > 0) {
             logger.debug(`Cleaned ${cleaned} expired cache entries`);
         }
-        
+
         return cleaned;
     }
 }

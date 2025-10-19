@@ -1,0 +1,111 @@
+{
+  "value": {
+    "id": "notifications_1760456944979_vwason8ug",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/d8-mf_XRDTo:APA91bG1yvNLcXCvHG-7nPavEyRVHVbna0byXQtzhJLaKHYsnQLn-AchsZtN5hpp2xn7ZucWCenTFk5kIDWRMMMFdPU0q4epzNlL8-iB573jdaPASqlZ1DtnNipcLxU_5SdBV8h6NZod",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BCvn6aPeuAYwFAi490mIuG0d3wB8QdyldlaRLMzqbP-xSsqTbpGjuFysvqSxmHDsNT43upFOADypJlZW3-w0bsw",
+            "auth": "ckPx1zI5Nk9moGbUWNH3Mg"
+          }
+        },
+        "location": {
+          "lat": 25.264268165896837,
+          "lon": 55.32180741031562,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "_id": "68ee696dd1d07b6dfb1a339f",
+        "__v": 0,
+        "createdAt": "2025-10-14T15:17:02.763Z",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "tz": "Asia/Dubai",
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "updatedAt": "2025-10-14T15:17:02.763Z",
+        "userId": "6888c9391815657294913e8d"
+      },
+      "payload": {
+        "title": "⏰ 5 min until 🕌 Prayer Time",
+        "body": "Prepare for prayer\n📍 Dubai\n🕐 7:49 PM\n\n🧪 This is a TEST notification",
+        "icon": "/images/prayers/fajr-icon.svg",
+        "badge": "/images/prayers/fajr-icon.svg",
+        "color": "#FF6B35",
+        "tag": "test-reminder",
+        "requireInteraction": true,
+        "data": {
+          "url": "/prayer-time.html",
+          "prayer": "test",
+          "time": "7:49 PM",
+          "location": "Dubai",
+          "category": "pre-prayer-reminders",
+          "isReminder": true,
+          "minutesBefore": 5,
+          "timestamp": "2025-10-14T15:49:04.977Z"
+        },
+        "actions": [
+          {
+            "action": "view_times",
+            "title": "🕐 View Prayer Times"
+          },
+          {
+            "action": "prepare",
+            "title": "🧘 Prepare for Prayer"
+          }
+        ],
+        "vibrate": [
+          200,
+          100,
+          200
+        ]
+      }
+    },
+    "options": {
+      "concurrency": 20,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 1000
+      },
+      "delay": 0,
+      "priority": 10
+    },
+    "timestamp": 1760456944979,
+    "status": "completed",
+    "attempts": 1,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-14T15:49:04.979Z",
+    "processedAt": "2025-10-14T15:49:05.875Z",
+    "finishedAt": 1760456945875,
+    "failedReason": null,
+    "result": {
+      "success": true,
+      "jobId": "notifications_1760456944979_vwason8ug",
+      "processingTime": 891
+    }
+  },
+  "timestamp": 1760456945876,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760456944979_vwason8ug"
+}

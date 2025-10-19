@@ -12,7 +12,7 @@ class DualOutputGenerator {
         // Check both ELEVENLABS_API_KEY and ELEVEN_API_KEY for compatibility
         const apiKey = process.env.ELEVENLABS_API_KEY || process.env.ELEVEN_API_KEY;
         this.elevenLabs = null;
-        
+
         if (apiKey && apiKey !== 'your-elevenlabs-api-key') {
             try {
                 this.elevenLabs = new ElevenLabsClient({
@@ -25,7 +25,7 @@ class DualOutputGenerator {
         } else {
             logger.warn('⚠️ [DualOutputGenerator] ElevenLabs API key not configured - voice output will be disabled');
         }
-        
+
         // Voice IDs mapped to languages (you can customize these)
         this.voiceMap = {
             'en': 'EXAVITQu4vr4xnSDxMaL', // Rachel (English)
@@ -40,11 +40,11 @@ class DualOutputGenerator {
             'bn': 'TxGEqnHWrfWFTfGW9XjX', // Charlie (Bengali)
             'default': 'EXAVITQu4vr4xnSDxMaL' // Default to English voice
         };
-        
+
         // Cache for frequently used audio
         this.audioCache = new Map();
         this.maxCacheSize = 100;
-        
+
         logger.info('✅ [DualOutputGenerator] Initialized');
     }
 
@@ -57,23 +57,23 @@ class DualOutputGenerator {
      */
     async generate(text, targetLanguage, options = {}) {
         const startTime = Date.now();
-        
+
         try {
             console.log('🎯 [DualOutputGenerator] ========== GENERATING DUAL OUTPUT ==========');
             console.log('Text:', text.substring(0, 100) + (text.length > 100 ? '...' : ''));
             console.log('Target Language:', targetLanguage);
             console.log('Options:', options);
             logger.info(`🎯 [DualOutputGenerator] Generating dual output for: ${text.substring(0, 50)}... (${targetLanguage})`);
-            
+
             // 1. Format text output
             const textOutput = this.formatTextOutput(text, targetLanguage, options);
-            
+
             // 2. Generate voice output (parallel with text formatting)
             const audioResult = await this.generateVoiceOutput(text, targetLanguage, options);
-            
+
             const processingTime = Date.now() - startTime;
             logger.info(`✅ [DualOutputGenerator] Dual output generated in ${processingTime}ms`);
-            
+
             return {
                 text: textOutput,
                 audio: audioResult.audioBuffer,
@@ -83,10 +83,10 @@ class DualOutputGenerator {
                 processingTime,
                 success: true
             };
-            
+
         } catch (error) {
             logger.error('[DualOutputGenerator] Error generating dual output:', error);
-            
+
             // Return fallback with text only
             return {
                 text: this.formatTextOutput(text, targetLanguage, options),
@@ -112,16 +112,16 @@ class DualOutputGenerator {
             length: text.length,
             wordCount: text.split(/\s+/).length
         };
-        
+
         // Add formatting metadata
         if (options.showTimestamps) {
             formatted.displayTime = new Date().toLocaleTimeString();
         }
-        
+
         if (options.highlight) {
             formatted.isHighlighted = true;
         }
-        
+
         return formatted;
     }
 
@@ -141,20 +141,20 @@ class DualOutputGenerator {
                     textOnly: true
                 };
             }
-            
+
             // Check cache first
             const cacheKey = `${language}:${text}`;
             if (this.audioCache.has(cacheKey)) {
                 logger.info('💾 [DualOutputGenerator] Using cached audio');
                 return this.audioCache.get(cacheKey);
             }
-            
+
             // Select voice based on language
             const voiceId = this.voiceMap[language] || this.voiceMap['default'];
-            
+
             // Generate audio using ElevenLabs
             logger.info(`🎤 [DualOutputGenerator] Generating audio with voice: ${voiceId}`);
-            
+
             const audioStream = await this.elevenLabs.textToSpeech.convert(voiceId, {
                 text: text,
                 model_id: "eleven_multilingual_v2",
@@ -165,27 +165,27 @@ class DualOutputGenerator {
                     use_speaker_boost: options.use_speaker_boost !== false
                 }
             });
-            
+
             // Convert stream to buffer
             const audioBuffer = await this.streamToBuffer(audioStream);
-            
+
             // Convert to base64 for easy transmission
             const audioBase64 = audioBuffer.toString('base64');
-            
+
             const result = {
                 audioBuffer,
                 audioBase64,
                 voiceId,
                 size: audioBuffer.length
             };
-            
+
             // Cache the result
             this.cacheAudio(cacheKey, result);
-            
+
             logger.info(`✅ [DualOutputGenerator] Audio generated: ${audioBuffer.length} bytes`);
-            
+
             return result;
-            
+
         } catch (error) {
             logger.error('[DualOutputGenerator] Error generating voice:', error);
             throw error;
@@ -198,19 +198,19 @@ class DualOutputGenerator {
     async generateMultiLanguage(text, languages, options = {}) {
         try {
             logger.info(`🌍 [DualOutputGenerator] Generating audio for ${languages.length} languages`);
-            
-            const promises = languages.map(lang => 
+
+            const promises = languages.map(lang =>
                 this.generate(text, lang, options).catch(error => ({
                     language: lang,
                     error: error.message,
                     success: false
                 }))
             );
-            
+
             const results = await Promise.all(promises);
-            
+
             return results;
-            
+
         } catch (error) {
             logger.error('[DualOutputGenerator] Error in multi-language generation:', error);
             throw error;
@@ -222,11 +222,11 @@ class DualOutputGenerator {
      */
     async streamToBuffer(stream) {
         const chunks = [];
-        
+
         for await (const chunk of stream) {
             chunks.push(chunk);
         }
-        
+
         return Buffer.concat(chunks);
     }
 
@@ -239,7 +239,7 @@ class DualOutputGenerator {
             const firstKey = this.audioCache.keys().next().value;
             this.audioCache.delete(firstKey);
         }
-        
+
         this.audioCache.set(key, value);
     }
 

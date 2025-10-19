@@ -22,7 +22,7 @@ function getPrayerTimes(lat, lon, method = 'MuslimWorldLeague', madhab = 'shafii
     let params = adhan.CalculationMethod[method]();
     params.madhab = (madhab === 'hanafi') ? adhan.Madhab.Hanafi : adhan.Madhab.Shafi;
     const prayerTimes = new adhan.PrayerTimes(coordinates, new Date(), params);
-    
+
     return {
         fajr: moment(prayerTimes.fajr).format('h:mm A'),
         dhuhr: moment(prayerTimes.dhuhr).format('h:mm A'),
@@ -63,8 +63,8 @@ function searchHistory(searchTerm, sessionId) {
     if (sessionId) {
         results = results.filter(item => item.sessionId === sessionId);
     }
-    
-    results = results.filter(item => 
+
+    results = results.filter(item =>
         item.original.toLowerCase().includes(lowercasedTerm) ||
         item.translated.toLowerCase().includes(lowercasedTerm)
     );
@@ -98,7 +98,7 @@ async function calculateZakat(assets) {
         axios.get(silverApiUrl, { headers }),
         axios.get(exchangeRateUrl)
     ]);
-    
+
     const targetRate = exchangeResponse.data.conversion_rates[currency.toUpperCase()];
     if (!targetRate) {
         throw new Error(`The currency code '${currency}' is invalid or not supported.`);
@@ -108,7 +108,7 @@ async function calculateZakat(assets) {
     const silverPricePerGram = (silverResponse.data.price / 31.1035) * targetRate;
 
     const nisabInSilver = silverPricePerGram * 595;
-    
+
     let totalWealth = (cash || 0);
     totalWealth += (goldGrams || 0) * goldPricePerGram;
     totalWealth += (silverGrams || 0) * silverPricePerGram;
@@ -120,7 +120,7 @@ async function calculateZakat(assets) {
         isPayable = true;
         zakatDue = totalWealth * 0.025;
     }
-    
+
     return {
         totalZakatableWealth: totalWealth.toFixed(2),
         nisabThreshold: nisabInSilver.toFixed(2),

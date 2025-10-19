@@ -163,12 +163,12 @@ class AdvancedVoiceInput {
 
         try {
             await navigator.mediaDevices.getUserMedia({ audio: true });
-            
+
             // Set language for recognition
             if (language !== 'auto') {
                 this.recognition.lang = language;
             }
-            
+
             this.recognition.start();
             console.log('Web Speech started with language:', language);
         } catch (error) {
@@ -198,7 +198,7 @@ class AdvancedVoiceInput {
         try {
             this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
             this.peerConnection = new RTCPeerConnection();
-            
+
             // Add audio track
             this.mediaStream.getTracks().forEach(track => {
                 this.peerConnection.addTrack(track, this.mediaStream);
@@ -241,7 +241,7 @@ class AdvancedVoiceInput {
     async processAudioBlob(audioBlob) {
         // Process complete audio blob
         console.log('Processing audio blob:', audioBlob.size, 'bytes');
-        
+
         // Convert to base64 for server processing
         const reader = new FileReader();
         reader.onload = () => {
@@ -290,7 +290,7 @@ class AdvancedVoiceInput {
     handleError(error) {
         console.error('Voice input error:', error);
         this.updateStatus(`Error: ${error}`);
-        
+
         if (error === 'no-speech' && this.isListening) {
             // Continue listening for no-speech errors
             setTimeout(() => {
@@ -349,19 +349,19 @@ class AdvancedVoiceInput {
     // Public API
     getSupportedTechnologies() {
         const technologies = [];
-        
+
         if (window.SpeechRecognition || window.webkitSpeechRecognition) {
             technologies.push('webspeech');
         }
-        
+
         if (window.MediaRecorder) {
             technologies.push('mediarecorder');
         }
-        
+
         if (window.RTCPeerConnection) {
             technologies.push('webrtc');
         }
-        
+
         return technologies;
     }
 

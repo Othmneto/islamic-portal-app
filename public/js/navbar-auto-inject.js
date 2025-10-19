@@ -9,15 +9,15 @@ class NavbarAutoInject {
         this.navbarCSS = null;
         this.navbarJS = null;
         this.isInitialized = false;
-        
+
         this.init();
     }
 
     async init() {
         if (this.isInitialized) return;
-        
+
         console.log('🔧 [NavbarAutoInject] Initializing navbar auto-injection...');
-        
+
         try {
             // Check if navbar already exists
             if (document.querySelector('.global-navbar')) {
@@ -27,16 +27,16 @@ class NavbarAutoInject {
 
             // Load navbar components
             await this.loadNavbarComponents();
-            
+
             // Inject navbar
             this.injectNavbar();
-            
+
             // Load and initialize navbar functionality
             await this.loadNavbarFunctionality();
-            
+
             this.isInitialized = true;
             console.log('✅ [NavbarAutoInject] Navbar auto-injection completed');
-            
+
         } catch (error) {
             console.error('❌ [NavbarAutoInject] Error during initialization:', error);
         }
@@ -73,7 +73,7 @@ class NavbarAutoInject {
             // Create navbar container
             const navbarContainer = document.createElement('div');
             navbarContainer.innerHTML = this.navbarHTML;
-            
+
             // Insert navbar at the beginning of body
             const body = document.body;
             if (body.firstChild) {
@@ -90,7 +90,7 @@ class NavbarAutoInject {
             }
 
             console.log('✅ [NavbarAutoInject] Navbar injected successfully');
-            
+
         } catch (error) {
             console.error('❌ [NavbarAutoInject] Error injecting navbar:', error);
         }

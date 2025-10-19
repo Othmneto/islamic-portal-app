@@ -11,21 +11,21 @@ export class RTLSupport {
         this.currentDirection = 'ltr';
         this.rtlElements = new Set();
     }
-    
+
     /**
      * Check if a language code is RTL
      */
     isRTLLanguage(langCode) {
         return this.rtlLanguages.has(langCode.toLowerCase());
     }
-    
+
     /**
      * Get text direction for a language
      */
     getTextDirection(langCode) {
         return this.isRTLLanguage(langCode) ? 'rtl' : 'ltr';
     }
-    
+
     /**
      * Apply RTL styling to an element
      */
@@ -33,43 +33,43 @@ export class RTLSupport {
         const direction = this.getTextDirection(langCode);
         element.style.direction = direction;
         element.style.textAlign = direction === 'rtl' ? 'right' : 'left';
-        
+
         // Add RTL class for CSS styling
         element.classList.toggle('rtl', direction === 'rtl');
         element.classList.toggle('ltr', direction === 'ltr');
-        
+
         // Store reference for cleanup
         this.rtlElements.add(element);
-        
+
         return direction;
     }
-    
+
     /**
      * Update text direction for multiple elements
      */
     updateTextDirection(elements, langCode) {
         const direction = this.getTextDirection(langCode);
         this.currentDirection = direction;
-        
+
         elements.forEach(element => {
             this.applyRTLStyling(element, langCode);
         });
-        
+
         // Update document direction
         document.documentElement.setAttribute('dir', direction);
         document.body.classList.toggle('rtl', direction === 'rtl');
         document.body.classList.toggle('ltr', direction === 'ltr');
     }
-    
+
     /**
      * Handle input field RTL behavior
      */
     setupRTLInput(inputElement, langCode) {
         const direction = this.getTextDirection(langCode);
-        
+
         inputElement.style.direction = direction;
         inputElement.style.textAlign = direction === 'rtl' ? 'right' : 'left';
-        
+
         // Handle cursor position for RTL
         if (direction === 'rtl') {
             inputElement.addEventListener('input', (e) => {
@@ -77,7 +77,7 @@ export class RTLSupport {
             });
         }
     }
-    
+
     /**
      * Handle cursor positioning in RTL input
      */
@@ -87,7 +87,7 @@ export class RTLSupport {
             input.setSelectionRange(input.value.length, input.value.length);
         }, 0);
     }
-    
+
     /**
      * Format text for RTL display
      */
@@ -95,11 +95,11 @@ export class RTLSupport {
         if (!this.isRTLLanguage(langCode)) {
             return text;
         }
-        
+
         // Add RTL markers if needed
         return `\u202E${text}\u202C`;
     }
-    
+
     /**
      * Clean up RTL styling
      */
@@ -110,7 +110,7 @@ export class RTLSupport {
             element.classList.remove('rtl', 'ltr');
         });
         this.rtlElements.clear();
-        
+
         document.documentElement.removeAttribute('dir');
         document.body.classList.remove('rtl', 'ltr');
     }

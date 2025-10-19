@@ -11,13 +11,19 @@ const LiveTranslationHandler = require('./liveTranslationHandler');
 module.exports = (io) => {
   // Initialize Real-Time Translation Manager
   const realTimeTranslationManager = new RealTimeTranslationManager(io);
-  
+
   // Initialize Live Translation Handler (Imam-Worshipper)
   const liveTranslationHandler = new LiveTranslationHandler(io);
 
   // This event fires whenever a new client connects
   io.on('connection', (socket) => {
     logger.info(`New client connected: ${socket.id}`);
+
+    // Join user-specific room for notification status updates
+    if (socket.userId) {
+      socket.join(`user:${socket.userId}`);
+      logger.info(`Socket ${socket.id} joined user room: user:${socket.userId}`);
+    }
 
     // Setup Live Translation handlers (Imam-Worshipper feature)
     liveTranslationHandler.setupHandlers(socket);
@@ -99,5 +105,27 @@ module.exports = (io) => {
    */
   io.getAllConversations = () => {
     return realTimeTranslationManager.getAllConversations();
+  };
+
+  /**
+   * Emits notification status update to a specific user.
+   * @param {string} userId - The ID of the user.
+   * @param {object} data - Notification status data.
+   */
+  io.emitNotificationStatus = (userId, data) => {
+    if (io && userId) {
+      io.to(`user:${userId}`).emit('notificationStatus', data);
+    }
+  };
+
+  /**
+   * Emits schedule update to a specific user.
+   * @param {string} userId - The ID of the user.
+   * @param {object} scheduleData - Schedule data.
+   */
+  io.emitScheduleUpdate = (userId, scheduleData) => {
+    if (io && userId) {
+      io.to(`user:${userId}`).emit('scheduleUpdate', scheduleData);
+    }
   };
 };

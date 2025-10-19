@@ -19,6 +19,12 @@ const PushSubscriptionSchema = new mongoose.Schema(
     preferences: { type: mongoose.Schema.Types.Mixed, default: undefined },
     location: { lat: { type: Number }, lon: { type: Number }, city: { type: String } },
     ua: { type: String },
+
+    // Health monitoring fields
+    expiresAt: { type: Date, default: null },
+    lastHealthCheck: { type: Date },
+    healthCheckFailures: { type: Number, default: 0 },
+    isActive: { type: Boolean, default: true },
   },
   { timestamps: true, collection: "push_subscriptions" }
 );
@@ -31,6 +37,10 @@ PushSubscriptionSchema.statics.upsertFromClient = async function ({
     err.status = 400;
     throw err;
   }
+
+  // Calculate expiration time
+  const expiresAt = subscription.expirationTime ? new Date(subscription.expirationTime) : null;
+
   const doc = await this.findOneAndUpdate(
     { "subscription.endpoint": subscription.endpoint },
     {
@@ -45,6 +55,10 @@ PushSubscriptionSchema.statics.upsertFromClient = async function ({
         preferences: preferences || undefined,
         location: location || undefined,
         ua: ua || undefined,
+        expiresAt: expiresAt,
+        lastHealthCheck: new Date(),
+        healthCheckFailures: 0,
+        isActive: true, // Ensure isActive is set to true on upsert
         updatedAt: new Date(),
       },
       $setOnInsert: { createdAt: new Date() },

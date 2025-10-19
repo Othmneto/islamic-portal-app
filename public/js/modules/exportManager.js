@@ -23,27 +23,27 @@ export class ExportManager {
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+
             doc.setFontSize(16);
             doc.text('Translation Export', 20, 20);
-            
+
             doc.setFontSize(12);
             doc.text('Original Text:', 20, 40);
-            
+
             // Handle long text by splitting into multiple lines
             const originalLines = doc.splitTextToSize(originalText || 'No text available', 170);
             doc.text(originalLines, 20, 50);
-            
+
             doc.text('Translated Text:', 20, 80);
             const translatedLines = doc.splitTextToSize(translatedText || 'No translation available', 170);
             doc.text(translatedLines, 20, 90);
-            
+
             doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 120);
-            
+
             if (metadata.fromLanguage && metadata.toLanguage) {
                 doc.text(`Language: ${metadata.fromLanguage} → ${metadata.toLanguage}`, 20, 130);
             }
-            
+
             doc.save('translation-export.pdf');
             return { success: true, message: 'PDF exported successfully!' };
         } catch (error) {
@@ -75,7 +75,7 @@ Metadata:
             a.download = 'translation-export.txt';
             a.click();
             URL.revokeObjectURL(url);
-            
+
             return { success: true, message: 'TXT exported successfully!' };
         } catch (error) {
             console.error('TXT export failed:', error);
@@ -118,7 +118,7 @@ Metadata:
             a.download = 'translation-export.doc';
             a.click();
             URL.revokeObjectURL(url);
-            
+
             return { success: true, message: 'Word document exported successfully!' };
         } catch (error) {
             console.error('Word export failed:', error);
@@ -146,8 +146,8 @@ Metadata:
                     throw new Error('Unsupported export format');
             }
 
-            const blob = new Blob([content], { 
-                type: format === 'word' ? 'application/msword' : 'text/plain' 
+            const blob = new Blob([content], {
+                type: format === 'word' ? 'application/msword' : 'text/plain'
             });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
@@ -165,7 +165,7 @@ Metadata:
 
     formatConversationAsText(conversations) {
         let content = `Conversation Export\nGenerated: ${new Date().toLocaleString()}\n\n`;
-        
+
         conversations.forEach((conv, index) => {
             content += `--- Translation ${index + 1} ---\n`;
             content += `Timestamp: ${new Date(conv.timestamp).toLocaleString()}\n`;
@@ -194,7 +194,7 @@ Metadata:
                 <h1>Conversation Export</h1>
                 <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
         `;
-        
+
         conversations.forEach((conv, index) => {
             content += `
                 <div class="translation">
@@ -219,44 +219,44 @@ Metadata:
         try {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            
+
             doc.setFontSize(16);
             doc.text('Conversation Export', 20, 20);
             doc.setFontSize(12);
             doc.text(`Generated: ${new Date().toLocaleString()}`, 20, 30);
-            
+
             let yPosition = 50;
-            
+
             conversations.forEach((conv, index) => {
                 if (yPosition > 250) {
                     doc.addPage();
                     yPosition = 20;
                 }
-                
+
                 doc.setFontSize(14);
                 doc.text(`Translation ${index + 1}`, 20, yPosition);
                 yPosition += 10;
-                
+
                 doc.setFontSize(10);
                 doc.text(`Timestamp: ${new Date(conv.timestamp).toLocaleString()}`, 20, yPosition);
                 yPosition += 8;
                 doc.text(`Languages: ${conv.fromLanguage} → ${conv.toLanguage}`, 20, yPosition);
                 yPosition += 8;
-                
+
                 doc.setFontSize(12);
                 doc.text('Original:', 20, yPosition);
                 yPosition += 8;
                 const originalLines = doc.splitTextToSize(conv.original, 170);
                 doc.text(originalLines, 20, yPosition);
                 yPosition += originalLines.length * 6 + 5;
-                
+
                 doc.text('Translated:', 20, yPosition);
                 yPosition += 8;
                 const translatedLines = doc.splitTextToSize(conv.translated, 170);
                 doc.text(translatedLines, 20, yPosition);
                 yPosition += translatedLines.length * 6 + 15;
             });
-            
+
             doc.save('conversation-export.pdf');
             return { success: true, message: 'PDF exported successfully!' };
         } catch (error) {

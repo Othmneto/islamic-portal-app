@@ -16,10 +16,10 @@ export class SecurityHardener {
             'Referrer-Policy': 'strict-origin-when-cross-origin',
             'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
         };
-        
+
         this.init();
     }
-    
+
     init() {
         this.setupCSPMonitoring();
         this.setupXSSProtection();
@@ -28,7 +28,7 @@ export class SecurityHardener {
         this.setupClickjackingProtection();
         this.setupSecureStorage();
     }
-    
+
     /**
      * Setup Content Security Policy monitoring
      */
@@ -42,19 +42,19 @@ export class SecurityHardener {
                 sourceFile: e.sourceFile,
                 lineNumber: e.lineNumber
             });
-            
+
             console.warn('CSP Violation:', {
                 directive: e.violatedDirective,
                 blocked: e.blockedURI,
                 source: e.sourceFile,
                 line: e.lineNumber
             });
-            
+
             // Report to server
             this.reportCSPViolation(e);
         });
     }
-    
+
     /**
      * Report CSP violation to server
      */
@@ -80,28 +80,28 @@ export class SecurityHardener {
             console.error('Failed to report CSP violation:', error);
         }
     }
-    
+
     /**
      * Setup XSS protection
      */
     setupXSSProtection() {
         // Note: innerHTML override disabled to prevent conflicts
         // this.sanitizeInputs();
-        
+
         // Monitor for XSS attempts
         this.monitorXSSAttempts();
-        
+
         // Setup output encoding
         this.setupOutputEncoding();
     }
-    
+
     /**
      * Sanitize user inputs
      */
     sanitizeInputs() {
         // Store reference to sanitizeHTML method
         const self = this;
-        
+
         // Override innerHTML to sanitize content
         const originalInnerHTML = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
         Object.defineProperty(Element.prototype, 'innerHTML', {
@@ -112,13 +112,13 @@ export class SecurityHardener {
             get: originalInnerHTML.get
         });
     }
-    
+
     /**
      * Sanitize HTML content
      */
     sanitizeHTML(html) {
         if (typeof html !== 'string') return html;
-        
+
         // Remove script tags and event handlers
         return html
             .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
@@ -127,7 +127,7 @@ export class SecurityHardener {
             .replace(/vbscript:/gi, '')
             .replace(/data:/gi, '');
     }
-    
+
     /**
      * Monitor XSS attempts
      */
@@ -141,13 +141,13 @@ export class SecurityHardener {
             /eval\s*\(/i,
             /expression\s*\(/i
         ];
-        
+
         // Monitor form inputs
         document.addEventListener('input', (e) => {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 const value = e.target.value;
                 const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(value));
-                
+
                 if (isSuspicious) {
                     this.xssAttempts++;
                     console.warn('Potential XSS attempt detected:', value);
@@ -156,7 +156,7 @@ export class SecurityHardener {
             }
         });
     }
-    
+
     /**
      * Report XSS attempt
      */
@@ -179,7 +179,7 @@ export class SecurityHardener {
             console.error('Failed to report XSS attempt:', error);
         }
     }
-    
+
     /**
      * Setup output encoding
      */
@@ -190,13 +190,13 @@ export class SecurityHardener {
             div.textContent = text;
             return div.innerHTML;
         };
-        
+
         // Encode URL parameters
         this.encodeURL = (text) => {
             return encodeURIComponent(text);
         };
     }
-    
+
     /**
      * Setup CSRF protection
      */
@@ -206,14 +206,14 @@ export class SecurityHardener {
         if (csrfMeta) {
             this.csrfToken = csrfMeta.getAttribute('content');
         }
-        
+
         // Add CSRF token to all forms
         this.addCSRFTokenToForms();
-        
+
         // Add CSRF token to AJAX requests
         this.addCSRFTokenToAJAX();
     }
-    
+
     /**
      * Add CSRF token to forms
      */
@@ -229,7 +229,7 @@ export class SecurityHardener {
             }
         });
     }
-    
+
     /**
      * Add CSRF token to AJAX requests
      */
@@ -245,7 +245,7 @@ export class SecurityHardener {
             return originalFetch(url, options);
         };
     }
-    
+
     /**
      * Setup input sanitization
      */
@@ -258,13 +258,13 @@ export class SecurityHardener {
             });
         });
     }
-    
+
     /**
      * Sanitize text input
      */
     sanitizeText(text) {
         if (typeof text !== 'string') return text;
-        
+
         return text
             .replace(/[<>]/g, '') // Remove angle brackets
             .replace(/javascript:/gi, '') // Remove javascript: protocol
@@ -272,7 +272,7 @@ export class SecurityHardener {
             .replace(/on\w+\s*=/gi, '') // Remove event handlers
             .trim();
     }
-    
+
     /**
      * Setup clickjacking protection
      */
@@ -282,17 +282,17 @@ export class SecurityHardener {
             // Allow only trusted domains
             const trustedDomains = ['localhost', 'yourdomain.com'];
             const parentDomain = window.parent.location.hostname;
-            
+
             if (!trustedDomains.includes(parentDomain)) {
                 // Redirect to prevent clickjacking
                 window.top.location = window.location;
             }
         }
-        
+
         // Note: X-Frame-Options should be set via HTTP headers, not meta tags
         // This is handled by the server-side security headers
     }
-    
+
     /**
      * Setup secure storage
      */
@@ -307,7 +307,7 @@ export class SecurityHardener {
                     console.error('Failed to store secure data:', error);
                 }
             },
-            
+
             get: (key) => {
                 try {
                     const encrypted = localStorage.getItem(`secure_${key}`);
@@ -320,13 +320,13 @@ export class SecurityHardener {
                 }
                 return null;
             },
-            
+
             remove: (key) => {
                 localStorage.removeItem(`secure_${key}`);
             }
         };
     }
-    
+
     /**
      * Simple encryption for sensitive data
      */
@@ -339,7 +339,7 @@ export class SecurityHardener {
         }
         return btoa(result);
     }
-    
+
     /**
      * Simple decryption for sensitive data
      */
@@ -357,25 +357,25 @@ export class SecurityHardener {
             return null;
         }
     }
-    
+
     /**
      * Validate file uploads
      */
     validateFileUpload(file) {
         const allowedTypes = ['text/plain', 'text/csv', 'application/json'];
         const maxSize = 5 * 1024 * 1024; // 5MB
-        
+
         if (!allowedTypes.includes(file.type)) {
             throw new Error('File type not allowed');
         }
-        
+
         if (file.size > maxSize) {
             throw new Error('File too large');
         }
-        
+
         return true;
     }
-    
+
     /**
      * Get security status
      */
@@ -388,7 +388,7 @@ export class SecurityHardener {
             securityHeaders: this.securityHeaders
         };
     }
-    
+
     /**
      * Cleanup security monitoring
      */

@@ -30,17 +30,17 @@ const testResults = {
  */
 function testPage(pagePath) {
     const fullPath = path.join(__dirname, '..', 'public', pagePath);
-    
+
     if (!fs.existsSync(fullPath)) {
         testResults.failed++;
         testResults.errors.push(`❌ File not found: ${pagePath}`);
         return false;
     }
-    
+
     try {
         const content = fs.readFileSync(fullPath, 'utf8');
         testResults.total++;
-        
+
         const checks = [
             {
                 name: 'Navbar HTML Structure',
@@ -93,17 +93,17 @@ function testPage(pagePath) {
                 error: 'Missing navigation links'
             }
         ];
-        
+
         let pagePassed = true;
         const pageErrors = [];
-        
+
         checks.forEach(check => {
             if (!check.test()) {
                 pagePassed = false;
                 pageErrors.push(check.error);
             }
         });
-        
+
         if (pagePassed) {
             testResults.passed++;
             console.log(`✅ ${pagePath}: All checks passed`);
@@ -112,9 +112,9 @@ function testPage(pagePath) {
             testResults.errors.push(`❌ ${pagePath}: ${pageErrors.join(', ')}`);
             console.log(`❌ ${pagePath}: ${pageErrors.join(', ')}`);
         }
-        
+
         return pagePassed;
-        
+
     } catch (error) {
         testResults.failed++;
         testResults.errors.push(`❌ ${pagePath}: Error reading file - ${error.message}`);
@@ -128,17 +128,17 @@ function testPage(pagePath) {
  */
 function testNavbarCSS() {
     const cssPath = path.join(__dirname, '..', 'public', 'css', 'global-navbar.css');
-    
+
     if (!fs.existsSync(cssPath)) {
         testResults.failed++;
         testResults.errors.push('❌ Navbar CSS file not found');
         return false;
     }
-    
+
     try {
         const content = fs.readFileSync(cssPath, 'utf8');
         testResults.total++;
-        
+
         const cssChecks = [
             {
                 name: 'Global Navbar Styles',
@@ -166,17 +166,17 @@ function testNavbarCSS() {
                 error: 'Missing dropdown styles'
             }
         ];
-        
+
         let cssPassed = true;
         const cssErrors = [];
-        
+
         cssChecks.forEach(check => {
             if (!check.test()) {
                 cssPassed = false;
                 cssErrors.push(check.error);
             }
         });
-        
+
         if (cssPassed) {
             testResults.passed++;
             console.log('✅ global-navbar.css: All checks passed');
@@ -185,9 +185,9 @@ function testNavbarCSS() {
             testResults.errors.push(`❌ global-navbar.css: ${cssErrors.join(', ')}`);
             console.log(`❌ global-navbar.css: ${cssErrors.join(', ')}`);
         }
-        
+
         return cssPassed;
-        
+
     } catch (error) {
         testResults.failed++;
         testResults.errors.push(`❌ global-navbar.css: Error reading file - ${error.message}`);
@@ -201,17 +201,17 @@ function testNavbarCSS() {
  */
 function testNavbarJS() {
     const jsPath = path.join(__dirname, '..', 'public', 'js', 'global-navbar.js');
-    
+
     if (!fs.existsSync(jsPath)) {
         testResults.failed++;
         testResults.errors.push('❌ Navbar JavaScript file not found');
         return false;
     }
-    
+
     try {
         const content = fs.readFileSync(jsPath, 'utf8');
         testResults.total++;
-        
+
         const jsChecks = [
             {
                 name: 'GlobalNavbar Class',
@@ -254,17 +254,17 @@ function testNavbarJS() {
                 error: 'Missing console logging'
             }
         ];
-        
+
         let jsPassed = true;
         const jsErrors = [];
-        
+
         jsChecks.forEach(check => {
             if (!check.test()) {
                 jsPassed = false;
                 jsErrors.push(check.error);
             }
         });
-        
+
         if (jsPassed) {
             testResults.passed++;
             console.log('✅ global-navbar.js: All checks passed');
@@ -273,9 +273,9 @@ function testNavbarJS() {
             testResults.errors.push(`❌ global-navbar.js: ${jsErrors.join(', ')}`);
             console.log(`❌ global-navbar.js: ${jsErrors.join(', ')}`);
         }
-        
+
         return jsPassed;
-        
+
     } catch (error) {
         testResults.failed++;
         testResults.errors.push(`❌ global-navbar.js: Error reading file - ${error.message}`);
@@ -324,8 +324,8 @@ ${testPages.map(page => `- ${page}`).join('\n')}
 
 ## 🚀 **Recommendations**
 
-${testResults.failed === 0 ? 
-    '🎉 **All tests passed!** Your navbar is fully functional and ready for production.' : 
+${testResults.failed === 0 ?
+    '🎉 **All tests passed!** Your navbar is fully functional and ready for production.' :
     '⚠️ **Some tests failed.** Please review the failed tests and fix the issues before deploying.'}
 
 ## 📝 **Next Steps**
@@ -343,20 +343,20 @@ ${testResults.failed === 0 ?
     // Write report to file
     const reportPath = path.join(__dirname, '..', 'NAVBAR_TEST_REPORT.md');
     fs.writeFileSync(reportPath, report);
-    
+
     console.log('\n📊 **TEST SUMMARY**');
     console.log(`Total Tests: ${testResults.total}`);
     console.log(`Passed: ${testResults.passed} ✅`);
     console.log(`Failed: ${testResults.failed} ❌`);
     console.log(`Success Rate: ${testResults.total > 0 ? Math.round((testResults.passed / testResults.total) * 100) : 0}%`);
-    
+
     if (testResults.errors.length > 0) {
         console.log('\n❌ **FAILED TESTS**');
         testResults.errors.forEach(error => console.log(error));
     }
-    
+
     console.log(`\n📄 **Report saved to**: ${reportPath}`);
-    
+
     return testResults.failed === 0;
 }
 
@@ -365,26 +365,26 @@ ${testResults.failed === 0 ?
  */
 function runTests() {
     console.log('🧪 **STARTING NAVBAR FUNCTIONALITY TESTS**\n');
-    
+
     // Test CSS
     console.log('🎨 Testing navbar CSS...');
     testNavbarCSS();
-    
+
     // Test JavaScript
     console.log('⚙️ Testing navbar JavaScript...');
     testNavbarJS();
-    
+
     // Test pages
     console.log('📄 Testing pages...');
     testPages.forEach(page => {
         console.log(`Testing ${page}...`);
         testPage(page);
     });
-    
+
     // Generate report
     console.log('\n📊 Generating test report...');
     const allPassed = generateReport();
-    
+
     if (allPassed) {
         console.log('\n🎉 **ALL TESTS PASSED!** Your navbar is fully functional!');
         process.exit(0);

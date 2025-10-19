@@ -46,7 +46,7 @@ const upload = multer({
             'audio/m4a',
             'audio/aac'
         ];
-        
+
         if (allowedMimes.includes(file.mimetype)) {
             cb(null, true);
         } else {
@@ -59,7 +59,7 @@ const audioDir = path.join(__dirname, '..', 'public/audio');
 // POST /speak
 router.post('/speak', validateSpeakRequest, async (req, res) => {
     const { text, from, to, voiceId, sessionId } = req.body;
-    
+
     try {
         const translationResults = await translateText(text, from, to, voiceId, sessionId);
         const newHistoryEntries = [];
@@ -85,7 +85,7 @@ router.post('/speak', validateSpeakRequest, async (req, res) => {
         }
 
         const insertResult = await addHistoryEntries(newHistoryEntries);
-        
+
         const insertedIds = Object.values(insertResult.insertedIds);
         for (let i = 0; i < insertedIds.length; i++) {
             const dbId = insertedIds[i].toString();
@@ -130,7 +130,7 @@ router.post('/auto-detect-speak', upload.single('audioBlob'), validateAutoDetect
             const audioId = `${uuidv4()}.mp3`;
             const audioPath = path.join(audioDir, audioId);
             await fs.promises.writeFile(audioPath, result.audioBuffer);
-            
+
             const fromField = (fromLang && fromLang !== 'auto') ? fromLang : `Auto-Detect (${detectedLang})`;
             const historyEntry = {
                 timestamp: new Date(),
@@ -175,11 +175,11 @@ router.post('/auto-detect-speak', upload.single('audioBlob'), validateAutoDetect
 // POST /translate - Simple text translation endpoint
 router.post('/translate', async (req, res) => {
     const { text, fromLang, toLang, sessionId } = req.body;
-    
+
     try {
         console.log('Translating text:', text.substring(0, 50) + '...');
         console.log('From language:', fromLang, 'To language:', toLang);
-        
+
         // Convert language names to codes for the translateText function
         const languageMap = {
             'English': 'en',
@@ -193,18 +193,18 @@ router.post('/translate', async (req, res) => {
             'Chinese': 'zh',
             'Japanese': 'ja'
         };
-        
+
         const fromCode = languageMap[fromLang] || fromLang || 'auto';
         const toCode = languageMap[toLang] || toLang || 'en';
-        
+
         console.log('Converted codes - From:', fromCode, 'To:', toCode);
-        
+
         // Use the existing translateText function - normalize to array
         const toArr = Array.isArray(toCode) ? toCode : [toCode];
         const translationResults = await translateText(text, fromCode, toArr, null, sessionId);
-        
+
         console.log('Translation results:', translationResults);
-        
+
         // Return the first result (or create a simple response)
         if (translationResults && translationResults.length > 0) {
             const result = translationResults[0];
@@ -227,7 +227,7 @@ router.post('/translate', async (req, res) => {
         }
     } catch (err) {
         console.error("Server Error in /translate:", err);
-        res.status(500).json({ 
+        res.status(500).json({
             error: err.message || 'Translation failed',
             translatedText: text, // Return original text on error
             fromLanguage: fromLang,

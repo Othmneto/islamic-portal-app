@@ -22,7 +22,7 @@ class RealTimeTranslation {
     initializeSocket() {
         // Initialize Socket.IO connection
         this.socket = io();
-        
+
         this.socket.on('connect', () => {
             console.log('Connected to server');
             this.isConnected = true;
@@ -92,13 +92,13 @@ class RealTimeTranslation {
     startConversation(sessionId) {
         this.sessionId = sessionId || this.getOrCreateSessionId();
         this.conversationId = this.generateConversationId();
-        
+
         if (this.socket && this.isConnected) {
             this.socket.emit('joinConversation', {
                 conversationId: this.conversationId,
                 sessionId: this.sessionId
             });
-            
+
             console.log('Started conversation:', this.conversationId);
             this.updateConversationStatus(true);
         }
@@ -106,7 +106,7 @@ class RealTimeTranslation {
 
     handleTextInput(text) {
         if (!this.isConnected || !this.conversationId) return;
-        
+
         if (text.length < 2) {
             this.clearPartialTranslation();
             return;
@@ -129,17 +129,17 @@ class RealTimeTranslation {
     // Auto-translate text immediately
     autoTranslateText(text) {
         if (!text || text.trim().length < 2) return;
-        
+
         console.log('Auto-translating text:', text);
-        
+
         // Clear previous translation timeout
         clearTimeout(this.translationTimeout);
-        
+
         // Debounce translation calls to avoid duplicates
         this.translationTimeout = setTimeout(() => {
             // Get target languages
             const targetLanguages = window.selectedTargetLanguages || ['English', 'Arabic'];
-            
+
             // Trigger translation for each target language
             targetLanguages.forEach(targetLang => {
                 this.translateToLanguage(text, targetLang);
@@ -151,7 +151,7 @@ class RealTimeTranslation {
     async testTranslation() {
         const testText = "السلام عليكم";
         console.log('Testing translation with:', testText);
-        
+
         try {
             // Use a valid voice ID - let's try a common one
             const response = await fetch('/api/translation/speak', {
@@ -199,12 +199,12 @@ class RealTimeTranslation {
                 'Chinese': 'zh',
                 'Japanese': 'ja'
             };
-            
+
             const fromLang = this.detectLanguage(text) === 'ar-SA' ? 'ar' : 'auto';
             const toCode = languageMap[targetLanguage] || 'en';
-            
+
             console.log(`Translating "${text}" from ${fromLang} to ${targetLanguage} (${toCode})`);
-            
+
             // Use the existing /speak endpoint
             const response = await fetch('/api/translation/speak', {
                 method: 'POST',
@@ -224,11 +224,11 @@ class RealTimeTranslation {
                 try {
                     const data = await response.json();
                     console.log(`Raw response data for ${targetLanguage}:`, data);
-                    
+
                     if (data && data.length > 0) {
                         const result = data[0];
                         console.log(`Translation successful for ${targetLanguage}:`, result);
-                        
+
                         // Only display if translation is not empty
                         if (result.translated && result.translated.trim() !== '') {
                             this.displayTranslationResult({
@@ -250,7 +250,7 @@ class RealTimeTranslation {
                     console.error(`JSON parsing error for ${targetLanguage}:`, jsonError);
                     const responseText = await response.text();
                     console.error('Response text:', responseText.substring(0, 500));
-                    
+
                     // Check if response is HTML (error page)
                     if (responseText.includes('<!DOCTYPE') || responseText.includes('<html')) {
                         console.error('Received HTML instead of JSON - server error');
@@ -279,7 +279,7 @@ class RealTimeTranslation {
             } else {
                 const errorText = await response.text();
                 console.error(`Translation failed for ${targetLanguage}:`, response.status, response.statusText, errorText);
-                
+
                 // Display error message
                 this.displayTranslationResult({
                     original: text,
@@ -299,38 +299,38 @@ class RealTimeTranslation {
     // Display translation result
     displayTranslationResult(data) {
         console.log(`Displaying translation result:`, data);
-        
+
         // Validate data structure
         if (!data || typeof data !== 'object') {
             console.error('Invalid data structure:', data);
             return;
         }
-        
+
         console.log(`Translation to ${data.toLanguage}:`, data.translated);
-        
+
         // Debug logging
         if (data.translated && data.translated.trim() !== '') {
             console.log('✅ Translation will be displayed:', data.translated);
         } else {
             console.log('❌ Translation is empty or invalid:', data);
         }
-        
+
         // Don't display empty translations
         if (!data.translated || data.translated.trim() === '') {
             console.log('Skipping empty translation');
             return;
         }
-        
+
         // Get or create results container
         let resultsContainer = document.getElementById('latest-translation-container');
         console.log('Results container found:', !!resultsContainer);
-        
+
         if (!resultsContainer) {
             console.log('Creating new results container');
             resultsContainer = this.createResultsContainer();
             document.querySelector('.container').appendChild(resultsContainer);
         }
-        
+
         // Add header if this is the first translation
         if (resultsContainer.children.length === 0) {
             const headerDiv = document.createElement('div');
@@ -338,7 +338,7 @@ class RealTimeTranslation {
             headerDiv.innerHTML = '<h3>🔄 Real-Time Translation Results</h3>';
             resultsContainer.appendChild(headerDiv);
         }
-        
+
         // Create translation result element
         const resultDiv = document.createElement('div');
         resultDiv.className = 'translation-result';
@@ -355,16 +355,16 @@ class RealTimeTranslation {
                 </div>
             </div>
         `;
-        
+
         // Add to results container
         console.log('Appending translation result to container');
         resultsContainer.appendChild(resultDiv);
-        
+
         // Make sure container is visible
         resultsContainer.style.display = 'block';
         console.log('Container display set to:', resultsContainer.style.display);
         console.log('Container children count:', resultsContainer.children.length);
-        
+
         // Scroll to bottom
         resultsContainer.scrollTop = resultsContainer.scrollHeight;
     }
@@ -383,13 +383,13 @@ class RealTimeTranslation {
             margin: 20px 0;
             background: #f9fafb;
         `;
-        
+
         // Insert after the language selection area
         const languageArea = document.querySelector('.language-input-area');
         if (languageArea) {
             languageArea.insertAdjacentElement('afterend', container);
         }
-        
+
         return container;
     }
 
@@ -416,7 +416,7 @@ class RealTimeTranslation {
             conversationId: this.conversationId,
             isPartial: !isComplete
         };
-        
+
         this.socket.emit('realTimeTranslation', translationData);
 
         // Show loading indicator
@@ -425,21 +425,21 @@ class RealTimeTranslation {
 
     displayTranslationResult(data) {
         const container = this.getOrCreateTranslationContainer();
-        
+
         // Create translation result element
         const translationElement = document.createElement('div');
         translationElement.className = 'realtime-translation-result';
         translationElement.innerHTML = this.createTranslationHTML(data);
-        
+
         // Add to container
         container.insertBefore(translationElement, container.firstChild);
-        
+
         // Auto-scroll to top
         container.scrollTop = 0;
-        
+
         // Play audio if available
         this.playTranslationAudio(data);
-        
+
         // Update conversation context
         this.updateConversationContext(data);
     }
@@ -464,7 +464,7 @@ class RealTimeTranslation {
 
     showTypingIndicator(data) {
         const typingContainer = this.getOrCreateTypingContainer();
-        
+
         if (data.isTyping) {
             typingContainer.innerHTML = `
                 <div class="typing-indicator">
@@ -482,7 +482,7 @@ class RealTimeTranslation {
 
     handleTranslationComplete(data) {
         this.hideLoadingIndicator();
-        
+
         if (data.success) {
             console.log('[RealTime] Translation completed successfully');
         } else {
@@ -494,13 +494,13 @@ class RealTimeTranslation {
     createTranslationHTML(data) {
         const translations = data.translations || [];
         const timestamp = new Date(data.timestamp).toLocaleTimeString();
-        
+
         let html = `
             <div class="translation-item">
                 <div class="original-text">${data.original}</div>
                 <div class="translations">
         `;
-        
+
         translations.forEach(translation => {
             html += `
                 <div class="translation-option">
@@ -513,7 +513,7 @@ class RealTimeTranslation {
                 </div>
             `;
         });
-        
+
         html += `
                 </div>
                 <div class="translation-meta">
@@ -522,7 +522,7 @@ class RealTimeTranslation {
                 </div>
             </div>
         `;
-        
+
         return html;
     }
 
@@ -541,7 +541,7 @@ class RealTimeTranslation {
             container = document.createElement('div');
             container.id = 'realtime-translations';
             container.className = 'realtime-translations-container';
-            
+
             // Insert after the main translation area
             const mainContainer = document.querySelector('.container');
             if (mainContainer) {
@@ -557,7 +557,7 @@ class RealTimeTranslation {
             container = document.createElement('div');
             container.id = 'partial-translation';
             container.className = 'partial-translation-container';
-            
+
             const textInput = document.getElementById('text-input');
             if (textInput && textInput.parentNode) {
                 textInput.parentNode.insertBefore(container, textInput.nextSibling);
@@ -572,7 +572,7 @@ class RealTimeTranslation {
             container = document.createElement('div');
             container.id = 'typing-indicators';
             container.className = 'typing-indicators-container';
-            
+
             const mainContainer = document.querySelector('.container');
             if (mainContainer) {
                 mainContainer.appendChild(container);
@@ -701,34 +701,34 @@ class RealTimeTranslation {
             this.recognition.maxAlternatives = 1; // Single alternative for better performance
             this.currentLanguage = 'en-US';
             this.languageDetectionEnabled = true;
-            
+
             this.recognition.onstart = () => {
                 console.log('Voice recognition started - continuous listening');
                 this.updateVoiceButton(true);
             };
-            
+
             this.recognition.onresult = (event) => {
                 let finalTranscript = '';
                 let interimTranscript = '';
                 let detectedLanguage = this.currentLanguage;
-                
+
                 // Process all results with language detection
                 for (let i = event.resultIndex; i < event.results.length; i++) {
                     const result = event.results[i];
                     const transcript = result[0].transcript;
-                    
+
                     // Try to detect language from the transcript
                     if (this.languageDetectionEnabled) {
                         detectedLanguage = this.detectLanguage(transcript);
                     }
-                    
+
                     if (result.isFinal) {
                         finalTranscript += transcript;
                     } else {
                         interimTranscript += transcript;
                     }
                 }
-                
+
                 // Update text input with current transcript
                 const textInput = document.getElementById('text-input');
                 if (textInput) {
@@ -738,16 +738,16 @@ class RealTimeTranslation {
                         const currentText = textInput.value;
                         textInput.value = currentText + (currentText ? ' ' : '') + finalTranscript;
                         console.log('Final voice input:', finalTranscript, 'Language:', detectedLanguage);
-                        
+
                         // Trigger real-time translation for the complete text
                         this.handleTextInput(textInput.value);
-                        
+
                         // Trigger immediate translation for Arabic text
                         if (detectedLanguage === 'ar-SA' || this.detectLanguage(finalTranscript) === 'ar-SA') {
                             console.log('Arabic detected - triggering immediate translation');
                             this.autoTranslateText(finalTranscript);
                         }
-                        
+
                         // Check if we need to restart with different language
                         if (detectedLanguage !== this.currentLanguage && detectedLanguage !== 'auto') {
                             this.switchLanguage(detectedLanguage);
@@ -755,13 +755,13 @@ class RealTimeTranslation {
                     } else if (interimTranscript) {
                         // Show interim results in a temporary way (don't save to input yet)
                         console.log('Interim voice input:', interimTranscript, 'Language:', detectedLanguage);
-                        
+
                         // Update a temporary display if needed
                         this.updateInterimDisplay(interimTranscript);
                     }
                 }
             };
-            
+
             this.recognition.onend = () => {
                 console.log('Voice recognition ended');
                 // Only update button if we're not supposed to be listening
@@ -783,12 +783,12 @@ class RealTimeTranslation {
                     }, 100);
                 }
             };
-            
+
             this.recognition.onerror = (event) => {
                 console.error('Voice recognition error:', event.error);
                 this.isListening = false;
                 this.updateVoiceButton(false);
-                
+
                 // Handle specific errors
                 if (event.error === 'no-speech') {
                     console.log('No speech detected, continuing to listen...');
@@ -829,16 +829,16 @@ class RealTimeTranslation {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                 await navigator.mediaDevices.getUserMedia({ audio: true });
             }
-            
+
             // Clear text input for fresh start
             const textInput = document.getElementById('text-input');
             if (textInput) {
                 textInput.value = '';
             }
-            
+
             // Set language based on voice recognition language selector
             const voiceRecognitionLang = document.getElementById('voice-recognition-lang')?.value || 'auto';
-            
+
             if (voiceRecognitionLang !== 'auto') {
                 this.recognition.lang = voiceRecognitionLang;
                 this.currentLanguage = voiceRecognitionLang;
@@ -851,7 +851,7 @@ class RealTimeTranslation {
                 this.languageDetectionEnabled = true; // Enable auto-detection
                 console.log('Using auto-detection mode - starting with English');
             }
-            
+
             this.isListening = true;
             this.listeningStartTime = new Date();
             this.recognition.start();
@@ -861,7 +861,7 @@ class RealTimeTranslation {
             console.error('Error starting voice input:', error);
             this.isListening = false;
             this.updateVoiceButton(false);
-            
+
             if (error.name === 'NotAllowedError') {
                 alert('Microphone permission denied. Please allow microphone access to use voice input.');
             } else if (error.name === 'NotFoundError') {
@@ -889,7 +889,7 @@ class RealTimeTranslation {
                 const minutes = Math.floor(elapsed / 60);
                 const seconds = elapsed % 60;
                 const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
-                
+
                 // Update the voice status with listening time
                 const voiceStatusText = document.getElementById('voice-status-text');
                 if (voiceStatusText) {
@@ -913,60 +913,60 @@ class RealTimeTranslation {
         if (/[\u0600-\u06FF]/.test(text)) {
             return 'ar-SA';
         }
-        
+
         // Arabic transliteration detection - more comprehensive
         const arabicTransliteration = /(assalamu|alaikum|wa|rahmat|ullah|barakat|bismillah|alhamdulillah|inshallah|mashallah|subhanallah|astaghfirullah|barakallahu|jazakallahu|salam|salaam|akhi|ukhti|habibi|habibti|ya|allah|muhammad|rasul|nabi|quran|hadith|dua|salah|sawm|zakat|hajj|ramadan|eid|jannah|jahannam|shaytan|jinn|malaikah|qiyamah|yawm|deen|islam|muslim|iman|taqwa|tawheed|shirk|kufr|nifaq|fitnah|bida|sunnah|ijtihad|fatwa|mufti|imam|sheikh|ustadh|qari|hafiz|mujahid|shahid|martyr|jihad|dawah|tabligh|tarbiyah|tazkiyah|tasawwuf|sufi|wali|awliya|karamah|barakah|noor|hikmah|fadl|rahmah|maghfirah|tawbah|istighfar|dhikr|tasbih|tahmid|takbir|tahlil|istighfar|dua|supplication|prayer|blessing|mercy|forgiveness|repentance|remembrance|praise|glorification|magnification|purification|supplication)/i;
-        
+
         if (arabicTransliteration.test(text)) {
             console.log('Arabic transliteration detected in:', text);
             return 'ar-SA';
         }
-        
+
         // English detection
         if (/^[a-zA-Z\s]+$/.test(text)) {
             return 'en-US';
         }
-        
+
         // French detection
         if (/[àâäéèêëïîôöùûüÿçñ]/i.test(text)) {
             return 'fr-FR';
         }
-        
+
         // German detection
         if (/[äöüß]/i.test(text)) {
             return 'de-DE';
         }
-        
+
         // Spanish detection
         if (/[ñáéíóúü]/i.test(text)) {
             return 'es-ES';
         }
-        
+
         // Urdu detection (Arabic script)
         if (/[\u0600-\u06FF\u0750-\u077F]/.test(text)) {
             return 'ur-PK';
         }
-        
+
         // Hindi detection
         if (/[\u0900-\u097F]/.test(text)) {
             return 'hi-IN';
         }
-        
+
         // Russian detection
         if (/[а-яё]/i.test(text)) {
             return 'ru-RU';
         }
-        
+
         // Chinese detection
         if (/[\u4e00-\u9fff]/.test(text)) {
             return 'zh-CN';
         }
-        
+
         // Japanese detection
         if (/[\u3040-\u309f\u30a0-\u30ff]/.test(text)) {
             return 'ja-JP';
         }
-        
+
         // Default to current language
         return this.currentLanguage;
     }
@@ -978,11 +978,11 @@ class RealTimeTranslation {
         }
 
         console.log('Switching recognition language from', this.currentLanguage, 'to', newLanguage);
-        
+
         // Update language
         this.currentLanguage = newLanguage;
         this.recognition.lang = newLanguage;
-        
+
         // Force restart recognition with new language
         if (this.isListening) {
             this.recognition.stop();
@@ -993,18 +993,18 @@ class RealTimeTranslation {
     // Force language change (for manual testing)
     forceLanguage(newLanguage) {
         console.log('Force switching to language:', newLanguage);
-        
+
         // Update language
         this.currentLanguage = newLanguage;
         this.recognition.lang = newLanguage;
         this.languageDetectionEnabled = false; // Disable auto-detection
-        
+
         // Force restart recognition
         if (this.isListening) {
             this.recognition.stop();
             // The onend handler will restart it automatically
         }
-        
+
         console.log('Language forced to:', newLanguage);
     }
 
@@ -1046,7 +1046,7 @@ class RealTimeTranslation {
         const micButton = document.getElementById('mic-button');
         const voiceStatus = document.getElementById('voice-status');
         const voiceStatusText = document.getElementById('voice-status-text');
-        
+
         if (micButton) {
             if (isListening) {
                 micButton.innerHTML = '<i class="fa-solid fa-stop"></i> Stop Listening';
@@ -1061,7 +1061,7 @@ class RealTimeTranslation {
                 this.hideInterimDisplay();
             }
         }
-        
+
         if (voiceStatus && voiceStatusText) {
             if (isListening) {
                 voiceStatus.style.display = 'flex';
@@ -1081,29 +1081,29 @@ class RealTimeTranslation {
 document.addEventListener('DOMContentLoaded', async () => {
     // Initialize Bundle Manager
     window.bundleManager = new BundleManager();
-    
+
     // Initialize Real-Time Translation
     window.realTimeTranslation = new RealTimeTranslation();
-    
+
     // Initialize Advanced Voice Input
     window.advancedVoiceInput = new AdvancedVoiceInput();
-    
+
     // Load and initialize all modules
     await initializeAllModules();
-    
+
     // Setup advanced voice input controls
     setupAdvancedVoiceControls();
-    
+
     // Setup force language buttons
     setupForceLanguageButtons();
-    
+
     // Auto-start real-time translation (always enabled)
     console.log('Auto-starting real-time translation...');
     window.realTimeTranslation.startConversation();
-    
+
     // Auto-setup target languages for immediate translation
     setupAutoTranslation();
-    
+
     // Test translation on page load
     setTimeout(() => {
         if (window.realTimeTranslation) {
@@ -1120,24 +1120,24 @@ async function initializeAllModules() {
         const smartSuggestions = await window.bundleManager.loadModule('smart-suggestions');
         const apmMonitoring = await window.bundleManager.loadModule('apm-monitoring');
         const errorTracking = await window.bundleManager.loadModule('error-tracking');
-        
+
         // Initialize modules
         window.conversationMemory = new conversationMemory.default();
         window.smartSuggestions = new smartSuggestions.default(window.conversationMemory);
         window.apmMonitoring = new apmMonitoring.default();
         window.errorTracking = new errorTracking.default();
-        
+
         // Load memories
         window.conversationMemory.loadMemories();
-        
+
         console.log('All modules initialized successfully');
-        
+
         // Show performance metrics
         setTimeout(() => {
             const metrics = window.apmMonitoring.getPerformanceSummary();
             console.log('Performance Summary:', metrics);
         }, 2000);
-        
+
     } catch (error) {
         console.error('Failed to initialize modules:', error);
         // Fallback to basic functionality
@@ -1148,17 +1148,17 @@ function setupAdvancedVoiceControls() {
     const startBtn = document.getElementById('advanced-voice-start');
     const stopBtn = document.getElementById('advanced-voice-stop');
     const techRadios = document.querySelectorAll('input[name="voice-tech"]');
-    
+
     if (startBtn) {
         startBtn.addEventListener('click', async () => {
             const selectedTech = document.querySelector('input[name="voice-tech"]:checked').value;
             const selectedLanguage = document.getElementById('voice-language').value;
-            
+
             try {
                 await window.advancedVoiceInput.startListening(selectedTech, selectedLanguage);
                 startBtn.style.display = 'none';
                 stopBtn.style.display = 'inline-flex';
-                
+
                 // Show advanced controls
                 document.getElementById('advanced-voice-controls').style.display = 'block';
             } catch (error) {
@@ -1167,7 +1167,7 @@ function setupAdvancedVoiceControls() {
             }
         });
     }
-    
+
     if (stopBtn) {
         stopBtn.addEventListener('click', () => {
             window.advancedVoiceInput.stopListening();
@@ -1175,7 +1175,7 @@ function setupAdvancedVoiceControls() {
             stopBtn.style.display = 'none';
         });
     }
-    
+
     // Show supported technologies
     const supportedTechs = window.advancedVoiceInput.getSupportedTechnologies();
     techRadios.forEach(radio => {
@@ -1190,7 +1190,7 @@ function setupAdvancedVoiceControls() {
 function setupForceLanguageButtons() {
     const forceArabicBtn = document.getElementById('force-arabic-btn');
     const forceEnglishBtn = document.getElementById('force-english-btn');
-    
+
     if (forceArabicBtn) {
         forceArabicBtn.addEventListener('click', () => {
             if (window.realTimeTranslation && window.realTimeTranslation.isListening) {
@@ -1201,7 +1201,7 @@ function setupForceLanguageButtons() {
             }
         });
     }
-    
+
     if (forceEnglishBtn) {
         forceEnglishBtn.addEventListener('click', () => {
             if (window.realTimeTranslation && window.realTimeTranslation.isListening) {
@@ -1217,20 +1217,20 @@ function setupForceLanguageButtons() {
 function setupAutoTranslation() {
     // Set up automatic translation to multiple languages
     const targetLanguages = ['English', 'Arabic']; // Start with just English and Arabic
-    
+
     // Store selected languages globally
     window.selectedTargetLanguages = targetLanguages;
-    
+
     // Update the display
     const toLanguagesDisplay = document.getElementById('toLanguagesDisplay');
     if (toLanguagesDisplay) {
         toLanguagesDisplay.textContent = targetLanguages.join(', ');
         toLanguagesDisplay.classList.add('active');
     }
-    
+
     // Setup target language selector
     setupTargetLanguageSelector();
-    
+
     console.log('Auto-translation setup complete. Target languages:', targetLanguages);
 }
 
@@ -1238,31 +1238,31 @@ function setupTargetLanguageSelector() {
     const updateBtn = document.getElementById('update-target-langs');
     const testBtn = document.getElementById('test-translation');
     const checkboxes = document.querySelectorAll('.lang-checkbox input[type="checkbox"]');
-    
+
     if (updateBtn) {
         updateBtn.addEventListener('click', () => {
             const selectedLanguages = Array.from(checkboxes)
                 .filter(cb => cb.checked)
                 .map(cb => cb.value);
-            
+
             if (selectedLanguages.length === 0) {
                 alert('Please select at least one target language');
                 return;
             }
-            
+
             // Update global target languages
             window.selectedTargetLanguages = selectedLanguages;
-            
+
             // Update display
             const toLanguagesDisplay = document.getElementById('toLanguagesDisplay');
             if (toLanguagesDisplay) {
                 toLanguagesDisplay.textContent = selectedLanguages.join(', ');
             }
-            
+
             console.log('Target languages updated:', selectedLanguages);
         });
     }
-    
+
     if (testBtn) {
         testBtn.addEventListener('click', async () => {
             if (window.realTimeTranslation) {

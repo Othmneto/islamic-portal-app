@@ -40,10 +40,10 @@ async function testTranslationAPI() {
                 targetLanguage: 'ar'
             })
         });
-        
+
         const data = await response.json();
         console.log('Translation API response:', data);
-        
+
         if (data.success) {
             console.log('✅ Translation API working!');
             console.log('Original:', data.original);
@@ -68,10 +68,10 @@ async function testHistoryAPI() {
                 'Content-Type': 'application/json'
             }
         });
-        
+
         const data = await response.json();
         console.log('History API response:', data);
-        
+
         if (data.success) {
             console.log('✅ History API working!');
             console.log('Translations found:', data.data?.translations?.length || 0);

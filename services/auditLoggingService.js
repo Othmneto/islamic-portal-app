@@ -9,7 +9,7 @@ class AuditLoggingService {
     constructor() {
         this.logDirectory = path.join(__dirname, '../logs/audit');
         this.initializeLogDirectory();
-        
+
         this.actionTypes = {
             // Authentication actions
             'AUTH_LOGIN': { severity: 'info', category: 'authentication' },
@@ -17,34 +17,34 @@ class AuditLoggingService {
             'AUTH_FAILED_LOGIN': { severity: 'warning', category: 'authentication' },
             'AUTH_PASSWORD_CHANGE': { severity: 'info', category: 'authentication' },
             'AUTH_ACCOUNT_LOCKED': { severity: 'warning', category: 'authentication' },
-            
+
             // Translation actions
             'TRANSLATION_REQUEST': { severity: 'info', category: 'translation' },
             'TRANSLATION_SUCCESS': { severity: 'info', category: 'translation' },
             'TRANSLATION_FAILED': { severity: 'warning', category: 'translation' },
             'TRANSLATION_CACHED': { severity: 'debug', category: 'translation' },
             'TRANSLATION_DELETED': { severity: 'info', category: 'translation' },
-            
+
             // Data access actions
             'DATA_READ': { severity: 'debug', category: 'data_access' },
             'DATA_WRITE': { severity: 'info', category: 'data_access' },
             'DATA_DELETE': { severity: 'warning', category: 'data_access' },
             'DATA_EXPORT': { severity: 'info', category: 'data_access' },
             'DATA_IMPORT': { severity: 'info', category: 'data_access' },
-            
+
             // Security actions
             'SECURITY_VIOLATION': { severity: 'error', category: 'security' },
             'RATE_LIMIT_EXCEEDED': { severity: 'warning', category: 'security' },
             'SUSPICIOUS_ACTIVITY': { severity: 'warning', category: 'security' },
             'UNAUTHORIZED_ACCESS': { severity: 'error', category: 'security' },
             'CSRF_ATTEMPT': { severity: 'warning', category: 'security' },
-            
+
             // System actions
             'SYSTEM_START': { severity: 'info', category: 'system' },
             'SYSTEM_SHUTDOWN': { severity: 'info', category: 'system' },
             'CONFIGURATION_CHANGE': { severity: 'warning', category: 'system' },
             'ERROR_OCCURRED': { severity: 'error', category: 'system' },
-            
+
             // User management actions
             'USER_CREATED': { severity: 'info', category: 'user_management' },
             'USER_UPDATED': { severity: 'info', category: 'user_management' },
@@ -124,7 +124,7 @@ class AuditLoggingService {
      */
     sanitizeDetails(details) {
         const sanitized = { ...details };
-        
+
         for (const field of this.sensitiveFields) {
             if (sanitized[field]) {
                 sanitized[field] = '[REDACTED]';
@@ -163,7 +163,7 @@ class AuditLoggingService {
     sanitizeHeaders(headers) {
         const sanitized = { ...headers };
         const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key', 'x-auth-token'];
-        
+
         for (const header of sensitiveHeaders) {
             if (sanitized[header]) {
                 sanitized[header] = '[REDACTED]';
@@ -178,9 +178,9 @@ class AuditLoggingService {
      */
     extractIPAddress(request) {
         if (!request) return null;
-        
-        return request.ip || 
-               request.connection?.remoteAddress || 
+
+        return request.ip ||
+               request.connection?.remoteAddress ||
                request.socket?.remoteAddress ||
                (request.connection?.socket ? request.connection.socket.remoteAddress : null) ||
                request.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
@@ -241,7 +241,7 @@ class AuditLoggingService {
             const date = new Date().toISOString().split('T')[0];
             const logFile = path.join(this.logDirectory, `audit_${date}.log`);
             const logEntry = JSON.stringify(auditEvent) + '\n';
-            
+
             await fs.appendFile(logFile, logEntry);
         } catch (error) {
             console.error('❌ [AuditLoggingService] Failed to write to log file:', error);
@@ -254,7 +254,7 @@ class AuditLoggingService {
     logToConsole(auditEvent) {
         const severity = auditEvent.severity;
         const message = `[AUDIT] ${auditEvent.actionType} - User: ${auditEvent.userId} - Risk: ${auditEvent.riskScore}`;
-        
+
         switch (severity) {
             case 'error':
                 console.error(`🔴 ${message}`);
@@ -336,7 +336,7 @@ class AuditLoggingService {
 
             // Get all log files in the date range
             const files = await fs.readdir(this.logDirectory);
-            
+
             for (const file of files) {
                 if (file.startsWith('audit_') && file.endsWith('.log')) {
                     const fileDate = new Date(file.replace('audit_', '').replace('.log', ''));
@@ -386,7 +386,7 @@ class AuditLoggingService {
             const end = new Date(endDate);
 
             const files = await fs.readdir(this.logDirectory);
-            
+
             for (const file of files) {
                 if (file.startsWith('audit_') && file.endsWith('.log')) {
                     const fileDate = new Date(file.replace('audit_', '').replace('.log', ''));
@@ -399,21 +399,21 @@ class AuditLoggingService {
                             try {
                                 const logEntry = JSON.parse(line);
                                 stats.total_events++;
-                                
+
                                 // Count by severity
                                 stats.by_severity[logEntry.severity] = (stats.by_severity[logEntry.severity] || 0) + 1;
-                                
+
                                 // Count by category
                                 stats.by_category[logEntry.category] = (stats.by_category[logEntry.category] || 0) + 1;
-                                
+
                                 // Count by action type
                                 stats.by_action_type[logEntry.actionType] = (stats.by_action_type[logEntry.actionType] || 0) + 1;
-                                
+
                                 // Count high risk events
                                 if (logEntry.riskScore >= 70) {
                                     stats.high_risk_events++;
                                 }
-                                
+
                                 // Count security alerts
                                 if (logEntry.actionType.includes('SECURITY') || logEntry.actionType.includes('AUTH_FAILED')) {
                                     stats.security_alerts++;

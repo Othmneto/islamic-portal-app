@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mostReplayedList.innerHTML = '<p>No translations have been replayed yet.</p>';
             return;
         }
-        
+
         let html = '';
         replayedData.forEach(item => {
             html += `

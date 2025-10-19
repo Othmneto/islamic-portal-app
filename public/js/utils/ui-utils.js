@@ -34,13 +34,13 @@ export class ToastManager {
 
   show(message, type = 'info', duration = 3500, options = {}) {
     const id = `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     const toast = document.createElement('div');
     toast.id = id;
     toast.className = `toast ${type}`;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
-    
+
     // Add icon based on type
     const icon = this.getIcon(type);
     if (icon) {
@@ -145,19 +145,19 @@ export class VoiceVisualizer {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContext.createMediaStreamSource(stream);
       this.analyser = audioContext.createAnalyser();
-      
+
       this.analyser.fftSize = 256;
       this.analyser.smoothingTimeConstant = 0.8;
-      
+
       const bufferLength = this.analyser.frequencyBinCount;
       this.dataArray = new Uint8Array(bufferLength);
-      
+
       source.connect(this.analyser);
-      
+
       this.createBars();
       this.isActive = true;
       this.animate();
-      
+
       return audioContext;
     } catch (error) {
       console.error('Error starting voice visualizer:', error);
@@ -168,7 +168,7 @@ export class VoiceVisualizer {
   createBars() {
     this.container.innerHTML = '';
     this.bars = [];
-    
+
     for (let i = 0; i < this.options.barCount; i++) {
       const bar = document.createElement('div');
       bar.className = 'waveform-bar';
@@ -186,34 +186,34 @@ export class VoiceVisualizer {
 
   animate() {
     if (!this.isActive) return;
-    
+
     this.analyser.getByteFrequencyData(this.dataArray);
-    
+
     const step = Math.floor(this.dataArray.length / this.options.barCount);
     let sum = 0;
-    
+
     for (let i = 0; i < this.options.barCount; i++) {
       const bar = this.bars[i];
       const dataIndex = i * step;
       const value = this.dataArray[dataIndex];
       const height = Math.max(2, (value / 255) * 20);
-      
+
       bar.style.height = `${height}px`;
-      
+
       // Add color variation
       if (i % 2 === 0) {
         bar.style.backgroundColor = this.options.color;
       } else {
         bar.style.backgroundColor = 'var(--brand-600)';
       }
-      
+
       sum += value;
     }
-    
+
     // Update amplitude for mic ring
     const amplitude = Math.min(1, sum / (this.options.barCount * 255));
     this.container.style.setProperty('--amp', amplitude.toFixed(2));
-    
+
     this.animationId = requestAnimationFrame(() => this.animate());
   }
 
@@ -223,7 +223,7 @@ export class VoiceVisualizer {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
-    
+
     // Reset bars
     if (this.bars) {
       this.bars.forEach(bar => {
@@ -264,7 +264,7 @@ export class TranslationItem {
     const item = document.createElement('div');
     item.className = 'translation-item';
     item.setAttribute('aria-live', 'polite');
-    
+
     item.innerHTML = `
       <div class="translation-header">
         <div class="lang-badge" title="${this.data.from} → ${this.data.to}">
@@ -289,7 +289,7 @@ export class TranslationItem {
         <span class="status-text">Processing...</span>
       </div>
     `;
-    
+
     return item;
   }
 
@@ -297,11 +297,11 @@ export class TranslationItem {
     const partialEl = this.element.querySelector(`#partial-${this.data.id}`);
     const finalEl = this.element.querySelector(`#final-${this.data.id}`);
     const statusEl = this.element.querySelector(`#status-${this.data.id}`);
-    
+
     if (partialEl) {
       partialEl.innerHTML = text + '<span class="cursor"></span>';
     }
-    
+
     this.element.classList.add('partial');
     this.updateStatus('Listening...', 'listening');
   }
@@ -310,16 +310,16 @@ export class TranslationItem {
     const partialEl = this.element.querySelector(`#partial-${this.data.id}`);
     const finalEl = this.element.querySelector(`#final-${this.data.id}`);
     const statusEl = this.element.querySelector(`#status-${this.data.id}`);
-    
+
     if (finalEl) {
       finalEl.textContent = text;
       finalEl.hidden = false;
     }
-    
+
     if (partialEl) {
       partialEl.hidden = true;
     }
-    
+
     this.element.classList.remove('partial');
     this.element.classList.add('final');
     this.updateStatus('Completed', 'completed');
@@ -329,11 +329,11 @@ export class TranslationItem {
     const statusEl = this.element.querySelector(`#status-${this.data.id}`);
     const statusDot = statusEl?.querySelector('.status-dot');
     const statusText = statusEl?.querySelector('.status-text');
-    
+
     if (statusText) {
       statusText.textContent = text;
     }
-    
+
     if (statusDot) {
       statusDot.className = `status-dot ${type}`;
     }
@@ -342,7 +342,7 @@ export class TranslationItem {
   showError(message) {
     this.element.classList.add('error');
     this.updateStatus(message, 'error');
-    
+
     // Add retry button
     const statusEl = this.element.querySelector(`#status-${this.data.id}`);
     if (statusEl && !statusEl.querySelector('.retry-button')) {
@@ -391,16 +391,16 @@ export class ProgressIndicator {
 
   update(progress, text = '') {
     if (!this.isVisible) return;
-    
+
     this.progress = Math.max(0, Math.min(100, progress));
-    
+
     const progressBar = this.container.querySelector('.progress-bar');
     const progressText = this.container.querySelector('.progress-text');
-    
+
     if (progressBar) {
       progressBar.style.width = `${this.progress}%`;
     }
-    
+
     if (progressText) {
       progressText.textContent = text || `${Math.round(this.progress)}%`;
     }
@@ -425,7 +425,7 @@ export class SkeletonLoader {
   show() {
     const skeleton = document.createElement('div');
     skeleton.className = 'loading-skeleton';
-    
+
     switch (this.type) {
       case 'text':
         skeleton.innerHTML = `
@@ -447,7 +447,7 @@ export class SkeletonLoader {
         `).join('');
         break;
     }
-    
+
     this.container.appendChild(skeleton);
   }
 

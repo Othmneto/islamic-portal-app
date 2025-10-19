@@ -16,7 +16,7 @@
 </head>
 <body>
 
-    <div class="container">
+    <div class="container calendar-full-bleed">
 
         
         <!-- Enhanced UI Controls -->
@@ -69,46 +69,11 @@
                 </div>
             </div>
             
-            <!-- Search Container -->
-            <div class="search-container" id="search-container">
-                <!-- Will be populated by JavaScript -->
-            </div>
             
-            <!-- Search Results -->
-            <div class="search-results" id="search-results"></div>
             
-            <!-- Hijri Calendar Display -->
-            <div class="hijri-calendar-display">
-                <div class="hijri-date" id="hijri-date">
-                    <!-- Will be populated by JavaScript -->
-                </div>
-                <div class="islamic-holiday" id="islamic-holiday" style="display: none;">
-                    <!-- Will be populated by JavaScript -->
-                </div>
-            </div>
             
-            <!-- OAuth Sync Status -->
-            <div class="oauth-sync-status">
-                <div class="sync-controls">
-                    <button onclick="syncWithGoogle()" class="sync-btn google-sync">
-                        <i class="fab fa-google"></i> Sync Google
-                    </button>
-                    <button onclick="syncWithMicrosoft()" class="sync-btn microsoft-sync">
-                        <i class="fab fa-microsoft"></i> Sync Microsoft
-                    </button>
-                    <button onclick="fullSync()" class="sync-btn full-sync">
-                        <i class="fas fa-sync"></i> Full Sync
-                    </button>
-                </div>
-                <div class="sync-status">
-                    <div class="google-sync-status">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                    <div class="microsoft-sync-status">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
+            
+            
         </div>
 
         <!-- Calendar Views -->
@@ -164,6 +129,30 @@
         <!-- Integration Panel -->
         <div class="integration-panel">
             <h3><i class="fa-solid fa-plug"></i> Integrations & Export</h3>
+            
+            <!-- OAuth Sync Status -->
+            <div class="oauth-sync-status">
+                <div class="sync-controls">
+                    <button onclick="syncWithGoogle()" class="sync-btn google-sync">
+                        <i class="fab fa-google"></i> Sync Google
+                    </button>
+                    <button onclick="syncWithMicrosoft()" class="sync-btn microsoft-sync">
+                        <i class="fab fa-microsoft"></i> Sync Microsoft
+                    </button>
+                    <button onclick="fullSync()" class="sync-btn full-sync">
+                        <i class="fas fa-sync"></i> Full Sync
+                    </button>
+                </div>
+                <div class="sync-status">
+                    <div class="google-sync-status">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                    <div class="microsoft-sync-status">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
             <div class="integration-actions">
                 <div class="integration-status">
                     <span id="sync-status" class="status-indicator">Not Connected</span>
@@ -219,6 +208,7 @@
                         <!-- Action Buttons -->
                         <div class="integration-actions">
                             <button id="email-sync-btn" class="integration-btn">Connect with OAuth</button>
+                            <button id="manual-import-btn" class="integration-btn secondary">Manual Import</button>
                             <div class="integration-controls" id="email-controls" style="display: none;">
                                 <button class="settings-btn" onclick="openEmailSettings()" title="Settings">
                                     <i class="fa-solid fa-cog"></i>
@@ -454,8 +444,24 @@
                             </div>
                         </div>
                         <div class="connected-actions">
-                            <button type="button" id="test-email-connection" class="btn-secondary">Test Connection</button>
-                            <button type="button" id="disconnect-email" class="btn-danger">Disconnect</button>
+                            <div class="sync-buttons">
+                                <button type="button" id="sync-to-email" class="btn-primary">
+                                    <i class="fa-solid fa-upload"></i>
+                                    Sync to Email
+                                </button>
+                                <button type="button" id="sync-from-email" class="btn-primary">
+                                    <i class="fa-solid fa-download"></i>
+                                    Sync from Email
+                                </button>
+                                <button type="button" id="two-way-sync" class="btn-success">
+                                    <i class="fa-solid fa-sync"></i>
+                                    Two-Way Sync
+                                </button>
+                            </div>
+                            <div class="connection-buttons">
+                                <button type="button" id="test-email-connection" class="btn-secondary">Test Connection</button>
+                                <button type="button" id="disconnect-email" class="btn-danger">Disconnect</button>
+                            </div>
                         </div>
                     </div>
                     

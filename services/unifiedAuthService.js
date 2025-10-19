@@ -59,7 +59,7 @@ class UnifiedAuthService {
                 userPrincipalName: profile.userPrincipalName,
                 allKeys: Object.keys(profile)
             });
-            
+
             let email;
             if (provider === 'google') {
                 email = profile.emails?.[0]?.value || profile.email;
@@ -69,9 +69,9 @@ class UnifiedAuthService {
                 // Fallback for other providers
                 email = profile.emails?.[0]?.value || profile.email || profile.preferred_username;
             }
-            
+
             console.log(`🔍 [UnifiedAuth] Extracted email for ${provider}:`, email);
-            
+
             if (!email) {
                 console.error(`❌ [UnifiedAuth] No email found in ${provider} profile:`, {
                     emails: profile.emails,
@@ -141,7 +141,7 @@ class UnifiedAuthService {
             return user;
         } catch (error) {
             console.error(`❌ [UnifiedAuth] Error creating/updating user from ${provider}:`, error);
-            
+
             await safeLogSecurityViolation('oauth_user_creation_failed', {
                 provider: provider,
                 email: profile.emails?.[0]?.value || profile.email || 'unknown',
@@ -149,17 +149,17 @@ class UnifiedAuthService {
                 ip: ip || 'unknown',
                 userAgent: userAgent || 'unknown'
             });
-            
+
             // Handle specific OAuth errors
             if (error.message.includes('No email found')) {
                 throw oauthErrorHandler(error, provider);
             }
-            
+
             // Handle database errors
             if (error.name === 'MongoError' || error.name === 'ValidationError') {
                 throw databaseErrorHandler(error);
             }
-            
+
             throw createError(`OAuth authentication failed for ${provider}`, 500, 'OAUTH_ERROR');
         }
     }
@@ -198,12 +198,12 @@ class UnifiedAuthService {
             if (!isPasswordValid) {
                 // Increment failed login attempts
                 user.failedLoginAttempts += 1;
-                
+
                 // Lock account after 5 failed attempts
                 if (user.failedLoginAttempts >= 5) {
                     user.accountLockedUntil = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
                 }
-                
+
                 await user.save();
 
                 await safeLogSecurityViolation({
@@ -336,10 +336,10 @@ class UnifiedAuthService {
             }
 
             const providerIdField = `${provider}Id`;
-            
+
             // Check if user has other auth methods
             const hasPassword = !!user.password;
-            const hasOtherOAuth = Object.keys(user.toObject()).some(key => 
+            const hasOtherOAuth = Object.keys(user.toObject()).some(key =>
                 key.endsWith('Id') && key !== providerIdField && user[key]
             );
 
@@ -349,14 +349,14 @@ class UnifiedAuthService {
 
             // Unlink the OAuth account
             user[providerIdField] = undefined;
-            
+
             // Update auth provider if needed
             if (user.authProvider === provider) {
                 if (hasPassword) {
                     user.authProvider = 'local';
                 } else {
                     // Find another OAuth provider
-                    const otherProvider = Object.keys(user.toObject()).find(key => 
+                    const otherProvider = Object.keys(user.toObject()).find(key =>
                         key.endsWith('Id') && key !== providerIdField && user[key]
                     );
                     if (otherProvider) {
@@ -412,7 +412,7 @@ class UnifiedAuthService {
         try {
             const user = await this.createOrUpdateUserFromOAuth(profile, provider, ip, userAgent);
             const token = this.generateToken(user);
-            
+
             return this.createLoginResponse(user, token);
         } catch (error) {
             console.error(`❌ [UnifiedAuth] OAuth callback error for ${provider}:`, error);

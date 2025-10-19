@@ -21,7 +21,7 @@ export class AdvancedSearch {
     indexTranslation(translation) {
         const indexKey = this.generateIndexKey(translation);
         const searchableText = this.extractSearchableText(translation);
-        
+
         this.searchIndex.set(indexKey, {
             id: translation.id,
             original: translation.original,
@@ -36,7 +36,7 @@ export class AdvancedSearch {
             searchableText: searchableText,
             tags: this.extractTags(translation)
         });
-        
+
         console.log('🔍 [AdvancedSearch] Indexed translation:', indexKey);
     }
 
@@ -58,14 +58,14 @@ export class AdvancedSearch {
 
         const results = [];
         const queryLower = searchOptions.caseSensitive ? query : query.toLowerCase();
-        
+
         // Add to search history
         this.addToSearchHistory(query);
-        
+
         for (const [key, entry] of this.searchIndex.entries()) {
             let score = 0;
             let matches = [];
-            
+
             // Text matching
             if (searchOptions.exactMatch) {
                 if (entry.original === query || entry.translated === query) {
@@ -78,19 +78,19 @@ export class AdvancedSearch {
                     score += 80;
                     matches.push('original');
                 }
-                
+
                 // Translated text matching
                 if (entry.translated.toLowerCase().includes(queryLower)) {
                     score += 70;
                     matches.push('translated');
                 }
-                
+
                 // Searchable text matching
                 if (entry.searchableText.toLowerCase().includes(queryLower)) {
                     score += 60;
                     matches.push('searchable');
                 }
-                
+
                 // Tag matching
                 for (const tag of entry.tags) {
                     if (tag.toLowerCase().includes(queryLower)) {
@@ -99,17 +99,17 @@ export class AdvancedSearch {
                     }
                 }
             }
-            
+
             // Apply filters
             if (this.passesFilters(entry, options.filters)) {
                 // Boost score for recent translations
                 const age = Date.now() - entry.timestamp;
                 const ageBoost = Math.max(0, 20 - (age / (24 * 60 * 60 * 1000))); // Boost for last 20 days
                 score += ageBoost;
-                
+
                 // Boost score for high confidence
                 score += entry.confidence * 0.1;
-                
+
                 if (score > 0) {
                     results.push({
                         ...entry,
@@ -121,7 +121,7 @@ export class AdvancedSearch {
                 }
             }
         }
-        
+
         // Sort results
         results.sort((a, b) => {
             switch (searchOptions.sortBy) {
@@ -134,10 +134,10 @@ export class AdvancedSearch {
                     return b.score - a.score;
             }
         });
-        
+
         // Limit results
         const limitedResults = results.slice(0, searchOptions.limit);
-        
+
         console.log(`🔍 [AdvancedSearch] Found ${limitedResults.length} results for query: "${query}"`);
         return limitedResults;
     }
@@ -155,34 +155,34 @@ export class AdvancedSearch {
             if (filters.dateRange.start && entryDate < filters.dateRange.start) return false;
             if (filters.dateRange.end && entryDate > filters.dateRange.end) return false;
         }
-        
+
         // Language filter
         if (filters.languages && filters.languages.length > 0) {
             const langPair = `${entry.fromLang}-${entry.toLang}`;
             if (!filters.languages.includes(langPair)) return false;
         }
-        
+
         // Context filter
         if (filters.context && filters.context.length > 0) {
             if (!filters.context.includes(entry.context)) return false;
         }
-        
+
         // Confidence filter
         if (filters.confidence) {
             if (entry.confidence < filters.confidence.min) return false;
             if (entry.confidence > filters.confidence.max) return false;
         }
-        
+
         // Islamic content filter
         if (filters.isIslamic !== null) {
             if (entry.isIslamic !== filters.isIslamic) return false;
         }
-        
+
         // Alternatives filter
         if (filters.hasAlternatives !== null) {
             if (entry.hasAlternatives !== filters.hasAlternatives) return false;
         }
-        
+
         return true;
     }
 
@@ -196,32 +196,32 @@ export class AdvancedSearch {
         const queryWords = query.toLowerCase().split(/\s+/);
         const originalWords = entry.original.toLowerCase().split(/\s+/);
         const translatedWords = entry.translated.toLowerCase().split(/\s+/);
-        
+
         let relevance = 0;
-        
+
         // Word overlap with original
         for (const word of queryWords) {
             if (originalWords.includes(word)) {
                 relevance += 1;
             }
         }
-        
+
         // Word overlap with translated
         for (const word of queryWords) {
             if (translatedWords.includes(word)) {
                 relevance += 0.8;
             }
         }
-        
+
         // Phrase matching
         if (entry.original.toLowerCase().includes(query.toLowerCase())) {
             relevance += 2;
         }
-        
+
         if (entry.translated.toLowerCase().includes(query.toLowerCase())) {
             relevance += 1.5;
         }
-        
+
         return relevance;
     }
 
@@ -241,17 +241,17 @@ export class AdvancedSearch {
      */
     extractSearchableText(translation) {
         let text = `${translation.original} ${translation.translated}`;
-        
+
         // Add alternatives if available
         if (translation.alternatives && translation.alternatives.length > 0) {
             text += ' ' + translation.alternatives.map(alt => alt.text).join(' ');
         }
-        
+
         // Add cultural context if available
         if (translation.culturalContext && translation.culturalContext.notes) {
             text += ' ' + translation.culturalContext.notes.join(' ');
         }
-        
+
         return text;
     }
 
@@ -262,22 +262,22 @@ export class AdvancedSearch {
      */
     extractTags(translation) {
         const tags = [];
-        
+
         // Language tags
         tags.push(translation.fromLang);
         tags.push(translation.toLang);
         tags.push(`${translation.fromLang}-${translation.toLang}`);
-        
+
         // Context tags
         if (translation.context) {
             tags.push(translation.context);
         }
-        
+
         // Islamic content tag
         if (translation.isIslamic) {
             tags.push('islamic');
         }
-        
+
         // Confidence tags
         if (translation.confidence >= 0.8) {
             tags.push('high-confidence');
@@ -286,12 +286,12 @@ export class AdvancedSearch {
         } else {
             tags.push('low-confidence');
         }
-        
+
         // Alternatives tag
         if (translation.alternatives && translation.alternatives.length > 0) {
             tags.push('has-alternatives');
         }
-        
+
         return tags;
     }
 
@@ -303,18 +303,18 @@ export class AdvancedSearch {
     getSuggestions(query) {
         const suggestions = new Set();
         const queryLower = query.toLowerCase();
-        
+
         for (const [key, entry] of this.searchIndex.entries()) {
             // Original text suggestions
             if (entry.original.toLowerCase().includes(queryLower)) {
                 suggestions.add(entry.original);
             }
-            
+
             // Translated text suggestions
             if (entry.translated.toLowerCase().includes(queryLower)) {
                 suggestions.add(entry.translated);
             }
-            
+
             // Tag suggestions
             for (const tag of entry.tags) {
                 if (tag.toLowerCase().includes(queryLower)) {
@@ -322,7 +322,7 @@ export class AdvancedSearch {
                 }
             }
         }
-        
+
         return Array.from(suggestions).slice(0, 10);
     }
 
@@ -337,16 +337,16 @@ export class AdvancedSearch {
         let totalConfidence = 0;
         let islamicCount = 0;
         let alternativesCount = 0;
-        
+
         for (const entry of this.searchIndex.values()) {
             languagePairs.add(`${entry.fromLang}-${entry.toLang}`);
             contexts.add(entry.context);
             totalConfidence += entry.confidence;
-            
+
             if (entry.isIslamic) islamicCount++;
             if (entry.hasAlternatives) alternativesCount++;
         }
-        
+
         return {
             totalEntries,
             languagePairs: languagePairs.size,
@@ -364,18 +364,18 @@ export class AdvancedSearch {
      */
     addToSearchHistory(query) {
         if (query.trim().length === 0) return;
-        
+
         // Remove if already exists
         this.searchHistory = this.searchHistory.filter(q => q !== query);
-        
+
         // Add to beginning
         this.searchHistory.unshift(query);
-        
+
         // Limit history size
         if (this.searchHistory.length > this.maxSearchHistory) {
             this.searchHistory = this.searchHistory.slice(0, this.maxSearchHistory);
         }
-        
+
         // Save to localStorage
         this.saveSearchHistory();
     }

@@ -47,21 +47,21 @@ const enhancementScript = `    <script src="/js/navbar-enhancements.js"></script
  */
 function addEnhancementsToPage(pageName) {
     const filePath = path.join(__dirname, '..', 'public', pageName);
-    
+
     if (!fs.existsSync(filePath)) {
         console.log(`❌ File not found: ${pageName}`);
         return false;
     }
-    
+
     try {
         let content = fs.readFileSync(filePath, 'utf8');
-        
+
         // Check if enhancements already exist
         if (content.includes('navbar-enhancements.js')) {
             console.log(`⏭️  Enhancements already exist in: ${pageName}`);
             return true;
         }
-        
+
         // Add enhancement script before closing body tag
         if (content.includes('</body>')) {
             content = content.replace(
@@ -69,12 +69,12 @@ function addEnhancementsToPage(pageName) {
                 `$1\n${enhancementScript}\n$2`
             );
         }
-        
+
         // Write the updated content
         fs.writeFileSync(filePath, content, 'utf8');
         console.log(`✅ Added enhancements to: ${pageName}`);
         return true;
-        
+
     } catch (error) {
         console.error(`❌ Error updating ${pageName}:`, error.message);
         return false;

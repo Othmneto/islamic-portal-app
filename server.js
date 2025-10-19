@@ -20,15 +20,18 @@ const ffmpegPath = require('ffmpeg-static');
 const requestId = require('./middleware/requestId');
 const { errorHandler } = require('./middleware/errorHandler');
 const { rateLimiters, dynamicRateLimiter } = require('./middleware/rateLimiter');
-const { 
-  generalLimiter, 
-  authLimiter, 
-  loginLimiter, 
-  translationLimiter, 
-  notificationLimiter, 
-  apiLimiter 
+const {
+  generalLimiter,
+  authLimiter,
+  loginLimiter,
+  translationLimiter,
+  notificationLimiter,
+  apiLimiter
 } = require('./middleware/inMemoryRateLimiter');
 const prayerLogRoutes = require('./routes/prayerLogRoutes');
+const prayerTimesFineTuningRoutes = require('./routes/prayerTimesFineTuningRoutes');
+const offlinePrayerTimesRoutes = require('./routes/offlinePrayerTimesRoutes');
+const prayerTimeReportRoutes = require('./routes/prayerTimeReportRoutes');
 
 // Database connection
 const { connect: connectDatabase, healthCheck: dbHealthCheck } = require('./config/database');
@@ -37,6 +40,9 @@ const { connect: connectDatabase, healthCheck: dbHealthCheck } = require('./conf
 const prayerNotificationScheduler = require('./tasks/prayerNotificationScheduler');
 // require('./workers/notificationWorker'); // Commented out - worker should run as separate process
 // require('./services/partialTranslationService'); // Temporarily disabled
+
+// --- Smart Timezone Detection Service ---
+const smartTimezoneService = require('./services/smartTimezoneService');
 
 // --- In-Memory Services with NVMe Persistence ---
 const diskPersistence = require('./services/diskPersistence');
@@ -75,7 +81,9 @@ const authRoutes = require('./routes/authRoutes');
 const namesRoutes = require('./routes/api/names');
 const userRoutes = require('./routes/userRoutes');
 const authCookieRoutes = require('./routes/authCookieRoutes');
+const tokenRoutes = require('./routes/tokenRoutes');
 const notificationsRouter = require('./routes/notifications');
+const notificationConfirmationRoutes = require('./routes/notificationConfirmationRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const accountManagementRoutes = require('./routes/accountManagementRoutes');
 const securityDashboard = require('./routes/securityDashboard');
@@ -112,6 +120,10 @@ io.use(socketAuth);
 
 require('./websockets/socketManager')(io);
 
+// Initialize WebSocket service for notification status updates
+const { initializeWebSocket } = require('./services/websocketService');
+initializeWebSocket(io);
+
 // --- Request metadata, cookies, logging ---
 app.use(requestId);
 app.use(cookieParser());
@@ -126,32 +138,32 @@ app.use(
       directives: {
         "default-src": ["'self'"],
         "script-src": [
-          "'self'", 
-          "'unsafe-inline'", 
+          "'self'",
+          "'unsafe-inline'",
           "'unsafe-eval'",
-          "https://cdnjs.cloudflare.com", 
-          "https://cdn.jsdelivr.net", 
+          "https://cdnjs.cloudflare.com",
+          "https://cdn.jsdelivr.net",
           "https://cdn.socket.io",
           "https://unpkg.com"
         ],
         "style-src": [
-          "'self'", 
-          "'unsafe-inline'", 
-          "https://cdnjs.cloudflare.com", 
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdnjs.cloudflare.com",
           "https://fonts.googleapis.com",
           "https://unpkg.com"
         ],
         "style-src-elem": [
-          "'self'", 
-          "'unsafe-inline'", 
-          "https://cdnjs.cloudflare.com", 
+          "'self'",
+          "'unsafe-inline'",
+          "https://cdnjs.cloudflare.com",
           "https://fonts.googleapis.com",
           "https://unpkg.com"
         ],
         "font-src": [
-          "'self'", 
-          "https://fonts.gstatic.com", 
-          "https://cdnjs.cloudflare.com", 
+          "'self'",
+          "https://fonts.gstatic.com",
+          "https://cdnjs.cloudflare.com",
           "https://r2cdn.perplexity.ai",
           "data:"
         ],
@@ -211,16 +223,14 @@ app.use(
     store: MongoStore.create({
       mongoUrl: env.MONGO_URI,
       dbName: env.DB_NAME,
-      collectionName: 'sessions',
-      ttl: 60 * 60 * 24 * 14,
-      autoRemove: 'interval',
-      autoRemoveInterval: 10,
+      collectionName: 'sessions'
+      // do not set a global ttl here; sessions persisted server-side and handled per-login
     }),
     cookie: {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 1000 * 60 * 60 * 24 * 14,
+      sameSite: 'lax'
+      // maxAge intentionally omitted; set per-login to support session vs persistent cookie
     },
   })
 );
@@ -282,11 +292,13 @@ app.use(generalLimiter);
 app.use('/api/auth/login', loginLimiter); // Apply strict rate limiting to login
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/auth-cookie', authLimiter, authCookieRoutes);
+app.use('/api/token', tokenRoutes);
 // Removed Passport OAuth routes to allow custom PKCE implementation to take precedence
 app.use('/api/auth', require('./routes/enhancedOAuth'));
-app.use('/api/token', apiLimiter, require('./routes/tokenRoutes')); // Token management routes
 app.use('/api/notifications', notificationLimiter, notificationsRouter);
-app.use('/api/subscription', require('./routes/subscriptionRoutes'));
+app.use('/api/notifications', notificationConfirmationRoutes);
+app.use('/api/notification-status', require('./routes/notificationStatusRoutes'));
+// app.use('/api/subscription', require('./routes/subscriptionRoutes')); // Disabled - conflicts with notifications routes
 
 // Analytics routes
 app.use('/api/analytics', require('./routes/analyticsRoutes'));
@@ -335,6 +347,10 @@ if (mfaRoutes) {
 }
 app.use('/api/location', locationRoutes);
 app.use('/api/prayer-log', prayerLogRoutes);
+app.use('/api/prayer-times-fine-tuning', prayerTimesFineTuningRoutes);
+app.use('/api/offline-prayer-times', offlinePrayerTimesRoutes);
+app.use('/api/prayer-time-reports', prayerTimeReportRoutes);
+app.use('/api/timezone', require('./routes/smartTimezoneRoutes'));
 app.use('/api/security', securityDashboard);
 app.use('/api', apiLimiter, apiRoutes);
 
@@ -344,10 +360,10 @@ app.get('/api/health/database', async (req, res) => {
     const health = await dbHealthCheck();
     res.json(health);
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       message: 'Database health check failed',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -360,10 +376,10 @@ app.get('/api/health/read-replicas', async (req, res) => {
     const health = await getHealthStatus();
     res.json(health);
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       message: 'Read replicas health check failed',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -378,7 +394,7 @@ app.get('/api/health/comprehensive', async (req, res) => {
       dbHealthCheck()
     ]);
 
-    const overallStatus = dbHealth.status === 'fulfilled' && dbHealth.value.status !== 'error' 
+    const overallStatus = dbHealth.status === 'fulfilled' && dbHealth.value.status !== 'error'
       ? 'healthy' : 'degraded';
 
     res.json({
@@ -389,10 +405,10 @@ app.get('/api/health/comprehensive', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ 
-      status: 'error', 
+    res.status(500).json({
+      status: 'error',
       message: 'Comprehensive health check failed',
-      error: error.message 
+      error: error.message
     });
   }
 });
@@ -464,6 +480,22 @@ async function startServer() {
       logger.error?.('❌ Failed to initialize prayer notification scheduler:', error);
     }
 
+    // Initialize Smart Timezone Detection Service
+    try {
+      await smartTimezoneService.initialize();
+      logger.info?.('✅ Smart timezone detection service initialized successfully');
+    } catch (error) {
+      logger.error?.('❌ Failed to initialize smart timezone detection service:', error);
+    }
+
+    // Initialize notification retry manager
+    try {
+      const notificationRetryManager = require('./services/notificationRetryManager');
+      logger.info?.('✅ Notification retry manager initialized successfully');
+    } catch (error) {
+      logger.error?.('❌ Failed to initialize notification retry manager:', error);
+    }
+
     // Start token cleanup service
     const tokenCleanupService = require('./services/tokenCleanupService');
     tokenCleanupService.start();
@@ -481,21 +513,21 @@ async function startServer() {
           try {
             const { subscription, payload } = job.data;
             console.log(`📬 [Notification Worker] Processing notification job: ${job.id}`);
-            
+
             // Import web-push here to avoid circular dependencies
             const webPush = require('web-push');
-            
+
             // Configure web-push with VAPID keys
             webPush.setVapidDetails(
               env.VAPID_SUBJECT || 'mailto:admin@islamic-portal.com',
               env.VAPID_PUBLIC_KEY,
               env.VAPID_PRIVATE_KEY
             );
-            
+
             // Convert subscription to web-push format
             // Handle both direct subscription objects and nested subscription objects
             let webPushSubscription;
-            
+
             if (subscription.subscription) {
               // Nested subscription object (from database)
               webPushSubscription = {
@@ -515,13 +547,13 @@ async function startServer() {
                 },
               };
             }
-            
+
             // Validate subscription
             if (!webPushSubscription.endpoint) {
               console.error('❌ [Notification Worker] Invalid subscription data:', JSON.stringify(subscription, null, 2));
               throw new Error('You must pass in a subscription with at least an endpoint.');
             }
-            
+
             // Send notification with high urgency and low TTL to reduce broker buffering
             await webPush.sendNotification(
               webPushSubscription,
@@ -529,11 +561,11 @@ async function startServer() {
               { TTL: 10, urgency: 'high' }
             );
             console.log(`✅ [Notification Worker] Notification sent successfully: ${job.id}`);
-            
+
             return { success: true };
       } catch (error) {
             console.error(`❌ [Notification Worker] Failed to send notification ${job.id}:`, error.message);
-            
+
             // If subscription is invalid, remove it from database
             if (error.statusCode === 404 || error.statusCode === 410) {
               try {
@@ -544,11 +576,11 @@ async function startServer() {
                 console.error(`❌ [Notification Worker] Failed to remove invalid subscription:`, dbError.message);
               }
             }
-            
+
             throw error;
           }
         });
-        
+
         console.log('📬 [Notification Worker] Started processing notifications');
         logger.info?.('📬 [Notification Worker] Started processing notifications');
       }
@@ -576,20 +608,20 @@ startServer();
 const shutdown = async () => {
   try {
     logger.info?.('🛑 Shutting down HTTP server...');
-    
+
     // Stop token cleanup service
     const tokenCleanupService = require('./services/tokenCleanupService');
     tokenCleanupService.stop();
-    
+
     // Shutdown in-memory services
     await shutdownRateLimiters();
     await diskPersistence.shutdown();
-    
+
     await new Promise((resolve) => server.close(resolve));
-    
+
     // Close enhanced database connections
     const { disconnect: disconnectDatabase } = require('./config/database');
-    
+
     try {
       const { closeAllConnections: closeReadReplicas } = require('./services/readReplicaService');
     await Promise.all([

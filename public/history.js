@@ -27,13 +27,13 @@ document.addEventListener('DOMContentLoaded', () => {
             displayedHistory = [];
             selectedItems.clear();
         }
-        
+
         const params = new URLSearchParams({ page, limit: 10, search: currentSearchTerm, favoritesOnly: showFavoritesOnly });
         try {
             const response = await fetch(`/history?${params.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch history.');
             const result = await response.json();
-            
+
             const newItems = result.data;
             if (append) {
                 displayedHistory.push(...newItems);
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             totalHistoryItems = result.total;
             currentPage = result.page;
-            
+
             renderHistoryList();
         } catch (err) {
             showNotification(err.message, 'error');
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
             historyList.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No translations found.</p>';
             return;
         }
-        
+
         historyList.innerHTML = '';
         let lastDate = null;
         const fragment = document.createDocumentFragment();
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const historyItemElement = event.target.closest('.history-item');
         const itemId = historyItemElement.dataset.id;
         const item = displayedHistory.find(i => i.id === itemId) || {};
-        
+
         if (button.classList.contains('delete-btn')) {
             if (confirm('Are you sure?')) {
                 fetch(`/history/${itemId}`, { method: 'DELETE' }).then(res => {
@@ -182,6 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         loadHistory(1);
     }
-    
+
     initialize();
 });

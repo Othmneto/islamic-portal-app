@@ -14,7 +14,7 @@ const NameSchema = new Schema({
   root: { type: Schema.Types.Mixed },
   category: { type: Schema.Types.Mixed },
   reference: { type: Schema.Types.Mixed },
-  
+
   // Existing flexible fields
   explanations: { type: Schema.Types.Mixed },
   invocation: { type: Schema.Types.Mixed },

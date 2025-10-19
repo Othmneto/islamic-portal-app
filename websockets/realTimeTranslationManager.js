@@ -66,7 +66,7 @@ class RealTimeTranslationManager {
 
     async handleRealTimeTranslation(socket, data) {
         const { text, fromLang, toLang, sessionId, conversationId, isPartial = false } = data;
-        
+
         if (!text || text.trim().length < 2) return;
 
         const conversation = this.activeConversations.get(conversationId);
@@ -96,11 +96,11 @@ class RealTimeTranslationManager {
 
     async handlePartialTranslation(socket, data, conversation) {
         const { text, fromLang, toLang } = data;
-        
+
         // Simple partial translation for typing indicators
         try {
             const partialTranslation = await this.getPartialTranslation(text, fromLang, toLang);
-            
+
             socket.emit('partialTranslation', {
                 original: text,
                 partial: partialTranslation,
@@ -150,7 +150,7 @@ class RealTimeTranslationManager {
 
     handleTypingIndicator(socket, data) {
         const { conversationId, isTyping, text } = data;
-        
+
         if (isTyping) {
             this.typingUsers.set(socket.id, {
                 conversationId,
@@ -173,7 +173,7 @@ class RealTimeTranslationManager {
     updateConversationContext(data) {
         const { conversationId, context } = data;
         const conversation = this.activeConversations.get(conversationId);
-        
+
         if (conversation) {
             conversation.context = context;
             conversation.lastActivity = new Date();
@@ -182,15 +182,15 @@ class RealTimeTranslationManager {
 
     handleDisconnection(socket) {
         console.log(`[RealTime] User disconnected: ${socket.id}`);
-        
+
         // Remove from typing users
         this.typingUsers.delete(socket.id);
-        
+
         // Remove from all conversations
         for (const [conversationId, conversation] of this.activeConversations.entries()) {
             conversation.participants.delete(socket.id);
         }
-        
+
         // Clean up empty conversations
         this.cleanupEmptyConversations();
     }
@@ -200,14 +200,14 @@ class RealTimeTranslationManager {
         const timeout = 30 * 60 * 1000; // 30 minutes
 
         for (const [conversationId, conversation] of this.activeConversations.entries()) {
-            if (conversation.participants.size === 0 || 
+            if (conversation.participants.size === 0 ||
                 (now - conversation.lastActivity) > timeout) {
                 this.activeConversations.delete(conversationId);
                 this.translationQueue.delete(conversationId);
-                
+
                 // Clean up BullMQ worker for this conversation
                 this.queueService.removeWorker(conversationId);
-                
+
                 console.log(`[RealTime] Cleaned up conversation: ${conversationId}`);
             }
         }

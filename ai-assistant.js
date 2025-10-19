@@ -91,9 +91,9 @@ async function _executeToolCalls(toolCalls, sessionId) {
             }
         } catch (error) {
             console.error(`Error executing tool '${functionName}':`, error);
-            functionResponse = { 
-                error: `The function ${functionName} failed to execute.`, 
-                details: error.message 
+            functionResponse = {
+                error: `The function ${functionName} failed to execute.`,
+                details: error.message
             };
         }
 
@@ -132,7 +132,7 @@ async function handleUserQuery(question, sessionId) {
     // Check if the model decided to call any tools
     if (toolCalls) {
         messages.push(responseMessage);
-        
+
         // <<< FIX POINT 12: Call the refactored helper function >>>
         const toolResponses = await _executeToolCalls(toolCalls, sessionId);
         messages.push(...toolResponses);

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------
    Prayer Times Page Script (Modular Version)
-   
+
    This is the main entry point that imports and coordinates all modules:
    - Core utilities and state management
    - Location services and geocoding

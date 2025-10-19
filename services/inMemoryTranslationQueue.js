@@ -109,9 +109,9 @@ class InMemoryTranslationQueueService {
      */
     async processTranslationJob(job) {
         const { text, from, to, voiceId, sessionId, conversationId, socketId } = job.data;
-        
+
         console.log(`[InMemoryTranslationQueue] Processing job ${job.id} for conversation ${conversationId}`);
-        
+
         try {
             // Get worker for this conversation
             const worker = this.workers.get(conversationId);
@@ -128,7 +128,7 @@ class InMemoryTranslationQueueService {
 
             // Perform translation
             const results = await translateText(text, from, to, voiceId, sessionId);
-            
+
             // Emit progress update
             worker.io.to(conversationId).emit('translationProgress', {
                 jobId: job.id,
@@ -147,7 +147,7 @@ class InMemoryTranslationQueueService {
             return { success: true, results };
         } catch (error) {
             console.error(`[InMemoryTranslationQueue] Job ${job.id} failed:`, error);
-            
+
             // Emit error if worker exists
             const worker = this.workers.get(conversationId);
             if (worker) {

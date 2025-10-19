@@ -1,523 +1,321 @@
-// Session Management Service
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { get, set, del, keys } = require('./diskPersistence');
-const { safeLogAuthEvent, safeLogSecurityViolation } = require('../middleware/securityLogging');
-const { createError } = require('../middleware/errorHandler');
+const Session = require('../models/Session');
+const User = require('../models/User');
 const { env } = require('../config');
+const { promisify } = require('util');
+
+const signAsync = promisify(jwt.sign);
+
+function sha256Hex(value) {
+  return crypto.createHash('sha256').update(value).digest('hex');
+}
 
 class SessionManagementService {
-    constructor() {
-        // Extended JWT settings for better user experience
-        this.accessTokenExpiry = 24 * 60 * 60 * 1000; // 24 hours (extended from 2 hours)
-        this.refreshTokenExpiry = 90 * 24 * 60 * 60 * 1000; // 90 days (extended from 30 days)
-        this.maxConcurrentSessions = 15; // Increased for better user experience
-        this.sessionExpiry = 180 * 24 * 60 * 60 * 1000; // 180 days (extended from 90 days)
-        
-        // Auto-refresh settings
-        this.autoRefreshThreshold = 2 * 60 * 60 * 1000; // Auto-refresh when 2 hours left (extended from 15 minutes)
-        this.maxRefreshAttempts = 5; // Maximum refresh attempts before requiring re-login (increased from 3)
+  constructor() {
+    this.shortExpiry = env.JWT_EXPIRY_SHORT || '24h';
+    this.longExpiry = env.JWT_EXPIRY_LONG || '90d';
+  }
+
+  // Issue access token (Remember Me aware)
+  async issueAccessTokenRememberMe(user, rememberMe = false) {
+    const expiresIn = rememberMe ? this.longExpiry : this.shortExpiry;
+    const payload = {
+      sub: String(user._id),
+      type: 'access',
+      aud: env.JWT_AUDIENCE || 'translator-backend',
+      iss: env.JWT_ISSUER || 'translator-backend',
+      jti: crypto.randomUUID(),
+      role: user.role
+    };
+    return signAsync(payload, env.JWT_SECRET, { expiresIn });
+  }
+
+  // Issue refresh token (Remember Me aware)
+  async issueRefreshTokenRememberMe(userId, sessionId, rememberMe = false) {
+    const expiresIn = rememberMe ? this.longExpiry : this.shortExpiry;
+    const payload = {
+      sub: String(userId),
+      sessionId,
+      type: 'refresh',
+      aud: env.JWT_AUDIENCE || 'translator-backend',
+      iss: env.JWT_ISSUER || 'translator-backend',
+      jti: crypto.randomUUID()
+    };
+    return signAsync(payload, env.JWT_SECRET, { expiresIn });
+  }
+
+  // Create session and return tokens
+  async createSessionRememberMeAware(user, req, rememberMe = false) {
+    // Create session document
+    const sessionId = crypto.randomUUID();
+    const now = Date.now();
+    const deviceFingerprint = (req.body && req.body.deviceFingerprint) || 'unknown';
+    const dd = {
+      sessionId,
+      userId: user._id,
+      ip: req.ip || (req.headers && req.headers['x-forwarded-for']) || 'unknown',
+      userAgent: req.get ? (req.get('User-Agent') || 'unknown') : 'unknown',
+      deviceInfo: {
+        fingerprint: deviceFingerprint,
+        platform: (req.body && req.body.platform) || 'unknown',
+        browser: this.extractBrowser(req.get ? req.get('User-Agent') : ''),
+        os: this.extractOS(req.get ? req.get('User-Agent') : '')
+      },
+      rememberMe: !!rememberMe,
+      createdAt: now,
+      lastActivity: now,
+      isActive: true
+    };
+
+    const sessionDoc = new Session(dd);
+
+    // Issue tokens
+    const accessToken = await this.issueAccessTokenRememberMe(user, rememberMe);
+    const refreshToken = await this.issueRefreshTokenRememberMe(user._id, sessionId, rememberMe);
+
+    // Hash and store refresh token hash
+    const refreshHash = sha256Hex(String(refreshToken) + String(user._id));
+    sessionDoc.currentRefreshTokenHash = refreshHash;
+    sessionDoc.refreshTokenVersion = 1;
+    sessionDoc.refreshTokenRotatedAt = Date.now();
+
+    await sessionDoc.save();
+
+    // Return tokens and minimal user data
+    return {
+      sessionId,
+      accessToken,
+      refreshToken,
+      expiresIn: rememberMe ? this.longExpiry : this.shortExpiry,
+      user: {
+        id: String(user._id),
+        email: user.email,
+        username: user.username,
+        role: user.role
+      }
+    };
+  }
+
+  // helper browser/os extraction (minimal)
+  extractBrowser(userAgent = '') {
+    // Very small UA parsing fallback - keep simple
+    if (!userAgent) return 'unknown';
+    if (userAgent.includes('Firefox')) return 'Firefox';
+    if (userAgent.includes('Chrome') && userAgent.includes('Safari')) return 'Chrome';
+    if (userAgent.includes('Safari') && !userAgent.includes('Chrome')) return 'Safari';
+    return 'unknown';
+  }
+
+  extractOS(userAgent = '') {
+    if (!userAgent) return 'unknown';
+    if (userAgent.includes('Windows')) return 'Windows';
+    if (userAgent.includes('Macintosh')) return 'MacOS';
+    if (userAgent.includes('Linux')) return 'Linux';
+    if (userAgent.includes('Android')) return 'Android';
+    if (userAgent.includes('iPhone') || userAgent.includes('iPad')) return 'iOS';
+    return 'unknown';
+  }
+
+  // Rotate refresh token: verify given refresh token, ensure matches current hash,
+  // then issue new access + refresh tokens and update session doc (hash rotation).
+  async rotateRefreshTokenHashedRotation(oldRefreshToken) {
+    // Verify token first
+    let decoded;
+    try {
+      decoded = jwt.verify(oldRefreshToken, env.JWT_SECRET, {
+        audience: env.JWT_AUDIENCE,
+        issuer: env.JWT_ISSUER
+      });
+    } catch (err) {
+      throw new Error('Invalid refresh token');
     }
 
-    /**
-     * Generate access token
-     */
-    generateAccessToken(user) {
-        const payload = {
-            user: {
-                id: user._id,
-                email: user.email,
-                username: user.username,
-                role: user.role,
-                authProvider: user.authProvider,
-                isVerified: user.isVerified
-            },
-            type: 'access',
-            iat: Math.floor(Date.now() / 1000)
+    const userId = decoded.sub;
+    const sessionId = decoded.sessionId;
+    if (!userId || !sessionId) throw new Error('Malformed refresh token');
+
+    const sessionDoc = await Session.findOne({ sessionId, userId });
+    if (!sessionDoc || !sessionDoc.isActive) {
+      throw new Error('Session not found or inactive');
+    }
+
+    const oldHash = sha256Hex(String(oldRefreshToken) + String(userId));
+    if (sessionDoc.currentRefreshTokenHash !== oldHash) {
+      // Detected reuse or mismatch
+      // Revoke session to be safe
+      sessionDoc.isActive = false;
+      sessionDoc.revokedAt = Date.now();
+      await sessionDoc.save();
+      throw new Error('Refresh token already used or invalid (possible reuse)');
+    }
+
+    // Everything checks: issue new tokens
+    const user = await User.findById(userId).select('-password');
+    if (!user) throw new Error('User not found');
+
+    const rememberMe = !!sessionDoc.rememberMe;
+    const newAccessToken = await this.issueAccessTokenRememberMe(user, rememberMe);
+    const newRefreshToken = await this.issueRefreshTokenRememberMe(userId, sessionId, rememberMe);
+    const newHash = sha256Hex(String(newRefreshToken) + String(userId));
+
+    // Keep previous hash for short grace period then rotate
+    sessionDoc.previousRefreshTokenHash = sessionDoc.currentRefreshTokenHash;
+    sessionDoc.currentRefreshTokenHash = newHash;
+    sessionDoc.refreshTokenVersion = (sessionDoc.refreshTokenVersion || 0) + 1;
+    sessionDoc.refreshTokenRotatedAt = Date.now();
+    sessionDoc.lastActivity = Date.now();
+    await sessionDoc.save();
+
+    return {
+      accessToken: newAccessToken,
+      newRefreshToken: newRefreshToken,
+      expiresIn: rememberMe ? this.longExpiry : this.shortExpiry,
+      sessionId: sessionId
+    };
+  }
+
+  // Revoke any session tokens by version or sessionId
+  async revokeRefreshTokenVersioned(sessionId, version) {
+    const sessionDoc = await Session.findOne({ sessionId });
+    if (!sessionDoc) return false;
+    if (typeof version === 'number' && sessionDoc.refreshTokenVersion === version) {
+      sessionDoc.isActive = false;
+      sessionDoc.revokedAt = Date.now();
+      await sessionDoc.save();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Get token information including expiry and refresh status
+   */
+  getTokenInfo(accessToken) {
+    try {
+      const decoded = jwt.verify(accessToken, env.JWT_SECRET, {
+        audience: env.JWT_AUDIENCE || 'translator-backend',
+        issuer: env.JWT_ISSUER || 'translator-backend'
+      });
+
+      const now = Math.floor(Date.now() / 1000);
+      const isExpired = decoded.exp < now;
+      const timeUntilExpiry = decoded.exp - now;
+
+      // Check if token needs refresh (past 50% of lifetime)
+      const tokenAge = now - decoded.iat;
+      const tokenLifetime = decoded.exp - decoded.iat;
+      const threshold = parseFloat(env.SESSION_SLIDING_WINDOW_THRESHOLD || '0.5');
+      const needsRefresh = tokenAge > tokenLifetime * threshold;
+
+      return {
+        userId: decoded.sub,
+        isExpired,
+        needsRefresh,
+        expiresAt: new Date(decoded.exp * 1000),
+        timeUntilExpiry: timeUntilExpiry * 1000, // Convert to milliseconds
+        issuedAt: new Date(decoded.iat * 1000),
+        jti: decoded.jti
+      };
+    } catch (error) {
+      console.error('❌ [SessionManagement] Error getting token info:', error.message);
+      return null;
+    }
+  }
+
+  /**
+   * Auto-refresh token if needed
+   */
+  async autoRefreshToken(accessToken, refreshToken) {
+    try {
+      const tokenInfo = this.getTokenInfo(accessToken);
+
+      if (!tokenInfo) {
+        throw new Error('Invalid access token');
+      }
+
+      if (tokenInfo.isExpired) {
+        throw new Error('Access token is expired');
+      }
+
+      if (!tokenInfo.needsRefresh) {
+        return {
+          accessToken,
+          refreshToken,
+          needsRefresh: false,
+          expiresIn: tokenInfo.timeUntilExpiry
         };
+      }
 
-        return jwt.sign(payload, env.JWT_SECRET, { 
-            expiresIn: Math.floor(this.accessTokenExpiry / 1000) 
-        });
+      // Token needs refresh, use the refresh token
+      const result = await this.rotateRefreshTokenHashedRotation(refreshToken);
+
+      return {
+        accessToken: result.accessToken,
+        refreshToken: result.newRefreshToken,
+        needsRefresh: true,
+        expiresIn: result.expiresIn
+      };
+    } catch (error) {
+      console.error('❌ [SessionManagement] Auto refresh error:', error.message);
+      throw error;
     }
+  }
 
-    /**
-     * Generate refresh token
-     */
-    generateRefreshToken(userId, sessionId) {
-        const payload = {
-            userId: userId,
-            sessionId: sessionId,
-            type: 'refresh',
-            iat: Math.floor(Date.now() / 1000)
-        };
+  /**
+   * Get session statistics for a user
+   */
+  async getSessionStats(userId) {
+    try {
+      const sessions = await Session.find({ userId, isActive: true });
 
-        return jwt.sign(payload, env.JWT_SECRET, { 
-            expiresIn: Math.floor(this.refreshTokenExpiry / 1000) 
-        });
+      const stats = {
+        totalActiveSessions: sessions.length,
+        rememberMeSessions: sessions.filter(s => s.rememberMe).length,
+        sessionOnlySessions: sessions.filter(s => !s.rememberMe).length,
+        sessions: sessions.map(session => ({
+          sessionId: session.sessionId,
+          rememberMe: session.rememberMe,
+          createdAt: session.createdAt,
+          lastActivity: session.lastActivity,
+          ip: session.ip,
+          userAgent: session.userAgent,
+          deviceInfo: session.deviceInfo
+        }))
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('❌ [SessionManagement] Error getting session stats:', error.message);
+      throw error;
     }
+  }
 
-    /**
-     * Create new session
-     */
-    async createSession(user, req) {
-        try {
-            const sessionId = crypto.randomUUID();
-            const now = Date.now();
-            
-            const sessionData = {
-                sessionId: sessionId,
-                userId: user._id,
-                ip: req.ip || 'unknown',
-                userAgent: req.get('User-Agent') || 'unknown',
-                createdAt: now,
-                lastActivity: now,
-                isActive: true,
-                deviceInfo: {
-                    fingerprint: req.body?.deviceFingerprint || 'unknown',
-                    platform: req.body?.platform || 'unknown',
-                    browser: this.extractBrowser(req.get('User-Agent') || ''),
-                    os: this.extractOS(req.get('User-Agent') || '')
-                },
-                location: req.body?.location || null
-            };
+  /**
+   * Invalidate a specific session
+   */
+  async invalidateSession(sessionId) {
+    try {
+      const session = await Session.findOne({ sessionId });
 
-            // Check concurrent session limit
-            await this.enforceConcurrentSessionLimit(user._id, sessionId);
+      if (!session) {
+        throw new Error('Session not found');
+      }
 
-            // Store session
-            await this.storeSession(sessionData);
+      session.isActive = false;
+      session.revokedAt = new Date();
+      await session.save();
 
-            // Generate tokens
-            const accessToken = this.generateAccessToken(user);
-            const refreshToken = this.generateRefreshToken(user._id, sessionId);
-
-            // Log session creation
-            await safeLogAuthEvent('SESSION_CREATED', {
-                userId: user._id,
-                sessionId: sessionId,
-                ip: req.ip || 'unknown',
-                userAgent: req.get('User-Agent') || 'unknown'
-            });
-
-            return {
-                accessToken: accessToken,
-                refreshToken: refreshToken,
-                sessionId: sessionId,
-                expiresIn: this.accessTokenExpiry
-            };
-        } catch (error) {
-            console.error('❌ Session Management: Error creating session:', error);
-            throw error;
-        }
+      return {
+        sessionId,
+        invalidated: true,
+        invalidatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('❌ [SessionManagement] Error invalidating session:', error.message);
+      throw error;
     }
-
-    /**
-     * Check if access token needs refresh
-     */
-    needsRefresh(accessToken) {
-        try {
-            const decoded = jwt.decode(accessToken);
-            if (!decoded || !decoded.exp) {
-                return true; // Invalid token, needs refresh
-            }
-            
-            const now = Math.floor(Date.now() / 1000);
-            const timeUntilExpiry = (decoded.exp - now) * 1000; // Convert to milliseconds
-            
-            return timeUntilExpiry <= this.autoRefreshThreshold;
-        } catch (error) {
-            console.error('❌ Session Management: Error checking token expiry:', error);
-            return true; // Error checking, assume needs refresh
-        }
-    }
-
-    /**
-     * Refresh access token
-     */
-    async refreshAccessToken(refreshToken) {
-        try {
-            // Verify refresh token
-            const decoded = jwt.verify(refreshToken, env.JWT_SECRET);
-            
-            if (decoded.type !== 'refresh') {
-                throw createError('Invalid token type', 401, 'INVALID_TOKEN_TYPE');
-            }
-
-            // Check if session exists and is active
-            const session = await this.getSession(decoded.sessionId);
-            if (!session || !session.isActive) {
-                throw createError('Session not found or inactive', 401, 'SESSION_NOT_FOUND');
-            }
-
-            // Check if session is expired
-            if (Date.now() - session.lastActivity > this.sessionExpiry) {
-                await this.invalidateSession(decoded.sessionId);
-                throw createError('Session expired', 401, 'SESSION_EXPIRED');
-            }
-
-            // Check refresh attempts
-            if (session.refreshAttempts >= this.maxRefreshAttempts) {
-                await this.invalidateSession(decoded.sessionId);
-                throw createError('Too many refresh attempts', 401, 'TOO_MANY_REFRESH_ATTEMPTS');
-            }
-
-            // Update last activity and increment refresh attempts
-            await this.updateSession(decoded.sessionId, { 
-                lastActivity: Date.now(),
-                refreshAttempts: (session.refreshAttempts || 0) + 1
-            });
-
-            // Get user data
-            const User = require('../models/User');
-            const user = await User.findById(decoded.userId);
-            if (!user) {
-                throw createError('User not found', 404, 'USER_NOT_FOUND');
-            }
-
-            // Generate new access token
-            const accessToken = this.generateAccessToken(user);
-
-            // Reset refresh attempts on successful refresh
-            await this.updateSession(decoded.sessionId, { refreshAttempts: 0 });
-
-            return {
-                accessToken: accessToken,
-                expiresIn: this.accessTokenExpiry,
-                refreshToken: refreshToken, // Return the same refresh token
-                sessionId: decoded.sessionId
-            };
-        } catch (error) {
-            console.error('❌ Session Management: Error refreshing token:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Invalidate session
-     */
-    async invalidateSession(sessionId) {
-        try {
-            const session = await this.getSession(sessionId);
-            if (!session) {
-                return { success: true, message: 'Session not found' };
-            }
-
-            // Mark session as inactive
-            await this.updateSession(sessionId, { isActive: false, invalidatedAt: Date.now() });
-
-            // Log session invalidation
-            await safeLogAuthEvent('SESSION_INVALIDATED', {
-                userId: session.userId,
-                sessionId: sessionId,
-                ip: session.ip,
-                userAgent: session.userAgent
-            });
-
-            return { success: true, message: 'Session invalidated' };
-        } catch (error) {
-            console.error('❌ Session Management: Error invalidating session:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Invalidate all user sessions
-     */
-    async invalidateAllUserSessions(userId, exceptSessionId = null) {
-        try {
-            const sessions = await this.getUserSessions(userId);
-            let invalidatedCount = 0;
-
-            for (const session of sessions) {
-                if (exceptSessionId && session.sessionId === exceptSessionId) {
-                    continue;
-                }
-
-                await this.invalidateSession(session.sessionId);
-                invalidatedCount++;
-            }
-
-            await safeLogAuthEvent('ALL_SESSIONS_INVALIDATED', {
-                userId: userId,
-                invalidatedCount: invalidatedCount,
-                exceptSessionId: exceptSessionId
-            });
-
-            return { success: true, invalidatedCount: invalidatedCount };
-        } catch (error) {
-            console.error('❌ Session Management: Error invalidating all sessions:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Store session data
-     */
-    async storeSession(sessionData) {
-        try {
-            const key = `session:${sessionData.sessionId}`;
-            const userSessionsKey = `user_sessions:${sessionData.userId}`;
-
-            await set(key, JSON.stringify(sessionData), this.sessionExpiry);
-            await set(userSessionsKey, sessionData.sessionId, this.sessionExpiry);
-        } catch (error) {
-            console.error('❌ Session Management: Error storing session:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get session data
-     */
-    async getSession(sessionId) {
-        try {
-            const key = `session:${sessionId}`;
-            const data = await get(key);
-
-            if (data) {
-                return JSON.parse(data);
-            }
-            return null;
-        } catch (error) {
-            console.error('❌ Session Management: Error getting session:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Update session data
-     */
-    async updateSession(sessionId, updates) {
-        try {
-            const session = await this.getSession(sessionId);
-            if (!session) {
-                throw createError('Session not found', 404, 'SESSION_NOT_FOUND');
-            }
-
-            const updatedSession = { ...session, ...updates };
-            const key = `session:${sessionId}`;
-
-            await set(key, JSON.stringify(updatedSession), this.sessionExpiry);
-
-            return updatedSession;
-        } catch (error) {
-            console.error('❌ Session Management: Error updating session:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update session activity
-     */
-    async updateSessionActivity(sessionId) {
-        try {
-            await this.updateSession(sessionId, { lastActivity: Date.now() });
-        } catch (error) {
-            console.error('❌ Session Management: Error updating session activity:', error);
-        }
-    }
-
-    /**
-     * Get user sessions
-     */
-    async getUserSessions(userId) {
-        try {
-            const userSessionsKey = `user_sessions:${userId}`;
-            const sessionId = await get(userSessionsKey);
-            const sessionIds = sessionId ? [sessionId] : [];
-
-            const sessions = [];
-            for (const sessionId of sessionIds) {
-                const session = await this.getSession(sessionId);
-                if (session) {
-                    sessions.push(session);
-                }
-            }
-
-            return sessions.sort((a, b) => b.lastActivity - a.lastActivity);
-        } catch (error) {
-            console.error('❌ Session Management: Error getting user sessions:', error);
-            return [];
-        }
-    }
-
-    /**
-     * Enforce concurrent session limit
-     */
-    async enforceConcurrentSessionLimit(userId, newSessionId) {
-        try {
-            const sessions = await this.getUserSessions(userId);
-            const activeSessions = sessions.filter(s => s.isActive);
-
-            if (activeSessions.length >= this.maxConcurrentSessions) {
-                // Remove oldest sessions
-                const sessionsToRemove = activeSessions
-                    .sort((a, b) => a.lastActivity - b.lastActivity)
-                    .slice(0, activeSessions.length - this.maxConcurrentSessions + 1);
-
-                for (const session of sessionsToRemove) {
-                    await this.invalidateSession(session.sessionId);
-                }
-
-                await safeLogSecurityViolation('concurrent_session_limit_exceeded', {
-                    userId: userId,
-                    maxSessions: this.maxConcurrentSessions,
-                    removedSessions: sessionsToRemove.length
-                });
-            }
-        } catch (error) {
-            console.error('❌ Session Management: Error enforcing concurrent session limit:', error);
-        }
-    }
-
-    /**
-     * Clean up expired sessions
-     */
-    async cleanupExpiredSessions() {
-        try {
-            // This would require scanning all session keys, which is expensive
-            // In production, you'd want to use a more efficient method
-            console.log('🧹 Session cleanup: This would clean up expired sessions in production');
-        } catch (error) {
-            console.error('❌ Session Management: Error cleaning up sessions:', error);
-        }
-    }
-
-    /**
-     * Extract browser from user agent
-     */
-    extractBrowser(userAgent) {
-        const browsers = [
-            { name: 'Chrome', pattern: /Chrome\/(\d+)/ },
-            { name: 'Firefox', pattern: /Firefox\/(\d+)/ },
-            { name: 'Safari', pattern: /Safari\/(\d+)/ },
-            { name: 'Edge', pattern: /Edg\/(\d+)/ },
-            { name: 'Opera', pattern: /Opera\/(\d+)/ }
-        ];
-
-        for (const browser of browsers) {
-            if (browser.pattern.test(userAgent)) {
-                return browser.name;
-            }
-        }
-
-        return 'Unknown';
-    }
-
-    /**
-     * Extract OS from user agent
-     */
-    extractOS(userAgent) {
-        const os = [
-            { name: 'Windows', pattern: /Windows NT (\d+\.\d+)/ },
-            { name: 'macOS', pattern: /Mac OS X (\d+[._]\d+)/ },
-            { name: 'Linux', pattern: /Linux/ },
-            { name: 'Android', pattern: /Android (\d+\.\d+)/ },
-            { name: 'iOS', pattern: /iPhone OS (\d+[._]\d+)/ }
-        ];
-
-        for (const o of os) {
-            if (o.pattern.test(userAgent)) {
-                return o.name;
-            }
-        }
-
-        return 'Unknown';
-    }
-
-    /**
-     * Get token expiry information
-     */
-    getTokenInfo(accessToken) {
-        try {
-            const decoded = jwt.decode(accessToken);
-            if (!decoded || !decoded.exp) {
-                return null;
-            }
-            
-            const now = Math.floor(Date.now() / 1000);
-            const expiresAt = decoded.exp;
-            const timeUntilExpiry = (expiresAt - now) * 1000; // Convert to milliseconds
-            const needsRefresh = timeUntilExpiry <= this.autoRefreshThreshold;
-            
-            return {
-                expiresAt: new Date(expiresAt * 1000),
-                timeUntilExpiry: timeUntilExpiry,
-                needsRefresh: needsRefresh,
-                isExpired: timeUntilExpiry <= 0,
-                userId: decoded.user?.id || decoded.userId
-            };
-        } catch (error) {
-            console.error('❌ Session Management: Error getting token info:', error);
-            return null;
-        }
-    }
-
-    /**
-     * Auto-refresh token if needed
-     */
-    async autoRefreshToken(accessToken, refreshToken) {
-        try {
-            const tokenInfo = this.getTokenInfo(accessToken);
-            if (!tokenInfo || !tokenInfo.needsRefresh) {
-                return { accessToken, needsRefresh: false };
-            }
-
-            console.log('🔄 [Session Management] Auto-refreshing token...');
-            const refreshResult = await this.refreshAccessToken(refreshToken);
-            
-            return {
-                accessToken: refreshResult.accessToken,
-                refreshToken: refreshResult.refreshToken,
-                needsRefresh: true,
-                expiresIn: refreshResult.expiresIn
-            };
-        } catch (error) {
-            console.error('❌ Session Management: Error auto-refreshing token:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get session statistics
-     */
-    async getSessionStats(userId) {
-        try {
-            const sessions = await this.getUserSessions(userId);
-            const activeSessions = sessions.filter(s => s.isActive);
-            const totalSessions = sessions.length;
-
-            const browsers = [...new Set(sessions.map(s => s.deviceInfo.browser))];
-            const platforms = [...new Set(sessions.map(s => s.deviceInfo.platform))];
-            const locations = [...new Set(sessions.map(s => s.location?.country).filter(Boolean))];
-
-            return {
-                totalSessions: totalSessions,
-                activeSessions: activeSessions.length,
-                browsers: browsers,
-                platforms: platforms,
-                locations: locations,
-                lastActivity: sessions.length > 0 ? Math.max(...sessions.map(s => s.lastActivity)) : null,
-                sessionExpiry: this.sessionExpiry,
-                accessTokenExpiry: this.accessTokenExpiry,
-                refreshTokenExpiry: this.refreshTokenExpiry
-            };
-        } catch (error) {
-            console.error('❌ Session Management: Error getting session stats:', error);
-            return {
-                totalSessions: 0,
-                activeSessions: 0,
-                browsers: [],
-                platforms: [],
-                locations: [],
-                lastActivity: null,
-                sessionExpiry: this.sessionExpiry,
-                accessTokenExpiry: this.accessTokenExpiry,
-                refreshTokenExpiry: this.refreshTokenExpiry
-            };
-        }
-    }
+  }
 }
 
 module.exports = new SessionManagementService();

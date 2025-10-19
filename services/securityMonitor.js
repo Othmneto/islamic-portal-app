@@ -157,7 +157,7 @@ class SecurityMonitor {
 
     this.isMonitoring = true;
     console.log('🔍 Security monitoring started');
-    
+
     // Set up periodic risk analysis
     this.riskAnalysisInterval = setInterval(() => {
       this.analyzeRiskPatterns();
@@ -251,7 +251,7 @@ class SecurityMonitor {
     }).sort({ timestamp: -1 }).limit(10);
 
     // Multiple failed attempts from same IP
-    const failedAttempts = recentEvents.filter(e => 
+    const failedAttempts = recentEvents.filter(e =>
       e.eventType.includes('FAILED') || e.eventType.includes('VIOLATION')
     ).length;
     riskScore += failedAttempts * 10;
@@ -272,13 +272,13 @@ class SecurityMonitor {
       const recentLocations = recentEvents
         .filter(e => e.location && e.location.coordinates)
         .map(e => e.location.coordinates);
-      
+
       if (recentLocations.length > 0) {
         const distance = this.calculateDistance(
           event.location.coordinates,
           recentLocations[0]
         );
-        
+
         if (distance > 1000) { // More than 1000km
           riskScore += 25;
         }
@@ -301,7 +301,7 @@ class SecurityMonitor {
     console.log(`🚨 HIGH RISK ALERT: ${event.eventType} (Score: ${event.riskScore})`);
     console.log(`📍 IP: ${event.ipAddress}, User: ${event.userId || 'Anonymous'}`);
     console.log(`🕐 Time: ${event.timestamp}`);
-    
+
     // Here you could integrate with external alerting systems
     // - Send email notifications
     // - Send Slack/Discord messages
@@ -313,7 +313,7 @@ class SecurityMonitor {
   async analyzeRiskPatterns() {
     try {
       const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-      
+
       // Find high-risk events in the last hour
       const highRiskEvents = await SecurityEvent.find({
         riskScore: { $gte: this.riskThresholds.HIGH },
@@ -323,7 +323,7 @@ class SecurityMonitor {
 
       if (highRiskEvents.length > 0) {
         console.log(`🔍 Found ${highRiskEvents.length} high-risk events in the last hour`);
-        
+
         // Group by IP address
         const ipGroups = {};
         highRiskEvents.forEach(event => {
@@ -353,7 +353,7 @@ class SecurityMonitor {
         timestamp: { $lt: thirtyDaysAgo },
         severity: { $in: ['LOW', 'MEDIUM'] } // Keep high and critical events longer
       });
-      
+
       if (result.deletedCount > 0) {
         console.log(`🧹 Cleaned up ${result.deletedCount} old security events`);
       }
@@ -373,7 +373,7 @@ class SecurityMonitor {
       };
 
       const startTime = new Date(Date.now() - timeframes[timeframe] || timeframes['24h']);
-      
+
       const events = await SecurityEvent.find({
         timestamp: { $gte: startTime }
       });
@@ -390,14 +390,14 @@ class SecurityMonitor {
       events.forEach(event => {
         // Count by type
         stats.byType[event.eventType] = (stats.byType[event.eventType] || 0) + 1;
-        
+
         // Count by severity
         stats.bySeverity[event.severity] = (stats.bySeverity[event.severity] || 0) + 1;
-        
+
         // Count by hour
         const hour = new Date(event.timestamp).getHours();
         stats.byHour[hour] = (stats.byHour[hour] || 0) + 1;
-        
+
         // Count by IP
         stats.topIPs[event.ipAddress] = (stats.topIPs[event.ipAddress] || 0) + 1;
       });
