@@ -29,6 +29,9 @@ const PushSubscriptionSchema = new mongoose.Schema(
   { timestamps: true, collection: "push_subscriptions" }
 );
 
+// Add composite index for efficient querying of active subscriptions
+PushSubscriptionSchema.index({ userId: 1, isActive: 1, createdAt: -1 });
+
 PushSubscriptionSchema.statics.upsertFromClient = async function ({
   subscription, tz, preferences, location, userId, ua,
 }) {

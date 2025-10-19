@@ -511,7 +511,12 @@ async function rescheduleNotificationsForUser(userId) {
 /** Schedule notifications for a single user for today's prayer times. */
 async function scheduleNotificationsForUser(user) {
   try {
-    const subscriptions = await PushSubscription.find({ userId: user._id }).lean();
+    const subscriptions = await PushSubscription.find({ 
+      userId: user._id,
+      isActive: true 
+    })
+    .sort({ createdAt: -1 })
+    .lean();
     if (!subscriptions || subscriptions.length === 0) {
       logger?.info?.(`No push subscriptions for ${user.email}; skipping schedule.`);
       return;
@@ -633,7 +638,12 @@ async function scheduleNotificationsForUser(user) {
             console.log(`🔔 [PrayerScheduler] ${prayerName} time! Cron fired at ${cronStartTimeStr}`);
 
             // RELOAD subscriptions fresh from DB to avoid 410 errors
-            const freshSubs = await PushSubscription.find({ userId: user._id }).lean();
+            const freshSubs = await PushSubscription.find({ 
+              userId: user._id,
+              isActive: true 
+            })
+            .sort({ createdAt: -1 })
+            .lean();
             console.log(`📬 [PrayerScheduler] Reloaded ${freshSubs.length} fresh subscription(s) from DB`);
 
             // Filter subscriptions that want this prayer
@@ -780,7 +790,12 @@ async function scheduleNotificationsForUser(user) {
               console.log(`🔔 [PrayerScheduler] ${prayerName} reminder time! Sending reminder notifications...`);
 
               // RELOAD subscriptions fresh from DB to avoid 410 errors
-              const freshSubs = await PushSubscription.find({ userId: user._id }).lean();
+              const freshSubs = await PushSubscription.find({ 
+                userId: user._id,
+                isActive: true 
+              })
+              .sort({ createdAt: -1 })
+              .lean();
               console.log(`📬 [PrayerScheduler] Reloaded ${freshSubs.length} fresh subscription(s) from DB for reminder`);
 
               // Send reminder notifications to all user's subscriptions

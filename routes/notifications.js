@@ -148,6 +148,23 @@ router.post("/subscribe", async (req, res) => {
       "subscription.endpoint": { $in: [null, "", undefined] }
     });
 
+    // Deactivate ALL other subscriptions for this user
+    if (userId) {
+      await PushSubscription.updateMany(
+        { 
+          userId: userId,
+          "subscription.endpoint": { $ne: s.endpoint } // Don't deactivate the current one
+        },
+        { 
+          $set: { 
+            isActive: false,
+            updatedAt: new Date()
+          } 
+        }
+      );
+      console.log("[/api/notifications/subscribe] Deactivated old subscriptions for user:", userId);
+    }
+
     // Use upsert to handle existing subscriptions properly
     const doc = await PushSubscription.findOneAndUpdate(
       { "subscription.endpoint": s.endpoint },
@@ -456,10 +473,12 @@ router.post("/test-immediate", async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    // Get user's subscription
-    const subscription = await PushSubscription.findOne({ userId }).lean();
+    // Get user's ACTIVE subscription (most recent one)
+    const subscription = await PushSubscription.findOne({ userId, isActive: true })
+      .sort({ createdAt: -1 }) // Get most recent
+      .lean();
     if (!subscription) {
-      return res.status(404).json({ error: "No subscription found for user" });
+      return res.status(404).json({ error: "No active subscription found for user" });
     }
 
     // Create test notification payload
