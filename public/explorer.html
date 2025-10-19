@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quran & Hadith Explorer</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .explorer-container {
+            width: 100%;
+            max-width: 900px;
+        }
+        .search-container {
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 10px;
+        }
+        #explorer-search-input {
+            flex-grow: 1;
+        }
+        #search-type-select {
+            width: 150px;
+        }
+        .content-area {
+            margin-top: 1.5rem;
+            text-align: left;
+        }
+        .verse-item, .hadith-item {
+            background-color: var(--tertiary-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .verse-arabic {
+            font-size: 1.8rem;
+            text-align: right;
+            margin-bottom: 1rem;
+        }
+        .verse-translation, .hadith-english {
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+        .verse-controls {
+            margin-top: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        .verse-controls button, .verse-controls select {
+             background: var(--primary-bg);
+        }
+        .bookmark-btn.bookmarked {
+            color: var(--favorite-color);
+        }
+        .tafsir-details {
+            margin-top: 1rem;
+            background-color: var(--primary-bg);
+            border-radius: 6px;
+            padding: 0.5rem 1rem;
+        }
+        .tafsir-details summary {
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .tafsir-text {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+        }
+    </style>
+  <!-- Include global navbar CSS -->
+  <link rel="stylesheet" href="/css/global-navbar.css">
+  
+  <style>
+    /* Add top padding to account for fixed navbar */
+    .page-content {
+      padding-top: 70px; /* Height of navbar */
+    }
+  </style>
+</head>
+<body>
+  <!-- Global Navbar -->
+  <header class="global-navbar">
+    <nav class="navbar-container">
+      <!-- Logo Section -->
+      <div class="navbar-brand">
+        <a href="/" class="brand-logo">
+          <i class="fas fa-mosque brand-icon"></i>
+          <span class="brand-text">Islamic Portal</span>
+        </a>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="navbar-nav">
+        <ul class="nav-menu">
+          <!-- Core Features -->
+          <li class="nav-item">
+            <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+              <i class="fas fa-language"></i>
+              <span class="nav-text">Translator</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+              <i class="fas fa-mosque"></i>
+              <span class="nav-text">Prayer Times</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+              <i class="fas fa-compass"></i>
+              <span class="nav-text">Qibla</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+              <i class="fas fa-moon"></i>
+              <span class="nav-text">Moon</span>
+            </a>
+          </li>
+
+          <!-- Islamic Content -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+              <i class="fas fa-book-open"></i>
+              <span class="nav-text">Content</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/explorer.html" class="dropdown-link">
+                <i class="fas fa-search"></i> Quran Explorer
+              </a></li>
+              <li><a href="/duas.html" class="dropdown-link">
+                <i class="fas fa-hands-praying"></i> Daily Duas
+              </a></li>
+              <li><a href="/names.html" class="dropdown-link">
+                <i class="fas fa-star"></i> 99 Names
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Tools -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+              <i class="fas fa-tools"></i>
+              <span class="nav-text">Tools</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/zakat.html" class="dropdown-link">
+                <i class="fas fa-coins"></i> Zakat Calculator
+              </a></li>
+              <li><a href="/converter.html" class="dropdown-link">
+                <i class="fas fa-calendar-alt"></i> Date Converter
+              </a></li>
+              <li><a href="/calendar.html" class="dropdown-link">
+                <i class="fas fa-calendar"></i> Islamic Calendar
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Analytics & History -->
+          <li class="nav-item">
+            <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span class="nav-text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+              <i class="fas fa-history"></i>
+              <span class="nav-text">History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="navbar-controls">
+        <!-- Search -->
+        <div class="search-container">
+          <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="search-dropdown" id="search-dropdown">
+            <input type="text" placeholder="Search..." class="search-input" id="global-search">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification-container">
+          <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No new notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="user-menu-container">
+          <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+            <div class="user-avatar" id="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="user-name">Guest</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-avatar-large" id="user-avatar-large">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-details">
+                <div class="user-name-large" id="user-name-large">Guest User</div>
+                <div class="user-email" id="user-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <ul class="user-menu-list">
+              <li><a href="/profile.html" class="user-menu-link">
+                <i class="fas fa-user"></i> Profile
+              </a></li>
+              <li><a href="/settings.html" class="user-menu-link">
+                <i class="fas fa-cog"></i> Settings
+              </a></li>
+              <li><a href="/security-dashboard.html" class="user-menu-link">
+                <i class="fas fa-shield-alt"></i> Security
+              </a></li>
+              <li class="user-menu-divider"></li>
+              <li><a href="/login.html" class="user-menu-link" id="login-link">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </a></li>
+              <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+          <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+            <i class="fas fa-sun theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon-dark"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <div class="mobile-nav-brand">
+            <i class="fas fa-mosque"></i>
+            <span>Islamic Portal</span>
+          </div>
+          <button class="mobile-nav-close" id="mobile-nav-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-nav-body">
+          <!-- Mobile navigation will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+    <div class="container explorer-container">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-book-quran"></i> Quran & Hadith Explorer</h1>
+            <p><a href="/index.html">← Back to Portal</a></p>
+        </header>
+
+        <div class="search-container">
+            <input type="search" id="explorer-search-input" placeholder="Search for 'patience', 'salah', etc...">
+            <select id="search-type-select">
+                <option value="semantic">Semantic Search</option>
+                <option value="keyword">Keyword Search</option>
+            </select>
+            <button id="search-btn"><i class="fa-solid fa-search"></i> Search</button>
+        </div>
+
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab-button active" data-tab="quran-panel"><i class="fa-solid fa-book-quran"></i> Quran</button>
+                <button class="tab-button" data-tab="hadith-panel"><i class="fa-solid fa-book"></i> Hadith</button>
+                <button class="tab-button" data-tab="bookmarks-panel"><i class="fa-solid fa-bookmark"></i> My Bookmarks</button>
+            </div>
+        </div>
+        
+        <div id="quran-panel" class="tab-content active">
+            <div id="quran-controls" class="content-controls" style="display:flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="surah-select" style="flex-grow: 1;"></select>
+                <select id="translation-select" style="flex-grow: 1;">
+                    <option value="en.sahih">Saheeh International</option>
+                </select>
+                <select id="qari-select" style="flex-grow: 1;">
+                    <option value="ar.alafasy">Mishary Rashid Alafasy</option>
+                    <option value="ar.husary">Mahmud Al-Husary</option>
+                </select>
+            </div>
+            <div id="quran-content-area" class="content-area">
+                </div>
+        </div>
+
+        <div id="hadith-panel" class="tab-content">
+             <div id="hadith-controls" class="content-controls" style="display:flex; gap: 1rem; margin-bottom: 1rem;">
+                <select id="hadith-collection-select" style="flex-grow: 1;"></select>
+            </div>
+            <div id="hadith-content-area" class="content-area">
+                 </div>
+        </div>
+        
+        <div id="bookmarks-panel" class="tab-content">
+             <div id="bookmarks-content-area" class="content-area">
+                 </div>
+        </div>
+    </div>
+
+    <audio id="recitation-player" style="display:none;"></audio>
+
+    <script src="explorer.js"></script>
+    <!-- Real-time Service -->
+
+
+  <!-- Global Navbar JavaScript -->
+  <script src="/js/global-navbar.js"></script>
+  
+  <script>
+    // Initialize navbar when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.GlobalNavbar) {
+        window.globalNavbar = new window.GlobalNavbar();
+      }
+    });
+  </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
+</body>
+</html>

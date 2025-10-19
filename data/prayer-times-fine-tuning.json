@@ -1,0 +1,626 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2025-10-13",
+  "description": "Fine-tuning adjustments for prayer times based on official Islamic authorities worldwide",
+  "regions": {
+    "uae": {
+      "name": "United Arab Emirates",
+      "authority": "General Authority of Islamic Affairs & Endowments (AWQAF)",
+      "calculationMethod": "UmmAlQura",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 22.5,
+        "latMax": 26.5,
+        "lonMin": 51,
+        "lonMax": 57
+      },
+      "adjustments": {
+        "fajr": -1,
+        "shuruq": 3,
+        "dhuhr": -3,
+        "asr": -2,
+        "maghrib": -3
+      },
+      "notes": "Adjustments verified against official AWQAF times for Dubai, Abu Dhabi, Sharjah"
+    },
+    "saudi_arabia": {
+      "name": "Saudi Arabia",
+      "authority": "Ministry of Islamic Affairs (Umm al-Qura Calendar)",
+      "calculationMethod": "UmmAlQura",
+      "madhab": "Hanbali",
+      "coordinates": {
+        "latMin": 16,
+        "latMax": 32,
+        "lonMin": 34,
+        "lonMax": 56
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Umm al-Qura method is designed for Saudi Arabia, minimal adjustments needed"
+    },
+    "egypt": {
+      "name": "Egypt",
+      "authority": "Egyptian General Authority of Survey",
+      "calculationMethod": "Egyptian",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 22,
+        "latMax": 32,
+        "lonMin": 24,
+        "lonMax": 37
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Egyptian method is specifically designed for Egypt"
+    },
+    "turkey": {
+      "name": "Turkey",
+      "authority": "Presidency of Religious Affairs (Diyanet)",
+      "calculationMethod": "Turkey",
+      "madhab": "Hanafi",
+      "coordinates": {
+        "latMin": 35,
+        "latMax": 42,
+        "lonMin": 25,
+        "lonMax": 45
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Diyanet method is official for Turkey"
+    },
+    "pakistan": {
+      "name": "Pakistan",
+      "authority": "University of Karachi",
+      "calculationMethod": "Karachi",
+      "madhab": "Hanafi",
+      "coordinates": {
+        "latMin": 23,
+        "latMax": 37,
+        "lonMin": 60,
+        "lonMax": 78
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Karachi method widely used in Pakistan"
+    },
+    "bangladesh": {
+      "name": "Bangladesh",
+      "authority": "Islamic Foundation Bangladesh",
+      "calculationMethod": "Karachi",
+      "madhab": "Hanafi",
+      "coordinates": {
+        "latMin": 20.5,
+        "latMax": 26.5,
+        "lonMin": 88,
+        "lonMax": 93
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Uses Karachi method with local adjustments"
+    },
+    "indonesia": {
+      "name": "Indonesia",
+      "authority": "Ministry of Religious Affairs (Kemenag)",
+      "calculationMethod": "Singapore",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": -11,
+        "latMax": 6,
+        "lonMin": 95,
+        "lonMax": 141
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Singapore method suitable for equatorial regions"
+    },
+    "malaysia": {
+      "name": "Malaysia",
+      "authority": "Department of Islamic Development Malaysia (JAKIM)",
+      "calculationMethod": "Singapore",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 0.5,
+        "latMax": 7.5,
+        "lonMin": 99,
+        "lonMax": 120
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Singapore method official for Malaysia"
+    },
+    "morocco": {
+      "name": "Morocco",
+      "authority": "Ministry of Endowments and Islamic Affairs",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Maliki",
+      "coordinates": {
+        "latMin": 27,
+        "latMax": 36,
+        "lonMin": -13,
+        "lonMax": -1
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used in Morocco"
+    },
+    "algeria": {
+      "name": "Algeria",
+      "authority": "Ministry of Religious Affairs and Endowments",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Maliki",
+      "coordinates": {
+        "latMin": 18,
+        "latMax": 37,
+        "lonMin": -9,
+        "lonMax": 12
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used in Algeria"
+    },
+    "tunisia": {
+      "name": "Tunisia",
+      "authority": "Ministry of Religious Affairs",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Maliki",
+      "coordinates": {
+        "latMin": 30,
+        "latMax": 38,
+        "lonMin": 7,
+        "lonMax": 12
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used in Tunisia"
+    },
+    "libya": {
+      "name": "Libya",
+      "authority": "General Authority for Endowments and Islamic Affairs",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Maliki",
+      "coordinates": {
+        "latMin": 19,
+        "latMax": 34,
+        "lonMin": 9,
+        "lonMax": 26
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used in Libya"
+    },
+    "jordan": {
+      "name": "Jordan",
+      "authority": "Ministry of Awqaf and Islamic Affairs",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Hanafi",
+      "coordinates": {
+        "latMin": 29,
+        "latMax": 34,
+        "lonMin": 34,
+        "lonMax": 40
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used in Jordan"
+    },
+    "kuwait": {
+      "name": "Kuwait",
+      "authority": "Ministry of Awqaf and Islamic Affairs",
+      "calculationMethod": "Kuwait",
+      "madhab": "Maliki",
+      "coordinates": {
+        "latMin": 28.5,
+        "latMax": 30.5,
+        "lonMin": 46.5,
+        "lonMax": 49
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Kuwait has its own calculation method"
+    },
+    "qatar": {
+      "name": "Qatar",
+      "authority": "Ministry of Endowments and Islamic Affairs",
+      "calculationMethod": "Qatar",
+      "madhab": "Hanbali",
+      "coordinates": {
+        "latMin": 24.5,
+        "latMax": 26.5,
+        "lonMin": 50.5,
+        "lonMax": 52
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Qatar has its own calculation method"
+    },
+    "bahrain": {
+      "name": "Bahrain",
+      "authority": "Ministry of Justice, Islamic Affairs and Endowments",
+      "calculationMethod": "UmmAlQura",
+      "madhab": "Maliki",
+      "coordinates": {
+        "latMin": 25.5,
+        "latMax": 26.5,
+        "lonMin": 50,
+        "lonMax": 51
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Uses Umm al-Qura method similar to Saudi Arabia"
+    },
+    "oman": {
+      "name": "Oman",
+      "authority": "Ministry of Endowments and Religious Affairs",
+      "calculationMethod": "UmmAlQura",
+      "madhab": "Ibadi",
+      "coordinates": {
+        "latMin": 16,
+        "latMax": 27,
+        "lonMin": 51,
+        "lonMax": 60
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Uses Umm al-Qura method, Ibadi madhab predominant"
+    },
+    "iran": {
+      "name": "Iran",
+      "authority": "Institute of Geophysics, University of Tehran",
+      "calculationMethod": "Tehran",
+      "madhab": "Jafari",
+      "coordinates": {
+        "latMin": 25,
+        "latMax": 40,
+        "lonMin": 44,
+        "lonMax": 64
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Tehran method for Shia calculations"
+    },
+    "iraq": {
+      "name": "Iraq",
+      "authority": "Sunni and Shia Endowments",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Mixed",
+      "coordinates": {
+        "latMin": 29,
+        "latMax": 38,
+        "lonMin": 38,
+        "lonMax": 49
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Mixed Sunni and Shia population"
+    },
+    "syria": {
+      "name": "Syria",
+      "authority": "Ministry of Endowments",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Hanafi",
+      "coordinates": {
+        "latMin": 32,
+        "latMax": 38,
+        "lonMin": 35,
+        "lonMax": 43
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used"
+    },
+    "lebanon": {
+      "name": "Lebanon",
+      "authority": "Dar al-Fatwa",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 33,
+        "latMax": 35,
+        "lonMin": 35,
+        "lonMax": 37
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used"
+    },
+    "palestine": {
+      "name": "Palestine",
+      "authority": "Ministry of Endowments and Religious Affairs",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 31,
+        "latMax": 33,
+        "lonMin": 34,
+        "lonMax": 36
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method used"
+    },
+    "yemen": {
+      "name": "Yemen",
+      "authority": "Ministry of Endowments and Guidance",
+      "calculationMethod": "UmmAlQura",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 12,
+        "latMax": 19,
+        "lonMin": 42,
+        "lonMax": 54
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Uses Umm al-Qura method similar to Saudi Arabia"
+    },
+    "afghanistan": {
+      "name": "Afghanistan",
+      "authority": "Ministry of Hajj and Religious Affairs",
+      "calculationMethod": "Karachi",
+      "madhab": "Hanafi",
+      "coordinates": {
+        "latMin": 29,
+        "latMax": 39,
+        "lonMin": 60,
+        "lonMax": 75
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Karachi method commonly used"
+    },
+    "india": {
+      "name": "India",
+      "authority": "Various Islamic Organizations",
+      "calculationMethod": "Karachi",
+      "madhab": "Mixed",
+      "coordinates": {
+        "latMin": 8,
+        "latMax": 36,
+        "lonMin": 68,
+        "lonMax": 98
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Mixed madhabs, Karachi method widely used"
+    },
+    "singapore": {
+      "name": "Singapore",
+      "authority": "Islamic Religious Council of Singapore (MUIS)",
+      "calculationMethod": "Singapore",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 1.1,
+        "latMax": 1.5,
+        "lonMin": 103.6,
+        "lonMax": 104.1
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Singapore method designed specifically for Singapore"
+    },
+    "brunei": {
+      "name": "Brunei",
+      "authority": "Ministry of Religious Affairs",
+      "calculationMethod": "Singapore",
+      "madhab": "Shafi",
+      "coordinates": {
+        "latMin": 4,
+        "latMax": 5.5,
+        "lonMin": 114,
+        "lonMax": 115.5
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Uses Singapore method for equatorial region"
+    },
+    "north_america": {
+      "name": "North America",
+      "authority": "Islamic Society of North America (ISNA)",
+      "calculationMethod": "NorthAmerica",
+      "madhab": "Mixed",
+      "coordinates": {
+        "latMin": 25,
+        "latMax": 72,
+        "lonMin": -170,
+        "lonMax": -52
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "ISNA method standard for North America"
+    },
+    "europe": {
+      "name": "Europe",
+      "authority": "Various European Islamic Councils",
+      "calculationMethod": "MuslimWorldLeague",
+      "madhab": "Mixed",
+      "coordinates": {
+        "latMin": 35,
+        "latMax": 72,
+        "lonMin": -10,
+        "lonMax": 40
+      },
+      "adjustments": {
+        "fajr": 0,
+        "shuruq": 0,
+        "dhuhr": 0,
+        "asr": 0,
+        "maghrib": 0,
+        "isha": 0
+      },
+      "notes": "Muslim World League method commonly used in Europe"
+    }
+  },
+  "adminNotes": {
+    "howToUpdate": "Adjustments should be verified against official local Islamic authority times",
+    "adjustmentUnits": "Minutes (positive = add time, negative = subtract time)",
+    "verificationProcess": "1. Compare calculated times with official times for at least 7 days. 2. Calculate average difference. 3. Apply adjustment. 4. Verify for another 7 days.",
+    "lastVerified": {
+      "uae": "2025-10-13",
+      "saudi_arabia": "2025-10-13"
+    }
+  }
+}
+
+

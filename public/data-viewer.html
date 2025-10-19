@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Islamic Content Data Viewer</title>
+    <link rel="stylesheet" href="/css/data-viewer.css">
+    <link rel="stylesheet" href="/css/global-navbar.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="navbar-container"></div>
+    
+    <div class="container">
+        <header class="page-header research-grade">
+            <div class="header-content">
+                <div class="header-main">
+                    <h1><i class="fas fa-microscope"></i> Islamic Research Database</h1>
+                    <p>Research-Grade Islamic Content Analysis & Knowledge Graph</p>
+                    <div class="research-stats">
+                        <div class="stat-item">
+                            <i class="fas fa-globe"></i>
+                            <span class="stat-value" id="total-sources">0</span>
+                            <span class="stat-label">Sources</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-book"></i>
+                            <span class="stat-value" id="total-terms">0</span>
+                            <span class="stat-label">Terms</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-project-diagram"></i>
+                            <span class="stat-value" id="knowledge-nodes">0</span>
+                            <span class="stat-label">Knowledge Nodes</span>
+                        </div>
+                        <div class="stat-item">
+                            <i class="fas fa-link"></i>
+                            <span class="stat-value" id="cross-references">0</span>
+                            <span class="stat-label">Cross-References</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="header-controls">
+                    <div class="live-indicator">
+                        <div class="pulse-dot"></div>
+                        <span>Research Active</span>
+                    </div>
+                    <div class="refresh-controls">
+                        <button id="refresh-all" class="btn btn-primary">
+                            <i class="fas fa-sync-alt"></i> Refresh Research
+                        </button>
+                        <button id="export-all" class="btn btn-success">
+                            <i class="fas fa-download"></i> Export Research
+                        </button>
+                        <button id="start-research" class="btn btn-warning">
+                            <i class="fas fa-play"></i> Start Research
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Advanced Overview Section -->
+        <section class="overview-section">
+            <div class="section-header">
+                <h2><i class="fas fa-chart-line"></i> Real-time Data Overview</h2>
+                <div class="view-controls">
+                    <button class="view-toggle active" data-view="cards"><i class="fas fa-th"></i> Cards</button>
+                    <button class="view-toggle" data-view="charts"><i class="fas fa-chart-pie"></i> Charts</button>
+                </div>
+            </div>
+            
+            <!-- Cards View -->
+            <div id="cards-view" class="overview-view active">
+                <div class="overview-grid">
+                    <div class="stat-card enhanced">
+                        <div class="stat-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-sites">0</h3>
+                            <p>Total Sites</p>
+                            <div class="stat-trend" id="sites-trend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card enhanced">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="successful-scrapes">0</h3>
+                            <p>Successful Scrapes</p>
+                            <div class="stat-trend" id="scrapes-trend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card enhanced">
+                        <div class="stat-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="new-terms">0</h3>
+                            <p>New Terms Found</p>
+                            <div class="stat-trend" id="terms-trend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card enhanced">
+                        <div class="stat-icon">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="supported-languages">0</h3>
+                            <p>Supported Languages</p>
+                            <div class="stat-trend" id="languages-trend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card enhanced">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="success-rate">0%</h3>
+                            <p>Success Rate</p>
+                            <div class="stat-trend" id="rate-trend">
+                                <i class="fas fa-arrow-up"></i> <span>+0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-card enhanced">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="last-scrape">Never</h3>
+                            <p>Last Scrape</p>
+                            <div class="stat-trend" id="time-trend">
+                                <i class="fas fa-clock"></i> <span>Live</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts View -->
+            <div id="charts-view" class="overview-view">
+                <div class="charts-grid">
+                    <div class="chart-container">
+                        <h3>Scraping Activity</h3>
+                        <canvas id="scraping-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Language Distribution</h3>
+                        <canvas id="language-chart"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Term Discovery Timeline</h3>
+                        <canvas id="terms-timeline-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Research-Grade Navigation Tabs -->
+        <nav class="tab-navigation enhanced research-grade">
+            <div class="tab-group">
+                <button class="tab-btn active" data-tab="terms">
+                    <i class="fas fa-book"></i>
+                    <span>Islamic Terms</span>
+                    <div class="tab-badge" id="terms-count">0</div>
+                </button>
+                <button class="tab-btn" data-tab="research">
+                    <i class="fas fa-microscope"></i>
+                    <span>Research Data</span>
+                    <div class="tab-badge" id="research-count">0</div>
+                </button>
+                <button class="tab-btn" data-tab="knowledge-graph">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>Knowledge Graph</span>
+                    <div class="tab-badge" id="graph-count">0</div>
+                </button>
+                <button class="tab-btn" data-tab="analytics">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Analytics</span>
+                    <div class="tab-badge" id="analytics-count">0</div>
+                </button>
+                <button class="tab-btn" data-tab="cross-references">
+                    <i class="fas fa-link"></i>
+                    <span>Cross-References</span>
+                    <div class="tab-badge" id="crossref-count">0</div>
+                </button>
+                <button class="tab-btn" data-tab="history">
+                    <i class="fas fa-history"></i>
+                    <span>Research History</span>
+                    <div class="tab-badge" id="history-count">0</div>
+                </button>
+                <button class="tab-btn" data-tab="statistics">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Statistics</span>
+                </button>
+                <button class="tab-btn" data-tab="export">
+                    <i class="fas fa-download"></i>
+                    <span>Export Research</span>
+                </button>
+            </div>
+            <div class="tab-controls">
+                <div class="search-global">
+                    <input type="text" id="global-search" placeholder="Search across all data...">
+                    <button id="clear-search" class="btn btn-sm">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="filter-controls">
+                    <select id="date-filter">
+                        <option value="">All Time</option>
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month">This Month</option>
+                    </select>
+                    <select id="category-filter">
+                        <option value="">All Categories</option>
+                        <option value="prayer">Prayer</option>
+                        <option value="quran">Quran</option>
+                        <option value="hadith">Hadith</option>
+                        <option value="general">General</option>
+                    </select>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Enhanced Terms Tab -->
+        <div id="terms-tab" class="tab-content active">
+            <div class="tab-header">
+                <div class="tab-title">
+                    <h2><i class="fas fa-book"></i> Islamic Terms Database</h2>
+                    <div class="tab-stats">
+                        <span id="terms-total">0</span> terms found
+                    </div>
+                </div>
+                <div class="tab-actions">
+                    <div class="search-container enhanced">
+                        <div class="search-input-group">
+                            <input type="text" id="term-search" placeholder="Search terms, translations, or categories...">
+                            <button id="search-btn" class="btn btn-sm">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <select id="language-filter">
+                            <option value="">All Languages</option>
+                            <option value="ar">Arabic</option>
+                            <option value="en">English</option>
+                            <option value="fr">French</option>
+                            <option value="es">Spanish</option>
+                            <option value="ur">Urdu</option>
+                            <option value="hi">Hindi</option>
+                            <option value="tr">Turkish</option>
+                            <option value="fa">Persian</option>
+                        </select>
+                        <select id="sort-filter">
+                            <option value="recent">Most Recent</option>
+                            <option value="alphabetical">Alphabetical</option>
+                            <option value="category">Category</option>
+                            <option value="popularity">Most Popular</option>
+                        </select>
+                    </div>
+                    <div class="view-controls">
+                        <button class="view-toggle active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-toggle" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                        <button class="view-toggle" data-view="compact">
+                            <i class="fas fa-compress"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="terms-container" id="terms-list">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>Loading terms...</span>
+                </div>
+            </div>
+            <div class="pagination-container" id="terms-pagination">
+                <!-- Pagination will be generated here -->
+            </div>
+        </div>
+
+        <!-- Research Data Tab -->
+        <div id="research-tab" class="tab-content">
+            <div class="tab-header">
+                <h2><i class="fas fa-microscope"></i> Research Data Analysis</h2>
+                <div class="research-controls">
+                    <select id="research-category">
+                        <option value="">All Categories</option>
+                        <option value="quran">Quran & Tafsir</option>
+                        <option value="hadith">Hadith Collections</option>
+                        <option value="fiqh">Fiqh & Jurisprudence</option>
+                        <option value="tafsir">Tafsir & Commentary</option>
+                        <option value="history">Islamic History</option>
+                        <option value="sciences">Islamic Sciences</option>
+                        <option value="arabic">Arabic Language</option>
+                        <option value="sufism">Sufism & Spirituality</option>
+                        <option value="culture">Islamic Art & Culture</option>
+                        <option value="economics">Islamic Economics</option>
+                        <option value="medicine">Islamic Medicine</option>
+                        <option value="philosophy">Islamic Philosophy</option>
+                        <option value="law">Islamic Law</option>
+                        <option value="astronomy">Islamic Astronomy</option>
+                    </select>
+                    <button id="refresh-research" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh Research
+                    </button>
+                </div>
+            </div>
+            <div class="research-container">
+                <div class="research-grid">
+                    <div class="research-card">
+                        <h3>Linguistic Analysis</h3>
+                        <div class="research-metrics" id="linguistic-analysis">
+                            <div class="metric">
+                                <span class="metric-label">Arabic Script</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Transliteration</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Classical Arabic</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Modern Arabic</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="research-card">
+                        <h3>Cultural Analysis</h3>
+                        <div class="research-metrics" id="cultural-analysis">
+                            <div class="metric">
+                                <span class="metric-label">Regional References</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Cultural Practices</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Social Structures</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="research-card">
+                        <h3>Religious Analysis</h3>
+                        <div class="research-metrics" id="religious-analysis">
+                            <div class="metric">
+                                <span class="metric-label">Theological Concepts</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Legal Concepts</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Ethical Concepts</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="research-card">
+                        <h3>Scholarly Analysis</h3>
+                        <div class="research-metrics" id="scholarly-analysis">
+                            <div class="metric">
+                                <span class="metric-label">Quran Citations</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Hadith Citations</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Scholarly Citations</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Graph Tab -->
+        <div id="knowledge-graph-tab" class="tab-content">
+            <div class="tab-header">
+                <h2><i class="fas fa-project-diagram"></i> Knowledge Graph</h2>
+                <div class="graph-controls">
+                    <select id="graph-filter">
+                        <option value="">All Relationships</option>
+                        <option value="semantic">Semantic</option>
+                        <option value="temporal">Temporal</option>
+                        <option value="geographical">Geographical</option>
+                        <option value="doctrinal">Doctrinal</option>
+                    </select>
+                    <button id="refresh-graph" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh Graph
+                    </button>
+                </div>
+            </div>
+            <div class="graph-container">
+                <div class="graph-visualization" id="knowledge-graph-viz">
+                    <div class="graph-placeholder">
+                        <i class="fas fa-project-diagram"></i>
+                        <h3>Knowledge Graph Visualization</h3>
+                        <p>Interactive network of Islamic concepts and relationships</p>
+                    </div>
+                </div>
+                <div class="graph-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Total Nodes</span>
+                        <span class="stat-value" id="graph-nodes">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Edges</span>
+                        <span class="stat-value" id="graph-edges">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Clusters</span>
+                        <span class="stat-value" id="graph-clusters">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cross-References Tab -->
+        <div id="cross-references-tab" class="tab-content">
+            <div class="tab-header">
+                <h2><i class="fas fa-link"></i> Cross-References</h2>
+                <div class="crossref-controls">
+                    <select id="crossref-confidence">
+                        <option value="">All Confidence Levels</option>
+                        <option value="high">High (0.8+)</option>
+                        <option value="medium">Medium (0.5-0.8)</option>
+                        <option value="low">Low (0.0-0.5)</option>
+                    </select>
+                    <button id="refresh-crossref" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="crossref-container" id="crossref-list">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>Loading cross-references...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- New Analytics Tab -->
+        <div id="analytics-tab" class="tab-content">
+            <div class="tab-header">
+                <h2><i class="fas fa-chart-bar"></i> Advanced Analytics</h2>
+                <div class="analytics-controls">
+                    <select id="analytics-timeframe">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+                    <button id="refresh-analytics" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="analytics-container">
+                <div class="analytics-grid">
+                    <div class="analytics-card">
+                        <h3>Term Discovery Rate</h3>
+                        <canvas id="term-discovery-chart"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Site Performance</h3>
+                        <canvas id="site-performance-chart"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Language Usage</h3>
+                        <canvas id="language-usage-chart"></canvas>
+                    </div>
+                    <div class="analytics-card">
+                        <h3>Scraping Efficiency</h3>
+                        <div class="efficiency-metrics">
+                            <div class="metric">
+                                <span class="metric-label">Success Rate</span>
+                                <span class="metric-value" id="efficiency-success">0%</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Avg Response Time</span>
+                                <span class="metric-value" id="efficiency-response">0ms</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-label">Terms per Hour</span>
+                                <span class="metric-value" id="efficiency-terms">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Enhanced History Tab -->
+        <div id="history-tab" class="tab-content">
+            <div class="tab-header">
+                <h2><i class="fas fa-history"></i> Scraping History</h2>
+                <div class="history-controls">
+                    <select id="history-filter">
+                        <option value="">All Activities</option>
+                        <option value="term_discovery">Term Discoveries</option>
+                        <option value="site_scraped">Site Scrapes</option>
+                        <option value="error">Errors</option>
+                    </select>
+                    <button id="refresh-history" class="btn btn-primary">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            <div class="history-container" id="history-list">
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <span>Loading history...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="statistics-tab" class="tab-content">
+            <div class="tab-header">
+                <h2>📊 Detailed Statistics</h2>
+                <button id="refresh-stats" class="btn btn-primary">🔄 Refresh</button>
+            </div>
+            <div class="stats-container" id="stats-content">
+                <div class="loading">Loading statistics...</div>
+            </div>
+        </div>
+
+        <!-- Export Tab -->
+        <div id="export-tab" class="tab-content">
+            <div class="tab-header">
+                <h2>📤 Export Data</h2>
+                <div class="export-options">
+                    <button id="export-json" class="btn btn-success">📄 Export as JSON</button>
+                    <button id="export-csv" class="btn btn-info">📊 Export as CSV</button>
+                </div>
+            </div>
+            <div class="export-container">
+                <div class="export-info">
+                    <h3>Available Export Formats</h3>
+                    <ul>
+                        <li><strong>JSON:</strong> Complete data with all metadata</li>
+                        <li><strong>CSV:</strong> Tabular format for spreadsheet analysis</li>
+                    </ul>
+                </div>
+                <div id="export-status" class="export-status"></div>
+            </div>
+        </div>
+
+        <!-- Enhanced Real-time Status Bar -->
+        <div class="status-bar enhanced">
+            <div class="status-left">
+                <div class="status-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="status-label">Last Updated:</span>
+                    <span id="last-updated">Never</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-robot"></i>
+                    <span class="status-label">Scraping Status:</span>
+                    <span id="scraping-status" class="status-badge">Unknown</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-database"></i>
+                    <span class="status-label">Data Points:</span>
+                    <span id="data-points">0</span>
+                </div>
+            </div>
+            <div class="status-center">
+                <div class="live-feed">
+                    <div class="live-indicator">
+                        <div class="pulse-dot"></div>
+                        <span>Live Feed</span>
+                    </div>
+                    <div class="recent-activity" id="recent-activity">
+                        <span>No recent activity</span>
+                    </div>
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-controls">
+                    <button id="auto-refresh" class="btn btn-sm">
+                        <i class="fas fa-sync-alt"></i> Auto Refresh
+                    </button>
+                    <button id="notifications-toggle" class="btn btn-sm">
+                        <i class="fas fa-bell"></i> Notifications
+                    </button>
+                    <button id="settings-toggle" class="btn btn-sm">
+                        <i class="fas fa-cog"></i> Settings
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Container -->
+    <div id="notification-container" class="notification-container">
+        <!-- Notifications will be dynamically added here -->
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Data Viewer Settings</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="setting-group">
+                    <label>Auto Refresh Interval</label>
+                    <select id="refresh-interval">
+                        <option value="5000">5 seconds</option>
+                        <option value="10000" selected>10 seconds</option>
+                        <option value="30000">30 seconds</option>
+                        <option value="60000">1 minute</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>Items per Page</label>
+                    <select id="items-per-page">
+                        <option value="10">10</option>
+                        <option value="25" selected>25</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                    </select>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="enable-sounds" checked>
+                        Enable notification sounds
+                    </label>
+                </div>
+                <div class="setting-group">
+                    <label>
+                        <input type="checkbox" id="enable-animations" checked>
+                        Enable animations
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="save-settings" class="btn btn-primary">Save Settings</button>
+                <button id="reset-settings" class="btn btn-secondary">Reset to Default</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/global-navbar.js"></script>
+    <script src="/js/navbar-enhancements.js"></script>
+    <script src="/js/data-viewer.js"></script>
+</body>
+</html>

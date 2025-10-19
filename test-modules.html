@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Test</title>
+</head>
+<body>
+    <h1>Module Test</h1>
+    <div id="result"></div>
+
+    <script type="module">
+        try {
+            console.log('🧪 Testing module imports...');
+            
+            // Test ui-utils import
+            const { toast, TranslationItem, ProgressIndicator, SkeletonLoader, TextCounter, LanguageDetector } = await import('./js/utils/ui-utils.js');
+            console.log('✅ ui-utils imported successfully');
+            console.log('toast:', typeof toast);
+            console.log('TranslationItem:', typeof TranslationItem);
+            console.log('ProgressIndicator:', typeof ProgressIndicator);
+            console.log('SkeletonLoader:', typeof SkeletonLoader);
+            console.log('TextCounter:', typeof TextCounter);
+            console.log('LanguageDetector:', typeof LanguageDetector);
+            
+            // Test realTimeTranslation import
+            const { RealTimeTranslation } = await import('./js/modules/realTimeTranslation.js');
+            console.log('✅ realTimeTranslation imported successfully');
+            console.log('RealTimeTranslation:', typeof RealTimeTranslation);
+            
+            document.getElementById('result').innerHTML = '<p style="color: green;">✅ All modules imported successfully!</p>';
+            
+        } catch (error) {
+            console.error('❌ Module import error:', error);
+            document.getElementById('result').innerHTML = `<p style="color: red;">❌ Error: ${error.message}</p>`;
+        }
+    </script>
+</body>
+</html>
+

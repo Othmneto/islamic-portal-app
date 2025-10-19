@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Worker Debug Test</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background-color: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background-color: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #logs { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; margin: 10px 0; height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Service Worker Debug Test</h1>
+    
+    <div id="status" class="status info">Initializing...</div>
+    
+    <div>
+        <button onclick="checkPermission()">Check Notification Permission</button>
+        <button onclick="registerSW()">Register Service Worker</button>
+        <button onclick="sendTestNotification()">Send Test Notification</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+    
+    <div id="logs"></div>
+
+    <script>
+        const statusEl = document.getElementById('status');
+        const logsEl = document.getElementById('logs');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logsEl.innerHTML += `[${timestamp}] ${message}\n`;
+            logsEl.scrollTop = logsEl.scrollHeight;
+            console.log(message);
+        }
+        
+        function updateStatus(message, type = 'info') {
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+        
+        function clearLogs() {
+            logsEl.innerHTML = '';
+        }
+        
+        async function checkPermission() {
+            log('🔍 Checking notification permission...');
+            
+            if (!('Notification' in window)) {
+                updateStatus('❌ Notifications not supported', 'error');
+                log('❌ Notifications not supported in this browser');
+                return;
+            }
+            
+            const permission = Notification.permission;
+            log(`📱 Current permission: ${permission}`);
+            
+            if (permission === 'granted') {
+                updateStatus('✅ Notification permission granted', 'success');
+                log('✅ Notification permission is granted');
+            } else if (permission === 'denied') {
+                updateStatus('❌ Notification permission denied', 'error');
+                log('❌ Notification permission is denied');
+            } else {
+                updateStatus('⚠️ Notification permission not requested', 'info');
+                log('⚠️ Notification permission not requested yet');
+            }
+        }
+        
+        async function registerSW() {
+            log('🔧 Registering Service Worker...');
+            
+            if (!('serviceWorker' in navigator)) {
+                updateStatus('❌ Service Worker not supported', 'error');
+                log('❌ Service Workers are not supported in this browser');
+                return;
+            }
+            
+            try {
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                log('✅ Service Worker registered successfully');
+                log(`📱 Registration scope: ${registration.scope}`);
+                log(`📱 Registration active: ${registration.active ? 'Yes' : 'No'}`);
+                log(`📱 Registration waiting: ${registration.waiting ? 'Yes' : 'No'}`);
+                log(`📱 Registration installing: ${registration.installing ? 'Yes' : 'No'}`);
+                
+                // Listen for Service Worker messages
+                navigator.serviceWorker.addEventListener('message', event => {
+                    log(`📨 SW Message: ${JSON.stringify(event.data)}`);
+                });
+                
+                // Listen for Service Worker state changes
+                registration.addEventListener('updatefound', () => {
+                    log('🔄 Service Worker update found');
+                });
+                
+                updateStatus('✅ Service Worker registered', 'success');
+                
+                // Check if Service Worker is controlling the page
+                if (navigator.serviceWorker.controller) {
+                    log('✅ Service Worker is controlling this page');
+                } else {
+                    log('⚠️ Service Worker is not controlling this page yet');
+                }
+                
+            } catch (error) {
+                updateStatus('❌ Service Worker registration failed', 'error');
+                log(`❌ Service Worker registration failed: ${error.message}`);
+                console.error('Service Worker registration failed:', error);
+            }
+        }
+        
+        async function sendTestNotification() {
+            log('📤 Sending test notification...');
+            
+            // Check permission first
+            if (Notification.permission !== 'granted') {
+                updateStatus('❌ Notification permission not granted', 'error');
+                log('❌ Cannot send notification: permission not granted');
+                return;
+            }
+            
+            // Check if Service Worker is ready
+            if (!navigator.serviceWorker.controller) {
+                updateStatus('❌ Service Worker not controlling page', 'error');
+                log('❌ Cannot send notification: Service Worker not controlling page');
+                return;
+            }
+            
+            try {
+                // Send message to Service Worker to show notification
+                navigator.serviceWorker.controller.postMessage({
+                    type: 'TEST_PUSH',
+                    data: {
+                        title: '🧪 Test Notification',
+                        body: 'This is a test notification from the debug page!',
+                        icon: '/icons/icon-192x192.png',
+                        tag: 'test-debug',
+                        requireInteraction: true,
+                        data: {
+                            notificationId: 'test-debug-' + Date.now(),
+                            type: 'test'
+                        }
+                    }
+                });
+                
+                log('✅ Test notification message sent to Service Worker');
+                updateStatus('✅ Test notification sent', 'success');
+                
+            } catch (error) {
+                updateStatus('❌ Failed to send test notification', 'error');
+                log(`❌ Failed to send test notification: ${error.message}`);
+                console.error('Failed to send test notification:', error);
+            }
+        }
+        
+        // Auto-run on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            log('🚀 Page loaded, starting debug...');
+            await checkPermission();
+            await registerSW();
+        });
+    </script>
+</body>
+</html>

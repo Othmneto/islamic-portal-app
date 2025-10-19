@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Flow Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            display: inline-block;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔐 OAuth Flow Test</h1>
+        <p>This page tests the OAuth re-authorization flow for calendar permissions.</p>
+        
+        <div id="status" class="status info">
+            Ready to test OAuth flow...
+        </div>
+        
+        <button class="test-button" onclick="testGoogleReauth()">
+            🔑 Test Google Calendar Re-authorization
+        </button>
+        
+        <button class="test-button" onclick="testMicrosoftReauth()">
+            🔑 Test Microsoft Calendar Re-authorization
+        </button>
+        
+        <button class="test-button" onclick="checkOAuthStatus()">
+            📊 Check OAuth Status
+        </button>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+        
+        function addResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `status ${type}`;
+            resultDiv.textContent = message;
+            resultsDiv.appendChild(resultDiv);
+        }
+        
+        async function testGoogleReauth() {
+            updateStatus('🔄 Testing Google Calendar Re-authorization...', 'info');
+            addResult('🔄 Initiating Google calendar re-authorization...', 'info');
+            
+            try {
+                // This should redirect to Google OAuth
+                window.location.href = '/api/oauth-sync/google/reauth';
+            } catch (error) {
+                updateStatus('❌ Google re-authorization failed', 'error');
+                addResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testMicrosoftReauth() {
+            updateStatus('🔄 Testing Microsoft Calendar Re-authorization...', 'info');
+            addResult('🔄 Initiating Microsoft calendar re-authorization...', 'info');
+            
+            try {
+                // This should redirect to Microsoft OAuth
+                window.location.href = '/api/oauth-sync/microsoft/reauth';
+            } catch (error) {
+                updateStatus('❌ Microsoft re-authorization failed', 'error');
+                addResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkOAuthStatus() {
+            updateStatus('📊 Checking OAuth status...', 'info');
+            
+            try {
+                const authToken = localStorage.getItem('authToken') || 
+                                 localStorage.getItem('accessToken') || 
+                                 localStorage.getItem('token') || 
+                                 localStorage.getItem('jwt');
+                
+                if (!authToken) {
+                    updateStatus('❌ No authentication token found', 'error');
+                    addResult('❌ Please log in first', 'error');
+                    return;
+                }
+                
+                const response = await fetch('/api/oauth-sync/status', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    updateStatus('✅ OAuth status retrieved successfully', 'success');
+                    addResult(`📊 Google: ${data.syncStatus.google.connected ? 'Connected' : 'Disconnected'} (Calendar: ${data.syncStatus.google.hasCalendarPermissions ? 'Yes' : 'No'})`, 'info');
+                    addResult(`📊 Microsoft: ${data.syncStatus.microsoft.connected ? 'Connected' : 'Disconnected'} (Calendar: ${data.syncStatus.microsoft.hasCalendarPermissions ? 'Yes' : 'No'})`, 'info');
+                } else {
+                    updateStatus('❌ Failed to get OAuth status', 'error');
+                    addResult(`❌ Status: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                updateStatus('❌ Error checking OAuth status', 'error');
+                addResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Check status on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            checkOAuthStatus();
+        });
+    </script>
+</body>
+</html>
+

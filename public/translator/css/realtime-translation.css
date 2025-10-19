@@ -1,0 +1,297 @@
+/**
+ * Real-Time Translation Styles
+ * Styles for live translation features
+ */
+
+/* Partial Translation Container */
+.partial-translation {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border: 2px solid var(--brand);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    position: relative;
+    overflow: hidden;
+    animation: slideIn 0.3s ease-out;
+}
+
+.partial-translation::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--brand), var(--accent));
+    animation: progress 2s ease-in-out infinite;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes progress {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Partial Translation Header */
+.partial-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-3);
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+}
+
+.partial-label {
+    color: var(--brand);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.partial-label::before {
+    content: '🔄';
+    animation: spin 1s linear infinite;
+}
+
+.partial-status {
+    color: var(--color-subtle);
+    font-style: italic;
+}
+
+/* Partial Translation Content */
+.partial-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+}
+
+.partial-original,
+.partial-translated {
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    font-size: var(--fs-md);
+    line-height: var(--lh-normal);
+}
+
+.partial-original {
+    color: var(--color-subtle);
+    font-style: italic;
+    border-left: 3px solid var(--color-border);
+}
+
+.partial-translated {
+    color: var(--color-text);
+    border-left: 3px solid var(--brand);
+    position: relative;
+}
+
+.partial-translated::after {
+    content: '...';
+    position: absolute;
+    bottom: var(--space-1);
+    right: var(--space-2);
+    color: var(--brand);
+    animation: blink 1s ease-in-out infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Status Indicators */
+.status-translating {
+    color: var(--brand);
+    font-weight: var(--fw-medium);
+}
+
+.status-ready {
+    color: var(--accent);
+    font-weight: var(--fw-medium);
+}
+
+.status-error {
+    color: var(--danger);
+    font-weight: var(--fw-medium);
+}
+
+/* Real-Time Translation Controls */
+.realtime-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+    border-radius: var(--radius-lg);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.realtime-controls::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--brand), var(--accent));
+}
+
+.realtime-toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: pointer;
+    user-select: none;
+}
+
+.realtime-toggle input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--brand);
+    cursor: pointer;
+    transform: scale(1.2);
+}
+
+.realtime-toggle label {
+    font-size: var(--fs-lg);
+    font-weight: var(--fw-semibold);
+    color: var(--color-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.realtime-toggle label::before {
+    content: '⚡';
+    font-size: var(--fs-xl);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.realtime-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.realtime-status {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-md);
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(71, 85, 105, 0.3);
+    color: var(--color-text);
+    transition: all 0.3s ease;
+}
+
+.realtime-status.active {
+    color: var(--brand);
+    border-color: var(--brand);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.realtime-status.translating {
+    color: var(--accent);
+    border-color: var(--accent);
+    background: rgba(16, 185, 129, 0.1);
+    animation: pulse 1s ease-in-out infinite;
+}
+
+/* Translation Speed Indicator */
+.translation-speed {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--fs-xs);
+    color: var(--color-subtle);
+}
+
+.speed-indicator {
+    width: 60px;
+    height: 4px;
+    background: var(--color-muted);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+
+.speed-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--brand), var(--accent));
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .partial-content {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+    
+    .realtime-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+    
+    .realtime-settings {
+        margin-left: 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: more) {
+    .partial-translation {
+        border-width: 3px;
+        background: var(--color-bg);
+    }
+    
+    .partial-original,
+    .partial-translated {
+        border-width: 2px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .partial-translation {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    
+    .realtime-controls {
+        display: none;
+    }
+}

@@ -1,0 +1,410 @@
+/* Real-time UI Components - Enhanced Voice & Translation Experience */
+
+/* Voice Input Visualization */
+.mic-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  margin: 0 auto;
+}
+
+.mic-ring {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79, 140, 255, 0.25), transparent 60%);
+  box-shadow: 0 0 0 calc(10px * var(--amp, 0.2)) rgba(79, 140, 255, 0.35);
+  transition: box-shadow 0.08s linear;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.mic-button {
+  position: relative;
+  z-index: 2;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--brand);
+  border: none;
+  color: white;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+.mic-button:hover {
+  background-color: var(--brand-600);
+  transform: scale(1.05);
+}
+
+.mic-button:active {
+  transform: scale(0.95);
+}
+
+.mic-button.listening {
+  background-color: var(--accent);
+  animation: listening-pulse 1s infinite;
+}
+
+@keyframes listening-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+  }
+}
+
+.mic-button.error {
+  background-color: var(--danger);
+}
+
+/* Translation Item with Partial/Final States */
+.translation-item {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  margin-bottom: var(--space-3);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.translation-item:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.translation-item.partial {
+  border-color: var(--brand);
+  background: linear-gradient(90deg, var(--brand-50) 0%, transparent 100%);
+}
+
+.translation-item.final {
+  border-color: var(--accent);
+}
+
+.translation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+  gap: var(--space-2);
+}
+
+.lang-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--brand-50);
+  color: var(--brand-700);
+  border-radius: var(--radius-full);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+}
+
+.lang-badge.partial {
+  background-color: var(--warn-50);
+  color: var(--warn);
+}
+
+.meta-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--color-subtle);
+}
+
+.latency {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.latency::before {
+  content: '⚡';
+  font-size: 10px;
+}
+
+.confidence {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.confidence-bar {
+  width: 40px;
+  height: 4px;
+  background-color: var(--color-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.confidence-fill {
+  height: 100%;
+  background-color: var(--accent);
+  transition: width var(--transition-normal);
+}
+
+/* Partial Text with Cursor */
+.partial-text {
+  position: relative;
+  opacity: 0.75;
+  font-style: italic;
+  color: var(--color-subtle);
+  min-height: 1.5em;
+}
+
+.partial-text .cursor {
+  display: inline-block;
+  width: 0.5ch;
+  height: 1em;
+  background-color: var(--brand);
+  animation: blink 1s step-end infinite;
+  margin-left: 2px;
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.final-text {
+  color: var(--color-text);
+  font-weight: var(--fw-normal);
+  line-height: var(--lh-relaxed);
+}
+
+/* Status Indicators */
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--color-subtle);
+  margin-top: var(--space-2);
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-subtle);
+}
+
+.status-dot.listening {
+  background-color: var(--accent);
+  animation: pulse 1s infinite;
+}
+
+.status-dot.processing {
+  background-color: var(--warn);
+  animation: pulse 1s infinite;
+}
+
+.status-dot.completed {
+  background-color: var(--accent);
+}
+
+.status-dot.error {
+  background-color: var(--danger);
+}
+
+/* Voice Waveform */
+.waveform {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  margin: var(--space-2) 0;
+}
+
+.waveform-bar {
+  width: 3px;
+  background-color: var(--brand);
+  border-radius: var(--radius-full);
+  transition: height 0.1s ease;
+  min-height: 2px;
+}
+
+.waveform-bar:nth-child(odd) {
+  background-color: var(--brand-600);
+}
+
+/* Translation Progress */
+.translation-progress {
+  position: relative;
+  height: 4px;
+  background-color: var(--color-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  margin: var(--space-2) 0;
+}
+
+.translation-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--brand), var(--accent));
+  border-radius: var(--radius-full);
+  transition: width var(--transition-normal);
+  position: relative;
+}
+
+.translation-progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Error States */
+.error-state {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: var(--danger-50);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-md);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+  margin: var(--space-2) 0;
+}
+
+.error-state .icon {
+  font-size: 18px;
+}
+
+.retry-button {
+  margin-left: auto;
+  padding: var(--space-1) var(--space-2);
+  background-color: var(--danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.retry-button:hover {
+  background-color: #dc2626;
+}
+
+/* Loading States */
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.loading-skeleton .skeleton-text {
+  height: 1em;
+  background: linear-gradient(90deg, var(--color-muted) 25%, var(--color-border) 50%, var(--color-muted) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: var(--radius-sm);
+}
+
+.loading-skeleton .skeleton-text.short {
+  width: 60%;
+}
+
+.loading-skeleton .skeleton-text.medium {
+  width: 80%;
+}
+
+.loading-skeleton .skeleton-text.long {
+  width: 100%;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .mic-container {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .mic-button {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  
+  .translation-item {
+    padding: var(--space-3);
+  }
+  
+  .translation-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+  
+  .meta-info {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+  }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: more) {
+  .translation-item.partial {
+    border-width: 2px;
+    background: var(--color-bg);
+  }
+  
+  .partial-text .cursor {
+    background-color: var(--color-text);
+  }
+  
+  .mic-button {
+    border: 2px solid var(--color-text);
+  }
+}

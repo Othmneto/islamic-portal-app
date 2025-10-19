@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear OAuth Tokens</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .warning-box h3 {
+            color: #856404;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .warning-box p {
+            color: #856404;
+            line-height: 1.6;
+        }
+        
+        .info-box {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .info-box h3 {
+            color: #0c5460;
+            margin-bottom: 10px;
+        }
+        
+        .info-box ul {
+            color: #0c5460;
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 150px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            border: 2px solid #bee5eb;
+            color: #0c5460;
+            display: block;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .loading.active {
+            display: block;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .next-steps {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .next-steps.show {
+            display: block;
+        }
+        
+        .next-steps h3 {
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        
+        .next-steps ol {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+        
+        .next-steps .btn {
+            margin-top: 15px;
+            background: #28a745;
+            color: white;
+        }
+        
+        .next-steps .btn:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Clear OAuth Tokens</h1>
+        <p class="subtitle">Remove existing OAuth tokens to re-authorize with new permissions</p>
+        
+        <div class="warning-box">
+            <h3>⚠️ Warning</h3>
+            <p>
+                This will remove your existing Google and Microsoft OAuth tokens. 
+                You will need to re-authorize your account with calendar permissions 
+                after clearing the tokens.
+            </p>
+        </div>
+        
+        <div class="info-box">
+            <h3>ℹ️ What happens next:</h3>
+            <ul>
+                <li>Your existing OAuth tokens will be removed</li>
+                <li>You'll need to click "Grant Calendar Access" again</li>
+                <li>Google/Microsoft will ask for calendar permissions</li>
+                <li>After granting permissions, calendar sync will work</li>
+            </ul>
+        </div>
+        
+        <div class="button-group">
+            <button class="btn btn-danger" onclick="clearTokens()">
+                🗑️ Clear OAuth Tokens
+            </button>
+            <button class="btn btn-secondary" onclick="goBack()">
+                ← Back to Calendar
+            </button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">Clearing OAuth tokens...</p>
+        </div>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="next-steps" id="nextSteps">
+            <h3>✅ Tokens Cleared Successfully!</h3>
+            <p style="margin-bottom: 15px;">Now follow these steps to re-authorize with calendar permissions:</p>
+            <ol>
+                <li>Go to the calendar page</li>
+                <li>Click the "🔑 Grant Calendar Access" button</li>
+                <li>Complete the OAuth flow and grant calendar permissions</li>
+                <li>Your calendar sync will now work!</li>
+            </ol>
+            <button class="btn" onclick="goToCalendar()">
+                📅 Go to Calendar
+            </button>
+        </div>
+    </div>
+
+    <script>
+        async function clearTokens() {
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            const nextSteps = document.getElementById('nextSteps');
+            
+            try {
+                // Show loading
+                loading.classList.add('active');
+                status.style.display = 'none';
+                nextSteps.classList.remove('show');
+                
+                // Get auth token
+                const authToken = localStorage.getItem('authToken') || 
+                                 localStorage.getItem('accessToken') || 
+                                 localStorage.getItem('token') || 
+                                 localStorage.getItem('jwt');
+                
+                if (!authToken) {
+                    throw new Error('No authentication token found. Please log in first.');
+                }
+                
+                // Clear OAuth tokens
+                const response = await fetch('/api/clear-oauth-tokens', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    credentials: 'include'
+                });
+                
+                loading.classList.remove('active');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('✅ OAuth tokens cleared:', data);
+                    
+                    status.className = 'status success';
+                    status.textContent = '✅ OAuth tokens cleared successfully!';
+                    status.style.display = 'block';
+                    
+                    // Show next steps
+                    nextSteps.classList.add('show');
+                    
+                } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to clear OAuth tokens');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error clearing tokens:', error);
+                loading.classList.remove('active');
+                
+                status.className = 'status error';
+                status.textContent = `❌ Error: ${error.message}`;
+                status.style.display = 'block';
+            }
+        }
+        
+        function goBack() {
+            window.location.href = '/calendar.html';
+        }
+        
+        function goToCalendar() {
+            window.location.href = '/calendar.html';
+        }
+        
+        // Check authentication on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const authToken = localStorage.getItem('authToken') || 
+                             localStorage.getItem('accessToken') || 
+                             localStorage.getItem('token') || 
+                             localStorage.getItem('jwt');
+            
+            if (!authToken) {
+                const status = document.getElementById('status');
+                status.className = 'status info';
+                status.textContent = 'ℹ️ Please log in first to clear OAuth tokens.';
+                status.style.display = 'block';
+                
+                // Disable clear button
+                document.querySelector('.btn-danger').disabled = true;
+                document.querySelector('.btn-danger').style.opacity = '0.5';
+                document.querySelector('.btn-danger').style.cursor = 'not-allowed';
+            }
+        });
+    </script>
+</body>
+</html>
+
+

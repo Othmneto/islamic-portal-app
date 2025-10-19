@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Islamic Calendar — Modern UI/UX (Production)</title>
+
+  <!-- Google Fonts (keeps the v3 look) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- External production CSS -->
+  <link rel="stylesheet" href="calendar.css" />
+
+  <!-- External production JS -->
+  <script src="calendar.js" defer></script>
+</head>
+<body>
+  <!-- ==========================
+       App Bar
+       ========================== -->
+  <header class="app-bar">
+    <div class="bar-inner">
+      <div class="brand">
+        <div class="logo"><span>🕌</span></div>
+        <div>
+          <div style="font-size:15px; color:var(--muted); font-weight:700; letter-spacing:.08em; text-transform:uppercase;">Islamic Portal</div>
+          <div style="font-size:18px; font-weight:800;">Calendar</div>
+        </div>
+      </div>
+
+      <div class="bar-spacer"></div>
+
+      <!-- Global search ready to be wired to your data -->
+      <div class="search">
+        <input id="global-search" class="ring" type="text" placeholder="Search events, people, or places…" />
+        <span class="kbd">⌘K</span>
+        <div class="search-results" id="global-search-results"></div>
+      </div>
+
+      <!-- Main toolbar: theme, occasions, reminders, OAuth status, add-event -->
+      <div class="toolbar">
+        <div class="toggle" role="tablist" aria-label="Theme">
+          <button id="theme-dark" class="active" aria-selected="true">Dark</button>
+          <button id="theme-light">Light</button>
+        </div>
+        <a class="btn ghost" href="#" id="go-today">Today</a>
+        <button class="btn ghost" id="open-occasions">Occasions</button>
+        <button class="btn ghost" id="open-reminders">Prayer Reminders</button>
+        <div class="oauth-mini" id="oauth-status">
+          <span class="pill-status disconnected" id="oauth-google-status" data-provider="google"><span class="dot"></span>Google</span>
+          <span class="pill-status disconnected" id="oauth-microsoft-status" data-provider="microsoft"><span class="dot"></span>Microsoft</span>
+        </div>
+        <button class="btn primary" id="add-event">+ Add Event</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================
+       Main Content Area
+       ========================== -->
+  <main class="wrap">
+    <!-- Calendar Surface (IDs match your scripts) -->
+    <section id="calendar" class="main card fade-in">
+      <div class="calendar-surface">
+        <!-- Header: view switch + period navigator + calendar type -->
+        <div class="calendar-header">
+          <div class="period">
+            <div class="toggle" role="tablist" aria-label="View">
+              <button class="view-btn active" id="view-month" data-view="month">Month</button>
+              <button class="view-btn" id="view-week" data-view="week">Week</button>
+              <button class="view-btn" id="view-day" data-view="day">Day</button>
+              <button class="view-btn" id="view-year" data-view="year">Year</button>
+            </div>
+            <div class="nav">
+              <button class="icon-btn" id="prev-button" data-nav="prev" aria-label="Previous">⟨</button>
+              <div class="pill" id="period-label">October 2025</div>
+              <button class="icon-btn" id="next-button" data-nav="next" aria-label="Next">⟩</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="select" style="min-width: 160px;">
+              <select id="calendarType" aria-label="Calendar type">
+                <option value="both" selected>Both calendars</option>
+                <option value="gregorian">Gregorian</option>
+                <option value="hijri">Hijri</option>
+              </select>
+            </div>
+            <div class="pill" id="today-hijri" title="Hijri date today">11 Rabi' al-Thani 1447 AH</div>
+          </div>
+        </div>
+
+        <!-- Month grid preview (your month renderer can override this) -->
+        <div class="month-grid" id="month-grid">
+          <div class="day" data-date="2025-10-05"><div class="g-num">5</div><div class="h-num">2 / 03</div>
+            <div class="today-ring"></div>
+            <div class="events">
+              <div class="event-pill" data-id="fajr-514"><span class="cat prayer"></span>Fajr • 05:14</div>
+              <div class="event-pill" data-id="standup"><span class="cat personal"></span>Team Standup</div>
+            </div>
+          </div>
+          <div class="day" data-date="2025-10-08"><div class="g-num">8</div><div class="h-num">5 / 03</div>
+            <div class="events"><div class="event-pill" data-id="mawlid-observed"><span class="cat holiday"></span>Mawlid (Observed)</div></div>
+          </div>
+          <div class="day" data-date="2025-10-14"><div class="g-num">14</div><div class="h-num">11 / 03</div>
+            <div class="events"><div class="event-pill" data-id="client-demo"><span class="cat personal"></span>Client Demo</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right rail with today list and prayer times -->
+    <aside class="right card fade-in">
+      <div class="card-header">
+        <div style="font-weight:700;">Today in Dubai</div>
+        <span class="pill" id="today-label">Sat • 11 Oct 2025</span>
+      </div>
+      <div class="card-body">
+        <div class="list" id="today-list" style="margin-bottom:16px;"></div>
+        <div class="row" style="margin-bottom: 12px; gap:8px;">
+          <button class="btn ghost" id="quick-occasions">View Occasions</button>
+          <button class="btn ghost" id="quick-reminders">Email Reminders</button>
+        </div>
+        <div class="card-header" style="margin: -14px -16px 10px;">
+          <div style="font-weight:700;">Prayer times</div>
+          <span class="pill" id="tz-label">Asia/Dubai</span>
+        </div>
+        <div class="prayers" id="prayer-times">
+          <div class="p prayer-time"><h5 class="prayer-name">Fajr</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Sunrise</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Dhuhr</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Asr</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Maghrib</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Isha</h5><div class="t prayer-time-value">--:--</div></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div>Production build • External CSS/JS, keeps your latest UI.</div>
+    <div class="pill">Keyboard: ← → • T • 1‑4</div>
+  </footer>
+
+  <!-- ==========================
+       Modals (Occasions, Reminders, Day Details)
+       ========================== -->
+  <div id="occasions-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="occasions-title">
+    <div class="backdrop" data-close="occasions"></div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="pill" style="display:inline-block; margin-right:8px;">Auto‑location</div>
+          <strong id="occasions-title">Islamic Occasions & Country Holidays</strong>
+        </div>
+        <button class="close-x" data-close="occasions">✕</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="country-select">Country</label>
+            <select id="country-select">
+              <option value="AE" selected>United Arab Emirates (Auto)</option>
+              <option value="SA">Saudi Arabia</option>
+              <option value="EG">Egypt</option>
+              <option value="UK">United Kingdom</option>
+              <option value="US">United States</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="year-select">Year</label>
+            <select id="year-select">
+              <option>2025</option>
+              <option selected>2026</option>
+              <option>2027</option>
+            </select>
+          </div>
+          <div class="field col-span-2">
+            <label>Events</label>
+            <ul id="occasions-list" class="list-clean"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="occasions">Close</button>
+        <button class="btn primary" id="add-occasions-to-calendar">Add to Calendar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reminders-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="reminders-title">
+    <div class="backdrop" data-close="reminders"></div>
+    <div class="card">
+      <div class="card-header">
+        <strong id="reminders-title">Prayer Email Reminders</strong>
+        <button class="close-x" data-close="reminders">✕</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field col-span-2"><label>Select prayers</label>
+            <div class="checks">
+              <label class="chk"><input type="checkbox" id="rem-fajr" checked> Fajr</label>
+              <label class="chk"><input type="checkbox" id="rem-sunrise"> Sunrise</label>
+              <label class="chk"><input type="checkbox" id="rem-dhuhr" checked> Dhuhr</label>
+              <label class="chk"><input type="checkbox" id="rem-asr"> Asr</label>
+              <label class="chk"><input type="checkbox" id="rem-maghrib" checked> Maghrib</label>
+              <label class="chk"><input type="checkbox" id="rem-isha"> Isha</label>
+            </div>
+          </div>
+          <div class="field"><label for="rem-offset">Send when</label>
+            <select id="rem-offset">
+              <option value="0" selected>At exact time</option>
+              <option value="-5">5 minutes before</option>
+              <option value="-10">10 minutes before</option>
+              <option value="-30">30 minutes before</option>
+            </select>
+          </div>
+          <div class="field"><label for="rem-email">Send to email</label>
+            <input id="rem-email" type="email" placeholder="you@example.com" />
+          </div>
+          <div class="field col-span-2">
+            <label>Status</label>
+            <div id="rem-status" class="pill">Not saved</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="reminders">Cancel</button>
+        <button class="btn primary" id="save-reminders">Save Email Reminders</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="day-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="day-title">
+    <div class="backdrop" data-close="day"></div>
+    <div class="card">
+      <div class="card-header">
+        <strong id="day-title">Day Events</strong>
+        <button class="close-x" data-close="day">✕</button>
+      </div>
+      <div class="card-body">
+        <ul id="day-events-list" class="list-clean"></ul>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="day">Close</button>
+        <button class="btn primary" id="create-event-on-day">+ Add Event</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

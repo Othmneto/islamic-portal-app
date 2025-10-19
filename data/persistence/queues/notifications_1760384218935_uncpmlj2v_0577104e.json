@@ -1,0 +1,89 @@
+{
+  "value": {
+    "id": "notifications_1760384218935_uncpmlj2v",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/cDMPLISuKOs:APA91bHhBmWk2ZMGyBIOfCh6NIk4sZAJ7VWtU9QoGs4mjxs7EXBXW0_E91FFDhtak5sTTtcesNbgnsAXV3Bs0S-sKVDVlj4luDHeMaA5pwRluIat9g0rH9RUI_KZT1V5bxNkvV2zolIF",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BAlRYqvxk2fx2utjinmPjM8kLtwQW5bb3CTOK7kTpQNt1lqDarRrycD9YGYF9Z62kA8GqmVylbxS0YpXT7b3k7s",
+            "auth": "wYaLX1eGE9_nB6LeFjDHvA"
+          }
+        },
+        "location": {
+          "lat": 25.264268165896837,
+          "lon": 55.32180741031562,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "_id": "68ed544fd1d07b6dfb1a3001",
+        "__v": 0,
+        "createdAt": "2025-10-13T19:34:40.549Z",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "tz": "Asia/Dubai",
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "updatedAt": "2025-10-13T19:34:40.549Z",
+        "userId": "6888c9391815657294913e8d"
+      },
+      "payload": {
+        "title": "🧪 Test Notification",
+        "body": "This is a test notification from the diagnostic script!",
+        "icon": "/icons/icon-192x192.png",
+        "badge": "/icons/badge-72x72.png",
+        "tag": "test-diagnostic",
+        "data": {
+          "url": "/prayer-time.html",
+          "type": "test",
+          "timestamp": "2025-10-13T19:36:58.934Z"
+        }
+      }
+    },
+    "options": {
+      "concurrency": 20,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 1000
+      },
+      "delay": 0,
+      "priority": 10
+    },
+    "timestamp": 1760384218935,
+    "status": "completed",
+    "attempts": 1,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-13T19:36:58.935Z",
+    "processedAt": "2025-10-13T19:37:00.048Z",
+    "finishedAt": 1760384220048,
+    "failedReason": null,
+    "result": {
+      "success": true,
+      "jobId": "notifications_1760384218935_uncpmlj2v",
+      "processingTime": 1112
+    }
+  },
+  "timestamp": 1760384220048,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760384218935_uncpmlj2v"
+}

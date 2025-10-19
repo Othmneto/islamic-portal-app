@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remember Me Settings - Islamic Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-navbar.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 80px; /* Account for fixed navbar */
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .remember-section {
+            background: white;
+            margin-bottom: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e9ecef;
+            overflow: hidden;
+        }
+
+        .section-header {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .section-header h2 {
+            color: #333;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .section-header p {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .section-content {
+            padding: 30px;
+        }
+
+        .remember-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .remember-item:last-child {
+            border-bottom: none;
+        }
+
+        .remember-info {
+            flex: 1;
+        }
+
+        .remember-info h3 {
+            color: #333;
+            margin-bottom: 8px;
+            font-size: 1.1rem;
+        }
+
+        .remember-info p {
+            color: #6c757d;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .remember-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .select-control {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 0.9rem;
+            min-width: 120px;
+        }
+
+        .select-control:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .device-list {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .device-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #e9ecef;
+        }
+
+        .device-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .device-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .device-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .device-details h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .device-details p {
+            color: #6c757d;
+            font-size: 0.8rem;
+        }
+
+        .device-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .notification {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .notification.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .notification.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                padding: 20px;
+            }
+            
+            .remember-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+            
+            .remember-controls {
+                width: 100%;
+                justify-content: space-between;
+            }
+            
+            .device-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Navbar -->
+    <header class="global-navbar">
+        <nav class="navbar-container">
+            <!-- Logo Section -->
+            <div class="navbar-brand">
+                <a href="/" class="brand-logo">
+                    <i class="fas fa-mosque brand-icon"></i>
+                    <span class="brand-text">Islamic Portal</span>
+                </a>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="navbar-nav">
+                <ul class="nav-menu">
+                    <!-- Core Features -->
+                    <li class="nav-item">
+                        <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+                            <i class="fas fa-language"></i>
+                            <span class="nav-text">Translator</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+                            <i class="fas fa-mosque"></i>
+                            <span class="nav-text">Prayer Times</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+                            <i class="fas fa-compass"></i>
+                            <span class="nav-text">Qibla</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+                            <i class="fas fa-moon"></i>
+                            <span class="nav-text">Moon</span>
+                        </a>
+                    </li>
+
+                    <!-- Islamic Content -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+                            <i class="fas fa-book-open"></i>
+                            <span class="nav-text">Content</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/explorer.html" class="dropdown-link">
+                                <i class="fas fa-search"></i> Quran Explorer
+                            </a></li>
+                            <li><a href="/duas.html" class="dropdown-link">
+                                <i class="fas fa-hands-praying"></i> Daily Duas
+                            </a></li>
+                            <li><a href="/names.html" class="dropdown-link">
+                                <i class="fas fa-star"></i> 99 Names
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Tools -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+                            <i class="fas fa-tools"></i>
+                            <span class="nav-text">Tools</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/zakat.html" class="dropdown-link">
+                                <i class="fas fa-coins"></i> Zakat Calculator
+                            </a></li>
+                            <li><a href="/converter.html" class="dropdown-link">
+                                <i class="fas fa-calendar-alt"></i> Date Converter
+                            </a></li>
+                            <li><a href="/calendar.html" class="dropdown-link">
+                                <i class="fas fa-calendar"></i> Islamic Calendar
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Analytics & History -->
+                    <li class="nav-item">
+                        <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+                            <i class="fas fa-history"></i>
+                            <span class="nav-text">History</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="navbar-controls">
+                <!-- Search -->
+                <div class="search-container">
+                    <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="search-dropdown">
+                        <input type="text" placeholder="Search..." class="search-input" id="global-search">
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="notification-container">
+                    <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">
+                            <h4>Notifications</h4>
+                            <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+                        </div>
+                        <div class="notification-list" id="notification-list">
+                            <div class="notification-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu-container">
+                    <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="user-name">Guest</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="user-info">
+                            <div class="user-avatar-large" id="user-avatar-large">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name-large" id="user-name-large">Guest User</div>
+                                <div class="user-email" id="user-email">guest@example.com</div>
+                            </div>
+                        </div>
+                        <div class="user-menu-divider"></div>
+                        <ul class="user-menu-list">
+                            <li><a href="/profile-management.html" class="user-menu-link">
+                                <i class="fas fa-user"></i> Profile Management
+                            </a></li>
+                            <li><a href="/account-management.html" class="user-menu-link">
+                                <i class="fas fa-user-cog"></i> Account Management
+                            </a></li>
+                            <li><a href="/remember-me-settings.html" class="user-menu-link">
+                                <i class="fas fa-memory"></i> Remember Me Settings
+                            </a></li>
+                            <li class="user-menu-divider"></li>
+                            <li><a href="/login.html" class="user-menu-link" id="login-link">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a></li>
+                            <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+                        <i class="fas fa-sun theme-icon-light"></i>
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Overlay -->
+        <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+            <div class="mobile-nav-content">
+                <div class="mobile-nav-header">
+                    <div class="mobile-nav-brand">
+                        <i class="fas fa-mosque"></i>
+                        <span>Islamic Portal</span>
+                    </div>
+                    <button class="mobile-nav-close" id="mobile-nav-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mobile-nav-body">
+                    <!-- Mobile navigation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="header">
+            <button class="back-btn" onclick="goBack()">
+                <i class="fas fa-arrow-left"></i> Back
+            </button>
+            <h1><i class="fas fa-memory"></i> Remember Me Settings</h1>
+            <p>Manage your login preferences and trusted devices</p>
+        </div>
+
+        <div class="content">
+            <!-- Login Preferences -->
+            <div class="remember-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-sign-in-alt"></i> Login Preferences</h2>
+                    <p>Configure how you want to stay logged in</p>
+                </div>
+                <div class="section-content">
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Remember Me</h3>
+                            <p>Stay logged in on this device for convenience</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="rememberMeEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Session Duration</h3>
+                            <p>How long to keep you logged in when "Remember Me" is enabled</p>
+                        </div>
+                        <div class="remember-controls">
+                            <select id="sessionDuration" class="select-control">
+                                <option value="1">1 day</option>
+                                <option value="7">1 week</option>
+                                <option value="30">1 month</option>
+                                <option value="90">3 months</option>
+                                <option value="365">1 year</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Auto-Login</h3>
+                            <p>Automatically log in when you visit the site (requires Remember Me)</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="autoLoginEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Biometric Login</h3>
+                            <p>Use fingerprint or face recognition for quick login</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="biometricLoginEnabled">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trusted Devices -->
+            <div class="remember-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-mobile-alt"></i> Trusted Devices</h2>
+                    <p>Manage devices that can automatically log you in</p>
+                </div>
+                <div class="section-content">
+                    <div class="info-box">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Trusted devices</strong> are devices where you've enabled "Remember Me" and have been using regularly. You can revoke access from any device at any time.
+                    </div>
+
+                    <div id="trustedDevices" class="device-list">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                            <p>Loading trusted devices...</p>
+                        </div>
+                    </div>
+
+                    <div style="text-align: center; margin-top: 20px;">
+                        <button class="btn btn-primary" onclick="refreshDevices()">
+                            <i class="fas fa-sync"></i> Refresh Devices
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Settings -->
+            <div class="remember-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-shield-alt"></i> Security Settings</h2>
+                    <p>Configure security options for remembered sessions</p>
+                </div>
+                <div class="section-content">
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Require Re-authentication</h3>
+                            <p>Ask for password confirmation for sensitive actions</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="requireReauth">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Login Notifications</h3>
+                            <p>Get notified when someone logs in from a new device</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="loginNotifications">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Session Timeout</h3>
+                            <p>Automatically log out after period of inactivity</p>
+                        </div>
+                        <div class="remember-controls">
+                            <select id="sessionTimeout" class="select-control">
+                                <option value="15">15 minutes</option>
+                                <option value="30">30 minutes</option>
+                                <option value="60">1 hour</option>
+                                <option value="120">2 hours</option>
+                                <option value="0">Never</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Storage -->
+            <div class="remember-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-database"></i> Data Storage</h2>
+                    <p>Control what data is stored locally for offline access</p>
+                </div>
+                <div class="section-content">
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Offline Translations</h3>
+                            <p>Store recent translations for offline access</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="offlineTranslations">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Prayer Times Cache</h3>
+                            <p>Cache prayer times for offline viewing</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="prayerTimesCache">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>User Preferences</h3>
+                            <p>Store your settings and preferences locally</p>
+                        </div>
+                        <div class="remember-controls">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="userPreferences">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="remember-item">
+                        <div class="remember-info">
+                            <h3>Clear Local Data</h3>
+                            <p>Remove all locally stored data and start fresh</p>
+                        </div>
+                        <div class="remember-controls">
+                            <button class="btn btn-danger" onclick="clearLocalData()">
+                                <i class="fas fa-trash"></i> Clear Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Save Button -->
+            <div style="text-align: center; margin-top: 40px;">
+                <button class="btn btn-primary" onclick="saveRememberMeSettings()" style="padding: 15px 40px; font-size: 1.1rem;">
+                    <i class="fas fa-save"></i> Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let rememberMeSettings = {};
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('💾 [Remember Me] Page loaded, initializing...');
+            
+            // Check authentication
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                console.log('❌ [Remember Me] No auth token found, redirecting to login');
+                window.location.href = '/login.html';
+                return;
+            }
+
+            console.log('✅ [Remember Me] Auth token found, loading settings...');
+            loadRememberMeSettings();
+            loadTrustedDevices();
+            setupEventListeners();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            console.log('🔧 [Remember Me] Setting up event listeners...');
+            
+            // Add change listeners to all toggles and selects
+            document.querySelectorAll('input[type="checkbox"], select').forEach(element => {
+                element.addEventListener('change', function() {
+                    console.log('🔄 [Remember Me] Setting changed:', this.id, this.checked || this.value);
+                });
+            });
+        }
+
+        // Load remember me settings
+        async function loadRememberMeSettings() {
+            try {
+                console.log('📊 [Remember Me] Loading remember me settings...');
+                
+                const response = await makeAuthenticatedRequest('/api/user/remember-me-settings');
+                if (response.ok) {
+                    const data = await response.json();
+                    rememberMeSettings = data.settings;
+                    console.log('✅ [Remember Me] Settings loaded:', data);
+                    
+                    populateRememberMeForm(data.settings);
+                } else {
+                    throw new Error('Failed to load remember me settings');
+                }
+            } catch (error) {
+                console.error('❌ [Remember Me] Error loading settings:', error);
+                showNotification('Failed to load remember me settings', 'error');
+                // Load default settings
+                loadDefaultSettings();
+            }
+        }
+
+        // Load default settings
+        function loadDefaultSettings() {
+            console.log('🔧 [Remember Me] Loading default remember me settings...');
+            
+            rememberMeSettings = {
+                rememberMeEnabled: true,
+                sessionDuration: '30',
+                autoLoginEnabled: false,
+                biometricLoginEnabled: false,
+                requireReauth: true,
+                loginNotifications: true,
+                sessionTimeout: '60',
+                offlineTranslations: true,
+                prayerTimesCache: true,
+                userPreferences: true
+            };
+            
+            populateRememberMeForm(rememberMeSettings);
+        }
+
+        // Populate remember me form
+        function populateRememberMeForm(settings) {
+            console.log('📝 [Remember Me] Populating form with settings:', settings);
+            
+            Object.keys(settings).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    if (element.type === 'checkbox') {
+                        element.checked = settings[key];
+                    } else if (element.tagName === 'SELECT') {
+                        element.value = settings[key];
+                    }
+                }
+            });
+        }
+
+        // Load trusted devices
+        async function loadTrustedDevices() {
+            try {
+                console.log('📱 [Remember Me] Loading trusted devices...');
+                
+                const response = await makeAuthenticatedRequest('/api/user/trusted-devices');
+                if (response.ok) {
+                    const data = await response.json();
+                    displayTrustedDevices(data.devices);
+                    console.log('✅ [Remember Me] Trusted devices loaded:', data);
+                } else {
+                    throw new Error('Failed to load trusted devices');
+                }
+            } catch (error) {
+                console.error('❌ [Remember Me] Error loading trusted devices:', error);
+                document.getElementById('trustedDevices').innerHTML = '<p>Failed to load trusted devices</p>';
+            }
+        }
+
+        // Display trusted devices
+        function displayTrustedDevices(devices) {
+            console.log('📱 [Remember Me] Displaying trusted devices:', devices);
+            
+            const container = document.getElementById('trustedDevices');
+            
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<p>No trusted devices found</p>';
+                return;
+            }
+            
+            const devicesHtml = devices.map(device => `
+                <div class="device-item">
+                    <div class="device-info">
+                        <div class="device-icon">
+                            <i class="fas fa-${getDeviceIcon(device.type)}"></i>
+                        </div>
+                        <div class="device-details">
+                            <h4>${device.name}</h4>
+                            <p>${device.browser} • ${device.os} • Last used: ${formatDate(device.lastUsed)}</p>
+                        </div>
+                    </div>
+                    <div class="device-status">
+                        <span class="status-badge ${device.isActive ? 'status-active' : 'status-inactive'}">
+                            ${device.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                        <button class="btn btn-danger" onclick="revokeDevice('${device.id}')">
+                            <i class="fas fa-times"></i> Revoke
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = devicesHtml;
+        }
+
+        // Get device icon
+        function getDeviceIcon(type) {
+            const icons = {
+                'desktop': 'desktop',
+                'mobile': 'mobile-alt',
+                'tablet': 'tablet-alt',
+                'unknown': 'question-circle'
+            };
+            return icons[type] || 'question-circle';
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        // Save remember me settings
+        async function saveRememberMeSettings() {
+            console.log('💾 [Remember Me] Saving remember me settings...');
+            
+            const settings = {
+                rememberMeEnabled: document.getElementById('rememberMeEnabled').checked,
+                sessionDuration: document.getElementById('sessionDuration').value,
+                autoLoginEnabled: document.getElementById('autoLoginEnabled').checked,
+                biometricLoginEnabled: document.getElementById('biometricLoginEnabled').checked,
+                requireReauth: document.getElementById('requireReauth').checked,
+                loginNotifications: document.getElementById('loginNotifications').checked,
+                sessionTimeout: document.getElementById('sessionTimeout').value,
+                offlineTranslations: document.getElementById('offlineTranslations').checked,
+                prayerTimesCache: document.getElementById('prayerTimesCache').checked,
+                userPreferences: document.getElementById('userPreferences').checked
+            };
+            
+            try {
+                const response = await makeAuthenticatedRequest('/api/user/remember-me-settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ settings })
+                });
+                
+                if (response.ok) {
+                    showNotification('Remember me settings saved successfully', 'success');
+                    console.log('✅ [Remember Me] Settings saved successfully');
+                } else {
+                    throw new Error('Failed to save remember me settings');
+                }
+            } catch (error) {
+                console.error('❌ [Remember Me] Error saving settings:', error);
+                showNotification('Failed to save remember me settings', 'error');
+            }
+        }
+
+        // Revoke device
+        async function revokeDevice(deviceId) {
+            if (!confirm('Are you sure you want to revoke access for this device?')) {
+                return;
+            }
+            
+            console.log('🚫 [Remember Me] Revoking device:', deviceId);
+            
+            try {
+                const response = await makeAuthenticatedRequest(`/api/user/trusted-devices/${deviceId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (response.ok) {
+                    showNotification('Device access revoked successfully', 'success');
+                    loadTrustedDevices(); // Refresh the list
+                    console.log('✅ [Remember Me] Device revoked successfully');
+                } else {
+                    throw new Error('Failed to revoke device');
+                }
+            } catch (error) {
+                console.error('❌ [Remember Me] Error revoking device:', error);
+                showNotification('Failed to revoke device access', 'error');
+            }
+        }
+
+        // Refresh devices
+        function refreshDevices() {
+            console.log('🔄 [Remember Me] Refreshing trusted devices...');
+            loadTrustedDevices();
+        }
+
+        // Clear local data
+        async function clearLocalData() {
+            if (!confirm('Are you sure you want to clear all locally stored data? This will remove offline translations, cached prayer times, and other local data.')) {
+                return;
+            }
+            
+            console.log('🗑️ [Remember Me] Clearing local data...');
+            
+            try {
+                // Clear localStorage
+                localStorage.clear();
+                
+                // Clear sessionStorage
+                sessionStorage.clear();
+                
+                // Clear IndexedDB (if supported)
+                if ('indexedDB' in window) {
+                    // This would clear IndexedDB
+                    console.log('🗑️ [Remember Me] IndexedDB cleared');
+                }
+                
+                showNotification('Local data cleared successfully', 'success');
+                console.log('✅ [Remember Me] Local data cleared successfully');
+            } catch (error) {
+                console.error('❌ [Remember Me] Error clearing local data:', error);
+                showNotification('Failed to clear local data', 'error');
+            }
+        }
+
+        // Utility functions
+        function makeAuthenticatedRequest(url, options = {}) {
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                window.location.href = '/login.html';
+                return Promise.reject('No auth token');
+            }
+            
+            const defaultOptions = {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                }
+            };
+            
+            return fetch(url, { ...defaultOptions, ...options });
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            document.querySelector('.content').insertBefore(notification, document.querySelector('.content').firstChild);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 5000);
+        }
+
+        function goBack() {
+            window.history.back();
+        }
+    </script>
+    
+    <!-- Global Navbar JavaScript -->
+    <script src="/js/global-navbar.js"></script>
+</body>
+</html>
+

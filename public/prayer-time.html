@@ -1,0 +1,597 @@
+<!-- translator-backend/public/prayer-time.html -->
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Prayer Times - Islamic Portal</title>
+
+  <meta name="theme-color" content="#0d6efd" />
+  <link rel="manifest" href="prayer-time.json">
+
+  <!-- Icons / Fonts -->
+  <link rel="icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/images/icon-192.png">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="prayer-time.css">
+  <link rel="stylesheet" href="css/smart-timezone.css">
+  
+  <!-- Include global navbar CSS -->
+  <link rel="stylesheet" href="/css/global-navbar.css">
+
+  <!-- Adhan.js for local fallback -->
+  <script src="https://cdn.jsdelivr.net/npm/adhan@4/dist/Adhan.js"></script>
+  
+  <!-- Socket.IO for real-time updates -->
+  <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+  
+  <style>
+    /* Add top padding to account for fixed navbar */
+    .page-content {
+      padding-top: 70px; /* Height of navbar */
+    }
+  </style>
+
+</head>
+<body>
+  <!-- Global Navbar -->
+  <header class="global-navbar">
+    <nav class="navbar-container">
+      <!-- Logo Section -->
+      <div class="navbar-brand">
+        <a href="/" class="brand-logo">
+          <i class="fas fa-mosque brand-icon"></i>
+          <span class="brand-text">Islamic Portal</span>
+        </a>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="navbar-nav">
+        <ul class="nav-menu">
+          <!-- Core Features -->
+          <li class="nav-item">
+            <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+              <i class="fas fa-language"></i>
+              <span class="nav-text">Translator</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/prayer-time.html" class="nav-link active" data-tooltip="Prayer Times & Qibla">
+              <i class="fas fa-mosque"></i>
+              <span class="nav-text">Prayer Times</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+              <i class="fas fa-compass"></i>
+              <span class="nav-text">Qibla</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+              <i class="fas fa-moon"></i>
+              <span class="nav-text">Moon</span>
+            </a>
+          </li>
+
+          <!-- Islamic Content -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+              <i class="fas fa-book-open"></i>
+              <span class="nav-text">Content</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/explorer.html" class="dropdown-link">
+                <i class="fas fa-search"></i> Quran Explorer
+              </a></li>
+              <li><a href="/duas.html" class="dropdown-link">
+                <i class="fas fa-hands-praying"></i> Daily Duas
+              </a></li>
+              <li><a href="/names.html" class="dropdown-link">
+                <i class="fas fa-star"></i> 99 Names
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Tools -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+              <i class="fas fa-tools"></i>
+              <span class="nav-text">Tools</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/zakat.html" class="dropdown-link">
+                <i class="fas fa-coins"></i> Zakat Calculator
+              </a></li>
+              <li><a href="/converter.html" class="dropdown-link">
+                <i class="fas fa-calendar-alt"></i> Date Converter
+              </a></li>
+              <li><a href="/calendar.html" class="dropdown-link">
+                <i class="fas fa-calendar"></i> Islamic Calendar
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Analytics & History -->
+          <li class="nav-item">
+            <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span class="nav-text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+              <i class="fas fa-history"></i>
+              <span class="nav-text">History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="navbar-controls">
+        <!-- Search -->
+        <div class="search-container">
+          <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="search-dropdown" id="search-dropdown">
+            <input type="text" placeholder="Search..." class="search-input" id="global-search">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification-container">
+          <button class="notification-toggle" id="notification-dropdown-toggle" data-tooltip="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No new notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="user-menu-container">
+          <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+            <div class="user-avatar" id="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="user-name">Guest</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-avatar-large" id="user-avatar-large">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-details">
+                <div class="user-name-large" id="user-name-large">Guest User</div>
+                <div class="user-email" id="user-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <ul class="user-menu-list">
+              <li><a href="/profile.html" class="user-menu-link">
+                <i class="fas fa-user"></i> Profile
+              </a></li>
+              <li><a href="/settings.html" class="user-menu-link">
+                <i class="fas fa-cog"></i> Settings
+              </a></li>
+              <li><a href="/security-dashboard.html" class="user-menu-link">
+                <i class="fas fa-shield-alt"></i> Security
+              </a></li>
+              <li class="user-menu-divider"></li>
+              <li><a href="/login.html" class="user-menu-link" id="login-link">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </a></li>
+              <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+          <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+            <i class="fas fa-sun theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon-dark"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <div class="mobile-nav-brand">
+            <i class="fas fa-mosque"></i>
+            <span>Islamic Portal</span>
+          </div>
+          <button class="mobile-nav-close" id="mobile-nav-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-nav-body">
+          <!-- Mobile navigation will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </header>
+  <noscript>
+    <div style="padding:1rem;background:#fee2e2;color:#991b1b;text-align:center">
+      JavaScript is required to view prayer times.
+    </div>
+  </noscript>
+
+  <div class="page-content">
+  <!-- Language Switcher -->
+  <div class="language-switcher">
+    <select id="language-selector" aria-label="Language">
+      <option value="en">English</option>
+      <option value="ar">العربية</option>
+      <option value="fr">Français</option>
+      <option value="hi">हिन्दी</option>
+    </select>
+  </div>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="page-header">
+      <h1><i class="fa-solid fa-clock"></i> Prayer Times</h1>
+      <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center;">
+        <p>
+          <a href="/index.html">← Portal</a><span>|</span>
+          <a href="/duas.html">Daily Duas</a><span>|</span>
+          <a href="/names.html">99 Names</a><span>|</span>
+          <a href="/zakat.html">Zakat Calculator</a><span>|</span>
+          <a href="/converter.html">Date Converter</a><span>|</span>
+          <a href="/stats.html">Ummah Stats →</a>
+        </p>
+        <button id="logout-btn" class="btn btn-danger" style="margin-left: 20px;">
+          <i class="fa-solid fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Location Search -->
+    <div class="location-search-container">
+      <label for="location-search-input" class="sr-only">Search location</label>
+      <input
+        type="text"
+        id="location-search-input"
+        data-i18n-placeholder="search_placeholder"
+        placeholder="Type at least 2 letters..."
+        autocomplete="off"
+        aria-autocomplete="list"
+        aria-controls="search-results"
+      />
+      <div id="search-results" role="listbox" aria-label="Location search results"></div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading-message"><p>Fetching prayer times...</p></div>
+
+    <!-- Main Content -->
+    <div id="prayer-times-content" style="display:none;">
+
+      <!-- Next Prayer / Countdown -->
+      <div class="next-prayer-info">
+        <h2><span id="next-prayer-name">--:--</span> in</h2>
+        <p id="countdown-timer">--:--:--</p>
+      </div>
+
+      <!-- Times Grid -->
+      <div class="prayer-times-grid">
+        <div id="fajr-card" class="prayer-card" data-key="fajr">
+          <h3>Fajr <span class="prayer-status-icon"></span></h3>
+          <p id="fajr-time">--:--</p>
+        </div>
+        <div id="dhuhr-card" class="prayer-card" data-key="dhuhr">
+          <h3>Dhuhr <span class="prayer-status-icon"></span></h3>
+          <p id="dhuhr-time">--:--</p>
+        </div>
+        <div id="asr-card" class="prayer-card" data-key="asr">
+          <h3>Asr <span class="prayer-status-icon"></span></h3>
+          <p id="asr-time">--:--</p>
+        </div>
+        <div id="maghrib-card" class="prayer-card" data-key="maghrib">
+          <h3>Maghrib <span class="prayer-status-icon"></span></h3>
+          <p id="maghrib-time">--:--</p>
+        </div>
+        <div id="isha-card" class="prayer-card" data-key="isha">
+          <h3>Isha <span class="prayer-status-icon"></span></h3>
+          <p id="isha-time">--:--</p>
+        </div>
+
+        <!-- NEW: Shuruq (Sunrise) -->
+        <div id="shuruq-card" class="prayer-card" data-key="shuruq">
+          <h3>Shuruq</h3>
+          <p id="shuruq-time">--:--</p>
+        </div>
+
+        <!-- NEW: Worship Periods -->
+        <div id="imsak-period-card" class="prayer-card period-card" data-key="imsak">
+          <h3>Imsak</h3>
+          <div class="period-times">
+            <span>Starts: <strong id="imsak-start-time">--:--</strong></span>
+            <span>Ends: <strong id="imsak-end-time">--:--</strong></span>
+          </div>
+        </div>
+
+        <div id="duha-period-card" class="prayer-card period-card" data-key="duha">
+          <h3>Duha</h3>
+          <div class="period-times">
+            <span>Starts: <strong id="duha-start-time">--:--</strong></span>
+            <span>Ends: <strong id="duha-end-time">--:--</strong></span>
+          </div>
+        </div>
+
+        <div id="tahajjud-period-card" class="prayer-card period-card" data-key="tahajjud">
+          <h3>Tahajjud</h3>
+          <div class="period-times">
+            <span>Starts: <strong id="tahajjud-start-time">--:--</strong></span>
+            <span>Ends: <strong id="tahajjud-end-time">--:--</strong></span>
+          </div>
+        </div>
+        <!-- /NEW -->
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-panel" aria-labelledby="settings-title">
+        <h3 id="settings-title">Settings</h3>
+        <div class="settings-grid">
+          <div class="settings-group">
+            <label for="calculation-method-select">Calculation Method</label>
+            <select id="calculation-method-select">
+              <option value="auto">Auto (recommended)</option>
+              <option value="MuslimWorldLeague">Muslim World League</option>
+              <option value="Egyptian">Egyptian</option>
+              <option value="Karachi">Karachi</option>
+              <option value="NorthAmerica">North America (ISNA)</option>
+              <option value="Dubai">Dubai</option>
+              <option value="UmmAlQura">Umm al-Qura (KSA)</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="madhab-select">Asr Method (Madhab)</label>
+            <select id="madhab-select">
+              <option value="auto">Auto (by country)</option>
+              <option value="shafii">Shafi'i</option>
+              <option value="hanafi">Hanafi</option>
+            </select>
+          </div>
+
+          <!-- NEW: Pre-Prayer Reminder -->
+          <div class="settings-group">
+            <label for="reminder-select">Pre-Prayer Reminder</label>
+            <select id="reminder-select">
+              <option value="0">No Reminder</option>
+              <option value="5">5 minutes before</option>
+              <option value="10">10 minutes before</option>
+              <option value="15">15 minutes before</option>
+              <option value="20">20 minutes before</option>
+            </select>
+          </div>
+
+          <div class="settings-group toggle-group">
+            <i class="fa-solid fa-hourglass-start" aria-hidden="true"></i>
+            <label class="theme-switch">
+              <input type="checkbox" id="clock-format-toggle" />
+              <span>24-Hour Clock</span>
+            </label>
+          </div>
+
+          <div class="settings-group toggle-group">
+            <i class="fa-solid fa-bell" aria-hidden="true"></i>
+            <label class="theme-switch">
+              <input type="checkbox" id="notification-toggle" />
+              <span>Enable Notifications</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem">
+          <h4 style="margin:.5rem 0">Per-Prayer Alerts</h4>
+          <div class="pill-toggle-grid">
+            <label class="pill"><input type="checkbox" id="alert-fajr" checked> Fajr</label>
+            <label class="pill"><input type="checkbox" id="alert-dhuhr" checked> Dhuhr</label>
+            <label class="pill"><input type="checkbox" id="alert-asr" checked> Asr</label>
+            <label class="pill"><input type="checkbox" id="alert-maghrib" checked> Maghrib</label>
+            <label class="pill"><input type="checkbox" id="alert-isha" checked> Isha</label>
+          </div>
+        </div>
+
+        <!-- Audio & Adhan Settings (New Panel) -->
+        <div class="settings-group audio-command-center">
+          <h4 style="margin-top:1.5rem; margin-bottom: 0.5rem; grid-column: 1 / -1;">Audio & Adhan Settings</h4>
+
+          <label for="adhan-volume-slider">Master Adhan Volume</label>
+          <div class="volume-control">
+            <i class="fa-solid fa-volume-off" aria-hidden="true"></i>
+            <input type="range" id="adhan-volume-slider" min="0" max="1" step="0.1" value="1" aria-label="Adhan volume">
+            <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+          </div>
+
+          <label for="audio-output-select">Play Adhan Through</label>
+          <select id="audio-output-select" aria-label="Audio output device">
+            <option value="default">Default Device</option>
+          </select>
+
+          <label for="sound-library">Select Adhan Sound</label>
+          <div id="sound-library" class="sound-library"></div>
+        </div>
+        <!-- /Audio & Adhan Settings (New Panel) -->
+      </div>
+
+      <!-- Audio / Test -->
+      <div class="adhan-toggle-container">
+        <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+        <label class="theme-switch">
+          <input type="checkbox" id="adhan-audio-toggle" />
+          <span>Play Adhan Audio</span>
+        </label>
+
+        <button id="test-notification-btn" class="btn" type="button" title="Queue a generic push notification">
+          <i class="fa-solid fa-bell"></i> Test Notification
+        </button>
+        <button id="test-prayer-notification-btn" class="btn" type="button" title="Queue a prayer push notification">
+          <i class="fa-solid fa-mosque"></i> Test Prayer Alert
+        </button>
+      </div>
+
+      <!-- Location / Date -->
+      <div class="location-info">
+        <p>Today's Date: <span id="gregorian-date"></span></p>
+        <p>Hijri Date: <span id="hijri-date"></span></p>
+        <p>Location: <span id="location-display"></span></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Notification Status Dashboard -->
+  <div class="notification-status-panel" id="notificationStatusPanel">
+    <div class="status-header" id="statusPanelToggle">
+      <h3>Notification Status</h3>
+      <span class="toggle-icon">▼</span>
+    </div>
+    
+    <div class="status-content" id="statusContent">
+      <!-- Current Schedule -->
+      <div class="status-section">
+        <h4>Current Schedule</h4>
+        <div class="schedule-info">
+          <div class="info-row">
+            <span class="label">Timezone:</span>
+            <span class="value" id="statusTimezone">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Reminder:</span>
+            <span class="value" id="statusReminder">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Next Prayer:</span>
+            <span class="value" id="statusNextPrayer">Loading...</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Next Reminder:</span>
+            <span class="value" id="statusNextReminder">Loading...</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Recent History -->
+      <div class="status-section">
+        <h4>Recent Notifications</h4>
+        <div class="history-list" id="historyList">
+          <div class="loading">Loading history...</div>
+        </div>
+      </div>
+      
+      <!-- Connection Status -->
+      <div class="status-section">
+        <div class="connection-status">
+          <span class="status-indicator" id="wsStatus">●</span>
+          <span id="wsStatusText">Connecting...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Assistant -->
+  <button id="open-assistant-btn" class="floating-btn" title="AI Assistant">
+    <i class="fa-solid fa-robot"></i>
+  </button>
+  <div id="assistant-modal" class="modal-overlay" aria-hidden="true">
+    <div class="modal-content assistant-modal-content" role="dialog" aria-modal="true" aria-labelledby="assistant-title">
+      <div class="modal-header">
+        <h3 id="assistant-title">AI Assistant</h3>
+        <button id="close-assistant-btn" class="modal-close-btn" aria-label="Close">&times;</button>
+      </div>
+      <div id="assistant-chat-window" class="assistant-chat-window">
+        <div class="message assistant">
+          Hello! Ask me about prayer times, Zakat, date conversions, or your translation history.
+        </div>
+      </div>
+      <div class="assistant-input-area">
+        <label for="assistant-input" class="sr-only">Ask a question</label>
+        <input type="text" id="assistant-input" placeholder="Ask a question...">
+        <button id="assistant-send-btn" type="button"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden screen-reader class -->
+  <style>
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+  </style>
+
+  <!-- Audio element used by the page when playing Adhan -->
+  <audio id="adhan-player" src="/audio/adhan.mp3" preload="auto"></audio>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
+  <script type="module" src="prayer-time.js"></script>
+  
+  <!-- Theme Manager (load first) -->
+  <script src="/js/themeManager.js"></script>
+  
+  <!-- Global Navbar JavaScript -->
+  <script src="/js/global-navbar.js"></script>
+  
+  <!-- Cross-tab sync and cache management -->
+  <script src="/js/cross-tab-sync.js"></script>
+  <script src="/js/cache-manager.js"></script>
+  <script src="/js/tokenManager.js"></script>
+  <script src="/js/prayer-time/api.js"></script>
+  
+  <!-- Service Worker token relay -->
+  <script>
+    if (navigator.serviceWorker) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        try {
+          const data = event.data || {};
+          if (data && data.type === 'GET_TOKEN' && event.ports && event.ports[0]) {
+            const token = localStorage.getItem('accessToken') || null;
+            event.ports[0].postMessage({ token });
+          }
+        } catch (err) {
+          console.error('[Page] SW message handler error', err);
+        }
+      });
+    }
+  </script>
+  
+  <script>
+    // Navbar is automatically initialized by global-navbar.js
+    // No need to create it here to avoid multiple initializations
+    
+  </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
+</body>
+</html>

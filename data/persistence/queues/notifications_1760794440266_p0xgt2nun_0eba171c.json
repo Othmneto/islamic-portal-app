@@ -1,0 +1,99 @@
+{
+  "value": {
+    "id": "notifications_1760794440266_p0xgt2nun",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "_id": "68f387fd83c81fb048bc0b14",
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/dgs9OjQ5-5c:APA91bFh9hIp2Afj_uXc7lDJ4OWIM75Id5n0LhaAKKO3XrYCL2UafnwvAZtWipugk1_Uzn6WthifkkZPyBPIX3-UOQ6tQd7ClZmJVZhSikGH3fZQURYNCP3Q81vnZlrW_6vGXIQl8CQq",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BFtj3as_jxEMVdkM9OAg41A6McSEhILSR2wBnIXmAku2ivakQtLvEL1J3NuZ-ts8x_gRs8dBfwa-7mp-7fFIJhE",
+            "auth": "dpvccl8Pa_kcdOmk38ydrQ"
+          }
+        },
+        "__v": 0,
+        "createdAt": "2025-10-18T12:28:45.244Z",
+        "location": {
+          "lat": 25.0734,
+          "lon": 55.2979,
+          "city": "Dubai, United Arab Emirates"
+        },
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "tz": "Asia/Dubai",
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "updatedAt": "2025-10-18T12:28:45.244Z",
+        "userId": "6888c9391815657294913e8d"
+      },
+      "payload": {
+        "title": "⏰ 15 min until 🌅 Maghrib Prayer Time",
+        "body": "Prepare for Maghrib prayer\n📍 Your location\n🕐 5:49 PM",
+        "icon": "/images/prayers/maghrib-icon.svg",
+        "badge": "/images/prayers/maghrib-icon.svg",
+        "color": "#FF4500",
+        "tag": "reminder-maghrib-15min",
+        "requireInteraction": false,
+        "data": {
+          "url": "/prayer-time.html",
+          "prayer": "maghrib",
+          "time": "5:49 PM",
+          "location": "Your location",
+          "category": "pre-prayer-reminders",
+          "isReminder": true,
+          "minutesBefore": 15,
+          "timestamp": "2025-10-18T12:48:11.406Z"
+        },
+        "actions": [
+          {
+            "action": "view_times",
+            "title": "🕐 View Prayer Times"
+          }
+        ],
+        "category": "pre-prayer-reminders",
+        "priority": "normal"
+      }
+    },
+    "options": {
+      "concurrency": 20,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 1000
+      },
+      "delay": 2000,
+      "priority": 10
+    },
+    "timestamp": 1760794440266,
+    "status": "failed",
+    "attempts": 4,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-18T13:34:00.266Z",
+    "processedAt": null,
+    "finishedAt": 1760794445322,
+    "failedReason": "Received unexpected response code"
+  },
+  "timestamp": 1760794445322,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760794440266_p0xgt2nun"
+}

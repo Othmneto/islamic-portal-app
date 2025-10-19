@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Prayer Notifications</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border-left: 4px solid #007bff;
+            background: #f8f9fa;
+        }
+        .step h3 { margin-top: 0; color: #007bff; }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+  <!-- Include global navbar CSS -->
+  <link rel="stylesheet" href="/css/global-navbar.css">
+  
+  <style>
+    /* Add top padding to account for fixed navbar */
+    .page-content {
+      padding-top: 70px; /* Height of navbar */
+    }
+  </style>
+</head>
+<body>
+  <!-- Global Navbar -->
+  <header class="global-navbar">
+    <nav class="navbar-container">
+      <!-- Logo Section -->
+      <div class="navbar-brand">
+        <a href="/" class="brand-logo">
+          <i class="fas fa-mosque brand-icon"></i>
+          <span class="brand-text">Islamic Portal</span>
+        </a>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="navbar-nav">
+        <ul class="nav-menu">
+          <!-- Core Features -->
+          <li class="nav-item">
+            <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+              <i class="fas fa-language"></i>
+              <span class="nav-text">Translator</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+              <i class="fas fa-mosque"></i>
+              <span class="nav-text">Prayer Times</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+              <i class="fas fa-compass"></i>
+              <span class="nav-text">Qibla</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+              <i class="fas fa-moon"></i>
+              <span class="nav-text">Moon</span>
+            </a>
+          </li>
+
+          <!-- Islamic Content -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+              <i class="fas fa-book-open"></i>
+              <span class="nav-text">Content</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/explorer.html" class="dropdown-link">
+                <i class="fas fa-search"></i> Quran Explorer
+              </a></li>
+              <li><a href="/duas.html" class="dropdown-link">
+                <i class="fas fa-hands-praying"></i> Daily Duas
+              </a></li>
+              <li><a href="/names.html" class="dropdown-link">
+                <i class="fas fa-star"></i> 99 Names
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Tools -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+              <i class="fas fa-tools"></i>
+              <span class="nav-text">Tools</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/zakat.html" class="dropdown-link">
+                <i class="fas fa-coins"></i> Zakat Calculator
+              </a></li>
+              <li><a href="/converter.html" class="dropdown-link">
+                <i class="fas fa-calendar-alt"></i> Date Converter
+              </a></li>
+              <li><a href="/calendar.html" class="dropdown-link">
+                <i class="fas fa-calendar"></i> Islamic Calendar
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Analytics & History -->
+          <li class="nav-item">
+            <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span class="nav-text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+              <i class="fas fa-history"></i>
+              <span class="nav-text">History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="navbar-controls">
+        <!-- Search -->
+        <div class="search-container">
+          <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="search-dropdown" id="search-dropdown">
+            <input type="text" placeholder="Search..." class="search-input" id="global-search">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification-container">
+          <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No new notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="user-menu-container">
+          <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+            <div class="user-avatar" id="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="user-name">Guest</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-avatar-large" id="user-avatar-large">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-details">
+                <div class="user-name-large" id="user-name-large">Guest User</div>
+                <div class="user-email" id="user-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <ul class="user-menu-list">
+              <li><a href="/profile.html" class="user-menu-link">
+                <i class="fas fa-user"></i> Profile
+              </a></li>
+              <li><a href="/settings.html" class="user-menu-link">
+                <i class="fas fa-cog"></i> Settings
+              </a></li>
+              <li><a href="/security-dashboard.html" class="user-menu-link">
+                <i class="fas fa-shield-alt"></i> Security
+              </a></li>
+              <li class="user-menu-divider"></li>
+              <li><a href="/login.html" class="user-menu-link" id="login-link">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </a></li>
+              <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+          <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+            <i class="fas fa-sun theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon-dark"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <div class="mobile-nav-brand">
+            <i class="fas fa-mosque"></i>
+            <span>Islamic Portal</span>
+          </div>
+          <button class="mobile-nav-close" id="mobile-nav-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-nav-body">
+          <!-- Mobile navigation will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+    <div class="container">
+        <h1>🕌 Prayer Notification Setup</h1>
+        <p>Set up push notifications for prayer times and reminders.</p>
+        
+        <div id="status"></div>
+        
+        <div class="step">
+            <h3>Step 1: Check Browser Support</h3>
+            <p>Your browser needs to support Web Push notifications.</p>
+            <button onclick="checkSupport()">Check Support</button>
+            <div id="support-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 2: Request Permission</h3>
+            <p>Allow notifications in your browser.</p>
+            <button onclick="requestPermission()" id="permission-btn" disabled>Request Permission</button>
+            <div id="permission-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 3: Create Subscription</h3>
+            <p>Subscribe to push notifications.</p>
+            <button onclick="subscribe()" id="subscribe-btn" disabled>Subscribe to Notifications</button>
+            <div id="subscription-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Step 4: Test Notifications</h3>
+            <p>Test if notifications are working.</p>
+            <button onclick="testNotification()" id="test-btn" disabled>Send Test Notification</button>
+            <div id="test-status"></div>
+        </div>
+        
+        <div class="step">
+            <h3>Current Status</h3>
+            <div id="current-status">
+                <p>Checking status...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let subscription = null;
+        
+        // Get auth token from localStorage
+        function getAuthToken() {
+            authToken = localStorage.getItem('authToken');
+            if (!authToken) {
+                showStatus('error', 'Please log in first to set up notifications.');
+                return false;
+            }
+            return true;
+        }
+        
+        function showStatus(type, message, elementId = 'status') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+        
+        function checkSupport() {
+            if (!('serviceWorker' in navigator)) {
+                showStatus('error', 'Service Worker not supported in this browser.', 'support-status');
+                return;
+            }
+            
+            if (!('PushManager' in window)) {
+                showStatus('error', 'Push notifications not supported in this browser.', 'support-status');
+                return;
+            }
+            
+            showStatus('success', '✅ Browser supports push notifications!', 'support-status');
+            document.getElementById('permission-btn').disabled = false;
+        }
+        
+        async function requestPermission() {
+            try {
+                const permission = await Notification.requestPermission();
+                
+                if (permission === 'granted') {
+                    showStatus('success', '✅ Notification permission granted!', 'permission-status');
+                    document.getElementById('subscribe-btn').disabled = false;
+                } else if (permission === 'denied') {
+                    showStatus('error', '❌ Notification permission denied. Please enable it in your browser settings.', 'permission-status');
+                } else {
+                    showStatus('warning', '⚠️ Notification permission dismissed. Please try again.', 'permission-status');
+                }
+            } catch (error) {
+                showStatus('error', '❌ Error requesting permission: ' + error.message, 'permission-status');
+            }
+        }
+        
+        async function subscribe() {
+            if (!getAuthToken()) return;
+            
+            try {
+                // Register service worker
+                const registration = await navigator.serviceWorker.register('/sw.js');
+                console.log('Service Worker registered:', registration);
+                
+                // Wait for service worker to be ready
+                await navigator.serviceWorker.ready;
+                
+                // Subscribe to push notifications
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: await getVapidPublicKey()
+                });
+                
+                console.log('Push subscription created:', subscription);
+                
+                // Send subscription to server
+                const response = await fetch('/api/notifications/subscribe', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        subscription: subscription,
+                        tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        preferences: {
+                            enabled: true,
+                            reminderMinutes: 5,
+                            perPrayer: {
+                                fajr: true,
+                                dhuhr: true,
+                                asr: true,
+                                maghrib: true,
+                                isha: true
+                            }
+                        },
+                        location: {
+                            lat: 25.2642778309613,
+                            lon: 55.321722321258726,
+                            city: 'Dubai',
+                            country: 'United Arab Emirates'
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('success', `✅ Successfully subscribed! Subscription ID: ${result.id}`, 'subscription-status');
+                    document.getElementById('test-btn').disabled = false;
+                    updateCurrentStatus();
+                } else {
+                    const error = await response.json();
+                    showStatus('error', '❌ Failed to subscribe: ' + (error.error || 'Unknown error'), 'subscription-status');
+                }
+                
+            } catch (error) {
+                console.error('Subscription error:', error);
+                showStatus('error', '❌ Error creating subscription: ' + error.message, 'subscription-status');
+            }
+        }
+        
+        async function getVapidPublicKey() {
+            try {
+                const response = await fetch('/api/notifications/vapid-public-key');
+                const data = await response.json();
+                return data.key;
+            } catch (error) {
+                console.error('Error getting VAPID key:', error);
+                throw error;
+            }
+        }
+        
+        async function testNotification() {
+            if (!getAuthToken()) return;
+            
+            try {
+                const response = await fetch('/api/notifications/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        title: 'Test Prayer Notification',
+                        body: 'This is a test notification to verify your setup is working!',
+                        icon: '/favicon.ico'
+                    })
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showStatus('success', `✅ Test notification sent! Delivered to ${result.delivered} device(s).`, 'test-status');
+                } else {
+                    const error = await response.json();
+                    showStatus('error', '❌ Failed to send test notification: ' + (error.error || 'Unknown error'), 'test-status');
+                }
+            } catch (error) {
+                showStatus('error', '❌ Error sending test notification: ' + error.message, 'test-status');
+            }
+        }
+        
+        async function updateCurrentStatus() {
+            if (!getAuthToken()) return;
+            
+            try {
+                // Check if user has subscriptions
+                const response = await fetch('/api/notifications/status', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    let statusHtml = '<ul>';
+                    statusHtml += `<li><strong>User:</strong> ${data.user?.email || 'Unknown'}</li>`;
+                    statusHtml += `<li><strong>Subscriptions:</strong> ${data.subscriptions?.length || 0}</li>`;
+                    statusHtml += `<li><strong>Notification Preferences:</strong> ${data.preferences?.enabled ? 'Enabled' : 'Disabled'}</li>`;
+                    statusHtml += `<li><strong>Reminder Minutes:</strong> ${data.preferences?.reminderMinutes || 0}</li>`;
+                    statusHtml += '</ul>';
+                    
+                    document.getElementById('current-status').innerHTML = statusHtml;
+                } else {
+                    document.getElementById('current-status').innerHTML = '<p>Unable to load status.</p>';
+                }
+            } catch (error) {
+                document.getElementById('current-status').innerHTML = '<p>Error loading status: ' + error.message + '</p>';
+            }
+        }
+        
+        // Initialize page
+        window.addEventListener('load', () => {
+            if (getAuthToken()) {
+                updateCurrentStatus();
+                checkSupport();
+            }
+        });
+    </script>
+
+  <!-- Global Navbar JavaScript -->
+  <script src="/js/global-navbar.js"></script>
+  
+  <script>
+    // Initialize navbar when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.GlobalNavbar) {
+        window.globalNavbar = new window.GlobalNavbar();
+      }
+    });
+  </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Environment variables
+.env
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Coverage directory
+coverage/
+
+# Next.js/.next, build outputs, etc. (if ever added)
+.next/
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Upload folders (optional, if user-generated files)
+uploads/

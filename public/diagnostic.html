@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Diagnostic Tool - Islamic Portal</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/global-navbar.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-top: 100px; /* Account for fixed navbar */
+            background: #f5f5f5;
+        }
+        .diagnostic-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .test-button {
+            background: #667eea;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .test-button:hover { background: #5a6fd8; }
+        .test-button:disabled { background: #ccc; cursor: not-allowed; }
+        .log-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Navbar -->
+    <header class="global-navbar">
+        <nav class="navbar-container">
+            <!-- Logo Section -->
+            <div class="navbar-brand">
+                <a href="/" class="brand-logo">
+                    <i class="fas fa-mosque brand-icon"></i>
+                    <span class="brand-text">Islamic Portal</span>
+                </a>
+            </div>
+
+            <!-- Main Navigation -->
+            <div class="navbar-nav">
+                <ul class="nav-menu">
+                    <!-- Core Features -->
+                    <li class="nav-item">
+                        <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+                            <i class="fas fa-language"></i>
+                            <span class="nav-text">Translator</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+                            <i class="fas fa-mosque"></i>
+                            <span class="nav-text">Prayer Times</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+                            <i class="fas fa-compass"></i>
+                            <span class="nav-text">Qibla</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+                            <i class="fas fa-moon"></i>
+                            <span class="nav-text">Moon</span>
+                        </a>
+                    </li>
+
+                    <!-- Islamic Content -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+                            <i class="fas fa-book-open"></i>
+                            <span class="nav-text">Content</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/explorer.html" class="dropdown-link">
+                                <i class="fas fa-search"></i> Quran Explorer
+                            </a></li>
+                            <li><a href="/duas.html" class="dropdown-link">
+                                <i class="fas fa-hands-praying"></i> Daily Duas
+                            </a></li>
+                            <li><a href="/names.html" class="dropdown-link">
+                                <i class="fas fa-star"></i> 99 Names
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Tools -->
+                    <li class="nav-item dropdown">
+                        <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+                            <i class="fas fa-tools"></i>
+                            <span class="nav-text">Tools</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="/zakat.html" class="dropdown-link">
+                                <i class="fas fa-coins"></i> Zakat Calculator
+                            </a></li>
+                            <li><a href="/converter.html" class="dropdown-link">
+                                <i class="fas fa-calendar-alt"></i> Date Converter
+                            </a></li>
+                            <li><a href="/calendar.html" class="dropdown-link">
+                                <i class="fas fa-calendar"></i> Islamic Calendar
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Analytics & History -->
+                    <li class="nav-item">
+                        <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+                            <i class="fas fa-chart-line"></i>
+                            <span class="nav-text">Analytics</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+                            <i class="fas fa-history"></i>
+                            <span class="nav-text">History</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Right Side Controls -->
+            <div class="navbar-controls">
+                <!-- Search -->
+                <div class="search-container">
+                    <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="search-dropdown" id="search-dropdown">
+                        <input type="text" placeholder="Search..." class="search-input" id="global-search">
+                        <div class="search-results" id="search-results"></div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="notification-container">
+                    <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge" id="notification-badge">0</span>
+                    </button>
+                    <div class="notification-dropdown" id="notification-dropdown">
+                        <div class="notification-header">
+                            <h4>Notifications</h4>
+                            <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+                        </div>
+                        <div class="notification-list" id="notification-list">
+                            <div class="notification-empty">No new notifications</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Menu -->
+                <div class="user-menu-container">
+                    <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+                        <div class="user-avatar" id="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="user-name">Guest</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div class="user-dropdown" id="user-dropdown">
+                        <div class="user-info">
+                            <div class="user-avatar-large" id="user-avatar-large">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name-large" id="user-name-large">Guest User</div>
+                                <div class="user-email" id="user-email">guest@example.com</div>
+                            </div>
+                        </div>
+                        <div class="user-menu-divider"></div>
+                        <ul class="user-menu-list">
+                            <li><a href="/profile.html" class="user-menu-link">
+                                <i class="fas fa-user"></i> Profile
+                            </a></li>
+                            <li><a href="/settings.html" class="user-menu-link">
+                                <i class="fas fa-cog"></i> Settings
+                            </a></li>
+                            <li><a href="/security-dashboard.html" class="user-menu-link">
+                                <i class="fas fa-shield-alt"></i> Security
+                            </a></li>
+                            <li class="user-menu-divider"></li>
+                            <li><a href="/login.html" class="user-menu-link" id="login-link">
+                                <i class="fas fa-sign-in-alt"></i> Login
+                            </a></li>
+                            <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Theme Toggle -->
+                <div class="theme-toggle-container">
+                    <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+                        <i class="fas fa-sun theme-icon-light"></i>
+                        <i class="fas fa-moon theme-icon-dark"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Menu Toggle -->
+                <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Overlay -->
+        <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+            <div class="mobile-nav-content">
+                <div class="mobile-nav-header">
+                    <div class="mobile-nav-brand">
+                        <i class="fas fa-mosque"></i>
+                        <span>Islamic Portal</span>
+                    </div>
+                    <button class="mobile-nav-close" id="mobile-nav-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="mobile-nav-body">
+                    <!-- Mobile navigation will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <h1>🔧 Diagnostic Tool</h1>
+    <p>This tool will help us identify what's working and what needs to be fixed.</p>
+
+    <div class="diagnostic-section">
+        <h2>🔐 Authentication Status</h2>
+        <div id="auth-status"></div>
+        <button class="test-button" onclick="checkAuth()">Check Authentication</button>
+        <button class="test-button" onclick="testLogin()">Test Login</button>
+    </div>
+
+    <div class="diagnostic-section">
+        <h2>🌐 Server Connection</h2>
+        <div id="server-status"></div>
+        <button class="test-button" onclick="testServer()">Test Server</button>
+        <button class="test-button" onclick="testAPI()">Test API Endpoints</button>
+    </div>
+
+    <div class="diagnostic-section">
+        <h2>📱 New Features Test</h2>
+        <div id="features-status"></div>
+        <button class="test-button" onclick="testProfileAPI()">Test Profile API</button>
+        <button class="test-button" onclick="testPrivacyAPI()">Test Privacy API</button>
+        <button class="test-button" onclick="testRememberMeAPI()">Test Remember Me API</button>
+        <button class="test-button" onclick="testMFAAPI()">Test MFA API</button>
+    </div>
+
+    <div class="diagnostic-section">
+        <h2>🔗 Page Links Test</h2>
+        <div id="pages-status"></div>
+        <a href="/profile-management.html" class="test-button" target="_blank">Profile Management</a>
+        <a href="/privacy-settings.html" class="test-button" target="_blank">Privacy Settings</a>
+        <a href="/remember-me-settings.html" class="test-button" target="_blank">Remember Me Settings</a>
+        <a href="/account-management.html" class="test-button" target="_blank">Account Management</a>
+        <a href="/mfa-setup.html" class="test-button" target="_blank">MFA Setup</a>
+    </div>
+
+    <div class="diagnostic-section">
+        <h2>📊 Console Logs</h2>
+        <div id="console-logs" class="log-output"></div>
+        <button class="test-button" onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <script>
+        let logs = [];
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push(logEntry);
+            
+            const consoleDiv = document.getElementById('console-logs');
+            consoleDiv.innerHTML = logs.join('\n');
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+            
+            console.log(logEntry);
+        }
+
+        function clearLogs() {
+            logs = [];
+            document.getElementById('console-logs').innerHTML = '';
+        }
+
+        // Check Authentication
+        async function checkAuth() {
+            log('🔐 Checking authentication status...');
+            const authStatus = document.getElementById('auth-status');
+            
+            const token = localStorage.getItem('authToken');
+            const userData = localStorage.getItem('userData');
+            
+            if (token) {
+                log('✅ Auth token found: ' + token.substring(0, 20) + '...');
+                authStatus.innerHTML = '<div class="status success">✅ Auth token found</div>';
+                
+                if (userData) {
+                    try {
+                        const user = JSON.parse(userData);
+                        log('✅ User data found: ' + user.email);
+                        authStatus.innerHTML += '<div class="status success">✅ User data: ' + user.email + '</div>';
+                    } catch (e) {
+                        log('❌ Invalid user data');
+                        authStatus.innerHTML += '<div class="status error">❌ Invalid user data</div>';
+                    }
+                } else {
+                    log('⚠️ No user data found');
+                    authStatus.innerHTML += '<div class="status warning">⚠️ No user data found</div>';
+                }
+            } else {
+                log('❌ No auth token found');
+                authStatus.innerHTML = '<div class="status error">❌ No auth token found. Please log in first.</div>';
+            }
+        }
+
+        // Test Login
+        async function testLogin() {
+            log('🔐 Testing login functionality...');
+            const authStatus = document.getElementById('auth-status');
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    log('⚠️ No auth token found for login test');
+                    authStatus.innerHTML += '<div class="status warning">⚠️ No auth token found for login test</div>';
+                    return;
+                }
+
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Login test successful: ' + data.email);
+                    authStatus.innerHTML += '<div class="status success">✅ Login test successful: ' + data.email + '</div>';
+                } else {
+                    log('❌ Login test failed: ' + response.status);
+                    authStatus.innerHTML += '<div class="status error">❌ Login test failed: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                log('❌ Login test error: ' + error.message);
+                authStatus.innerHTML += '<div class="status error">❌ Login test error: ' + error.message + '</div>';
+            }
+        }
+
+        // Test Server
+        async function testServer() {
+            log('🌐 Testing server connection...');
+            const serverStatus = document.getElementById('server-status');
+            
+            try {
+                const response = await fetch('/');
+                if (response.ok) {
+                    log('✅ Server is running and responding');
+                    serverStatus.innerHTML = '<div class="status success">✅ Server is running and responding</div>';
+                } else {
+                    log('❌ Server responded with status: ' + response.status);
+                    serverStatus.innerHTML = '<div class="status error">❌ Server error: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                log('❌ Server connection failed: ' + error.message);
+                serverStatus.innerHTML = '<div class="status error">❌ Server connection failed: ' + error.message + '</div>';
+            }
+        }
+
+        // Test API Endpoints
+        async function testAPI() {
+            log('🌐 Testing API endpoints...');
+            const serverStatus = document.getElementById('server-status');
+            
+            const endpoints = [
+                '/api/auth/me',
+                '/api/user/profile',
+                '/api/user/privacy-settings',
+                '/api/user/remember-me-settings',
+                '/api/mfa/status'
+            ];
+            
+            let results = [];
+            
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint, {
+                        headers: {
+                            'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        log('✅ ' + endpoint + ' - OK');
+                        results.push('✅ ' + endpoint);
+                    } else {
+                        log('❌ ' + endpoint + ' - ' + response.status);
+                        results.push('❌ ' + endpoint + ' (' + response.status + ')');
+                    }
+                } catch (error) {
+                    log('❌ ' + endpoint + ' - Error: ' + error.message);
+                    results.push('❌ ' + endpoint + ' (Error)');
+                }
+            }
+            
+            serverStatus.innerHTML = '<div class="status info">API Test Results:</div>' + 
+                results.map(r => '<div class="status ' + (r.includes('✅') ? 'success' : 'error') + '">' + r + '</div>').join('');
+        }
+
+        // Test Profile API
+        async function testProfileAPI() {
+            log('👤 Testing Profile API...');
+            const featuresStatus = document.getElementById('features-status');
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    log('❌ No auth token for Profile API test');
+                    featuresStatus.innerHTML = '<div class="status error">❌ No auth token found</div>';
+                    return;
+                }
+
+                const response = await fetch('/api/user/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    log('✅ Profile API working: ' + data.user.email);
+                    featuresStatus.innerHTML = '<div class="status success">✅ Profile API working</div>';
+                } else {
+                    log('❌ Profile API failed: ' + response.status);
+                    featuresStatus.innerHTML = '<div class="status error">❌ Profile API failed: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                log('❌ Profile API error: ' + error.message);
+                featuresStatus.innerHTML = '<div class="status error">❌ Profile API error: ' + error.message + '</div>';
+            }
+        }
+
+        // Test Privacy API
+        async function testPrivacyAPI() {
+            log('🔒 Testing Privacy API...');
+            const featuresStatus = document.getElementById('features-status');
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    log('❌ No auth token for Privacy API test');
+                    return;
+                }
+
+                const response = await fetch('/api/user/privacy-settings', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    log('✅ Privacy API working');
+                    featuresStatus.innerHTML += '<div class="status success">✅ Privacy API working</div>';
+                } else {
+                    log('❌ Privacy API failed: ' + response.status);
+                    featuresStatus.innerHTML += '<div class="status error">❌ Privacy API failed: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                log('❌ Privacy API error: ' + error.message);
+                featuresStatus.innerHTML += '<div class="status error">❌ Privacy API error: ' + error.message + '</div>';
+            }
+        }
+
+        // Test Remember Me API
+        async function testRememberMeAPI() {
+            log('💾 Testing Remember Me API...');
+            const featuresStatus = document.getElementById('features-status');
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    log('❌ No auth token for Remember Me API test');
+                    return;
+                }
+
+                const response = await fetch('/api/user/remember-me-settings', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    log('✅ Remember Me API working');
+                    featuresStatus.innerHTML += '<div class="status success">✅ Remember Me API working</div>';
+                } else {
+                    log('❌ Remember Me API failed: ' + response.status);
+                    featuresStatus.innerHTML += '<div class="status error">❌ Remember Me API failed: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                log('❌ Remember Me API error: ' + error.message);
+                featuresStatus.innerHTML += '<div class="status error">❌ Remember Me API error: ' + error.message + '</div>';
+            }
+        }
+
+        // Test MFA API
+        async function testMFAAPI() {
+            log('🔐 Testing MFA API...');
+            const featuresStatus = document.getElementById('features-status');
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                if (!token) {
+                    log('❌ No auth token for MFA API test');
+                    return;
+                }
+
+                const response = await fetch('/api/mfa/status', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    log('✅ MFA API working');
+                    featuresStatus.innerHTML += '<div class="status success">✅ MFA API working</div>';
+                } else {
+                    log('❌ MFA API failed: ' + response.status);
+                    featuresStatus.innerHTML += '<div class="status error">❌ MFA API failed: ' + response.status + '</div>';
+                }
+            } catch (error) {
+                log('❌ MFA API error: ' + error.message);
+                featuresStatus.innerHTML += '<div class="status error">❌ MFA API error: ' + error.message + '</div>';
+            }
+        }
+
+        // Test Page Links
+        function testPageLinks() {
+            log('🔗 Testing page links...');
+            const pagesStatus = document.getElementById('pages-status');
+            
+            const pages = [
+                '/profile-management.html',
+                '/privacy-settings.html',
+                '/remember-me-settings.html',
+                '/account-management.html',
+                '/mfa-setup.html'
+            ];
+            
+            let results = [];
+            
+            pages.forEach(page => {
+                fetch(page)
+                    .then(response => {
+                        if (response.ok) {
+                            log('✅ ' + page + ' - Accessible');
+                            results.push('✅ ' + page);
+                        } else {
+                            log('❌ ' + page + ' - ' + response.status);
+                            results.push('❌ ' + page + ' (' + response.status + ')');
+                        }
+                    })
+                    .catch(error => {
+                        log('❌ ' + page + ' - Error: ' + error.message);
+                        results.push('❌ ' + page + ' (Error)');
+                    });
+            });
+            
+            setTimeout(() => {
+                pagesStatus.innerHTML = '<div class="status info">Page Accessibility Test:</div>' + 
+                    results.map(r => '<div class="status ' + (r.includes('✅') ? 'success' : 'error') + '">' + r + '</div>').join('');
+            }, 2000);
+        }
+
+        // Auto-run diagnostics on page load
+        window.onload = function() {
+            log('🔧 Diagnostic tool loaded');
+            checkAuth();
+            testServer();
+            testPageLinks();
+        };
+    </script>
+    
+    <!-- Global Navbar JavaScript -->
+    <script src="/js/global-navbar.js"></script>
+</body>
+</html>

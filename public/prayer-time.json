@@ -1,0 +1,22 @@
+// translator-backend/public/prayer-time.json
+{
+  "name": "Islamic Portal",
+  "short_name": "Islamic Portal",
+  "start_url": "/prayer-time.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "description": "A comprehensive Islamic portal for prayer times, notifications, and more.",
+  "icons": [
+    {
+      "src": "/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

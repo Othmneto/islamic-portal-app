@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Translation - Imam (Speaker)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/main.css">
+    <link rel="stylesheet" href="/css/global-navbar.css">
+    <style>
+        :root {
+            --primary-color: #10b981;
+            --primary-hover: #059669;
+            --danger-color: #ef4444;
+            --warning-color: #f59e0b;
+            --info-color: #3b82f6;
+            --success-color: #10b981;
+            --bg-primary: #1f2937;
+            --bg-secondary: #111827;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #374151;
+        }
+
+        body {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 80px auto 20px;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin: 0 0 10px;
+            color: var(--primary-color);
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .main-card {
+            background: var(--bg-primary);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            margin-bottom: 20px;
+        }
+
+        .session-setup {
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .session-id-display {
+            background: var(--info-color);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .session-id-display.active {
+            display: block;
+        }
+
+        .session-id {
+            font-size: 3rem;
+            font-weight: bold;
+            letter-spacing: 0.2em;
+            margin: 10px 0;
+        }
+
+        .qr-code {
+            margin: 20px auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .waveform-container {
+            background: var(--bg-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .waveform {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 100%;
+        }
+
+        .waveform-bar {
+            width: 4px;
+            background: var(--primary-color);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .status-indicator.connected {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success-color);
+        }
+
+        .status-indicator.disconnected {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger-color);
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: currentColor;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .translation-feed {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border-radius: 8px;
+        }
+
+        .translation-item {
+            padding: 15px;
+            background: var(--bg-primary);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .translation-original {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+        }
+
+        .translation-targets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .translation-target {
+            padding: 6px 12px;
+            background: var(--info-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .copy-btn {
+            background: var(--info-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-left: 10px;
+        }
+
+        .copy-btn:hover {
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .session-id {
+                font-size: 2rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Global Navbar -->
+    <div id="navbar-placeholder"></div>
+
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-microphone"></i> Live Translation - Imam</h1>
+            <p>Start broadcasting and translate your speech in real-time for worshippers</p>
+        </div>
+
+        <!-- Session Setup -->
+        <div class="main-card" id="setupSection">
+            <h2>Create Translation Session</h2>
+            <div class="session-setup">
+                <div class="form-group">
+                    <label for="sessionTitle">Session Title</label>
+                    <input type="text" id="sessionTitle" placeholder="e.g., Friday Khutbah">
+                </div>
+
+                <div class="form-group">
+                    <label for="sourceLanguage">Speaking Language</label>
+                    <select id="sourceLanguage">
+                        <option value="ar">Arabic (العربية)</option>
+                        <option value="en">English</option>
+                        <option value="ur">Urdu (اردو)</option>
+                        <option value="tr">Turkish (Türkçe)</option>
+                        <option value="id">Indonesian (Bahasa Indonesia)</option>
+                        <option value="ms">Malay (Bahasa Melayu)</option>
+                        <option value="bn">Bengali (বাংলা)</option>
+                        <option value="fr">French (Français)</option>
+                        <option value="de">German (Deutsch)</option>
+                        <option value="es">Spanish (Español)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="sessionDescription">Description (Optional)</label>
+                    <textarea id="sessionDescription" placeholder="Brief description of the session..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="sessionPassword">Password Protection (Optional)</label>
+                    <input type="password" id="sessionPassword" placeholder="Leave empty for public session">
+                </div>
+
+                <button class="btn btn-primary" id="createSessionBtn">
+                    <i class="fas fa-plus-circle"></i> Create Session
+                </button>
+            </div>
+        </div>
+
+        <!-- Active Session -->
+        <div class="main-card hidden" id="activeSession">
+            <!-- Session ID Display -->
+            <div class="session-id-display active">
+                <h3>Session ID</h3>
+                <div class="session-id" id="sessionIdDisplay">ABC-123-XYZ</div>
+                <button class="copy-btn" id="copySessionId">
+                    <i class="fas fa-copy"></i> Copy ID
+                </button>
+                <div class="qr-code" id="qrCode">
+                    <!-- QR code will be generated here -->
+                </div>
+                <p style="color: white; margin-top: 10px;">Share this ID with worshippers to join</p>
+            </div>
+
+            <!-- Status and Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div id="connectionStatus" class="status-indicator disconnected">
+                        <span class="status-dot"></span>
+                        <span>Disconnected</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="activeListeners">0</div>
+                    <div class="stat-label">Active Listeners</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="sessionDuration">00:00</div>
+                    <div class="stat-label">Duration</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="totalTranslations">0</div>
+                    <div class="stat-label">Translations</div>
+                </div>
+            </div>
+
+            <!-- Waveform Visualization -->
+            <div class="waveform-container">
+                <div class="waveform" id="waveform">
+                    <!-- Bars will be generated dynamically -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-row">
+                <button class="btn btn-primary" id="startBroadcastBtn">
+                    <i class="fas fa-play"></i> Start Broadcasting
+                </button>
+                <button class="btn btn-warning hidden" id="pauseBroadcastBtn">
+                    <i class="fas fa-pause"></i> Pause
+                </button>
+                <button class="btn btn-danger" id="endSessionBtn">
+                    <i class="fas fa-stop"></i> End Session
+                </button>
+            </div>
+
+            <!-- Recent Translations -->
+            <h3>Recent Translations</h3>
+            <div class="translation-feed" id="translationFeed">
+                <p style="color: var(--text-secondary); text-align: center;">No translations yet. Start broadcasting to begin.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <!-- Socket.IO client from server -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        console.log('🔍 [Imam] Checking Socket.IO after load:', typeof io !== 'undefined' ? '✅ Loaded' : '❌ Not Loaded');
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script src="/js/global-navbar.js"></script>
+    <script src="/js/navbar-enhancements.js"></script>
+    <script src="/js/liveTranslation/imamInterface.js"></script>
+</body>
+</html>
+

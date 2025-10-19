@@ -1,0 +1,85 @@
+{
+  "value": {
+    "id": "notifications_1760272271766_19ery6mej",
+    "name": "send-push",
+    "data": {
+      "subscription": {
+        "_id": "68eb99130dffdffea5bcbbc2",
+        "userId": "6888c9391815657294913e8d",
+        "subscription": {
+          "endpoint": "https://fcm.googleapis.com/fcm/send/c7e3U3l2TAA:APA91bGS0wS3TB7glAr0JP_BbcbJk8ihkDKoQE2k1zdF7lnVeluu0M9ycAX-ds1fjZlyuBImNRIiuyWPEwNVYqLA19622vB-M233YAGb9d7WNUZQarE5Dp2VlHP8qgb0WCu2P6gnnl77",
+          "expirationTime": null,
+          "keys": {
+            "p256dh": "BDRc8_7rJuZMXoUeq9sr2x9LumIAOQjrnxlseLW5Hp99tAB82pkUXz18L8CYvi575B6lL1v4fkeRsFoC_-RuN20",
+            "auth": "NKFNLLlCfjO0XytbU5sgZA"
+          }
+        },
+        "tz": "Asia/Dubai",
+        "preferences": {
+          "enabled": true,
+          "tz": "Asia/Dubai",
+          "perPrayer": {
+            "fajr": true,
+            "dhuhr": true,
+            "asr": true,
+            "maghrib": true,
+            "isha": true
+          },
+          "method": "auto",
+          "madhab": "auto",
+          "highLatRule": "auto",
+          "audio": {
+            "file": "adhan.mp3",
+            "volume": 1
+          }
+        },
+        "location": {
+          "lat": 25.26428870586797,
+          "lon": 55.3217779422983,
+          "city": "Al Rigga Street, Deira, Al Corniche, Al Muraqqabat, Dubai, United Arab Emirates"
+        },
+        "ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36",
+        "createdAt": "2025-10-12T12:03:31.487Z",
+        "updatedAt": "2025-10-12T12:03:31.487Z",
+        "__v": 0
+      },
+      "payload": {
+        "title": "Test Prayer Notification",
+        "body": "This is a test notification for prayer times",
+        "icon": "/icons/icon-192x192.png",
+        "data": {
+          "url": "/prayer-time.html",
+          "prayer": "test",
+          "timestamp": "2025-10-12T12:31:11.766Z"
+        }
+      }
+    },
+    "options": {
+      "concurrency": 5,
+      "removeOnComplete": true,
+      "removeOnFail": true,
+      "attempts": 3,
+      "backoff": {
+        "type": "exponential",
+        "delay": 2000
+      },
+      "delay": 0
+    },
+    "timestamp": 1760272271766,
+    "status": "completed",
+    "attempts": 1,
+    "maxAttempts": 3,
+    "createdAt": "2025-10-12T12:31:11.766Z",
+    "processedAt": "2025-10-12T12:31:12.691Z",
+    "finishedAt": 1760272272691,
+    "failedReason": null,
+    "result": {
+      "success": true,
+      "jobId": "notifications_1760272271766_19ery6mej"
+    }
+  },
+  "timestamp": 1760272272691,
+  "ttl": null,
+  "category": "queues",
+  "key": "notifications_1760272271766_19ery6mej"
+}

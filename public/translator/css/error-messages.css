@@ -1,0 +1,233 @@
+/* Error and Success Message Styles */
+
+.error-message {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    border: 1px solid #f87171;
+    border-left: 4px solid #ef4444;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.1), 0 2px 4px -1px rgba(239, 68, 68, 0.06);
+    animation: slideInDown 0.3s ease-out;
+    position: relative;
+}
+
+.error-message i.fas.fa-exclamation-triangle {
+    color: #ef4444;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.error-message #error-text {
+    color: #991b1b;
+    font-weight: 500;
+    flex: 1;
+    line-height: 1.5;
+}
+
+.error-close {
+    background: none;
+    border: none;
+    color: #991b1b;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.error-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+}
+
+.error-close:focus {
+    outline: 2px solid #ef4444;
+    outline-offset: 2px;
+}
+
+.error-retry-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 12px;
+    flex-shrink: 0;
+}
+
+.error-retry-btn:hover {
+    background: #dc2626;
+    transform: translateY(-1px);
+}
+
+.error-retry-btn:focus {
+    outline: 2px solid #ef4444;
+    outline-offset: 2px;
+}
+
+.success-message {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border: 1px solid #6ee7b7;
+    border-left: 4px solid #10b981;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1), 0 2px 4px -1px rgba(16, 185, 129, 0.06);
+    animation: slideInDown 0.3s ease-out;
+    position: relative;
+}
+
+.success-message i.fas.fa-check-circle {
+    color: #10b981;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+.success-message #success-text {
+    color: #065f46;
+    font-weight: 500;
+    flex: 1;
+    line-height: 1.5;
+}
+
+.success-close {
+    background: none;
+    border: none;
+    color: #065f46;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.success-close:hover {
+    background: rgba(16, 185, 129, 0.1);
+    color: #047857;
+}
+
+.success-close:focus {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes slideInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideOutUp {
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .error-message,
+    .success-message {
+        padding: 12px 16px;
+        margin: 12px 0;
+    }
+    
+    .error-message #error-text,
+    .success-message #success-text {
+        font-size: 14px;
+    }
+    
+    .error-retry-btn {
+        padding: 6px 12px;
+        font-size: 14px;
+        margin-left: 8px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .error-message {
+        background: #ffffff;
+        border: 2px solid #000000;
+        color: #000000;
+    }
+    
+    .success-message {
+        background: #ffffff;
+        border: 2px solid #000000;
+        color: #000000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .error-message,
+    .success-message {
+        animation: none;
+    }
+    
+    .error-close,
+    .success-close,
+    .error-retry-btn {
+        transition: none;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .error-message {
+        background: linear-gradient(135deg, #7f1d1d 0%, #991b1b 100%);
+        border-color: #dc2626;
+        color: #fecaca;
+    }
+    
+    .error-message #error-text {
+        color: #fecaca;
+    }
+    
+    .error-close {
+        color: #fecaca;
+    }
+    
+    .error-close:hover {
+        background: rgba(239, 68, 68, 0.2);
+    }
+    
+    .success-message {
+        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+        border-color: #10b981;
+        color: #a7f3d0;
+    }
+    
+    .success-message #success-text {
+        color: #a7f3d0;
+    }
+    
+    .success-close {
+        color: #a7f3d0;
+    }
+    
+    .success-close:hover {
+        background: rgba(16, 185, 129, 0.2);
+    }
+}

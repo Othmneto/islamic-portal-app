@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Moon Status</title>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+  <style>
+    .page-header{ text-align:center; margin-bottom:1rem; }
+    .moon-panel{ background:var(--secondary-bg); border:1px solid var(--border-color); border-radius:12px; padding:1.5rem; }
+    .moon-panel h4{ margin:0 0 1rem 0; text-align:center; }
+    .moon-visual{ font-size:4rem; margin:.5rem 0; text-align:center; }
+    .moon-details{ text-align:center; color:var(--text-secondary); }
+    .moon-times{ display:flex; justify-content:center; gap:2rem; margin-top:1rem; }
+    .moon-extra{ display:flex; justify-content:center; gap:2rem; margin-top:.5rem; font-size:.9rem; color:var(--text-secondary); }
+    .pill{ background:var(--tertiary-bg); padding:.6rem .8rem; border-radius:8px; display:inline-block; }
+    .loc{ text-align:center; color:var(--text-secondary); margin:.5rem 0 1rem; }
+  </style>
+  <!-- Include global navbar CSS -->
+  <link rel="stylesheet" href="/css/global-navbar.css">
+  
+  <style>
+    /* Add top padding to account for fixed navbar */
+    .page-content {
+      padding-top: 70px; /* Height of navbar */
+    }
+  </style>
+</head>
+<body>
+  <!-- Global Navbar -->
+  <header class="global-navbar">
+    <nav class="navbar-container">
+      <!-- Logo Section -->
+      <div class="navbar-brand">
+        <a href="/" class="brand-logo">
+          <i class="fas fa-mosque brand-icon"></i>
+          <span class="brand-text">Islamic Portal</span>
+        </a>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="navbar-nav">
+        <ul class="nav-menu">
+          <!-- Core Features -->
+          <li class="nav-item">
+            <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+              <i class="fas fa-language"></i>
+              <span class="nav-text">Translator</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+              <i class="fas fa-mosque"></i>
+              <span class="nav-text">Prayer Times</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+              <i class="fas fa-compass"></i>
+              <span class="nav-text">Qibla</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/moon.html" class="nav-link" data-tooltip="Moon Status" class="nav-link active">
+              <i class="fas fa-moon"></i>
+              <span class="nav-text">Moon</span>
+            </a>
+          </li>
+
+          <!-- Islamic Content -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+              <i class="fas fa-book-open"></i>
+              <span class="nav-text">Content</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/explorer.html" class="dropdown-link">
+                <i class="fas fa-search"></i> Quran Explorer
+              </a></li>
+              <li><a href="/duas.html" class="dropdown-link">
+                <i class="fas fa-hands-praying"></i> Daily Duas
+              </a></li>
+              <li><a href="/names.html" class="dropdown-link">
+                <i class="fas fa-star"></i> 99 Names
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Tools -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+              <i class="fas fa-tools"></i>
+              <span class="nav-text">Tools</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/zakat.html" class="dropdown-link">
+                <i class="fas fa-coins"></i> Zakat Calculator
+              </a></li>
+              <li><a href="/converter.html" class="dropdown-link">
+                <i class="fas fa-calendar-alt"></i> Date Converter
+              </a></li>
+              <li><a href="/calendar.html" class="dropdown-link">
+                <i class="fas fa-calendar"></i> Islamic Calendar
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Analytics & History -->
+          <li class="nav-item">
+            <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span class="nav-text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+              <i class="fas fa-history"></i>
+              <span class="nav-text">History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="navbar-controls">
+        <!-- Search -->
+        <div class="search-container">
+          <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="search-dropdown" id="search-dropdown">
+            <input type="text" placeholder="Search..." class="search-input" id="global-search">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification-container">
+          <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No new notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="user-menu-container">
+          <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+            <div class="user-avatar" id="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="user-name">Guest</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-avatar-large" id="user-avatar-large">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-details">
+                <div class="user-name-large" id="user-name-large">Guest User</div>
+                <div class="user-email" id="user-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <ul class="user-menu-list">
+              <li><a href="/profile.html" class="user-menu-link">
+                <i class="fas fa-user"></i> Profile
+              </a></li>
+              <li><a href="/settings.html" class="user-menu-link">
+                <i class="fas fa-cog"></i> Settings
+              </a></li>
+              <li><a href="/security-dashboard.html" class="user-menu-link">
+                <i class="fas fa-shield-alt"></i> Security
+              </a></li>
+              <li class="user-menu-divider"></li>
+              <li><a href="/login.html" class="user-menu-link" id="login-link">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </a></li>
+              <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+          <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+            <i class="fas fa-sun theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon-dark"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <div class="mobile-nav-brand">
+            <i class="fas fa-mosque"></i>
+            <span>Islamic Portal</span>
+          </div>
+          <button class="mobile-nav-close" id="mobile-nav-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-nav-body">
+          <!-- Mobile navigation will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <header class="page-header">
+      <h1><i class="fa-solid fa-moon"></i> <span data-i18n-key="moon_today">Moon Today</span></h1>
+      <p style="margin:.5rem 0; display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap;">
+        <a href="/index.html">← Portal</a><span>|</span>
+        <a href="/prayer-time.html">Prayer Times</a><span>|</span>
+        <a href="/qibla.html">Qibla Direction</a>
+      </p>
+    </header>
+
+    <div class="loc"><i class="fa-solid fa-location-dot"></i> <span id="m-status">Detecting location…</span></div>
+
+    <section class="moon-panel">
+      <h4 data-i18n-key="moon_today">Moon Today</h4>
+      <div id="moon-visual" class="moon-visual">🌘</div>
+      <div id="moon-details" class="moon-details">—</div>
+
+      <div class="moon-times">
+        <div><strong data-i18n-key="moon_rise">Rise:</strong> <span id="m-rise">—:—</span></div>
+        <div><strong data-i18n-key="moon_set">Set:</strong> <span id="m-set">—:—</span></div>
+      </div>
+
+      <div class="moon-extra">
+        <div><strong data-i18n-key="moon_age">Age:</strong> <span id="m-age">—</span></div>
+        <div><strong data-i18n-key="moon_distance">Distance:</strong> <span id="m-dist">—</span> km</div>
+      </div>
+    </section>
+  </div>
+
+  <script src="common.js"></script>
+  <script src="moon.js"></script>
+
+  <!-- Global Navbar JavaScript -->
+  <script src="/js/global-navbar.js"></script>
+  
+  <script>
+    // Initialize navbar when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.GlobalNavbar) {
+        window.globalNavbar = new window.GlobalNavbar();
+      }
+    });
+  </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
+</body>
+</html>

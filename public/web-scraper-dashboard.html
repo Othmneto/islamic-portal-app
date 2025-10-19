@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Scraper Dashboard - Islamic Content Monitor</title>
+    <link rel="stylesheet" href="/css/global-navbar.css">
+    <link rel="stylesheet" href="/css/web-scraper-dashboard.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🕷️ Islamic Content Scraper Dashboard</h1>
+            <p>Real-time monitoring and data enhancement system</p>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Statistics Card -->
+            <div class="card">
+                <h3>📊 System Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalTerms">0</span>
+                        <div class="stat-label">Total Terms</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="totalLanguages">0</span>
+                        <div class="stat-label">Languages</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="successfulScrapes">0</span>
+                        <div class="stat-label">Successful Scrapes</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number" id="failedScrapes">0</span>
+                        <div class="stat-label">Failed Scrapes</div>
+                    </div>
+                </div>
+                
+                <div class="data-usage">
+                    <h4>📈 Data Usage & Enhancement</h4>
+                    <div class="usage-item">
+                        <span class="usage-label">Translation Accuracy Boost</span>
+                        <span class="usage-value" id="accuracyBoost">0%</span>
+                    </div>
+                    <div class="usage-item">
+                        <span class="usage-label">New Islamic Terms Added</span>
+                        <span class="usage-value" id="newTerms">0</span>
+                    </div>
+                    <div class="usage-item">
+                        <span class="usage-label">Content Sources Active</span>
+                        <span class="usage-value" id="activeSources">0/20</span>
+                    </div>
+                    <div class="usage-item">
+                        <span class="usage-label">Last Update</span>
+                        <span class="usage-value" id="lastUpdate">Never</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Panel -->
+            <div class="card">
+                <h3>🎮 Control Panel</h3>
+                <div class="control-panel">
+                    <div style="margin-bottom: 20px;">
+                        <span class="status-indicator status-idle" id="statusIndicator"></span>
+                        <span id="statusText">System Idle</span>
+                    </div>
+                    
+                    <button class="btn" id="startBtn" onclick="startScraping()">
+                        🚀 Start Scraping
+                    </button>
+                    <button class="btn stop" id="stopBtn" onclick="stopScraping()" disabled>
+                        ⏹️ Stop Scraping
+                    </button>
+                    <button class="btn" id="refreshBtn" onclick="refreshStatus()">
+                        🔄 Refresh Status
+                    </button>
+                </div>
+
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+                </div>
+                <div style="text-align: center; margin-top: 10px; font-size: 0.9rem; color: #718096;">
+                    <span id="progressText">Ready to start</span>
+                </div>
+            </div>
+
+            <!-- Detailed Metrics -->
+            <div class="card">
+                <h3>📊 Detailed Metrics</h3>
+                <div class="metrics-grid">
+                    <div class="metric-section">
+                        <h4>📚 Terminology Database</h4>
+                        <div id="termDetails" class="metric-details">
+                            <div class="metric-item">
+                                <span class="metric-label">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="metric-section">
+                        <h4>🕷️ Web Scraper</h4>
+                        <div id="scraperDetails" class="metric-details">
+                            <div class="metric-item">
+                                <span class="metric-label">Loading...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Real-time Logs -->
+            <div class="card logs-container">
+                <h3>📝 Real-time Activity Logs</h3>
+                <button class="clear-logs" onclick="clearLogs()">Clear Logs</button>
+                <div id="logsContainer">
+                    <div class="log-entry info">
+                        <span class="log-timestamp">[System]</span>
+                        <span class="log-message">Dashboard initialized. Ready to monitor Islamic content scraping.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/web-scraper-dashboard.js"></script>
+</body>
+</html>

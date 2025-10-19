@@ -1,0 +1,37 @@
+{
+  "timestamp": "2025-10-03T07:52:46.623Z",
+  "stats": {
+    "totalSites": 0,
+    "successfulScrapes": 21,
+    "failedScrapes": 3,
+    "newTerms": 13,
+    "updatedTerms": 0,
+    "lastScrape": "2025-10-03T07:51:01.851Z"
+  },
+  "summary": {
+    "totalSites": 0,
+    "successRate": "87.50%",
+    "newTermsFound": 13,
+    "databaseStats": {
+      "totalTerms": 45,
+      "supportedLanguages": [
+        "en",
+        "fr",
+        "es",
+        "de",
+        "tr",
+        "ur",
+        "hi",
+        "bn",
+        "id",
+        "ms",
+        "sw",
+        "zh",
+        "ru",
+        "fa",
+        "ar"
+      ],
+      "totalTranslations": 474
+    }
+  }
+}

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zakat Calculator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="main.css">
+    <style>
+        .page-header { text-align: center; margin-bottom: 2rem; }
+        #zakat-form-container, #zakat-results-container {
+            background-color: var(--secondary-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+        }
+        .accordion {
+            background-color: var(--tertiary-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            padding: 18px;
+            width: 100%;
+            text-align: left;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            outline: none;
+            transition: 0.4s;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+        .accordion:after {
+            content: '\002B'; /* Plus sign */
+            color: var(--text-secondary);
+            font-weight: bold;
+            float: right;
+        }
+        .accordion.active:after { content: "\2212"; }
+        .panel {
+            padding: 0 18px;
+            background-color: var(--secondary-bg);
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.2s ease-out;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .panel-content { padding: 1.5rem 0.5rem; }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .input-group label {
+            flex: 1 1 200px;
+            text-align: left;
+            color: var(--text-secondary);
+        }
+        .input-group input, .input-group select {
+            flex: 2 1 300px;
+            padding: 10px;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1.1rem;
+        }
+        .sub-group {
+             display: grid;
+             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+             gap: 1rem;
+        }
+        .dynamic-row { display: flex; gap: 1rem; margin-bottom: 0.5rem; align-items: center; }
+        .dynamic-row input { flex-grow: 1; }
+        .dynamic-add-btn, .dynamic-remove-btn { font-size: 1.5rem; cursor: pointer; color: var(--accent-color); padding: 0 5px; }
+        .dynamic-remove-btn { color: var(--danger-color); }
+        #calculate-btn, #recalculate-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            background-color: #59771D; /* Color from reference site */
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 2rem;
+            color: white;
+        }
+        .results-summary { list-style-type: none; padding: 0; margin-top: 1rem; }
+        .results-summary li { display: flex; justify-content: space-between; padding: 1rem; border-bottom: 1px solid var(--border-color); flex-wrap: wrap; }
+        .results-summary li:last-child { border-bottom: none; }
+        .results-summary .final-zakat { font-size: 1.5rem; font-weight: bold; text-align: center; display: block; background-color: var(--accent-color); color: white; padding: 1rem; border-radius: 8px; }
+        .result-value { display: flex; gap: 0.5rem; font-weight: bold; }
+    </style>
+  <!-- Include global navbar CSS -->
+  <link rel="stylesheet" href="/css/global-navbar.css">
+  
+  <style>
+    /* Add top padding to account for fixed navbar */
+    .page-content {
+      padding-top: 70px; /* Height of navbar */
+    }
+  </style>
+</head>
+<body>
+  <!-- Global Navbar -->
+  <header class="global-navbar">
+    <nav class="navbar-container">
+      <!-- Logo Section -->
+      <div class="navbar-brand">
+        <a href="/" class="brand-logo">
+          <i class="fas fa-mosque brand-icon"></i>
+          <span class="brand-text">Islamic Portal</span>
+        </a>
+      </div>
+
+      <!-- Main Navigation -->
+      <div class="navbar-nav">
+        <ul class="nav-menu">
+          <!-- Core Features -->
+          <li class="nav-item">
+            <a href="/translator/text-translator" class="nav-link" data-tooltip="AI-Powered Translation">
+              <i class="fas fa-language"></i>
+              <span class="nav-text">Translator</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/prayer-time.html" class="nav-link" data-tooltip="Prayer Times & Qibla">
+              <i class="fas fa-mosque"></i>
+              <span class="nav-text">Prayer Times</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/qibla.html" class="nav-link" data-tooltip="Qibla Direction">
+              <i class="fas fa-compass"></i>
+              <span class="nav-text">Qibla</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/moon.html" class="nav-link" data-tooltip="Moon Status">
+              <i class="fas fa-moon"></i>
+              <span class="nav-text">Moon</span>
+            </a>
+          </li>
+
+          <!-- Islamic Content -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Content">
+              <i class="fas fa-book-open"></i>
+              <span class="nav-text">Content</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/explorer.html" class="dropdown-link">
+                <i class="fas fa-search"></i> Quran Explorer
+              </a></li>
+              <li><a href="/duas.html" class="dropdown-link">
+                <i class="fas fa-hands-praying"></i> Daily Duas
+              </a></li>
+              <li><a href="/names.html" class="dropdown-link">
+                <i class="fas fa-star"></i> 99 Names
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Tools -->
+          <li class="nav-item dropdown">
+            <a href="#" class="nav-link dropdown-toggle" data-tooltip="Islamic Tools">
+              <i class="fas fa-tools"></i>
+              <span class="nav-text">Tools</span>
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </a>
+            <ul class="dropdown-menu">
+              <li><a href="/zakat.html" class="dropdown-link">
+                <i class="fas fa-coins"></i> Zakat Calculator
+              </a></li>
+              <li><a href="/converter.html" class="dropdown-link">
+                <i class="fas fa-calendar-alt"></i> Date Converter
+              </a></li>
+              <li><a href="/calendar.html" class="dropdown-link">
+                <i class="fas fa-calendar"></i> Islamic Calendar
+              </a></li>
+            </ul>
+          </li>
+
+          <!-- Analytics & History -->
+          <li class="nav-item">
+            <a href="/analytics.html" class="nav-link" data-tooltip="Analytics Dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span class="nav-text">Analytics</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a href="/history.html" class="nav-link" data-tooltip="Translation History">
+              <i class="fas fa-history"></i>
+              <span class="nav-text">History</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Right Side Controls -->
+      <div class="navbar-controls">
+        <!-- Search -->
+        <div class="search-container">
+          <button class="search-toggle" id="search-toggle" data-tooltip="Search">
+            <i class="fas fa-search"></i>
+          </button>
+          <div class="search-dropdown" id="search-dropdown">
+            <input type="text" placeholder="Search..." class="search-input" id="global-search">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notification-container">
+          <button class="notification-toggle" id="notification-toggle" data-tooltip="Notifications">
+            <i class="fas fa-bell"></i>
+            <span class="notification-badge" id="notification-badge">0</span>
+          </button>
+          <div class="notification-dropdown" id="notification-dropdown">
+            <div class="notification-header">
+              <h4>Notifications</h4>
+              <button class="mark-all-read" id="mark-all-read">Mark all read</button>
+            </div>
+            <div class="notification-list" id="notification-list">
+              <div class="notification-empty">No new notifications</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- User Menu -->
+        <div class="user-menu-container">
+          <button class="user-toggle" id="user-toggle" data-tooltip="User Menu">
+            <div class="user-avatar" id="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="user-name" id="user-name">Guest</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <div class="user-dropdown" id="user-dropdown">
+            <div class="user-info">
+              <div class="user-avatar-large" id="user-avatar-large">
+                <i class="fas fa-user"></i>
+              </div>
+              <div class="user-details">
+                <div class="user-name-large" id="user-name-large">Guest User</div>
+                <div class="user-email" id="user-email">guest@example.com</div>
+              </div>
+            </div>
+            <div class="user-menu-divider"></div>
+            <ul class="user-menu-list">
+              <li><a href="/profile.html" class="user-menu-link">
+                <i class="fas fa-user"></i> Profile
+              </a></li>
+              <li><a href="/settings.html" class="user-menu-link">
+                <i class="fas fa-cog"></i> Settings
+              </a></li>
+              <li><a href="/security-dashboard.html" class="user-menu-link">
+                <i class="fas fa-shield-alt"></i> Security
+              </a></li>
+              <li class="user-menu-divider"></li>
+              <li><a href="/login.html" class="user-menu-link" id="login-link">
+                <i class="fas fa-sign-in-alt"></i> Login
+              </a></li>
+              <li><a href="#" class="user-menu-link" id="logout-link" style="display: none;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle-container">
+          <button class="theme-toggle" id="theme-toggle" data-tooltip="Toggle Theme">
+            <i class="fas fa-sun theme-icon-light"></i>
+            <i class="fas fa-moon theme-icon-dark"></i>
+          </button>
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" id="mobile-nav-overlay">
+      <div class="mobile-nav-content">
+        <div class="mobile-nav-header">
+          <div class="mobile-nav-brand">
+            <i class="fas fa-mosque"></i>
+            <span>Islamic Portal</span>
+          </div>
+          <button class="mobile-nav-close" id="mobile-nav-close">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="mobile-nav-body">
+          <!-- Mobile navigation will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+    <div class="container">
+        <header class="page-header">
+            <h1><i class="fa-solid fa-calculator"></i> Zakat Calculator</h1>
+            <p><a href="/prayertimes.html">← Back to Prayer Times</a></p>
+        </header>
+
+        <div id="zakat-form-container">
+            <div class="zakatcontainer">
+                <div class="input-group">
+                    <label for="currency-select">Currency</label>
+                    <select id="currency-select">
+                        <option value="USD">US Dollar (USD)</option>
+                        <option value="AED" selected>UAE Dirham (AED)</option>
+                        <option value="EGP">Egyptian Pound (EGP)</option>
+                        <option value="SAR">Saudi Riyal (SAR)</option>
+                        <option value="GBP">British Pound (GBP)</option>
+                        <option value="EUR">Euro (EUR)</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label for="nisab-standard">Nisab Standard</label>
+                    <select id="nisab-standard">
+                        <option value="silver">Silver (if you have more than 595g)</option>
+                        <option value="gold">Gold (if you have more than 85g)</option>
+                    </select>
+                </div>
+                <div class="input-group" id="silver-price-group">
+                    <label for="silver-price">Price per gram of Silver</label>
+                    <input type="number" id="silver-price" placeholder="Enter current price" step="any">
+                </div>
+                <div class="input-group" id="gold-price-group" style="display: none;">
+                    <label for="gold-price">Price per gram of Gold (24k)</label>
+                    <input type="number" id="gold-price" placeholder="Enter current price" step="any">
+                </div>
+            </div>
+            <div class="zakatcontainer">
+                 <div class="input-group">
+                    <label for="zakat-year">Zakat Year</label>
+                    <select id="zakat-year"><option value="hijri">Hijri (rate: 2.5%)</option><option value="gregorian">Gregorian (rate: 2.577%)</option></select>
+                </div>
+            </div>
+
+            <button class="accordion">Cash</button>
+            <div class="panel"><div class="panel-content"><div class="input-group"><label>Cash & Bank Balances</label><input type="number" id="cash-assets" placeholder="0.00" step="any"></div></div></div>
+
+            <button class="accordion">Merchandise</button>
+            <div class="panel"><div class="panel-content"><div class="input-group"><label>Value of Business Merchandise/Stock</label><input type="number" id="merchandise" placeholder="0.00" step="any"></div></div></div>
+
+            <button class="accordion">Debts (Receivable/Payable)</button>
+            <div class="panel"><div class="panel-content">
+                <div class="input-group"><label>Debts owed TO YOU (Receivables)</label><input type="number" id="receivables" placeholder="0.00" step="any"></div>
+                <div class="input-group"><label>Debts YOU OWE (Liabilities)</label><input type="number" id="liabilities" placeholder="0.00" step="any"></div>
+            </div></div>
+            
+            <button class="accordion">Gold</button>
+            <div class="panel"><div class="panel-content sub-group">
+                <div class="input-group"><label>Gold 24k (grams)</label><input type="number" id="gold-24" placeholder="0" step="any"></div>
+                <div class="input-group"><label>Gold 22k (grams)</label><input type="number" id="gold-22" placeholder="0" step="any"></div>
+                <div class="input-group"><label>Gold 21k (grams)</label><input type="number" id="gold-21" placeholder="0" step="any"></div>
+                <div class="input-group"><label>Gold 18k (grams)</label><input type="number" id="gold-18" placeholder="0" step="any"></div>
+            </div></div>
+
+            <button class="accordion">Silver</button>
+            <div class="panel"><div class="panel-content"><div class="input-group"><label>Silver (grams)</label><input type="number" id="silver-grams" placeholder="0" step="any"></div></div></div>
+            
+            <button class="accordion">Shares</button>
+            <div class="panel"><div class="panel-content" id="shares-container">
+                <div class="dynamic-row"><input type="text" placeholder="Name of Stock/Share..."><input type="number" placeholder="No. of Shares" step="any"><input type="number" placeholder="Price per Share" step="any"><span class="dynamic-add-btn" data-type="shares">+</span></div>
+            </div></div>
+            
+            <button class="accordion">Investment Funds</button>
+            <div class="panel"><div class="panel-content" id="funds-container">
+                <div class="dynamic-row"><input type="text" placeholder="Name of Fund..."><input type="number" placeholder="No. of Units" step="any"><input type="number" placeholder="Price per Unit" step="any"><span class="dynamic-add-btn" data-type="funds">+</span></div>
+            </div></div>
+
+            <button id="calculate-btn">Show Zakat Result</button>
+        </div>
+
+        <div id="zakat-results-container" style="display: none;">
+             <h3 style="text-align:center; color: var(--accent-color);">Zakat Calculation Summary</h3>
+             <ul class="results-summary">
+                <li><span>Nisab Threshold</span><span class="result-value"><span id="result-nisab">0.00</span> <span class="result-currency"></span></span></li>
+                <li><span>Total Zakatable Wealth</span><span class="result-value"><span id="result-wealth">0.00</span> <span class="result-currency"></span></span></li>
+                <li class="final-zakat" id="final-zakat-box"></li>
+             </ul>
+             <button id="recalculate-btn">Edit Values</button>
+        </div>
+    </div>
+    <script src="zakat.js"></script>
+    <!-- Real-time Service -->
+
+
+  <!-- Global Navbar JavaScript -->
+  <script src="/js/global-navbar.js"></script>
+  
+  <script>
+    // Initialize navbar when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.GlobalNavbar) {
+        window.globalNavbar = new window.GlobalNavbar();
+      }
+    });
+  </script>
+
+    <script src="/js/navbar-enhancements.js"></script>
+</body>
+</html>
