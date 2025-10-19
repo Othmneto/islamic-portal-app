@@ -1,519 +1,252 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Islamic Calendar & Events</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="calendar.css">
-    <link rel="stylesheet" href="./css/calendar-enhanced.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment-hijri/2.1.2/moment-hijri.min.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Islamic Calendar — Modern UI/UX (Production)</title>
+
+  <!-- Google Fonts (keeps the v3 look) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- External production CSS -->
+  <link rel="stylesheet" href="calendar.css" />
+
+  <!-- External production JS -->
+  <script src="calendar.js" defer></script>
 </head>
 <body>
-
-    <div class="container calendar-full-bleed">
-
-        
-        <!-- Enhanced UI Controls -->
-        <div class="enhanced-controls">
-            <!-- View Mode Buttons -->
-            <div class="view-mode-buttons" id="view-mode-buttons">
-                <button class="view-btn active" data-view="month"><i class="fa-solid fa-calendar-days"></i> Month</button>
-                <button class="view-btn" data-view="week"><i class="fa-solid fa-calendar-week"></i> Week</button>
-                <button class="view-btn" data-view="day"><i class="fa-solid fa-calendar-day"></i> Day</button>
-                <button class="view-btn" data-view="year"><i class="fa-solid fa-calendar"></i> Year</button>
-            </div>
-            
-            <!-- Calendar Navigation -->
-            <div class="calendar-navigation">
-                <button id="prev-btn" class="nav-btn"><i class="fa-solid fa-chevron-left"></i></button>
-                <div class="current-period">
-                    <span id="current-period">January 2024</span>
-                </div>
-                <button id="next-btn" class="nav-btn"><i class="fa-solid fa-chevron-right"></i></button>
-                <button id="today-btn" class="today-btn">Today</button>
-            </div>
-            
-            <!-- Calendar Options -->
-            <div class="calendar-options">
-                <select id="calendar-type">
-                    <option value="gregorian">Gregorian</option>
-                    <option value="hijri">Hijri</option>
-                    <option value="both">Both Calendars</option>
-                </select>
-                
-                <select id="timezone-select">
-                    <option value="auto">Auto (Browser)</option>
-                    <option value="UTC">UTC</option>
-                    <option value="America/New_York">New York</option>
-                    <option value="Europe/London">London</option>
-                    <option value="Asia/Dubai">Dubai</option>
-                    <option value="Asia/Riyadh">Riyadh</option>
-                    <option value="Asia/Karachi">Karachi</option>
-                    <option value="Asia/Jakarta">Jakarta</option>
-                </select>
-            </div>
-            
-            <!-- Theme Selector -->
-            <div class="theme-selector" id="theme-selector">
-                <div class="theme-switch-wrapper">
-                    <label class="theme-switch" for="theme-toggle">
-                        <input type="checkbox" id="theme-toggle" />
-                        <span class="slider round"></span>
-                    </label>
-                </div>
-            </div>
-            
-            
-            
-            
-            
-            
+  <!-- ==========================
+       App Bar
+       ========================== -->
+  <header class="app-bar">
+    <div class="bar-inner">
+      <div class="brand">
+        <div class="logo"><span>🕌</span></div>
+        <div>
+          <div style="font-size:15px; color:var(--muted); font-weight:700; letter-spacing:.08em; text-transform:uppercase;">Islamic Portal</div>
+          <div style="font-size:18px; font-weight:800;">Calendar</div>
         </div>
+      </div>
 
-        <!-- Calendar Views -->
-        <div class="calendar-views">
-            <!-- Month View -->
-            <div id="month-view" class="calendar-view active">
-                <div class="calendar-grid">
-                    <div class="day-headers">
-                        <div class="day-header">Sun</div>
-                        <div class="day-header">Mon</div>
-                        <div class="day-header">Tue</div>
-                        <div class="day-header">Wed</div>
-                        <div class="day-header">Thu</div>
-                        <div class="day-header">Fri</div>
-                        <div class="day-header">Sat</div>
-                    </div>
-                    <div id="month-grid" class="month-grid"></div>
-                </div>
-            </div>
+      <div class="bar-spacer"></div>
 
-            <!-- Week View -->
-            <div id="week-view" class="calendar-view">
-                <div class="week-header">
-                    <div class="time-column">Time</div>
-                    <div class="day-columns">
-                        <div class="day-column" data-day="0">Sunday</div>
-                        <div class="day-column" data-day="1">Monday</div>
-                        <div class="day-column" data-day="2">Tuesday</div>
-                        <div class="day-column" data-day="3">Wednesday</div>
-                        <div class="day-column" data-day="4">Thursday</div>
-                        <div class="day-column" data-day="5">Friday</div>
-                        <div class="day-column" data-day="6">Saturday</div>
-                    </div>
-                </div>
-                <div id="week-grid" class="week-grid"></div>
-            </div>
+      <!-- Global search ready to be wired to your data -->
+      <div class="search">
+        <input id="global-search" class="ring" type="text" placeholder="Search events, people, or places…" />
+        <span class="kbd">⌘K</span>
+        <div class="search-results" id="global-search-results"></div>
+      </div>
 
-            <!-- Day View -->
-            <div id="day-view" class="calendar-view">
-                <div class="day-header">
-                    <div class="time-column">Time</div>
-                    <div class="day-column">Today</div>
-                </div>
-                <div id="day-grid" class="day-grid"></div>
-            </div>
-
-            <!-- Year View -->
-            <div id="year-view" class="calendar-view">
-                <div id="year-grid" class="year-grid"></div>
-            </div>
+      <!-- Main toolbar: theme, occasions, reminders, OAuth status, add-event -->
+      <div class="toolbar">
+        <div class="toggle" role="tablist" aria-label="Theme">
+          <button id="theme-dark" class="active" aria-selected="true">Dark</button>
+          <button id="theme-light">Light</button>
         </div>
-
-        <!-- Integration Panel -->
-        <div class="integration-panel">
-            <h3><i class="fa-solid fa-plug"></i> Integrations & Export</h3>
-            
-            <!-- OAuth Sync Status -->
-            <div class="oauth-sync-status">
-                <div class="sync-controls">
-                    <button onclick="syncWithGoogle()" class="sync-btn google-sync">
-                        <i class="fab fa-google"></i> Sync Google
-                    </button>
-                    <button onclick="syncWithMicrosoft()" class="sync-btn microsoft-sync">
-                        <i class="fab fa-microsoft"></i> Sync Microsoft
-                    </button>
-                    <button onclick="fullSync()" class="sync-btn full-sync">
-                        <i class="fas fa-sync"></i> Full Sync
-                    </button>
-                </div>
-                <div class="sync-status">
-                    <div class="google-sync-status">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                    <div class="microsoft-sync-status">
-                        <!-- Will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            
-            <div class="integration-actions">
-                <div class="integration-status">
-                    <span id="sync-status" class="status-indicator">Not Connected</span>
-                </div>
-                <div class="export-import-buttons">
-                    <button id="export-json-btn" class="export-btn" title="Export as JSON">
-                        <i class="fa-solid fa-download"></i> JSON
-                    </button>
-                    <button id="export-csv-btn" class="export-btn" title="Export as CSV">
-                        <i class="fa-solid fa-file-csv"></i> CSV
-                    </button>
-                    <button id="export-ics-btn" class="export-btn" title="Export as iCal">
-                        <i class="fa-solid fa-calendar"></i> iCal
-                    </button>
-                    <button id="import-btn" class="import-btn" title="Import Calendar">
-                        <i class="fa-solid fa-upload"></i> Import
-                    </button>
-                    <input type="file" id="import-file" accept=".json" style="display: none;">
-                </div>
-            </div>
-            
-            <div class="integration-grid">
-
-                <!-- Email Integration -->
-                <div class="integration-card" id="email-sync-card">
-                    <div class="integration-icon">
-                        <i class="fa-solid fa-envelope"></i>
-                    </div>
-                    <div class="integration-info">
-                        <h4>Email Integration</h4>
-                        <p>Gmail & Outlook calendar sync via OAuth</p>
-                        
-                        <!-- Connection Status -->
-                        <div class="connection-status" id="email-connection-status">
-                            <div class="status-line">
-                                <span class="status-label">Status:</span>
-                                <span class="status-value" id="email-status-text">Checking...</span>
-                            </div>
-                            <div class="status-line" id="email-details" style="display: none;">
-                                <span class="status-label">Email:</span>
-                                <span class="status-value" id="email-address">-</span>
-                            </div>
-                            <div class="status-line" id="email-provider-line" style="display: none;">
-                                <span class="status-label">Provider:</span>
-                                <span class="status-value" id="email-provider">-</span>
-                            </div>
-                            <div class="status-line" id="email-last-sync-line" style="display: none;">
-                                <span class="status-label">Last Sync:</span>
-                                <span class="status-value" id="email-last-sync">-</span>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
-                        <div class="integration-actions">
-                            <button id="email-sync-btn" class="integration-btn">Connect with OAuth</button>
-                            <button id="manual-import-btn" class="integration-btn secondary">Manual Import</button>
-                            <div class="integration-controls" id="email-controls" style="display: none;">
-                                <button class="settings-btn" onclick="openEmailSettings()" title="Settings">
-                                    <i class="fa-solid fa-cog"></i>
-                                    <span>Settings</span>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
+        <a class="btn ghost" href="#" id="go-today">Today</a>
+        <button class="btn ghost" id="open-occasions">Occasions</button>
+        <button class="btn ghost" id="open-reminders">Prayer Reminders</button>
+        <div class="oauth-mini" id="oauth-status">
+          <span class="pill-status disconnected" id="oauth-google-status" data-provider="google"><span class="dot"></span>Google</span>
+          <span class="pill-status disconnected" id="oauth-microsoft-status" data-provider="microsoft"><span class="dot"></span>Microsoft</span>
         </div>
-
-        <!-- Event Management Panel -->
-        <div class="event-panel">
-            <h3><i class="fa-solid fa-list"></i> Events & Reminders</h3>
-            <div class="event-actions">
-                <button id="sync-all-btn" class="sync-btn"><i class="fa-solid fa-sync"></i> Sync All</button>
-                <button id="add-event-btn" class="add-btn"><i class="fa-solid fa-plus"></i> Add Event</button>
-            </div>
-            
-            <div class="event-filters">
-                <input type="text" id="event-search" placeholder="Search events...">
-                <select id="event-category-filter">
-                    <option value="">All Categories</option>
-                    <option value="prayer">Prayer Times</option>
-                    <option value="islamic">Islamic Events</option>
-                    <option value="personal">Personal</option>
-                    <option value="reminder">Reminders</option>
-                    <option value="holiday">Holidays</option>
-                </select>
-            </div>
-            
-            <div id="events-list" class="events-list"></div>
-        </div>
-
-
-
-        <!-- Event Modal -->
-        <div id="event-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 id="modal-title">Add New Event</h3>
-                    <button class="close-btn" id="close-modal">&times;</button>
-                </div>
-                <form id="event-form" class="event-form">
-                    <div class="form-group">
-                        <label for="event-title">Event Title</label>
-                        <input type="text" id="event-title" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="event-description">Description</label>
-                        <textarea id="event-description" rows="3"></textarea>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="event-start-date">Start Date</label>
-                            <input type="date" id="event-start-date" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="event-start-time">Start Time</label>
-                            <input type="time" id="event-start-time">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="event-end-date">End Date</label>
-                            <input type="date" id="event-end-date">
-                        </div>
-                        <div class="form-group">
-                            <label for="event-end-time">End Time</label>
-                            <input type="time" id="event-end-time">
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="event-category">Category</label>
-                        <select id="event-category">
-                            <option value="personal">Personal</option>
-                            <option value="prayer">Prayer</option>
-                            <option value="islamic">Islamic Event</option>
-                            <option value="reminder">Reminder</option>
-                            <option value="holiday">Holiday</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="event-repeat">Repeat</label>
-                        <select id="event-repeat">
-                            <option value="none">No Repeat</option>
-                            <option value="daily">Daily</option>
-                            <option value="weekly">Weekly</option>
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Recurrence Options (hidden by default) -->
-                    <div class="form-group" id="recurrence-options" style="display: none;">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="recurrence-end-date">End Date (Optional)</label>
-                                <input type="date" id="recurrence-end-date">
-                            </div>
-                            <div class="form-group">
-                                <label for="recurrence-count">Number of Occurrences</label>
-                                <input type="number" id="recurrence-count" min="1" max="365">
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="meeting-type">Meeting Type</label>
-                        <select id="meeting-type">
-                            <option value="none">No Meeting</option>
-                            <option value="teams">Microsoft Teams</option>
-                            <option value="google-meet">Google Meet</option>
-                            <option value="webex">Cisco Webex</option>
-                            <option value="custom">Custom Link</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group" id="meeting-link-group" style="display: none;">
-                        <label for="meeting-link">Meeting Link</label>
-                        <input type="url" id="meeting-link" placeholder="https://...">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="event-reminder"> Set Reminder
-                        </label>
-                    </div>
-                    
-                    <!-- Islamic Event Options -->
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="islamic-event"> Islamic Event
-                        </label>
-                    </div>
-                    
-                    <div class="form-group" id="prayer-time-group" style="display: none;">
-                        <label for="prayer-time">Prayer Time</label>
-                        <select id="prayer-time">
-                            <option value="">Select Prayer Time</option>
-                            <option value="fajr">Fajr</option>
-                            <option value="dhuhr">Dhuhr</option>
-                            <option value="asr">Asr</option>
-                            <option value="maghrib">Maghrib</option>
-                            <option value="isha">Isha</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Template Options -->
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="save-as-template"> Save as Template
-                        </label>
-                    </div>
-                    
-                    <div class="form-group" id="template-category-group" style="display: none;">
-                        <label for="template-category">Template Category</label>
-                        <select id="template-category">
-                            <option value="personal">Personal</option>
-                            <option value="work">Work</option>
-                            <option value="prayer">Prayer</option>
-                            <option value="islamic">Islamic Event</option>
-                            <option value="reminder">Reminder</option>
-                            <option value="holiday">Holiday</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>
-                            <input type="checkbox" id="send-email"> Send Email Invitation
-                        </label>
-                    </div>
-                    
-                    <div class="form-actions">
-                        <button type="button" id="cancel-event" class="btn-secondary">Cancel</button>
-                        <button type="submit" class="btn-primary">Save Event</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Location Modal -->
-        <div id="location-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Change Location</h3>
-                    <button class="close-btn" id="close-location-modal">&times;</button>
-                </div>
-                <div class="location-form">
-                    <div class="form-group">
-                        <label for="location-search">Search Location</label>
-                        <input type="text" id="location-search" placeholder="Enter city or address...">
-                        <div id="location-suggestions" class="location-suggestions"></div>
-                    </div>
-                    <div class="form-actions">
-                        <button type="button" id="use-current-location" class="btn-secondary">Use Current Location</button>
-                        <button type="button" id="save-location" class="btn-primary">Save Location</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Email Integration Modal -->
-        <div id="email-sync-modal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3>Email Calendar Integration</h3>
-                    <button class="close-btn" id="close-email-sync-modal">&times;</button>
-                </div>
-                <div class="integration-setup">
-                    <!-- Connected Status (shown when connected) -->
-                    <div id="email-connected-status" class="connected-status" style="display: none;">
-                        <div class="status-header">
-                            <i class="fa-solid fa-check-circle status-icon connected"></i>
-                            <h4>Email Integration Connected</h4>
-                        </div>
-                        <div class="status-details">
-                            <div class="provider-info">
-                                <span class="provider-label">Provider:</span>
-                                <span id="connected-email-provider" class="provider-name">-</span>
-                            </div>
-                            <div class="last-sync-info">
-                                <span class="sync-label">Last Sync:</span>
-                                <span id="connected-email-last-sync" class="sync-time">-</span>
-                            </div>
-                        </div>
-                        <div class="connected-actions">
-                            <div class="sync-buttons">
-                                <button type="button" id="sync-to-email" class="btn-primary">
-                                    <i class="fa-solid fa-upload"></i>
-                                    Sync to Email
-                                </button>
-                                <button type="button" id="sync-from-email" class="btn-primary">
-                                    <i class="fa-solid fa-download"></i>
-                                    Sync from Email
-                                </button>
-                                <button type="button" id="two-way-sync" class="btn-success">
-                                    <i class="fa-solid fa-sync"></i>
-                                    Two-Way Sync
-                                </button>
-                            </div>
-                            <div class="connection-buttons">
-                                <button type="button" id="test-email-connection" class="btn-secondary">Test Connection</button>
-                                <button type="button" id="disconnect-email" class="btn-danger">Disconnect</button>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Setup Flow (shown when not connected) -->
-                    <div id="email-setup-flow">
-                        <div class="setup-step">
-                            <h4><i class="fa-solid fa-envelope"></i> Choose Email Provider</h4>
-                            <p>Select your email provider to connect via OAuth authentication:</p>
-                            <div class="email-options">
-                                <button class="email-btn" data-provider="gmail">
-                                    <i class="fa-brands fa-google"></i>
-                                    <span>Gmail</span>
-                                </button>
-                                <button class="email-btn" data-provider="outlook">
-                                    <i class="fa-brands fa-microsoft"></i>
-                                    <span>Outlook</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="setup-step" id="oauth-email-setup" style="display: none;">
-                            <h4><i class="fa-solid fa-shield-alt"></i> OAuth Authentication</h4>
-                            <div class="oauth-info">
-                                <p>Click the button below to authenticate with your email provider:</p>
-                                <button id="oauth-email-auth-btn" class="btn-primary oauth-btn">
-                                    <i class="fa-solid fa-lock"></i>
-                                    Authenticate with OAuth
-                                </button>
-                                <div class="oauth-status" id="oauth-email-status" style="display: none;">
-                                    <i class="fa-solid fa-check-circle"></i>
-                                    <span>Authentication successful!</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="form-actions">
-                            <button type="button" id="test-email-sync" class="btn-secondary">Test Connection</button>
-                            <button type="button" id="save-email-sync" class="btn-primary">Save Settings</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-
-        <!-- Notification -->
-        <div id="notification" class="notification"></div>
+        <button class="btn primary" id="add-event">+ Add Event</button>
+      </div>
     </div>
+  </header>
 
-    <script src="calendar.js"></script>
-    <!-- Real-time Service -->
+  <!-- ==========================
+       Main Content Area
+       ========================== -->
+  <main class="wrap">
+    <!-- Calendar Surface (IDs match your scripts) -->
+    <section id="calendar" class="main card fade-in">
+      <div class="calendar-surface">
+        <!-- Header: view switch + period navigator + calendar type -->
+        <div class="calendar-header">
+          <div class="period">
+            <div class="toggle" role="tablist" aria-label="View">
+              <button class="view-btn active" id="view-month" data-view="month">Month</button>
+              <button class="view-btn" id="view-week" data-view="week">Week</button>
+              <button class="view-btn" id="view-day" data-view="day">Day</button>
+              <button class="view-btn" id="view-year" data-view="year">Year</button>
+            </div>
+            <div class="nav">
+              <button class="icon-btn" id="prev-button" data-nav="prev" aria-label="Previous">⟨</button>
+              <div class="pill" id="period-label">October 2025</div>
+              <button class="icon-btn" id="next-button" data-nav="next" aria-label="Next">⟩</button>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <div class="select" style="min-width: 160px;">
+              <select id="calendarType" aria-label="Calendar type">
+                <option value="both" selected>Both calendars</option>
+                <option value="gregorian">Gregorian</option>
+                <option value="hijri">Hijri</option>
+              </select>
+            </div>
+            <div class="pill" id="today-hijri" title="Hijri date today">11 Rabi' al-Thani 1447 AH</div>
+          </div>
+        </div>
 
+        <!-- Month grid preview (your month renderer can override this) -->
+        <div class="month-grid" id="month-grid">
+          <div class="day" data-date="2025-10-05"><div class="g-num">5</div><div class="h-num">2 / 03</div>
+            <div class="today-ring"></div>
+            <div class="events">
+              <div class="event-pill" data-id="fajr-514"><span class="cat prayer"></span>Fajr • 05:14</div>
+              <div class="event-pill" data-id="standup"><span class="cat personal"></span>Team Standup</div>
+            </div>
+          </div>
+          <div class="day" data-date="2025-10-08"><div class="g-num">8</div><div class="h-num">5 / 03</div>
+            <div class="events"><div class="event-pill" data-id="mawlid-observed"><span class="cat holiday"></span>Mawlid (Observed)</div></div>
+          </div>
+          <div class="day" data-date="2025-10-14"><div class="g-num">14</div><div class="h-num">11 / 03</div>
+            <div class="events"><div class="event-pill" data-id="client-demo"><span class="cat personal"></span>Client Demo</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
 
+    <!-- Right rail with today list and prayer times -->
+    <aside class="right card fade-in">
+      <div class="card-header">
+        <div style="font-weight:700;">Today in Dubai</div>
+        <span class="pill" id="today-label">Sat • 11 Oct 2025</span>
+      </div>
+      <div class="card-body">
+        <div class="list" id="today-list" style="margin-bottom:16px;"></div>
+        <div class="row" style="margin-bottom: 12px; gap:8px;">
+          <button class="btn ghost" id="quick-occasions">View Occasions</button>
+          <button class="btn ghost" id="quick-reminders">Email Reminders</button>
+        </div>
+        <div class="card-header" style="margin: -14px -16px 10px;">
+          <div style="font-weight:700;">Prayer times</div>
+          <span class="pill" id="tz-label">Asia/Dubai</span>
+        </div>
+        <div class="prayers" id="prayer-times">
+          <div class="p prayer-time"><h5 class="prayer-name">Fajr</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Sunrise</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Dhuhr</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Asr</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Maghrib</h5><div class="t prayer-time-value">--:--</div></div>
+          <div class="p prayer-time"><h5 class="prayer-name">Isha</h5><div class="t prayer-time-value">--:--</div></div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer>
+    <div>Production build • External CSS/JS, keeps your latest UI.</div>
+    <div class="pill">Keyboard: ← → • T • 1‑4</div>
+  </footer>
+
+  <!-- ==========================
+       Modals (Occasions, Reminders, Day Details)
+       ========================== -->
+  <div id="occasions-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="occasions-title">
+    <div class="backdrop" data-close="occasions"></div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="pill" style="display:inline-block; margin-right:8px;">Auto‑location</div>
+          <strong id="occasions-title">Islamic Occasions & Country Holidays</strong>
+        </div>
+        <button class="close-x" data-close="occasions">✕</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="country-select">Country</label>
+            <select id="country-select">
+              <option value="AE" selected>United Arab Emirates (Auto)</option>
+              <option value="SA">Saudi Arabia</option>
+              <option value="EG">Egypt</option>
+              <option value="UK">United Kingdom</option>
+              <option value="US">United States</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="year-select">Year</label>
+            <select id="year-select">
+              <option>2025</option>
+              <option selected>2026</option>
+              <option>2027</option>
+            </select>
+          </div>
+          <div class="field col-span-2">
+            <label>Events</label>
+            <ul id="occasions-list" class="list-clean"></ul>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="occasions">Close</button>
+        <button class="btn primary" id="add-occasions-to-calendar">Add to Calendar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reminders-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="reminders-title">
+    <div class="backdrop" data-close="reminders"></div>
+    <div class="card">
+      <div class="card-header">
+        <strong id="reminders-title">Prayer Email Reminders</strong>
+        <button class="close-x" data-close="reminders">✕</button>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field col-span-2"><label>Select prayers</label>
+            <div class="checks">
+              <label class="chk"><input type="checkbox" id="rem-fajr" checked> Fajr</label>
+              <label class="chk"><input type="checkbox" id="rem-sunrise"> Sunrise</label>
+              <label class="chk"><input type="checkbox" id="rem-dhuhr" checked> Dhuhr</label>
+              <label class="chk"><input type="checkbox" id="rem-asr"> Asr</label>
+              <label class="chk"><input type="checkbox" id="rem-maghrib" checked> Maghrib</label>
+              <label class="chk"><input type="checkbox" id="rem-isha"> Isha</label>
+            </div>
+          </div>
+          <div class="field"><label for="rem-offset">Send when</label>
+            <select id="rem-offset">
+              <option value="0" selected>At exact time</option>
+              <option value="-5">5 minutes before</option>
+              <option value="-10">10 minutes before</option>
+              <option value="-30">30 minutes before</option>
+            </select>
+          </div>
+          <div class="field"><label for="rem-email">Send to email</label>
+            <input id="rem-email" type="email" placeholder="you@example.com" />
+          </div>
+          <div class="field col-span-2">
+            <label>Status</label>
+            <div id="rem-status" class="pill">Not saved</div>
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="reminders">Cancel</button>
+        <button class="btn primary" id="save-reminders">Save Email Reminders</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="day-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="day-title">
+    <div class="backdrop" data-close="day"></div>
+    <div class="card">
+      <div class="card-header">
+        <strong id="day-title">Day Events</strong>
+        <button class="close-x" data-close="day">✕</button>
+      </div>
+      <div class="card-body">
+        <ul id="day-events-list" class="list-clean"></ul>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="day">Close</button>
+        <button class="btn primary" id="create-event-on-day">+ Add Event</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
