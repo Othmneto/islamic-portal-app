@@ -15,7 +15,7 @@ class NotificationRetryManager {
     this.retryMultiplier = 2;
     this.isProcessing = false;
     this.processingInterval = null;
-    this.processingIntervalMs = 10000; // 10 seconds
+    this.processingIntervalMs = 100; // 100ms for near-instant processing
 
     this.init();
   }
@@ -136,6 +136,14 @@ class NotificationRetryManager {
       await this.persistQueueStateWriteAhead();
 
       console.log('📝 [NotificationRetry] Notification enqueued for retry:', notificationId);
+      
+      // Trigger immediate processing (don't wait for interval)
+      setImmediate(() => {
+        this.processNotificationRetry(notificationId).catch(err => {
+          console.error('❌ [NotificationRetry] Immediate processing error:', err);
+        });
+      });
+      
       return true;
     } catch (error) {
       console.error('❌ [NotificationRetry] Error enqueuing notification:', error);
