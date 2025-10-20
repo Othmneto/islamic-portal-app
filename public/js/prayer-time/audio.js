@@ -374,7 +374,13 @@ if (typeof window !== 'undefined') {
   console.log('✅ [Audio] Global audio player instance created');
 }
 
-// Export for module usage
+// Export for ES6 module usage
+export { AdhanAudioPlayer };
+
+// Also create a named export matching the import in prayer-time.js
+export const PrayerTimesAudio = AdhanAudioPlayer;
+
+// CommonJS fallback for compatibility
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = AdhanAudioPlayer;
+  module.exports = { AdhanAudioPlayer, PrayerTimesAudio: AdhanAudioPlayer };
 }
