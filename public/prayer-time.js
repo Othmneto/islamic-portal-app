@@ -234,6 +234,7 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     // Initialize notification status dashboard
     console.log("[Main] Initializing notification status dashboard");
     const statusDashboard = new NotificationStatusDashboard(core, api);
+    window.__statusDashboard = statusDashboard;
 
     // Check if user is authenticated before initializing
     const token = api.getAuthToken();

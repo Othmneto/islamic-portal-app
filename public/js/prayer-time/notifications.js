@@ -207,7 +207,12 @@ export class PrayerTimesNotifications {
       console.log("[Notifications] Subscription successful:", responseData);
 
       // Also update user notification preferences in profile (fire-and-forget)
-      this.updateUserNotificationPreferences(prefs).catch(() => {});
+      this.updateUserNotificationPreferences(prefs)
+        .then(() => {
+          // Refresh status panel immediately
+          try { window.__statusDashboard?.throttledLoadCurrentStatus?.(); } catch {}
+        })
+        .catch(() => {});
     } finally {
       this.isSubscribing = false; // Reset flag
     }
