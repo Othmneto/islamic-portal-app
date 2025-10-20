@@ -73,14 +73,12 @@ export class PrayerTimesCore {
       reminderSel: this.$("reminder-select"),
       clock24Toggle: this.$("clock-format-toggle"),
       notifToggle: this.$("notification-toggle"),
-      adhanToggle: this.$("adhan-audio-toggle"),
+      adhanToggle: this.$("audio-enabled-toggle"),  // Updated to use new audio settings toggle
 
 
-      // Audio
+      // Audio (now managed by audio-settings-ui.js)
       adhanPlayer: this.$("adhan-player"),
       volumeSlider: this.$("adhan-volume-slider"),
-      audioOutputSelect: this.$("audio-output-select"),
-      soundLibrary: this.$("sound-library"),
 
       // Per-prayer toggles
       alertFajr: this.$("alert-fajr"),
