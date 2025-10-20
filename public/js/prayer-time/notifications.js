@@ -96,8 +96,9 @@ export class PrayerTimesNotifications {
     const perPrayer = this.loadPerPrayer() || this.defaultPerPrayer();
     const method = this.core.el.methodSel?.value || this.core.state.settings.calculationMethod || "auto";
     const madhab = this.core.el.madhabSel?.value || this.core.state.settings.madhab || "auto";
-    const reminderMinutes =
-      parseInt(this.core.el.reminderSel?.value ?? this.core.state.settings.reminderMinutes ?? 0, 10);
+    // Read reminder minutes from UI if available; fall back to state; coerce to non-negative integer
+    let reminderMinutes = parseInt(this.core.el.reminderSel?.value ?? this.core.state.settings.reminderMinutes ?? 0, 10);
+    if (!Number.isFinite(reminderMinutes) || reminderMinutes < 0) reminderMinutes = 0;
 
     const src = localStorage.getItem("selectedAdhanSrc") || "/audio/adhan.mp3";
     const volume = parseFloat(localStorage.getItem("adhanVolume") || "1") || 1;
@@ -137,21 +138,9 @@ export class PrayerTimesNotifications {
       this.isSubscribing = true;
       console.log("[Notifications] Sending subscription to server, enabled:", enabled);
 
-      // CRITICAL: Ensure we have the latest settings before sending subscription
-      // This prevents sending stale reminderMinutes values
-      if (this.core.settings) {
-        console.log("[Notifications] Refreshing settings before subscription...");
-        const freshSettings = await this.core.settings.loadFromServer();
-        if (freshSettings) {
-          this.core.settings.applySettings(freshSettings);
-          this.core.settings.updateUI();
-          console.log("[Notifications] Settings refreshed with fresh data");
+      // Use local, current UI values for preferences to avoid overwriting with stale server data
 
-          // Small delay to ensure database update has completed
-          await new Promise(resolve => setTimeout(resolve, 100));
-        }
-      }
-
+      // Always derive preferences from current UI/state (dynamic reminder minutes)
       const prefs = this.getPreferences(enabled);
       const token = this.api.getAuthToken();
 
@@ -217,8 +206,8 @@ export class PrayerTimesNotifications {
       const responseData = await res.json();
       console.log("[Notifications] Subscription successful:", responseData);
 
-      // Also update user notification preferences in profile
-      await this.updateUserNotificationPreferences(prefs);
+      // Also update user notification preferences in profile (fire-and-forget)
+      this.updateUserNotificationPreferences(prefs).catch(() => {});
     } finally {
       this.isSubscribing = false; // Reset flag
     }
