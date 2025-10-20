@@ -159,7 +159,17 @@ export class PrayerTimesSettings {
   updateUI() {
     if (this.core.el.methodSel) this.core.el.methodSel.value = this.core.state.settings.calculationMethod;
     if (this.core.el.madhabSel) this.core.el.madhabSel.value = this.core.state.settings.madhab;
-    if (this.core.el.reminderSel) this.core.el.reminderSel.value = String(this.core.state.settings.reminderMinutes);
+    if (this.core.el.reminderSel) {
+      const current = String(this.core.state.settings.reminderMinutes);
+      // If current value is not in the dropdown, add it dynamically
+      if (!Array.from(this.core.el.reminderSel.options).some(o => o.value === current)) {
+        const opt = document.createElement('option');
+        opt.value = current;
+        opt.textContent = `${current} minutes before`;
+        this.core.el.reminderSel.appendChild(opt);
+      }
+      this.core.el.reminderSel.value = current;
+    }
     if (this.core.el.clock24Toggle) this.core.el.clock24Toggle.checked = this.core.state.settings.is24Hour;
 
     if (this.core.el.adhanToggle) {
@@ -177,6 +187,32 @@ export class PrayerTimesSettings {
     }
 
     localStorage.setItem("clockFormat24", this.core.state.settings.is24Hour ? "true" : "false");
+  }
+
+  // Attach dynamic listeners (idempotent)
+  attachListeners() {
+    if (this._listenersAttached) return;
+    this._listenersAttached = true;
+
+    // Dynamic reminder change: update state, persist, and resubscribe
+    if (this.core.el.reminderSel) {
+      this.core.el.reminderSel.addEventListener('change', async (e) => {
+        const val = parseInt(e.target.value, 10);
+        if (!Number.isNaN(val)) {
+          this.core.state.settings.reminderMinutes = val;
+          await this.save(); // debounce persists to server
+          try {
+            // Re-send subscription with latest settings
+            const notifications = this.core.notifications;
+            if (notifications && typeof notifications.sendSubscriptionToServer === 'function') {
+              await notifications.sendSubscriptionToServer(true);
+            }
+          } catch (err) {
+            console.warn('[Settings] Failed to re-sync subscription after reminder change:', err);
+          }
+        }
+      });
+    }
   }
 
   // Handle legacy migration

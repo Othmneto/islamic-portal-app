@@ -128,6 +128,8 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     // Expose single shared instance globally for UI and SW
     window.adhanAudioPlayer = audio;
     const notifications = new PrayerTimesNotifications(core, api);
+    // Expose for settings to use on dynamic changes
+    core.notifications = notifications;
     const logging = new PrayerTimesLogging(core, api);
     const settings = new PrayerTimesSettings(core, api);
     const i18n = new PrayerTimesI18N(core);
@@ -217,6 +219,8 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     // Initialize all modules
     console.log("[Main] Initializing all modules");
     await settings.initialize();
+    // Ensure settings listeners are attached after UI is present
+    settings.attachListeners?.();
     calculator.initialize();
     await i18n.initialize();
     await audio.initialize();
