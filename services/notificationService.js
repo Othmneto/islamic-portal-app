@@ -7,6 +7,70 @@ const NotificationHistory = require('../models/NotificationHistory');
 const notificationRetryManager = require('./notificationRetryManager');
 const { env } = require('../config');
 const logger = require('../utils/logger');
+const { getAudioFile, validateAudioSettings, clamp } = require('../utils/audioVoices');
+
+/**
+ * Enrich payload with audio parameters based on user preferences
+ * @param {string} userId - User ID
+ * @param {object} payload - Notification payload
+ * @returns {object} - Audio parameters to add to payload.data
+ */
+async function enrichPayloadWithAudio(userId, payload) {
+  // Load user preferences
+  const user = await User.findById(userId).select('preferences').lean();
+  if (!user || !user.preferences) return {};
+
+  const prefs = user.preferences;
+  const notificationType = payload.notificationType || 'main';
+  const prayer = payload.prayerName || payload.prayer;
+
+  // Start with global audio settings
+  let audioSettings = {
+    volume: prefs.audioSettings?.volume || 0.8,
+    fadeInMs: prefs.audioSettings?.fadeInMs || 3000,
+    vibrateOnly: prefs.audioSettings?.vibrateOnly || false,
+    cooldownSeconds: prefs.audioSettings?.cooldownSeconds || 30
+  };
+
+  // Select audio file based on notification type
+  const profileMain = prefs.audioProfileMain || { name: 'madinah', file: '/audio/adhan_madinah.mp3' };
+  const profileReminder = prefs.audioProfileReminder || { name: 'short', file: '/audio/adhan.mp3' };
+  
+  let audioFile = notificationType === 'reminder' ? profileReminder.file : profileMain.file;
+
+  // Apply per-prayer overrides if they exist
+  if (prayer && prefs.audioOverrides) {
+    const override = prefs.audioOverrides.get ? prefs.audioOverrides.get(prayer) : prefs.audioOverrides[prayer];
+    if (override) {
+      if (override.volume !== undefined) audioSettings.volume = override.volume;
+      if (override.fadeInMs !== undefined) audioSettings.fadeInMs = override.fadeInMs;
+      if (override.vibrateOnly !== undefined) audioSettings.vibrateOnly = override.vibrateOnly;
+      if (override.cooldownSeconds !== undefined) audioSettings.cooldownSeconds = override.cooldownSeconds;
+      
+      // Override audio file if specified
+      if (notificationType === 'reminder' && override.fileReminder) {
+        audioFile = override.fileReminder;
+      } else if (notificationType === 'main' && override.fileMain) {
+        audioFile = override.fileMain;
+      }
+    }
+  }
+
+  // Clamp values to safe limits
+  const clamped = validateAudioSettings(audioSettings, {
+    maxVolume: env.AUDIO_MAX_VOLUME,
+    maxFadeMs: env.AUDIO_MAX_FADE_MS,
+    maxCooldown: env.AUDIO_COOLDOWN_SECONDS
+  });
+
+  return {
+    audioFile,
+    volume: clamped.volume,
+    fadeInMs: clamped.fadeInMs,
+    vibrateOnly: clamped.vibrateOnly,
+    cooldownSeconds: clamped.cooldownSeconds
+  };
+}
 
 // START: New function to add a single job with an optional delay
 /**
@@ -22,12 +86,24 @@ const sendNotification = async (subscription, payload, delay = 0) => {
     // Generate unique notification ID for tracking
     const notificationId = require('crypto').randomUUID();
 
-    // Enhanced payload with notification ID for confirmation tracking
+    // NEW: Enrich payload with audio params if feature enabled
+    let audioParams = {};
+    if (env.AUDIO_ENABLED === 'true' && subscription.userId) {
+      try {
+        audioParams = await enrichPayloadWithAudio(subscription.userId, payload);
+      } catch (audioError) {
+        logger.warn?.('Audio enrichment skipped:', audioError.message);
+        // Continue without audio params - graceful degradation
+      }
+    }
+
+    // Enhanced payload with notification ID for confirmation tracking + audio
     const enhancedPayload = {
       ...payload,
       data: {
         ...payload.data,
-        notificationId: notificationId
+        notificationId: notificationId,
+        ...audioParams // Add audio params if available
       }
     };
 

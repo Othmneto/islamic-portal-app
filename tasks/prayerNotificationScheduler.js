@@ -609,6 +609,8 @@ async function scheduleNotificationsForUser(user) {
           color: template.color,
           tag: `${prayerName}-${new Date().toDateString()}`,
           requireInteraction: true,
+          prayerName: prayerName, // Add at top level for notificationService
+          notificationType: 'main', // NEW: Mark as main prayer notification
           data: {
             url: "/prayer-time.html",
             prayer: prayerName,
@@ -617,7 +619,7 @@ async function scheduleNotificationsForUser(user) {
             category: "prayer-reminders",
             timestamp: new Date().toISOString(),
             userTimezone: user.timezone || 'UTC',
-            audioFile: "/audio/adhan.mp3" // Add audio file for background playback
+            audioFile: "/audio/adhan.mp3" // Add audio file for background playback (will be replaced if audio feature enabled)
           },
           actions: template.actions,
           category: "prayer-reminders",
@@ -763,6 +765,8 @@ async function scheduleNotificationsForUser(user) {
             color: template.color,
             tag: `reminder-${prayerName}-${reminderMinutes}min`,
             requireInteraction: false,
+            prayerName: prayerName, // Add at top level for notificationService
+            notificationType: 'reminder', // NEW: Mark as pre-prayer reminder
             data: {
               url: "/prayer-time.html",
               prayer: prayerName,
