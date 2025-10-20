@@ -86,7 +86,11 @@ export class PrayerTimesSettings {
               asr: true,
               maghrib: true,
               isha: true
-            }
+            },
+            // NEW: Audio preferences from server
+            audioProfileMain: serverSettings.audioProfileMain || { name: 'madinah', file: '/audio/adhan_madinah.mp3' },
+            audioProfileReminder: serverSettings.audioProfileReminder || { name: 'short', file: '/audio/adhan.mp3' },
+            audioSettings: serverSettings.audioSettings || { volume: 0.8, fadeInMs: 3000, vibrateOnly: false, cooldownSeconds: 30 }
           };
         }
 
@@ -98,6 +102,10 @@ export class PrayerTimesSettings {
           theme: serverSettings.theme || "dark",
           language: serverSettings.language || "en",
           audioEnabled: serverSettings.audioEnabled !== false,
+          // NEW: Audio preferences fallback
+          audioProfileMain: serverSettings.audioProfileMain || { name: 'madinah', file: '/audio/adhan_madinah.mp3' },
+          audioProfileReminder: serverSettings.audioProfileReminder || { name: 'short', file: '/audio/adhan.mp3' },
+          audioSettings: serverSettings.audioSettings || { volume: 0.8, fadeInMs: 3000, vibrateOnly: false, cooldownSeconds: 30 },
           selectedAdhanSrc: serverSettings.selectedAdhanSrc || "/audio/adhan.mp3",
           adhanVolume: serverSettings.adhanVolume || 1.0,
           prayerReminders: {
@@ -285,7 +293,7 @@ export class PrayerTimesSettings {
         })
       });
 
-      // Save notification preferences separately
+      // Save notification preferences separately (including audio prefs)
       const notificationResponse = await fetch("/api/user/notification-preferences", {
         method: "PUT",
         headers: {
@@ -297,6 +305,10 @@ export class PrayerTimesSettings {
           calculationMethod: this.core.state.settings.calculationMethod,
           madhab: this.core.state.settings.madhab,
           timezone: this.core.state.tz,
+          // NEW: Audio preferences
+          audioProfileMain: this.core.state.settings.audioProfileMain || { name: 'madinah', file: '/audio/adhan_madinah.mp3' },
+          audioProfileReminder: this.core.state.settings.audioProfileReminder || { name: 'short', file: '/audio/adhan.mp3' },
+          audioSettings: this.core.state.settings.audioSettings || { volume: 0.8, fadeInMs: 3000, vibrateOnly: false, cooldownSeconds: 30 },
           prayerReminders: this.core.state.settings.prayerReminders || {
             fajr: true,
             dhuhr: true,

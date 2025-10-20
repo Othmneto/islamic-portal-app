@@ -219,14 +219,20 @@ self.addEventListener('push', event => {
   // Auto-play adhan if it's a prayer notification
   if (notificationData.data && notificationData.data.prayer && notificationData.data.audioFile) {
     console.log(`🔊 [ServiceWorker] Auto-playing adhan for ${notificationData.data.prayer}`);
-    // Send message to main thread to play adhan
+    // Send message to main thread to play adhan with full audio params
     self.clients.matchAll().then(clients => {
       clients.forEach(client => {
         client.postMessage({
           type: 'PLAY_ADHAN',
           audioFile: notificationData.data.audioFile,
           prayer: notificationData.data.prayer,
-          fromNotification: true
+          notificationType: notificationData.data.notificationType || 'main',
+          fromNotification: true,
+          // NEW: Forward all audio parameters from backend enrichment
+          volume: notificationData.data.volume,
+          fadeInMs: notificationData.data.fadeInMs,
+          vibrateOnly: notificationData.data.vibrateOnly,
+          cooldownSeconds: notificationData.data.cooldownSeconds
         });
       });
     });
@@ -272,7 +278,14 @@ self.addEventListener('notificationclick', event => {
           client.postMessage({
             type: 'PLAY_ADHAN',
             audioFile: audioFile,
-            fromNotification: true
+            prayer: notificationData.prayer,
+            notificationType: notificationData.notificationType || 'main',
+            fromNotification: true,
+            // NEW: Forward all audio parameters
+            volume: notificationData.volume,
+            fadeInMs: notificationData.fadeInMs,
+            vibrateOnly: notificationData.vibrateOnly,
+            cooldownSeconds: notificationData.cooldownSeconds
           });
         });
         // Also open the prayer times page
