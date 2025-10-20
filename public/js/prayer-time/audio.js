@@ -21,7 +21,7 @@ class AdhanAudioPlayer {
   }
 
   /**
-   * Initialize audio system
+   * Initialize audio system (internal, called by constructor)
    */
   init() {
     console.log('🎵 [Audio] Initializing adhan audio player...');
@@ -33,6 +33,16 @@ class AdhanAudioPlayer {
     this.setupServiceWorkerListener();
     
     console.log(`🎵 [Audio] Audio player initialized (enabled: ${this.enabled})`);
+  }
+
+  /**
+   * Public initialize method for compatibility with prayer-time.js module system
+   * @returns {Promise<void>}
+   */
+  async initialize() {
+    // Already initialized in constructor, but this provides a hook for future async setup
+    console.log('🎵 [Audio] Initialize called (already initialized in constructor)');
+    return Promise.resolve();
   }
 
   /**
