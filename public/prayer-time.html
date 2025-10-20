@@ -423,26 +423,102 @@
           </div>
         </div>
 
-        <!-- Audio & Adhan Settings (New Panel) -->
+        <!-- Audio & Adhan Settings (Enhanced) -->
         <div class="settings-group audio-command-center">
-          <h4 style="margin-top:1.5rem; margin-bottom: 0.5rem; grid-column: 1 / -1;">Audio & Adhan Settings</h4>
+          <h4 style="margin-top:1.5rem; margin-bottom: 0.5rem; grid-column: 1 / -1;">
+            🎵 Audio & Adhan Settings
+          </h4>
 
-          <label for="adhan-volume-slider">Master Adhan Volume</label>
-          <div class="volume-control">
-            <i class="fa-solid fa-volume-off" aria-hidden="true"></i>
-            <input type="range" id="adhan-volume-slider" min="0" max="1" step="0.1" value="1" aria-label="Adhan volume">
-            <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+          <!-- Audio Enable Toggle -->
+          <div class="settings-group toggle-group" style="grid-column: 1 / -1;">
+            <i class="fa-solid fa-music" aria-hidden="true"></i>
+            <label class="theme-switch">
+              <input type="checkbox" id="audio-enabled-toggle" checked />
+              <span>Enable Adhan Audio</span>
+            </label>
           </div>
 
-          <label for="audio-output-select">Play Adhan Through</label>
-          <select id="audio-output-select" aria-label="Audio output device">
-            <option value="default">Default Device</option>
+          <!-- Main Prayer Voice -->
+          <label for="audio-voice-main">Main Prayer Voice</label>
+          <select id="audio-voice-main" aria-label="Main prayer voice">
+            <option value="madinah">Madinah (Traditional)</option>
+            <option value="makkah">Makkah (Traditional)</option>
+            <option value="egypt">Egypt Style</option>
+            <option value="silent">Silent (Vibrate Only)</option>
           </select>
 
-          <label for="sound-library">Select Adhan Sound</label>
-          <div id="sound-library" class="sound-library"></div>
+          <!-- Reminder Voice -->
+          <label for="audio-voice-reminder">Pre-Reminder Voice</label>
+          <select id="audio-voice-reminder" aria-label="Reminder voice">
+            <option value="short">Short Reminder</option>
+            <option value="madinah">Madinah</option>
+            <option value="makkah">Makkah</option>
+            <option value="silent">Silent (Vibrate Only)</option>
+          </select>
+
+          <!-- Volume Control -->
+          <label for="adhan-volume-slider">Volume</label>
+          <div class="volume-control">
+            <i class="fa-solid fa-volume-off" aria-hidden="true"></i>
+            <input type="range" id="adhan-volume-slider" min="0" max="1" step="0.05" value="0.8" aria-label="Adhan volume">
+            <i class="fa-solid fa-volume-high" aria-hidden="true"></i>
+            <span id="volume-value" style="margin-left: 0.5rem; min-width: 3rem;">80%</span>
+          </div>
+
+          <!-- Fade-in Duration -->
+          <label for="audio-fadein-slider">Fade-In Duration</label>
+          <div class="volume-control">
+            <span style="font-size: 0.9rem;">0s</span>
+            <input type="range" id="audio-fadein-slider" min="0" max="10000" step="500" value="3000" aria-label="Fade-in duration">
+            <span style="font-size: 0.9rem;">10s</span>
+            <span id="fadein-value" style="margin-left: 0.5rem; min-width: 3rem;">3.0s</span>
+          </div>
+
+          <!-- Preview Buttons -->
+          <div style="grid-column: 1 / -1; margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <button id="preview-main-voice-btn" class="btn btn-secondary" type="button" title="Preview main prayer voice">
+              <i class="fa-solid fa-play"></i> Preview Main Voice
+            </button>
+            <button id="preview-reminder-voice-btn" class="btn btn-secondary" type="button" title="Preview reminder voice">
+              <i class="fa-solid fa-play"></i> Preview Reminder
+            </button>
+            <button id="stop-audio-btn" class="btn btn-secondary" type="button" title="Stop audio playback" style="display:none;">
+              <i class="fa-solid fa-stop"></i> Stop
+            </button>
+          </div>
+
+          <!-- Advanced Options (Collapsible) -->
+          <details style="grid-column: 1 / -1; margin-top: 1rem;">
+            <summary style="cursor: pointer; font-weight: 600; padding: 0.5rem 0;">
+              ⚙️ Advanced Options
+            </summary>
+            <div style="margin-top: 1rem; padding-left: 1rem; border-left: 3px solid var(--accent-color);">
+              
+              <!-- Vibrate Only -->
+              <div class="settings-group toggle-group">
+                <i class="fa-solid fa-mobile-screen-button" aria-hidden="true"></i>
+                <label class="theme-switch">
+                  <input type="checkbox" id="audio-vibrate-only-toggle" />
+                  <span>Vibrate Only (No Sound)</span>
+                </label>
+              </div>
+
+              <!-- Cooldown -->
+              <label for="audio-cooldown-slider" style="margin-top: 1rem;">Cooldown Between Notifications</label>
+              <div class="volume-control">
+                <span style="font-size: 0.9rem;">0s</span>
+                <input type="range" id="audio-cooldown-slider" min="0" max="300" step="10" value="30" aria-label="Cooldown duration">
+                <span style="font-size: 0.9rem;">5m</span>
+                <span id="cooldown-value" style="margin-left: 0.5rem; min-width: 3rem;">30s</span>
+              </div>
+
+              <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.5rem;">
+                ℹ️ Prevents rapid-fire notifications within the cooldown period.
+              </p>
+            </div>
+          </details>
         </div>
-        <!-- /Audio & Adhan Settings (New Panel) -->
+        <!-- /Audio & Adhan Settings (Enhanced) -->
       </div>
 
       <!-- Audio / Test -->

@@ -81,6 +81,7 @@ const PrayerTimesAPI = window.PrayerTimesAPI || window.prayerTimeAPI?.constructo
 import { PrayerTimesLocation } from './js/prayer-time/location.js';
 import { PrayerTimesCalculator } from './js/prayer-time/prayer-times.js';
 import { PrayerTimesAudio } from './js/prayer-time/audio.js';
+import { AudioSettingsUI } from './js/prayer-time/audio-settings-ui.js';
 import { PrayerTimesNotifications } from './js/prayer-time/notifications.js';
 import { PrayerTimesLogging } from './js/prayer-time/prayer-logging.js';
 import { PrayerTimesSettings } from './js/prayer-time/settings.js';
@@ -129,6 +130,7 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     const settings = new PrayerTimesSettings(core, api);
     const i18n = new PrayerTimesI18N(core);
     const uiComponents = new PrayerTimesUIComponents(core);
+    const audioUI = new AudioSettingsUI(core, audio);  // Initialize after settings
 
     // Connect modules
     console.log("[Main] Connecting module callbacks");
@@ -216,6 +218,9 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     calculator.initialize();
     await i18n.initialize();
     await audio.initialize();
+    // Pass settings instance to audioUI for saving
+    core.settings = settings;
+    await audioUI.initialize();
     await notifications.initialize();
     await logging.initialize();
     uiComponents.initialize();
