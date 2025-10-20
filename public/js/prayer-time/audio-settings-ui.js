@@ -121,6 +121,8 @@ export class AudioSettingsUI {
         if (this.elements.volumeValue) {
           this.elements.volumeValue.textContent = Math.round(volume * 100) + '%';
         }
+        // Live volume adjustment if playing
+        try { window.adhanAudioPlayer?.setMasterVolume(volume, 100); } catch {}
       });
 
       this.elements.volumeSlider.addEventListener('change', async (e) => {

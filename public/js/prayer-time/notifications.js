@@ -47,19 +47,15 @@ export class PrayerTimesNotifications {
   async ensureSubscribed(reg) {
     if (!reg) throw new Error("Service worker registration is missing.");
 
-    // Clear any existing subscription to ensure we get a fresh one
+    // Prefer existing subscription if available to avoid endpoint churn
     const existing = await reg.pushManager.getSubscription();
     if (existing) {
-      console.log("[Notifications] Unsubscribing from existing subscription to get fresh one");
-      try {
-        await existing.unsubscribe();
-        console.log("[Notifications] Successfully unsubscribed from existing subscription");
-      } catch (error) {
-        console.warn("[Notifications] Failed to unsubscribe from existing subscription:", error);
-        // Continue anyway - we'll create a new one
-      }
+      this.core.state.pushSubscription = existing;
+      console.log("[Notifications] Using existing push subscription");
+      return existing;
     }
 
+    // Create a new subscription
     const r = await fetch("/api/notifications/vapid-public-key", { credentials: "include" });
     if (!r.ok) throw new Error("VAPID key error");
     const vapid = await r.text();
@@ -69,6 +65,14 @@ export class PrayerTimesNotifications {
     });
     this.core.state.pushSubscription = sub;
     console.log("[Notifications] Created fresh subscription");
+    return sub;
+  }
+
+  // Ensure there is an active subscription locally and on server
+  async ensureActiveSubscriptionOnServer() {
+    const reg = await this.registerSW();
+    const sub = await this.ensureSubscribed(reg);
+    await this.sendSubscriptionToServer(true);
     return sub;
   }
 
@@ -394,6 +398,11 @@ export class PrayerTimesNotifications {
 
       console.log("[Notifications] Sending test notification request...");
       const csrf = this.api.getCsrf();
+
+      // Ensure active subscription exists before testing
+      const reg = await this.registerSW();
+      await this.ensureSubscribed(reg);
+      await this.sendSubscriptionToServer(true);
       const r = await fetch("/api/notifications/test-immediate", {
         method: "POST",
         headers: {
@@ -427,6 +436,10 @@ export class PrayerTimesNotifications {
     try {
       const token = this.api.getAuthToken();
       const csrf = this.api.getCsrf();
+      // Ensure active subscription exists before testing
+      const reg = await this.registerSW();
+      await this.ensureSubscribed(reg);
+      await this.sendSubscriptionToServer(true);
       let r = await fetch("/api/notifications/test-immediate", {
         method: "POST",
         headers: {

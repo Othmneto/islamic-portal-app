@@ -376,6 +376,32 @@ class AdhanAudioPlayer {
       currentPlayback: this.currentPlayback
     };
   }
+
+  /**
+   * Adjust master volume in real-time if playing
+   * @param {number} volume - 0..1
+   * @param {number} rampMs - ramp duration in ms
+   */
+  setMasterVolume(volume, rampMs = 200) {
+    const v = Math.max(0, Math.min(typeof volume === 'number' ? volume : 0.8, 1));
+    if (!this.gainNode || !this.audioContext) return;
+    try {
+      const ctx = this.audioContext;
+      const gain = this.gainNode.gain;
+      gain.cancelScheduledValues(ctx.currentTime);
+      gain.linearRampToValueAtTime(v, ctx.currentTime + (rampMs / 1000));
+      // Persist preference for next plays
+      try {
+        const settings = JSON.parse(localStorage.getItem('prayerTimeSettings') || '{}');
+        if (!settings.audioSettings) settings.audioSettings = {};
+        settings.audioSettings.volume = v;
+        localStorage.setItem('prayerTimeSettings', JSON.stringify(settings));
+      } catch {}
+      console.log(`🎚️ [Audio] Master volume set to ${Math.round(v * 100)}%`);
+    } catch (e) {
+      console.warn('[Audio] Failed to set volume:', e);
+    }
+  }
 }
 
 // Export for ES6 module usage
