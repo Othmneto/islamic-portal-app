@@ -259,6 +259,24 @@ const userSchema = new mongoose.Schema(
       madhab: { type: String, enum: ['shafii', 'hanafi', 'auto'], default: 'shafii' },
       // language preference could be added here if needed
       // language: { type: String, default: 'en' },
+
+      // Enhanced Audio Preferences (OPTIONAL - backward compatible)
+      audioProfileMain: {
+        name: { type: String, default: 'madinah' },
+        file: { type: String, default: '/audio/adhan_madinah.mp3' }
+      },
+      audioProfileReminder: {
+        name: { type: String, default: 'short' },
+        file: { type: String, default: '/audio/adhan.mp3' }
+      },
+      audioSettings: {
+        volume: { type: Number, default: 0.8, min: 0, max: 1 },
+        fadeInMs: { type: Number, default: 3000, min: 0, max: 10000 },
+        vibrateOnly: { type: Boolean, default: false },
+        cooldownSeconds: { type: Number, default: 30, min: 0, max: 300 }
+      },
+      // Per-prayer audio overrides (optional)
+      audioOverrides: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} }
     },
 
     // Other data

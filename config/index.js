@@ -92,6 +92,13 @@ const envSchema = z.object({
 
   // CSRF Configuration
   ALLOW_NO_CSRF: z.string().default('true'),
+
+  // Audio Feature Flags (disabled by default for safety)
+  AUDIO_ENABLED: z.string().default('false'),
+  AUDIO_MAX_VOLUME: z.coerce.number().default(0.9),
+  AUDIO_MAX_FADE_MS: z.coerce.number().default(10000),
+  AUDIO_COOLDOWN_SECONDS: z.coerce.number().default(30),
+  AUDIO_DEFAULT_PROFILE: z.string().default('madinah'),
 });
 
 let env;

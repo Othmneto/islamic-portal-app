@@ -285,7 +285,11 @@ router.get("/notification-preferences", authMiddleware, async (req, res) => {
  */
 router.put("/notification-preferences", authMiddleware, validate(notificationPreferencesSchema), async (req, res) => {
   try {
-    const { enabled, reminderMinutes, prayerReminders, calculationMethod, madhab, timezone } = req.body;
+    const { 
+      enabled, reminderMinutes, prayerReminders, calculationMethod, madhab, timezone,
+      // NEW: Audio preferences (optional, validated but stored for future use)
+      audioProfileMain, audioProfileReminder, audioSettings, audioOverrides
+    } = req.body;
     const $set = {};
 
     if (typeof enabled !== "undefined") {
@@ -311,6 +315,49 @@ router.put("/notification-preferences", authMiddleware, validate(notificationPre
     }
     if (typeof timezone !== "undefined") {
       $set["timezone"] = timezone;
+    }
+
+    // NEW: Accept and validate audio preferences (stored but not yet actively used)
+    // Safe to add - if validation fails, we silently skip without breaking existing flow
+    try {
+      const { validateAudioProfile, validateAudioSettings } = require('../utils/audioVoices');
+      const { env } = require('../config');
+
+      if (audioProfileMain && typeof audioProfileMain === 'object') {
+        const validName = validateAudioProfile(audioProfileMain.name);
+        if (validName) {
+          $set["preferences.audioProfileMain.name"] = validName;
+          if (audioProfileMain.file) {
+            $set["preferences.audioProfileMain.file"] = audioProfileMain.file;
+          }
+        }
+      }
+
+      if (audioProfileReminder && typeof audioProfileReminder === 'object') {
+        const validName = validateAudioProfile(audioProfileReminder.name);
+        if (validName) {
+          $set["preferences.audioProfileReminder.name"] = validName;
+          if (audioProfileReminder.file) {
+            $set["preferences.audioProfileReminder.file"] = audioProfileReminder.file;
+          }
+        }
+      }
+
+      if (audioSettings && typeof audioSettings === 'object') {
+        const validated = validateAudioSettings(audioSettings, {
+          maxVolume: env.AUDIO_MAX_VOLUME,
+          maxFadeMs: env.AUDIO_MAX_FADE_MS,
+          maxCooldown: env.AUDIO_COOLDOWN_SECONDS
+        });
+        $set["preferences.audioSettings"] = validated;
+      }
+
+      if (audioOverrides && typeof audioOverrides === 'object') {
+        $set["preferences.audioOverrides"] = audioOverrides;
+      }
+    } catch (audioError) {
+      // Silently skip audio prefs if validation fails - don't break existing functionality
+      logger.warn?.("Audio preferences validation skipped:", audioError.message);
     }
 
     await User.findByIdAndUpdate(req.user.id, { $set });
