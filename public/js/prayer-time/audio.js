@@ -378,12 +378,6 @@ class AdhanAudioPlayer {
   }
 }
 
-// Create global instance
-if (typeof window !== 'undefined') {
-  window.adhanAudioPlayer = new AdhanAudioPlayer();
-  console.log('✅ [Audio] Global audio player instance created');
-}
-
 // Export for ES6 module usage
 export { AdhanAudioPlayer };
 

@@ -125,6 +125,8 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     const location = new PrayerTimesLocation(core, api);
     const calculator = new PrayerTimesCalculator(core, api, location);
     const audio = new PrayerTimesAudio(core);
+    // Expose single shared instance globally for UI and SW
+    window.adhanAudioPlayer = audio;
     const notifications = new PrayerTimesNotifications(core, api);
     const logging = new PrayerTimesLogging(core, api);
     const settings = new PrayerTimesSettings(core, api);
