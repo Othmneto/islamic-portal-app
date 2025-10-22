@@ -106,7 +106,13 @@ class CalendarRenderers {
       lastDay: lastDay.toDateString()
     });
 
-    let html = '<div class="month-grid">';
+    let html = '';
+    
+    // Add day headers (Sun, Mon, Tue, etc.)
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    dayNames.forEach(name => {
+      html += `<div class="day-header">${name}</div>`;
+    });
     
     // Add empty cells for days before the first of the month
     for (let i = 0; i < startDayOfWeek; i++) {
@@ -155,8 +161,6 @@ class CalendarRenderers {
 
       html += '</div>';
     }
-
-    html += '</div>';
     
     console.log('✅ [Renderer] Month view HTML generated');
     
@@ -172,18 +176,21 @@ class CalendarRenderers {
    * Render week view
    */
   renderWeek(container, date) {
+    console.log('🎨 [Renderer] Rendering week view');
     const startOfWeek = new Date(date);
     startOfWeek.setDate(date.getDate() - date.getDay()); // Start on Sunday
 
-    let html = '<div class="week-grid">';
-    html += '<div class="week-header">';
+    let html = '';
     
+    // Day headers
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    html += '<div class="week-header">';
     days.forEach(day => {
       html += `<div class="day-header">${day}</div>`;
     });
     html += '</div>';
 
+    // Week days with events
     html += '<div class="week-days">';
     
     for (let i = 0; i < 7; i++) {
@@ -210,7 +217,8 @@ class CalendarRenderers {
     }
     
     html += '</div>';
-    html += '</div>';
+    
+    console.log('✅ [Renderer] Week view rendered');
     
     if (container) {
       container.innerHTML = html;
@@ -223,6 +231,7 @@ class CalendarRenderers {
    * Render day view
    */
   renderDay(container, date) {
+    console.log('🎨 [Renderer] Rendering day view');
     const dateStr = date.toISOString().split('T')[0];
     const dayEvents = this.getEventsForDate(date);
 
@@ -233,45 +242,33 @@ class CalendarRenderers {
       return aTime - bTime;
     });
 
-    let html = '<div class="day-view">';
-    html += `<div class="day-header">`;
-    html += `<h3>${date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h3>`;
+    let html = '';
+    html += `<div class="day-view-header">`;
+    html += `<div class="day-view-date">${date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>`;
+    html += `<div class="day-view-hijri">${dateStr}</div>`;
     html += `</div>`;
 
-    html += '<div class="day-timeline">';
-    
-    // Show 24-hour timeline
-    for (let hour = 0; hour < 24; hour++) {
-      const hourStr = hour.toString().padStart(2, '0');
-      const hourDisplay = hour === 0 ? '12 AM' : hour < 12 ? `${hour} AM` : hour === 12 ? '12 PM' : `${hour - 12} PM`;
-      
-      html += `<div class="hour-block" data-hour="${hour}">`;
-      html += `<div class="hour-label">${hourDisplay}</div>`;
-      html += `<div class="hour-events">`;
-      
-      // Filter events for this hour
-      const hourEvents = dayEvents.filter(event => {
-        const eventDate = new Date(event.startDate || event.start);
-        return eventDate.getHours() === hour;
-      });
-      
-      hourEvents.forEach(event => {
+    if (dayEvents.length === 0) {
+      html += `<div style="padding: 40px; text-align: center; color: var(--muted); font-size: 14px;">No events scheduled for this day</div>`;
+    } else {
+      dayEvents.forEach(event => {
         const time = this.formatTime(event.startDate || event.start);
         const catClass = this.getCategoryClass(event);
         const title = event.title || event.name || 'Event';
         
-        html += `<div class="event-item ${catClass}" data-id="${event.id}">`;
-        html += `<span class="event-time">${time}</span>`;
-        html += `<span class="event-title">${title}</span>`;
+        html += `<div class="time-slot">`;
+        html += `<div class="slot-time">${time}</div>`;
+        html += `<div class="slot-events">`;
+        html += `<div class="slot-event ${catClass}" data-id="${event.id}">`;
+        html += `<div class="slot-event-title">${title}</div>`;
+        html += `<div class="slot-event-meta">${event.category || 'Event'}</div>`;
+        html += `</div>`;
+        html += `</div>`;
         html += `</div>`;
       });
-      
-      html += '</div>';
-      html += '</div>';
     }
     
-    html += '</div>';
-    html += '</div>';
+    console.log('✅ [Renderer] Day view rendered');
     
     if (container) {
       container.innerHTML = html;
@@ -284,10 +281,14 @@ class CalendarRenderers {
    * Render year view
    */
   renderYear(container, year) {
-    let html = '<div class="year-grid">';
+    console.log('🎨 [Renderer] Rendering year view:', year);
+    let html = '';
     
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                        'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     
     for (let month = 1; month <= 12; month++) {
       html += `<div class="mini-month" data-month="${month}">`;
@@ -300,6 +301,12 @@ class CalendarRenderers {
       
       html += '<div class="mini-month-grid">';
       
+      // Day headers
+      const dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+      dayNames.forEach(d => {
+        html += `<div class="mini-day-header">${d}</div>`;
+      });
+      
       // Empty cells before first day
       for (let i = 0; i < startDayOfWeek; i++) {
         html += '<div class="mini-day empty"></div>';
@@ -311,8 +318,13 @@ class CalendarRenderers {
         const dateStr = currentDate.toISOString().split('T')[0];
         const dayEvents = this.getEventsForDate(currentDate);
         const hasEvents = dayEvents.length > 0;
+        const isToday = currentDate.getTime() === today.getTime();
         
-        html += `<div class="mini-day ${hasEvents ? 'has-events' : ''}" data-date="${dateStr}">`;
+        let classes = 'mini-day';
+        if (hasEvents) classes += ' has-events';
+        if (isToday) classes += ' today';
+        
+        html += `<div class="${classes}" data-date="${dateStr}">`;
         html += day;
         html += '</div>';
       }
@@ -321,7 +333,7 @@ class CalendarRenderers {
       html += '</div>';
     }
     
-    html += '</div>';
+    console.log('✅ [Renderer] Year view rendered');
     
     if (container) {
       container.innerHTML = html;

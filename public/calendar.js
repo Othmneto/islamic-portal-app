@@ -276,17 +276,23 @@ function render() {
   console.log('🎨 [Calendar] Rendering', CalendarState.currentView, 'view for', year, month);
   console.log('🎨 [Calendar] Total events to render:', CalendarState.events.length);
   
+  // Update container class based on view
+  container.className = '';
   switch (CalendarState.currentView) {
     case 'month':
+      container.className = 'month-grid';
       CalendarState.renderer.renderMonth(container, year, month);
       break;
     case 'week':
+      container.className = 'week-grid';
       CalendarState.renderer.renderWeek(container, CalendarState.currentDate);
       break;
     case 'day':
+      container.className = 'day-view';
       CalendarState.renderer.renderDay(container, CalendarState.currentDate);
       break;
     case 'year':
+      container.className = 'year-grid';
       CalendarState.renderer.renderYear(container, year);
       break;
   }
