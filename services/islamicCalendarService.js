@@ -164,11 +164,13 @@ class IslamicCalendarService {
             const dateStr = gregorianDate.toISOString().split('T')[0];
             const hijriMoment = moment(dateStr, 'YYYY-MM-DD');
             
+            const monthNum = hijriMoment.iMonth() + 1; // 0-indexed, so +1
+            
             return {
                 year: hijriMoment.iYear(),
-                month: hijriMoment.iMonth() + 1, // moment-hijri uses 0-indexed months
+                month: monthNum,
                 day: hijriMoment.iDate(),
-                monthName: hijriMoment.format('iMMMM'), // English month name
+                monthName: this.hijriMonthNames[monthNum - 1] || 'Unknown', // English month name from array
                 monthNameAr: hijriMoment.format('iMMMM'), // Arabic month name (moment-hijri provides this)
                 dayName: gregorianDate.toLocaleDateString('en-US', { weekday: 'long' }),
                 dayNameAr: gregorianDate.toLocaleDateString('ar-SA', { weekday: 'long' }),

@@ -698,7 +698,8 @@ async function updateCurrentHijri() {
     const hijriEl = document.getElementById('today-hijri');
     
     if (hijri && hijriEl) {
-      hijriEl.textContent = `${hijri.day} ${hijri.monthName} ${hijri.year} ${hijri.designation}`;
+      // Show both English and Arabic: "30 Rabi' al-Thani (ربيع الثاني) 1447 AH"
+      hijriEl.textContent = `${hijri.day} ${hijri.monthName} (${hijri.monthNameAr}) ${hijri.year} ${hijri.designation}`;
     }
   } catch (error) {
     console.error('[Calendar] Hijri date error:', error);
