@@ -165,16 +165,17 @@ class IslamicCalendarService {
             const gregorianMonth = gregorianDate.getMonth() + 1;
             const gregorianDay = gregorianDate.getDate();
             
-            // Convert using offline library
-            const hijriDate = HijriJS.gregorianToHijri(gregorianYear, gregorianMonth, gregorianDay);
+            // Convert using offline library - Initialize first
+            HijriJS.initialize();
+            const hijri = new HijriJS.HijriJs(gregorianDay, gregorianMonth, gregorianYear);
             
-            if (hijriDate) {
+            if (hijri) {
                 return {
-                    year: hijriDate.year,
-                    month: hijriDate.month,
-                    day: hijriDate.day,
-                    monthName: this.hijriMonthNames[hijriDate.month - 1] || 'Unknown',
-                    monthNameAr: this.hijriMonthNamesAr[hijriDate.month - 1] || 'غير معروف',
+                    year: hijri.year,
+                    month: hijri.month,
+                    day: hijri.day,
+                    monthName: this.hijriMonthNames[hijri.month - 1] || 'Unknown',
+                    monthNameAr: this.hijriMonthNamesAr[hijri.month - 1] || 'غير معروف',
                     dayName: gregorianDate.toLocaleDateString('en-US', { weekday: 'long' }),
                     dayNameAr: gregorianDate.toLocaleDateString('ar-SA', { weekday: 'long' }),
                     designation: 'AH'
