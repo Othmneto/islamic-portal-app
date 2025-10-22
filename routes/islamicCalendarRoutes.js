@@ -277,7 +277,7 @@ router.get('/countries', requireAuth, async (req, res) => {
     }
 });
 
-// Get current Hijri date
+// Get current Hijri date (public endpoint)
 router.get('/current-hijri', async (req, res) => {
     try {
         const today = new Date();

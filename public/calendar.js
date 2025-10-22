@@ -378,12 +378,17 @@ async function updatePrayerTimesPanel() {
   });
   
   // Update the prayer time displays
-  prayerOrder.forEach(prayer => {
-    const element = prayerTimesContainer.querySelector(`.prayer-time:has(.prayer-name:contains("${prayer.charAt(0).toUpperCase() + prayer.slice(1)}"))`);
-    if (element) {
-      const timeValue = element.querySelector('.prayer-time-value');
-      if (timeValue) {
-        timeValue.textContent = prayerTimes[prayer] || '--:--';
+  const prayerElements = prayerTimesContainer.querySelectorAll('.prayer-time');
+  prayerElements.forEach(element => {
+    const nameElement = element.querySelector('.prayer-name');
+    if (nameElement) {
+      const prayerName = nameElement.textContent.toLowerCase().trim();
+      const matchingPrayer = prayerOrder.find(p => prayerName.includes(p));
+      if (matchingPrayer && prayerTimes[matchingPrayer]) {
+        const timeValue = element.querySelector('.prayer-time-value');
+        if (timeValue) {
+          timeValue.textContent = prayerTimes[matchingPrayer];
+        }
       }
     }
   });

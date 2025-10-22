@@ -255,11 +255,13 @@ class CalendarAPI {
    * Get OAuth integration status
    */
   async getIntegrationStatus() {
+    console.log('🔗 [CalendarAPI] Fetching OAuth integration status...');
     try {
-      const data = await this.authenticatedFetch('/api/calendar-integration/status');
+      const data = await this.authenticatedFetch('/api/calendar/status');
+      console.log('✅ [CalendarAPI] OAuth status:', data);
       return data.integrations || { mobile: { connected: false }, email: { connected: false } };
     } catch (error) {
-      console.error('[CalendarAPI] Error fetching integration status:', error);
+      console.error('❌ [CalendarAPI] Error fetching integration status:', error);
       return { mobile: { connected: false }, email: { connected: false } };
     }
   }
@@ -268,19 +270,23 @@ class CalendarAPI {
    * Initiate OAuth connection for a provider
    */
   async connectProvider(provider) {
+    console.log(`🔗 [CalendarAPI] Connecting ${provider}...`);
     try {
-      const data = await this.authenticatedFetch(`/api/calendar-integration/connect/${provider}`, {
+      const data = await this.authenticatedFetch(`/api/calendar/connect/${provider}`, {
         method: 'POST'
       });
       
+      console.log(`✅ [CalendarAPI] ${provider} connect response:`, data);
+      
       if (data.authUrl) {
+        console.log(`🌐 [CalendarAPI] Redirecting to OAuth: ${data.authUrl}`);
         // Redirect to OAuth flow
         window.location.href = data.authUrl;
       }
       
       return data;
     } catch (error) {
-      console.error(`[CalendarAPI] Error connecting ${provider}:`, error);
+      console.error(`❌ [CalendarAPI] Error connecting ${provider}:`, error);
       throw error;
     }
   }
@@ -313,13 +319,15 @@ class CalendarAPI {
    * Test OAuth connection
    */
   async testConnection(provider) {
+    console.log(`🔗 [CalendarAPI] Testing ${provider} connection...`);
     try {
-      const data = await this.authenticatedFetch(`/api/calendar-integration/test/${provider}`, {
+      const data = await this.authenticatedFetch(`/api/calendar/test/${provider}`, {
         method: 'POST'
       });
+      console.log(`✅ [CalendarAPI] ${provider} test result:`, data);
       return data;
     } catch (error) {
-      console.error(`[CalendarAPI] Error testing ${provider} connection:`, error);
+      console.error(`❌ [CalendarAPI] Error testing ${provider} connection:`, error);
       throw error;
     }
   }
@@ -328,13 +336,15 @@ class CalendarAPI {
    * Disconnect OAuth integration
    */
   async disconnectIntegration(type) {
+    console.log(`🔗 [CalendarAPI] Disconnecting ${type}...`);
     try {
-      const data = await this.authenticatedFetch(`/api/calendar-integration/disconnect/${type}`, {
+      const data = await this.authenticatedFetch(`/api/calendar/disconnect/${type}`, {
         method: 'POST'
       });
+      console.log(`✅ [CalendarAPI] ${type} disconnected`);
       return data;
     } catch (error) {
-      console.error(`[CalendarAPI] Error disconnecting ${type}:`, error);
+      console.error(`❌ [CalendarAPI] Error disconnecting ${type}:`, error);
       throw error;
     }
   }
