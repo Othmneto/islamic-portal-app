@@ -20,6 +20,27 @@ const CalendarState = {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Calendar] Initializing...');
   
+  // Check authentication - calendar requires login
+  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+  
+  if (!token) {
+    console.warn('⚠️ [Calendar] Authentication required. Redirecting to login...');
+    // Show message and redirect after 1 second
+    document.body.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #0b1220; color: #e6edf7; font-family: system-ui; flex-direction: column; gap: 1rem;">
+        <div style="font-size: 48px;">🔒</div>
+        <h2>Authentication Required</h2>
+        <p style="color: #94a3b8;">Redirecting to login page...</p>
+      </div>
+    `;
+    setTimeout(() => {
+      window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+    }, 1000);
+    return;
+  }
+  
+  console.log('✅ [Calendar] User authenticated, loading calendar...');
+  
   // Wait for API to be ready
   if (!window.calendarAPI) {
     console.error('[Calendar] CalendarAPI not loaded!');
