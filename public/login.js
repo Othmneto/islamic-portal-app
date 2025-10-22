@@ -153,24 +153,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // Get CSRF token
-  let csrfToken = null;
-  try {
-    const csrfResponse = await fetch('/api/csrf-token', {
-      credentials: 'include'
-    });
-    if (csrfResponse.ok) {
-      const csrfData = await csrfResponse.json();
-      csrfToken = csrfData.csrfToken;
-    }
-  } catch (err) {
-    console.warn('[login.js] Failed to get CSRF token:', err);
-  }
-
   function setMessage(text, ok = false) {
     if (!messageDiv) return console[ok ? 'info' : 'warn'](text);
     messageDiv.textContent = text;
     messageDiv.style.color = ok ? 'green' : 'red';
+  }
+
+  // Helper to get fresh CSRF token
+  async function getFreshCsrfToken() {
+    try {
+      const csrfResponse = await fetch('/api/csrf-token', {
+        credentials: 'include'
+      });
+      if (csrfResponse.ok) {
+        const csrfData = await csrfResponse.json();
+        console.log('🔐 Fresh CSRF token obtained:', csrfData.csrfToken ? csrfData.csrfToken.substring(0, 10) + '...' : 'None');
+        return csrfData.csrfToken;
+      }
+    } catch (err) {
+      console.warn('[login.js] Failed to get CSRF token:', err);
+    }
+    return null;
   }
 
   loginForm.addEventListener('submit', async (e) => {
@@ -184,14 +187,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     const password = passEl?.value || '';
     const rememberMe = rememberMeEl ? rememberMeEl.checked : false;
 
-    console.log('🔍 Login attempt:', { email, passwordLength: password.length, rememberMe, csrfToken: csrfToken ? 'present' : 'missing' });
-
     if (!email || !password) {
       setMessage('Please enter your email and password.');
       return;
     }
 
     setMessage('Logging in...');
+
+    // Get fresh CSRF token right before login attempt
+    const csrfToken = await getFreshCsrfToken();
+    console.log('🔍 Login attempt:', { email, passwordLength: password.length, rememberMe, csrfToken: csrfToken ? 'present' : 'missing' });
 
     try {
       const headers = { 'Content-Type': 'application/json' };
