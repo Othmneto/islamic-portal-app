@@ -400,46 +400,6 @@ async function loadTodayPanel() {
     `;
     todayList.appendChild(item);
   });
-  
-  // Update prayer times in side panel
-  await updatePrayerTimesPanel();
-}
-
-async function updatePrayerTimesPanel() {
-  const prayerTimesContainer = document.getElementById('prayer-times');
-  if (!prayerTimesContainer) return;
-  
-  const today = new Date();
-  const prayerEvents = CalendarState.events.filter(e => 
-    e.isIslamicEvent && 
-    e.category === 'prayer' &&
-    new Date(e.startDate).toDateString() === today.toDateString()
-  );
-  
-  const prayerOrder = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
-  const prayerTimes = {};
-  
-  prayerEvents.forEach(event => {
-    if (event.prayerName) {
-      prayerTimes[event.prayerName] = CalendarState.renderer.formatTime(event.startDate);
-    }
-  });
-  
-  // Update the prayer time displays
-  const prayerElements = prayerTimesContainer.querySelectorAll('.prayer-time');
-  prayerElements.forEach(element => {
-    const nameElement = element.querySelector('.prayer-name');
-    if (nameElement) {
-      const prayerName = nameElement.textContent.toLowerCase().trim();
-      const matchingPrayer = prayerOrder.find(p => prayerName.includes(p));
-      if (matchingPrayer && prayerTimes[matchingPrayer]) {
-        const timeValue = element.querySelector('.prayer-time-value');
-        if (timeValue) {
-          timeValue.textContent = prayerTimes[matchingPrayer];
-        }
-      }
-    }
-  });
 }
 
 // ===== MODALS =====
