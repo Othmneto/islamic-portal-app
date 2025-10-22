@@ -21,21 +21,37 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Calendar] Initializing...');
   
   // Check authentication - calendar requires login
-  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+  // Check multiple possible token locations
+  const token = localStorage.getItem('token') || 
+                localStorage.getItem('authToken') || 
+                sessionStorage.getItem('token') ||
+                sessionStorage.getItem('authToken');
   
-  if (!token) {
+  // Also check if tokenManager is available
+  const tokenManagerAuth = window.tokenManager && window.tokenManager.isAuthenticated && window.tokenManager.isAuthenticated();
+  
+  console.log('[Calendar] Auth check:', {
+    hasToken: !!token,
+    tokenManager: !!window.tokenManager,
+    tokenManagerAuth: tokenManagerAuth,
+    localStorageKeys: Object.keys(localStorage),
+    sessionStorageKeys: Object.keys(sessionStorage)
+  });
+  
+  if (!token && !tokenManagerAuth) {
     console.warn('⚠️ [Calendar] Authentication required. Redirecting to login...');
-    // Show message and redirect after 1 second
+    // Show message and redirect after 2 seconds to give time to read
     document.body.innerHTML = `
       <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #0b1220; color: #e6edf7; font-family: system-ui; flex-direction: column; gap: 1rem;">
         <div style="font-size: 48px;">🔒</div>
         <h2>Authentication Required</h2>
         <p style="color: #94a3b8;">Redirecting to login page...</p>
+        <p style="color: #64748b; font-size: 12px;">Debug: No valid token found</p>
       </div>
     `;
     setTimeout(() => {
       window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
-    }, 1000);
+    }, 2000);
     return;
   }
   
