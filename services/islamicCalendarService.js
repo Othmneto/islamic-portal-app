@@ -1,6 +1,6 @@
 const axios = require('axios');
 const { logger } = require('../config/logger');
-const HijriJS = require('hijri-js');
+const moment = require('moment-hijri');
 
 class IslamicCalendarService {
     constructor() {
@@ -159,28 +159,21 @@ class IslamicCalendarService {
             logger.info('Using offline Hijri conversion (API unavailable)');
         }
         
-        // Fallback: Use offline hijri-js library
+        // Fallback: Use offline moment-hijri library
         try {
-            const gregorianYear = gregorianDate.getFullYear();
-            const gregorianMonth = gregorianDate.getMonth() + 1;
-            const gregorianDay = gregorianDate.getDate();
+            const dateStr = gregorianDate.toISOString().split('T')[0];
+            const hijriMoment = moment(dateStr, 'YYYY-MM-DD');
             
-            // Convert using offline library - Initialize first
-            HijriJS.initialize();
-            const hijri = new HijriJS.HijriJs(gregorianDay, gregorianMonth, gregorianYear);
-            
-            if (hijri) {
-                return {
-                    year: hijri.year,
-                    month: hijri.month,
-                    day: hijri.day,
-                    monthName: this.hijriMonthNames[hijri.month - 1] || 'Unknown',
-                    monthNameAr: this.hijriMonthNamesAr[hijri.month - 1] || 'غير معروف',
-                    dayName: gregorianDate.toLocaleDateString('en-US', { weekday: 'long' }),
-                    dayNameAr: gregorianDate.toLocaleDateString('ar-SA', { weekday: 'long' }),
-                    designation: 'AH'
-                };
-            }
+            return {
+                year: hijriMoment.iYear(),
+                month: hijriMoment.iMonth() + 1, // moment-hijri uses 0-indexed months
+                day: hijriMoment.iDate(),
+                monthName: hijriMoment.format('iMMMM'), // English month name
+                monthNameAr: hijriMoment.format('iMMMM'), // Arabic month name (moment-hijri provides this)
+                dayName: gregorianDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                dayNameAr: gregorianDate.toLocaleDateString('ar-SA', { weekday: 'long' }),
+                designation: 'AH'
+            };
         } catch (fallbackError) {
             logger.error('Error in offline Hijri conversion:', fallbackError);
         }
