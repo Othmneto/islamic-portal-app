@@ -20,49 +20,9 @@ const CalendarState = {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Calendar] Initializing...');
   
-  // Wait a bit for TokenManager to initialize if it exists
-  await new Promise(resolve => setTimeout(resolve, 100));
-  
-  // Check authentication - calendar requires login
-  // Check multiple possible token locations
-  const token = localStorage.getItem('token') || 
-                localStorage.getItem('authToken') || 
-                sessionStorage.getItem('token') ||
-                sessionStorage.getItem('authToken');
-  
-  // Also check if tokenManager is available
-  const tokenManagerAuth = window.tokenManager && window.tokenManager.isAuthenticated && window.tokenManager.isAuthenticated();
-  
-  console.log('[Calendar] Auth check:', {
-    hasToken: !!token,
-    token: token ? token.substring(0, 20) + '...' : 'none',
-    tokenManager: !!window.tokenManager,
-    tokenManagerAuth: tokenManagerAuth,
-    localStorageKeys: Object.keys(localStorage),
-    sessionStorageKeys: Object.keys(sessionStorage)
-  });
-  
-  if (!token && !tokenManagerAuth) {
-    console.warn('⚠️ [Calendar] Authentication required. Redirecting to login...');
-    console.log('[Calendar] Debug - localStorage:', localStorage);
-    console.log('[Calendar] Debug - sessionStorage:', sessionStorage);
-    
-    // Show message and redirect after 2 seconds to give time to read
-    document.body.innerHTML = `
-      <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #0b1220; color: #e6edf7; font-family: system-ui; flex-direction: column; gap: 1rem;">
-        <div style="font-size: 48px;">🔒</div>
-        <h2>Authentication Required</h2>
-        <p style="color: #94a3b8;">Please log in to access the calendar</p>
-        <p style="color: #64748b; font-size: 12px;">Redirecting to login page...</p>
-      </div>
-    `;
-    setTimeout(() => {
-      window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
-    }, 2000);
-    return;
-  }
-  
-  console.log('✅ [Calendar] User authenticated, loading calendar...');
+  // Note: Authentication is handled by the backend API
+  // The calendar page is accessible, but API calls will require auth
+  // This allows the page to load and show appropriate UI based on auth status
   
   // Wait for API to be ready
   if (!window.calendarAPI) {
