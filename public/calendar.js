@@ -20,6 +20,14 @@ const CalendarState = {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Calendar] Initializing...');
   
+  // Check authentication first
+  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+  if (!token) {
+    console.warn('⚠️ [Calendar] No authentication token found, redirecting to login');
+    window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+    return;
+  }
+  
   // Wait for API to be ready
   if (!window.calendarAPI) {
     console.error('[Calendar] CalendarAPI not loaded!');
