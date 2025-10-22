@@ -20,13 +20,26 @@ const CalendarState = {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('[Calendar] Initializing...');
   
-  // Check authentication first
-  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-  if (!token) {
-    console.warn('⚠️ [Calendar] No authentication token found, redirecting to login');
-    window.location.href = '/login.html?redirect=' + encodeURIComponent(window.location.pathname);
+  // Check authentication using TokenManager if available
+  let isAuthenticated = false;
+  
+  if (window.tokenManager) {
+    console.log('[Calendar] Using TokenManager for auth check');
+    isAuthenticated = window.tokenManager.isAuthenticated();
+  } else {
+    // Fallback to checking localStorage/sessionStorage directly
+    console.log('[Calendar] TokenManager not available, checking storage directly');
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    isAuthenticated = !!token;
+  }
+  
+  if (!isAuthenticated) {
+    console.warn('⚠️ [Calendar] Not authenticated, redirecting to prayer-time.html');
+    window.location.href = '/prayer-time.html';
     return;
   }
+  
+  console.log('✅ [Calendar] User authenticated, proceeding to load calendar');
   
   // Wait for API to be ready
   if (!window.calendarAPI) {
