@@ -208,13 +208,26 @@ async function loadMonthData() {
     prayerEvents: prayerEvents.length
   });
   
-  const allEvents = [
+  // Merge and deduplicate by ID
+  const allEventsWithDuplicates = [
     ...userEvents,
     ...islamicHolidayEvents,
     ...prayerEvents
   ];
   
-  console.log(`✅ [Calendar] Total merged events: ${allEvents.length}`);
+  // Deduplicate by ID (keep first occurrence)
+  const eventMap = new Map();
+  allEventsWithDuplicates.forEach(event => {
+    if (event.id && !eventMap.has(event.id)) {
+      eventMap.set(event.id, event);
+    }
+  });
+  
+  const allEvents = Array.from(eventMap.values());
+  
+  console.log(`✅ [Calendar] Total events before dedup: ${allEventsWithDuplicates.length}`);
+  console.log(`✅ [Calendar] Total events after dedup: ${allEvents.length}`);
+  console.log(`📊 [Calendar] Removed ${allEventsWithDuplicates.length - allEvents.length} duplicates`);
   
   CalendarState.events = allEvents;
   CalendarState.renderer.setEvents(allEvents);

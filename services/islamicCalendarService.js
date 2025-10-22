@@ -312,33 +312,20 @@ class IslamicCalendarService {
     // Get all Islamic events for a month
     async getMonthlyIslamicEvents(year, month, latitude, longitude, country = 'AE') {
         try {
-            console.log(`🕌 [IslamicCalendarService] Getting monthly events for ${year}-${month}`);
+            console.log(`🕌 [IslamicCalendarService] Getting monthly events (holidays only) for ${year}-${month}`);
             const startDate = new Date(year, month - 1, 1);
             const endDate = new Date(year, month, 0);
 
             const holidays = await this.getIslamicHolidays(startDate, endDate, country);
             console.log(`🕌 [IslamicCalendarService] Found ${holidays.length} holidays`);
 
-            // Create prayer events for the entire month
-            const prayerEvents = [];
-            const daysInMonth = new Date(year, month, 0).getDate();
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                try {
-                    const date = new Date(year, month - 1, day);
-                    const dayPrayerEvents = await this.createPrayerTimeEvents(date, latitude, longitude, country);
-                    prayerEvents.push(...dayPrayerEvents);
-                } catch (error) {
-                    console.error(`Error creating prayer events for ${year}-${month}-${day}:`, error.message);
-                }
-            }
-
-            console.log(`🕌 [IslamicCalendarService] Created ${prayerEvents.length} prayer events`);
+            // NOTE: Prayer events are now handled by the dedicated monthly-prayer-times endpoint
+            // to avoid duplication. This endpoint only returns holidays.
 
             return {
                 holidays,
-                prayerEvents,
-                totalEvents: holidays.length + prayerEvents.length
+                prayerEvents: [], // Empty - use /monthly-prayer-times endpoint instead
+                totalEvents: holidays.length
             };
         } catch (error) {
             logger.error('Error getting monthly Islamic events:', error);
