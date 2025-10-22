@@ -177,33 +177,51 @@ async function loadMonthData() {
   const { lat, lon, tz, country } = CalendarState.location;
   const prefs = CalendarState.api.getPrayerPreferences();
   
-  console.log('[Calendar] Loading data for', year, month);
+  console.log('📅 [Calendar] ========== LOADING MONTH DATA ==========');
+  console.log('📅 [Calendar] Date:', year, month);
+  console.log('📅 [Calendar] Location:', { lat, lon, tz, country });
+  console.log('📅 [Calendar] Prayer prefs:', prefs);
   
   // Load all data in parallel
+  console.log('📅 [Calendar] Starting parallel data fetch...');
   const [userEvents, islamicEvents, prayerTimes] = await Promise.all([
     CalendarState.api.getUserEvents(),
     CalendarState.api.getMonthlyIslamicEvents(year, month, lat, lon, country),
     CalendarState.api.getMonthlyPrayerTimes(year, month, lat, lon, tz, prefs.method, prefs.madhab)
   ]);
   
-  console.log('[Calendar] Loaded:', {
+  console.log('✅ [Calendar] All data loaded successfully');
+  console.log('📊 [Calendar] Data summary:', {
     userEvents: userEvents.length,
     holidays: islamicEvents.holidays?.length || 0,
-    prayerDays: prayerTimes.days?.length || 0
+    prayerDays: prayerTimes.days?.length || 0,
+    totalPrayerEvents: (prayerTimes.days?.length || 0) * 5 // 5 prayers per day
   });
   
   // Merge all events
+  console.log('📅 [Calendar] Converting and merging events...');
+  const islamicHolidayEvents = convertIslamicHolidaysToEvents(islamicEvents.holidays || []);
+  const prayerEvents = convertPrayerTimesToEvents(prayerTimes.days || []);
+  
+  console.log('📅 [Calendar] Converted:', {
+    islamicHolidayEvents: islamicHolidayEvents.length,
+    prayerEvents: prayerEvents.length
+  });
+  
   const allEvents = [
     ...userEvents,
-    ...convertIslamicHolidaysToEvents(islamicEvents.holidays || []),
-    ...convertPrayerTimesToEvents(prayerTimes.days || [])
+    ...islamicHolidayEvents,
+    ...prayerEvents
   ];
+  
+  console.log(`✅ [Calendar] Total merged events: ${allEvents.length}`);
   
   CalendarState.events = allEvents;
   CalendarState.renderer.setEvents(allEvents);
   
   // Update global for compatibility
   window.calendarEvents = allEvents;
+  console.log('📅 [Calendar] ========== MONTH DATA LOADED ==========');
 }
 
 function convertIslamicHolidaysToEvents(holidays) {
@@ -244,11 +262,19 @@ function convertPrayerTimesToEvents(days) {
 }
 
 function render() {
+  console.log('🎨 [Calendar] Rendering view:', CalendarState.currentView);
+  
   const container = document.getElementById('month-grid');
-  if (!container) return;
+  if (!container) {
+    console.error('❌ [Calendar] Container #month-grid not found!');
+    return;
+  }
   
   const year = CalendarState.currentDate.getFullYear();
   const month = CalendarState.currentDate.getMonth() + 1;
+  
+  console.log('🎨 [Calendar] Rendering', CalendarState.currentView, 'view for', year, month);
+  console.log('🎨 [Calendar] Total events to render:', CalendarState.events.length);
   
   switch (CalendarState.currentView) {
     case 'month':
@@ -265,12 +291,15 @@ function render() {
       break;
   }
   
+  console.log('✅ [Calendar] View rendered');
+  
   // Update period label
   const periodLabel = document.getElementById('period-label');
   CalendarState.renderer.updatePeriodLabel(periodLabel, CalendarState.currentView, CalendarState.currentDate);
   
   // Setup day click handlers
   setupDayClickHandlers();
+  console.log('✅ [Calendar] Day click handlers setup');
 }
 
 function setupDayClickHandlers() {

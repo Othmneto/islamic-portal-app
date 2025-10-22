@@ -312,11 +312,15 @@ router.get('/current-hijri', async (req, res) => {
 // NEW: Get monthly prayer times using non-invasive monthly service
 router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
     try {
+        console.log('🕌 [IslamicCalendar] Monthly prayer times request:', req.params, req.query);
+        
         const { year, month } = req.params;
         const { lat, lon, tz, method, madhab } = req.query;
 
         const yearNum = parseInt(year);
         const monthNum = parseInt(month);
+        
+        console.log('🕌 [IslamicCalendar] Parsed params:', { yearNum, monthNum, lat, lon, tz, method, madhab });
 
         if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
             return res.status(400).json({
@@ -339,6 +343,8 @@ router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
             });
         }
 
+        console.log('🕌 [IslamicCalendar] Calling getPrayerTimesForMonth...');
+        
         const monthlyTimes = getPrayerTimesForMonth({
             year: yearNum,
             month: monthNum,
@@ -349,6 +355,8 @@ router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
             madhab: madhab || 'auto'
         });
 
+        console.log('✅ [IslamicCalendar] Successfully retrieved monthly prayer times, returning response');
+
         res.json({
             success: true,
             ...monthlyTimes,
@@ -356,6 +364,7 @@ router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
         });
 
     } catch (error) {
+        console.error('❌ [IslamicCalendar] Error getting monthly prayer times:', error);
         logger.error('Error getting monthly prayer times:', error);
         res.status(500).json({
             success: false,

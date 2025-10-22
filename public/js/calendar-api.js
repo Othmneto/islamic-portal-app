@@ -5,9 +5,11 @@
 
 class CalendarAPI {
   constructor() {
+    console.log('🗓️ [CalendarAPI] Initializing Calendar API client');
     this.baseURL = '';
     this.cache = new Map();
     this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
+    console.log('✅ [CalendarAPI] Calendar API client initialized');
   }
 
   /**
@@ -98,11 +100,13 @@ class CalendarAPI {
    * Get all user calendar events
    */
   async getUserEvents() {
+    console.log('📅 [CalendarAPI] Fetching user events...');
     try {
       const data = await this.authenticatedFetch('/api/calendar/events');
+      console.log(`✅ [CalendarAPI] Loaded ${data.events?.length || 0} user events`);
       return data.events || [];
     } catch (error) {
-      console.error('[CalendarAPI] Error fetching user events:', error);
+      console.error('❌ [CalendarAPI] Error fetching user events:', error);
       return [];
     }
   }
@@ -162,20 +166,27 @@ class CalendarAPI {
    * Get monthly Islamic events (holidays + prayer times)
    */
   async getMonthlyIslamicEvents(year, month, lat, lon, country = 'AE') {
+    console.log('🕌 [CalendarAPI] Fetching monthly Islamic events:', { year, month, lat, lon, country });
+    
     const cacheKey = `islamic-events-${year}-${month}-${lat}-${lon}-${country}`;
     const cached = this.getCached(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      console.log('💾 [CalendarAPI] Using cached Islamic events');
+      return cached;
+    }
 
     try {
-      const data = await this.authenticatedFetch(
-        `/api/islamic-calendar/monthly-events/${year}/${month}?latitude=${lat}&longitude=${lon}&country=${country}`
-      );
+      const url = `/api/islamic-calendar/monthly-events/${year}/${month}?latitude=${lat}&longitude=${lon}&country=${country}`;
+      console.log('🌐 [CalendarAPI] Requesting:', url);
+      
+      const data = await this.authenticatedFetch(url);
       
       const result = data.events || { holidays: [], prayerEvents: [] };
+      console.log(`✅ [CalendarAPI] Loaded ${result.holidays?.length || 0} holidays, ${result.prayerEvents?.length || 0} prayer events`);
       this.setCached(cacheKey, result);
       return result;
     } catch (error) {
-      console.error('[CalendarAPI] Error fetching Islamic events:', error);
+      console.error('❌ [CalendarAPI] Error fetching Islamic events:', error);
       return { holidays: [], prayerEvents: [] };
     }
   }
@@ -184,19 +195,26 @@ class CalendarAPI {
    * Get monthly prayer times (NEW endpoint using monthly service)
    */
   async getMonthlyPrayerTimes(year, month, lat, lon, tz, method = 'auto', madhab = 'auto') {
+    console.log('🕌 [CalendarAPI] Fetching monthly prayer times:', { year, month, lat, lon, tz, method, madhab });
+    
     const cacheKey = `prayer-times-${year}-${month}-${lat}-${lon}-${tz}-${method}-${madhab}`;
     const cached = this.getCached(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      console.log('💾 [CalendarAPI] Using cached prayer times');
+      return cached;
+    }
 
     try {
-      const data = await this.authenticatedFetch(
-        `/api/islamic-calendar/monthly-prayer-times/${year}/${month}?lat=${lat}&lon=${lon}&tz=${encodeURIComponent(tz)}&method=${method}&madhab=${madhab}`
-      );
+      const url = `/api/islamic-calendar/monthly-prayer-times/${year}/${month}?lat=${lat}&lon=${lon}&tz=${encodeURIComponent(tz)}&method=${method}&madhab=${madhab}`;
+      console.log('🌐 [CalendarAPI] Requesting:', url);
       
+      const data = await this.authenticatedFetch(url);
+      
+      console.log(`✅ [CalendarAPI] Loaded ${data.days?.length || 0} days of prayer times`);
       this.setCached(cacheKey, data);
       return data;
     } catch (error) {
-      console.error('[CalendarAPI] Error fetching monthly prayer times:', error);
+      console.error('❌ [CalendarAPI] Error fetching monthly prayer times:', error);
       return { days: [] };
     }
   }

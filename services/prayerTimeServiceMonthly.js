@@ -177,11 +177,14 @@ function getPrayerTimesForDay({ date, lat, lon, timezone, method, madhab }) {
  * @returns {Array} Array of prayer times for each day in the month
  */
 function getPrayerTimesForMonth({ year, month, lat, lon, timezone, method = 'auto', madhab = 'auto' }) {
+  console.log('📅 [PrayerMonthly] Starting monthly calculation:', { year, month, lat, lon, timezone, method, madhab });
+  
   try {
     const monthlyTimes = [];
     
     // Calculate number of days in the month
     const daysInMonth = moment.tz(`${year}-${String(month).padStart(2, '0')}`, timezone).daysInMonth();
+    console.log(`📅 [PrayerMonthly] Calculating for ${daysInMonth} days in ${year}-${month}`);
     
     // Calculate prayer times for each day
     for (let day = 1; day <= daysInMonth; day++) {
@@ -212,6 +215,8 @@ function getPrayerTimesForMonth({ year, month, lat, lon, timezone, method = 'aut
         meta: dayTimes.meta
       });
     }
+    
+    console.log(`✅ [PrayerMonthly] Successfully calculated ${monthlyTimes.length} days`);
     
     return {
       year,

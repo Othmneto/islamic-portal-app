@@ -90,10 +90,21 @@ class CalendarRenderers {
    * Render month view
    */
   renderMonth(container, year, month) {
+    console.log('🎨 [Renderer] Rendering month view:', year, month);
+    console.log('🎨 [Renderer] Total events available:', this.events.length);
+    console.log('🎨 [Renderer] Active layers:', this.layers);
+    
     const firstDay = new Date(year, month - 1, 1);
     const lastDay = new Date(year, month, 0);
     const daysInMonth = lastDay.getDate();
     const startDayOfWeek = firstDay.getDay(); // 0 = Sunday
+    
+    console.log('🎨 [Renderer] Month details:', {
+      daysInMonth,
+      startDayOfWeek,
+      firstDay: firstDay.toDateString(),
+      lastDay: lastDay.toDateString()
+    });
 
     let html = '<div class="month-grid">';
     
@@ -147,8 +158,11 @@ class CalendarRenderers {
 
     html += '</div>';
     
+    console.log('✅ [Renderer] Month view HTML generated');
+    
     if (container) {
       container.innerHTML = html;
+      console.log('✅ [Renderer] Month view rendered to container');
     }
     
     return html;
