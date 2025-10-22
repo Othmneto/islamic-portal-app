@@ -195,8 +195,19 @@ async function loadMonthData() {
   ]);
   
   console.log('✅ [Calendar] All data loaded successfully');
+  
+  // Filter out Islamic/Prayer events from user events (we'll generate them fresh)
+  const pureUserEvents = userEvents.filter(event => 
+    !event.isIslamicEvent && 
+    !event.prayerName && 
+    event.category !== 'prayer' && 
+    event.category !== 'holiday'
+  );
+  
   console.log('📊 [Calendar] Data summary:', {
-    userEvents: userEvents.length,
+    totalUserEvents: userEvents.length,
+    pureUserEvents: pureUserEvents.length,
+    filteredOutIslamicEvents: userEvents.length - pureUserEvents.length,
     holidays: islamicEvents.holidays?.length || 0,
     prayerDays: prayerTimes.days?.length || 0,
     totalPrayerEvents: (prayerTimes.days?.length || 0) * 5 // 5 prayers per day
@@ -212,22 +223,36 @@ async function loadMonthData() {
     prayerEvents: prayerEvents.length
   });
   
-  // Merge and deduplicate by ID
+  // Merge and deduplicate by ID and by date+title
   const allEventsWithDuplicates = [
-    ...userEvents,
+    ...pureUserEvents, // Use filtered user events
     ...islamicHolidayEvents,
     ...prayerEvents
   ];
   
-  // Deduplicate by ID (keep first occurrence)
+  // Advanced deduplication: by ID and by date+title+category
   const eventMap = new Map();
   allEventsWithDuplicates.forEach(event => {
-    if (event.id && !eventMap.has(event.id)) {
+    const dateKey = new Date(event.startDate).toISOString().split('T')[0];
+    const uniqueKey = `${event.id || ''}-${dateKey}-${event.title}-${event.category || ''}`;
+    
+    if (!eventMap.has(event.id) && !eventMap.has(uniqueKey)) {
       eventMap.set(event.id, event);
+      eventMap.set(uniqueKey, event);
     }
   });
   
-  const allEvents = Array.from(eventMap.values());
+  // Extract unique events only (remove the duplicate keys)
+  const uniqueEvents = new Set();
+  allEventsWithDuplicates.forEach(event => {
+    const dateKey = new Date(event.startDate).toISOString().split('T')[0];
+    const uniqueKey = `${event.id || ''}-${dateKey}-${event.title}-${event.category || ''}`;
+    if (eventMap.get(event.id) === event || eventMap.get(uniqueKey) === event) {
+      uniqueEvents.add(event);
+    }
+  });
+  
+  const allEvents = Array.from(uniqueEvents);
   
   console.log(`✅ [Calendar] Total events before dedup: ${allEventsWithDuplicates.length}`);
   console.log(`✅ [Calendar] Total events after dedup: ${allEvents.length}`);
