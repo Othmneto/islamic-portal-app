@@ -219,18 +219,20 @@ app.use(
     name: 'sid',
     secret: env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true, // CHANGED: Always create session for CSRF protection
     store: MongoStore.create({
       mongoUrl: env.MONGO_URI,
       dbName: env.DB_NAME,
-      collectionName: 'sessions'
+      collectionName: 'sessions',
+      touchAfter: 24 * 3600 // Lazy session update (once per 24 hours)
       // do not set a global ttl here; sessions persisted server-side and handled per-login
     }),
     cookie: {
       httpOnly: true,
       secure: env.NODE_ENV === 'production',
-      sameSite: 'lax'
-      // maxAge intentionally omitted; set per-login to support session vs persistent cookie
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days default for session cookie
+      // This can be overridden per-login to support session vs persistent cookie
     },
   })
 );
