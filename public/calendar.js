@@ -366,9 +366,18 @@ function setupDayClickHandlers() {
 // ===== TODAY PANEL =====
 async function loadTodayPanel() {
   const todayList = document.getElementById('today-list');
+  const todayLabel = document.getElementById('today-label');
+  
   if (!todayList) return;
   
   const today = new Date();
+  
+  // Update the today label with current date
+  if (todayLabel) {
+    const options = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+    todayLabel.textContent = today.toLocaleDateString('en-US', options).replace(',', ' •');
+  }
+  
   const todayEvents = CalendarState.renderer.getEventsForDate(today);
   
   // Sort by time
