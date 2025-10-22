@@ -13,7 +13,11 @@
   <!-- External production CSS -->
   <link rel="stylesheet" href="calendar.css" />
 
-  <!-- External production JS -->
+  <!-- Calendar API and Renderers (load first) -->
+  <script src="/js/calendar-api.js"></script>
+  <script src="/js/calendar-renderers.js"></script>
+  
+  <!-- External production JS (main calendar logic) -->
   <script src="calendar.js" defer></script>
 </head>
 <body>
