@@ -1,5 +1,6 @@
 const axios = require('axios');
 const { logger } = require('../config/logger');
+const HijriJS = require('hijri-js');
 
 class IslamicCalendarService {
     constructor() {
@@ -13,6 +14,16 @@ class IslamicCalendarService {
             'TR': 2, 'PK': 1, 'BD': 1, 'IN': 1, 'ID': 1, 'MY': 1,
             'US': 2, 'CA': 2, 'GB': 1, 'FR': 12, 'DE': 4
         };
+        this.hijriMonthNames = [
+            'Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' al-Thani",
+            'Jumada al-Awwal', 'Jumada al-Thani', 'Rajab', "Sha'ban",
+            'Ramadan', 'Shawwal', "Dhu al-Qi'dah", "Dhu al-Hijjah"
+        ];
+        this.hijriMonthNamesAr = [
+            'محرم', 'صفر', 'ربيع الأول', 'ربيع الثاني',
+            'جمادى الأولى', 'جمادى الثانية', 'رجب', 'شعبان',
+            'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'
+        ];
     }
 
     initializeIslamicHolidays() {
@@ -124,8 +135,11 @@ class IslamicCalendarService {
     // Convert Gregorian date to Hijri
     async convertToHijri(gregorianDate) {
         try {
+            // Try online API first (with shorter timeout)
             const dateStr = gregorianDate.toISOString().split('T')[0];
-            const response = await axios.get(`${this.hijriApiUrl}/${dateStr}`);
+            const response = await axios.get(`${this.hijriApiUrl}/${dateStr}`, {
+                timeout: 2000 // 2 second timeout
+            });
 
             if (response.data && response.data.data) {
                 const hijri = response.data.data.hijri;
@@ -140,11 +154,37 @@ class IslamicCalendarService {
                     designation: hijri.designation.abbreviated
                 };
             }
-            throw new Error('Invalid response from Hijri API');
         } catch (error) {
-            logger.error('Error converting to Hijri:', error);
-            return null;
+            // Fallback to offline library
+            logger.info('Using offline Hijri conversion (API unavailable)');
         }
+        
+        // Fallback: Use offline hijri-js library
+        try {
+            const gregorianYear = gregorianDate.getFullYear();
+            const gregorianMonth = gregorianDate.getMonth() + 1;
+            const gregorianDay = gregorianDate.getDate();
+            
+            // Convert using offline library
+            const hijriDate = HijriJS.gregorianToHijri(gregorianYear, gregorianMonth, gregorianDay);
+            
+            if (hijriDate) {
+                return {
+                    year: hijriDate.year,
+                    month: hijriDate.month,
+                    day: hijriDate.day,
+                    monthName: this.hijriMonthNames[hijriDate.month - 1] || 'Unknown',
+                    monthNameAr: this.hijriMonthNamesAr[hijriDate.month - 1] || 'غير معروف',
+                    dayName: gregorianDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                    dayNameAr: gregorianDate.toLocaleDateString('ar-SA', { weekday: 'long' }),
+                    designation: 'AH'
+                };
+            }
+        } catch (fallbackError) {
+            logger.error('Error in offline Hijri conversion:', fallbackError);
+        }
+        
+        return null;
     }
 
     // Get prayer times for a specific date and location
