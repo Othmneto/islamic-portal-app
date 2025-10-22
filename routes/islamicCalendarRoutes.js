@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const IslamicCalendarService = require('../services/islamicCalendarService');
+const { getPrayerTimesForMonth } = require('../services/prayerTimeServiceMonthly');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { logger } = require('../config/logger');
 
@@ -304,6 +305,61 @@ router.get('/current-hijri', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to get current Hijri date'
+        });
+    }
+});
+
+// NEW: Get monthly prayer times using non-invasive monthly service
+router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
+    try {
+        const { year, month } = req.params;
+        const { lat, lon, tz, method, madhab } = req.query;
+
+        const yearNum = parseInt(year);
+        const monthNum = parseInt(month);
+
+        if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid year or month'
+            });
+        }
+
+        if (!lat || !lon) {
+            return res.status(400).json({
+                success: false,
+                error: 'Latitude and longitude are required'
+            });
+        }
+
+        if (!tz) {
+            return res.status(400).json({
+                success: false,
+                error: 'Timezone (tz) is required'
+            });
+        }
+
+        const monthlyTimes = getPrayerTimesForMonth({
+            year: yearNum,
+            month: monthNum,
+            lat: parseFloat(lat),
+            lon: parseFloat(lon),
+            timezone: tz,
+            method: method || 'auto',
+            madhab: madhab || 'auto'
+        });
+
+        res.json({
+            success: true,
+            ...monthlyTimes,
+            message: 'Monthly prayer times retrieved successfully'
+        });
+
+    } catch (error) {
+        logger.error('Error getting monthly prayer times:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get monthly prayer times'
         });
     }
 });
