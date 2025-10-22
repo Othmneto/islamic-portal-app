@@ -294,7 +294,8 @@ class CalendarAPI {
   /**
    * Sync events with external provider
    */
-  async syncProvider(provider) {
+  async syncProvider(provider, events = null) {
+    console.log(`🔗 [CalendarAPI] Syncing ${provider}...`);
     try {
       // First, ensure user has OAuth tokens
       const status = await this.getIntegrationStatus();
@@ -304,13 +305,26 @@ class CalendarAPI {
         throw new Error(`${provider} not connected. Please connect first.`);
       }
 
+      // If no events provided, get all user events
+      if (!events) {
+        console.log('📅 [CalendarAPI] Fetching user events for sync...');
+        events = await this.getUserEvents();
+      }
+      
+      console.log(`📅 [CalendarAPI] Syncing ${events.length} events to ${provider}`);
+
       const data = await this.authenticatedFetch(`/api/calendar/sync/${provider}`, {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ events })
       });
       
+      console.log(`✅ [CalendarAPI] ${provider} sync completed:`, data);
       return data;
     } catch (error) {
-      console.error(`[CalendarAPI] Error syncing ${provider}:`, error);
+      console.error(`❌ [CalendarAPI] Error syncing ${provider}:`, error);
       throw error;
     }
   }

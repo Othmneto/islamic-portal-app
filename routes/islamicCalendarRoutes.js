@@ -280,16 +280,22 @@ router.get('/countries', requireAuth, async (req, res) => {
 // Get current Hijri date (public endpoint)
 router.get('/current-hijri', async (req, res) => {
     try {
+        console.log('📅 [IslamicCalendar] Current Hijri date request');
         const today = new Date();
+        console.log('📅 [IslamicCalendar] Today:', today.toISOString());
+        
         const hijri = await islamicCalendarService.convertToHijri(today);
+        console.log('📅 [IslamicCalendar] Hijri result:', hijri);
 
         if (!hijri) {
+            console.error('❌ [IslamicCalendar] convertToHijri returned null/undefined');
             return res.status(500).json({
                 success: false,
                 error: 'Failed to get current Hijri date'
             });
         }
 
+        console.log('✅ [IslamicCalendar] Returning Hijri date');
         res.json({
             success: true,
             gregorian: {
@@ -301,10 +307,12 @@ router.get('/current-hijri', async (req, res) => {
         });
 
     } catch (error) {
+        console.error('❌ [IslamicCalendar] Error getting current Hijri date:', error);
         logger.error('Error getting current Hijri date:', error);
         res.status(500).json({
             success: false,
-            error: 'Failed to get current Hijri date'
+            error: 'Failed to get current Hijri date',
+            details: error.message
         });
     }
 });
