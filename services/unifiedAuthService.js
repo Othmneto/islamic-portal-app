@@ -4,7 +4,6 @@
  */
 
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { env } = require('../config');
@@ -12,39 +11,9 @@ const { safeLogAuthEvent, safeLogSecurityViolation } = require('../middleware/se
 const { createError, oauthErrorHandler, databaseErrorHandler } = require('../middleware/errorHandler');
 
 class UnifiedAuthService {
-    constructor() {
-        this.jwtSecret = env.JWT_SECRET;
-        this.jwtExpiresIn = env.JWT_EXPIRES_IN || '7d';
-    }
+    constructor() {}
 
-    /**
-     * Generate JWT token for user
-     */
-    generateToken(user) {
-        const payload = {
-            user: {
-                id: user._id,
-                email: user.email,
-                username: user.username,
-                role: user.role,
-                authProvider: user.authProvider,
-                isVerified: user.isVerified
-            }
-        };
-
-        return jwt.sign(payload, this.jwtSecret, { expiresIn: this.jwtExpiresIn });
-    }
-
-    /**
-     * Verify JWT token
-     */
-    verifyToken(token) {
-        try {
-            return jwt.verify(token, this.jwtSecret);
-        } catch (error) {
-            throw new Error('Invalid token');
-        }
-    }
+    // JWT token methods removed - session-only architecture
 
     /**
      * Create or update user from OAuth profile
@@ -388,10 +357,9 @@ class UnifiedAuthService {
     /**
      * Create unified login response
      */
-    createLoginResponse(user, token) {
+    createLoginResponse(user) {
         return {
             success: true,
-            token,
             user: {
                 id: user._id,
                 email: user.email,
@@ -401,7 +369,7 @@ class UnifiedAuthService {
                 isVerified: user.isVerified,
                 needsUsernameSetup: !user.username && user.authProvider !== 'local'
             },
-            message: 'Login successful'
+            message: 'Login successful (session)'
         };
     }
 
@@ -411,9 +379,7 @@ class UnifiedAuthService {
     async handleOAuthCallback(profile, provider, ip, userAgent) {
         try {
             const user = await this.createOrUpdateUserFromOAuth(profile, provider, ip, userAgent);
-            const token = this.generateToken(user);
-
-            return this.createLoginResponse(user, token);
+            return this.createLoginResponse(user);
         } catch (error) {
             console.error(`❌ [UnifiedAuth] OAuth callback error for ${provider}:`, error);
             throw error;

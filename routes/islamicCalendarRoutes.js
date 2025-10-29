@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const IslamicCalendarService = require('../services/islamicCalendarService');
 const { getPrayerTimesForMonth } = require('../services/prayerTimeServiceMonthly');
+const holidayAggregator = require('../services/holidayAggregatorService');
+const Holiday = require('../models/Holiday');
 const { requireAuth } = require('../middleware/authMiddleware');
 const { logger } = require('../config/logger');
 
@@ -317,6 +319,104 @@ router.get('/current-hijri', async (req, res) => {
     }
 });
 
+// Get daily prayer times
+router.get('/daily-prayer-times', async (req, res) => {
+    try {
+        console.log('🕌 [IslamicCalendar] Daily prayer times request:', req.query);
+        
+        const { date, lat, lon, tz, method, madhab } = req.query;
+
+        if (!date || !lat || !lon) {
+            return res.status(400).json({
+                success: false,
+                error: 'Date, latitude and longitude are required'
+            });
+        }
+
+        const targetDate = new Date(date);
+        if (isNaN(targetDate.getTime())) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid date format. Use YYYY-MM-DD'
+            });
+        }
+
+        const year = targetDate.getFullYear();
+        const month = targetDate.getMonth() + 1;
+
+        const monthlyPrayerTimes = await getPrayerTimesForMonth({
+            year,
+            month,
+            lat: parseFloat(lat),
+            lon: parseFloat(lon),
+            timezone: tz || 'UTC',
+            method: method || 'auto',
+            madhab: madhab || 'auto'
+        });
+
+        // Find the specific day's prayer times from the monthly result
+        const daysArray = Array.isArray(monthlyPrayerTimes?.days)
+          ? monthlyPrayerTimes.days
+          : monthlyPrayerTimes; // backward compatibility if an array is returned
+
+        const isoDate = `${year}-${String(month).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+        const dayData = Array.isArray(daysArray)
+          ? daysArray.find(d => d?.date === isoDate)
+          : undefined;
+
+        if (!dayData) {
+            // Fallback: compute single day using monthly service's day calculator
+            try {
+                const { getPrayerTimesForDay } = require('../services/prayerTimeServiceMonthly');
+                const singleDay = getPrayerTimesForDay({
+                    date: targetDate,
+                    lat: parseFloat(lat),
+                    lon: parseFloat(lon),
+                    timezone: tz || 'UTC',
+                    method: method || 'auto',
+                    madhab: madhab || 'auto'
+                });
+                return res.json({
+                    success: true,
+                    data: {
+                        date: isoDate,
+                        times: {
+                            fajr: singleDay.fajr,
+                            dhuhr: singleDay.dhuhr,
+                            asr: singleDay.asr,
+                            maghrib: singleDay.maghrib,
+                            isha: singleDay.isha,
+                            shuruq: singleDay.shuruq,
+                        }
+                    },
+                    message: 'Daily prayer times calculated successfully'
+                });
+            } catch (e) {
+                return res.status(404).json({
+                    success: false,
+                    error: 'Prayer times not found for the specified date'
+                });
+            }
+        }
+
+        res.json({
+            success: true,
+            data: {
+                date: dayData.date,
+                times: dayData.times
+            },
+            message: 'Daily prayer times retrieved successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ [IslamicCalendar] Error getting daily prayer times:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get daily prayer times'
+        });
+    }
+});
+
 // NEW: Get monthly prayer times using non-invasive monthly service
 router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
     try {
@@ -377,6 +477,140 @@ router.get('/monthly-prayer-times/:year/:month', async (req, res) => {
         res.status(500).json({
             success: false,
             error: 'Failed to get monthly prayer times'
+        });
+    }
+});
+
+// NEW: Get yearly holidays for occasions modal (using Holiday Aggregator)
+router.get('/yearly-holidays/:year', requireAuth, async (req, res) => {
+    try {
+        console.log('🕌 [IslamicCalendar] Yearly holidays request:', req.params, req.query);
+        
+        const { year } = req.params;
+        const { country, includeIslamic, includeNational } = req.query;
+
+        const yearNum = parseInt(year);
+        
+        console.log('🕌 [IslamicCalendar] Parsed params:', { yearNum, country, includeIslamic, includeNational });
+
+        if (isNaN(yearNum) || yearNum < 2020 || yearNum > 2035) {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid year. Must be between 2020-2035'
+            });
+        }
+
+        if (!country) {
+            return res.status(400).json({
+                success: false,
+                error: 'Country parameter is required'
+            });
+        }
+
+        console.log('🕌 [IslamicCalendar] Calling holidayAggregator...');
+        
+        // Build include types array
+        const includeTypes = [];
+        if (includeIslamic !== 'false') {
+            includeTypes.push('islamic', 'religious');
+        }
+        if (includeNational !== 'false') {
+            includeTypes.push('national', 'public', 'observance');
+        }
+
+        // Fetch from holiday aggregator (with DB and API integration)
+        const holidays = await holidayAggregator.getHolidaysForCountry(
+            country,
+            yearNum,
+            includeTypes
+        );
+
+        // Transform to frontend format
+        const formattedHolidays = holidays.map(h => ({
+            id: h.uniqueId,
+            name: h.name,
+            nameAr: h.nameAr || h.nameLocal,
+            date: h.date,
+            type: h.type,
+            duration: h.duration || 1,
+            country: h.countryCode,
+            isPublic: h.isPublicHoliday,
+            description: h.description,
+            hijriDate: h.hijriDate
+        }));
+
+        console.log('✅ [IslamicCalendar] Successfully retrieved yearly holidays, returning response');
+
+        res.json({
+            success: true,
+            holidays: formattedHolidays,
+            year: yearNum,
+            country: country,
+            count: formattedHolidays.length,
+            message: 'Yearly holidays retrieved successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ [IslamicCalendar] Error getting yearly holidays:', error);
+        logger.error('Error getting yearly holidays:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get yearly holidays',
+            details: error.message
+        });
+    }
+});
+
+// Get list of supported countries
+router.get('/countries', async (req, res) => {
+    try {
+        const countries = await holidayAggregator.getAllCountries();
+        
+        res.json({
+            success: true,
+            countries: countries,
+            count: countries.length,
+            message: 'Countries list retrieved successfully'
+        });
+    } catch (error) {
+        logger.error('Error getting countries list:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get countries list',
+            details: error.message
+        });
+    }
+});
+
+// Get holiday details by ID
+router.get('/holiday/:id', requireAuth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const holiday = await Holiday.findOne({ uniqueId: id });
+        
+        if (!holiday) {
+            return res.status(404).json({
+                success: false,
+                error: 'Holiday not found'
+            });
+        }
+
+        // Update request count
+        holiday.requestCount = (holiday.requestCount || 0) + 1;
+        await holiday.save();
+
+        res.json({
+            success: true,
+            holiday: holiday,
+            message: 'Holiday details retrieved successfully'
+        });
+    } catch (error) {
+        logger.error('Error getting holiday details:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to get holiday details',
+            details: error.message
         });
     }
 });

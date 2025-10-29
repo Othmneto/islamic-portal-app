@@ -14,19 +14,16 @@
    - Real-time auto-refresh service
 ------------------------------------------------------------------- */
 
-// Import logout functions from common.js
+// Session-based auth: no token helpers needed
+// Tokens are managed server-side via httpOnly cookies
 function getToken() {
-  return localStorage.getItem('authToken') ||
-         localStorage.getItem('token') ||
-         localStorage.getItem('jwt') ||
-         localStorage.getItem('access_token');
+  // DEPRECATED: Session-based auth does not use client-side tokens
+  return null;
 }
 
 function removeToken() {
-  localStorage.removeItem('authToken');
-  localStorage.removeItem('token');
-  localStorage.removeItem('jwt');
-  localStorage.removeItem('access_token');
+  // DEPRECATED: Session cleared server-side via /api/auth-cookie/logout
+  // Clear any remaining legacy storage items
   localStorage.removeItem('userData');
   localStorage.removeItem('userPreferences');
   localStorage.removeItem('savedLocations');
@@ -34,28 +31,20 @@ function removeToken() {
 
 async function logout() {
   try {
-    const token = getToken();
-
-    if (token) {
-      try {
-        const response = await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        });
-
-        if (response.ok) {
-          console.log('✅ Logout API call successful');
-        } else if (response.status === 401) {
-          console.log('ℹ️ Token already expired, proceeding with client-side logout');
-        } else {
-          console.warn('⚠️ Logout API call failed, but continuing with client-side logout');
-        }
-      } catch (apiError) {
-        console.warn('⚠️ Logout API call failed:', apiError.message);
+    // Session-based logout
+    try {
+      const response = await fetch('/api/auth-cookie/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (response.ok) {
+        console.log('✅ Logout (session) successful');
+      } else {
+        console.warn('⚠️ Logout (session) failed, proceeding to clear local state');
       }
+    } catch (apiError) {
+      console.warn('⚠️ Logout (session) request error:', apiError.message);
     }
 
     removeToken();
@@ -189,17 +178,15 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
           console.log("[Main] Handling LOG_PRAYER message");
           logging.logPrayerAsCompleted(event.data.prayer);
         } else if (event.data?.type === "PLAY_ADHAN") {
-          console.log("[Main] Handling PLAY_ADHAN message");
-          const audioFile = event.data.audioFile || "/audio/adhan.mp3";
-          const fromNotification = event.data.fromNotification || false;
-
-          if (fromNotification) {
+          // Audio module already handles PLAY_ADHAN messages via its own SW listener
+          // This handler is kept only for logging and toast notification
+          console.log("[Main] PLAY_ADHAN message received (handled by audio module)");
+          
+          if (event.data.fromNotification) {
             console.log("[Main] Playing adhan from notification click");
-            // Show a toast notification when adhan plays from notification
             core.toast("success", "Adhan playing from notification");
           }
-
-          audio.playAdhan(audioFile);
+          // Don't call audio.playAdhan() here - let the audio module handle it to avoid race conditions
         }
       });
     }
@@ -236,9 +223,8 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
     const statusDashboard = new NotificationStatusDashboard(core, api);
     window.__statusDashboard = statusDashboard;
 
-    // Check if user is authenticated before initializing
-    const token = api.getAuthToken();
-    if (token) {
+    // Check if user is authenticated before initializing (session-based)
+    if (window.tokenManager?.isAuthenticated()) {
       console.log("[Main] User authenticated, initializing notification status dashboard");
       await statusDashboard.initialize();
     } else {
@@ -246,8 +232,7 @@ import { NotificationStatusDashboard } from './js/prayer-time/notification-statu
 
       // Retry initialization when user becomes authenticated
       const checkAuth = setInterval(() => {
-        const newToken = api.getAuthToken();
-        if (newToken) {
+        if (window.tokenManager?.isAuthenticated()) {
           console.log("[Main] User now authenticated, initializing notification status dashboard");
           statusDashboard.initialize();
           clearInterval(checkAuth);

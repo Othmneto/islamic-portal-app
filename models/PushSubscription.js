@@ -19,6 +19,14 @@ const PushSubscriptionSchema = new mongoose.Schema(
     preferences: { type: mongoose.Schema.Types.Mixed, default: undefined },
     location: { lat: { type: Number }, lon: { type: Number }, city: { type: String } },
     ua: { type: String },
+    
+    // Browser information for cross-browser support debugging
+    browserInfo: {
+      browser: { type: String },
+      os: { type: String },
+      pushService: { type: String },
+      canBackgroundNotify: { type: Boolean }
+    },
 
     // Health monitoring fields
     expiresAt: { type: Date, default: null },

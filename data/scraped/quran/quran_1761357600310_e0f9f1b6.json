@@ -1,0 +1,16 @@
+{
+  "url": "https://quran.com",
+  "contentType": "quran",
+  "timestamp": "2025-10-25T02:00:00.303Z",
+  "content": {
+    "verses": [],
+    "translations": [],
+    "tafsir": [],
+    "surahs": []
+  },
+  "metadata": {
+    "title": "The Noble Quran - Quran.com",
+    "description": "The Quran translated into many languages in a simple and easy interface",
+    "language": "en"
+  }
+}

@@ -182,9 +182,9 @@ class SimpleTextTranslator {
             console.log('📡 [SimpleTextTranslator] Sending request to /api/text-translation/translate');
             const response = await fetch('/api/text-translation/translate', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('authToken') || ''}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     sourceText: text,

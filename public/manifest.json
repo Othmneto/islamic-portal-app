@@ -1,120 +1,135 @@
 {
-  "name": "Islamic Portal - Translation & Prayer",
-  "short_name": "Islamic Portal",
-  "description": "Comprehensive Islamic translation and prayer management platform",
-  "start_url": "/",
+  "name": "Islamic Calendar - Prayer Times & Events",
+  "short_name": "Islamic Calendar",
+  "description": "A comprehensive Islamic calendar with prayer times, holidays, and event management",
+  "start_url": "/calendar.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#667eea",
+  "background_color": "#1a1a1a",
+  "theme_color": "#6366f1",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
-  "categories": ["education", "religion", "productivity"],
+  "dir": "ltr",
+  "categories": ["productivity", "lifestyle", "religion"],
   "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32 48x48",
+      "type": "image/x-icon"
+    },
     {
       "src": "/icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-96x96.png",
       "sizes": "96x96",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-128x128.png",
       "sizes": "128x128",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-144x144.png",
       "sizes": "144x144",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-152x152.png",
       "sizes": "152x152",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-384x384.png",
       "sizes": "384x384",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-1.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Desktop calendar view"
+    },
+    {
+      "src": "/screenshots/mobile-1.png",
+      "sizes": "375x667",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile calendar view"
     }
   ],
   "shortcuts": [
     {
-      "name": "Text Translator",
-      "short_name": "Translator",
-      "description": "Quick access to text translation",
-      "url": "/translator/text-translator.html",
+      "name": "Today",
+      "short_name": "Today",
+      "description": "Go to today's date",
+      "url": "/calendar.html?view=today",
       "icons": [
         {
-          "src": "/icons/translator-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "src": "/icons/shortcut-today.png",
+          "sizes": "96x96"
         }
       ]
     },
     {
       "name": "Prayer Times",
-      "short_name": "Prayer",
-      "description": "Check prayer times",
-      "url": "/prayer-times.html",
+      "short_name": "Prayers",
+      "description": "View today's prayer times",
+      "url": "/calendar.html?view=prayers",
       "icons": [
         {
-          "src": "/icons/prayer-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "src": "/icons/shortcut-prayer.png",
+          "sizes": "96x96"
         }
       ]
     },
     {
-      "name": "Account Management",
-      "short_name": "Account",
-      "description": "Manage your account settings",
-      "url": "/account-management.html",
+      "name": "Add Event",
+      "short_name": "Add Event",
+      "description": "Create a new event",
+      "url": "/calendar.html?action=add-event",
       "icons": [
         {
-          "src": "/icons/account-96x96.png",
-          "sizes": "96x96",
-          "type": "image/png"
+          "src": "/icons/shortcut-add.png",
+          "sizes": "96x96"
         }
       ]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Home page on desktop"
-    },
-    {
-      "src": "/screenshots/mobile-translator.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Text translator on mobile"
     }
   ],
   "related_applications": [],
@@ -123,22 +138,32 @@
     "preferred_width": 400
   },
   "launch_handler": {
-    "client_mode": "focus-existing"
+    "client_mode": "navigate-existing"
   },
+  "handle_links": "preferred",
+  "capture_links": "new-client",
+  "protocol_handlers": [
+    {
+      "protocol": "web+islamic-calendar",
+      "url": "/calendar.html?event=%s"
+    }
+  ],
   "file_handlers": [
     {
-      "action": "/translator/text-translator.html",
+      "action": "/calendar.html?import=ics",
       "accept": {
-        "text/plain": [".txt"],
-        "text/markdown": [".md"]
+        "text/calendar": [".ics"]
       }
     }
   ],
-  "protocol_handlers": [
-    {
-      "protocol": "web+islamic",
-      "url": "/?q=%s"
+  "share_target": {
+    "action": "/calendar.html?share=event",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
     }
-  ]
+  }
 }
-

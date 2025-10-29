@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PWA Icon Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #1a1a1a; color: white; }
+    .icon-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .icon-item { text-align: center; padding: 10px; border: 1px solid #333; border-radius: 8px; background: #2a2a2a; }
+    .icon-preview { margin: 10px 0; }
+    .download-btn { background: #6366f1; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+    .download-btn:hover { background: #4f46e5; }
+    h1 { color: #6366f1; }
+  </style>
+</head>
+<body>
+  <h1>📱 PWA Icon Generator</h1>
+  <p>Right-click on each icon and save it to the /public/icons/ directory with the correct filename.</p>
+  
+  <div class="icon-grid">
+    <div class="icon-item">
+      <h3>favicon.ico</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-32" width="32" height="32" style="border: 1px solid #555; image-rendering: pixelated;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(32, 'favicon.ico')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-72x72.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-72" width="72" height="72" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(72, 'icon-72x72.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-96x96.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-96" width="96" height="96" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(96, 'icon-96x96.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-128x128.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-128" width="128" height="128" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(128, 'icon-128x128.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-144x144.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-144" width="144" height="144" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(144, 'icon-144x144.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-152x152.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-152" width="152" height="152" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(152, 'icon-152x152.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-180x180.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-180" width="180" height="180" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(180, 'icon-180x180.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-192x192.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-192" width="192" height="192" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(192, 'icon-192x192.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-384x384.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-384" width="384" height="384" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(384, 'icon-384x384.png')">Download</button>
+    </div>
+    
+    <div class="icon-item">
+      <h3>icon-512x512.png</h3>
+      <div class="icon-preview">
+        <canvas id="canvas-512" width="512" height="512" style="border: 1px solid #555;"></canvas>
+      </div>
+      <button class="download-btn" onclick="downloadIcon(512, 'icon-512x512.png')">Download</button>
+    </div>
+  </div>
+
+  <script>
+    // Generate all icons
+    function generateIcon(size) {
+      const canvas = document.getElementById('canvas-' + size);
+      const ctx = canvas.getContext('2d');
+      
+      // Background with rounded corners
+      ctx.fillStyle = '#6366f1';
+      ctx.fillRect(0, 0, size, size);
+      
+      // Add rounded corners
+      ctx.globalCompositeOperation = 'destination-in';
+      ctx.beginPath();
+      ctx.roundRect(0, 0, size, size, size * 0.1);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+      
+      // Calendar icon
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold ' + (size * 0.4) + 'px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('📅', size/2, size/2);
+    }
+
+    // Generate all icons
+    [32, 72, 96, 128, 144, 152, 180, 192, 384, 512].forEach(generateIcon);
+
+    function downloadIcon(size, filename) {
+      const canvas = document.getElementById('canvas-' + size);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+

@@ -338,8 +338,8 @@ class TextTranslator {
     async loadUserPreferences() {
         try {
             const response = await fetch('/api/user/preferences', {
+                credentials: 'include',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -360,8 +360,8 @@ class TextTranslator {
     async loadUserHistory() {
         try {
             const response = await fetch('/api/translation-history/history', {
+                credentials: 'include',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('authToken')}`,
                     'Content-Type': 'application/json'
                 }
             });
@@ -707,9 +707,9 @@ class TextTranslator {
             console.log('📡 [TextTranslator] Sending request to /api/text-translation/translate');
             const response = await fetch('/api/text-translation/translate', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('accessToken') || localStorage.getItem('authToken') || ''}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     sourceText: text,
@@ -3962,8 +3962,8 @@ class TextTranslator {
         try {
             const response = await fetch('/api/user/preferences', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(preferences)

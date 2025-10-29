@@ -2,6 +2,22 @@
 
 This is the backend server for a multi-functional application that provides AI-powered translation services, user authentication, and an API for retrieving Islamic-related information such as prayer times, Duas, and the 99 Names of Allah.
 
+## ⚠️ Authentication Migration (JWT → Session)
+
+**Important:** This application has migrated from JWT to session-based authentication.
+
+### For New Developers
+- Use **session-based authentication** for all web clients
+- See [`docs/AUTHENTICATION.md`](docs/AUTHENTICATION.md) for complete guide
+- Login endpoint: `POST /api/auth-cookie/login` (session-based)
+- All requests must include `credentials: 'include'`
+
+### Deprecated Endpoints
+- ❌ `POST /api/auth/login` (JWT) → Returns 410 Gone
+- ✅ Use `POST /api/auth-cookie/login` (Session) instead
+
+See [`JWT_TO_SESSION_MIGRATION_SUMMARY.md`](JWT_TO_SESSION_MIGRATION_SUMMARY.md) for full migration details.
+
 ## ✨ Features
 
 -   **User Authentication**: Secure user registration and login using JWT (JSON Web Tokens).
@@ -87,7 +103,8 @@ Here is a summary of the main available API routes.
 | Method | Endpoint                  | Description                               | Access    |
 | :----- | :------------------------ | :---------------------------------------- | :-------- |
 | `POST` | `/api/auth/register`      | Register a new user.                      | Public    |
-| `POST` | `/api/auth/login`         | Log in an existing user and get a token.  | Public    |
+| `POST` | `/api/auth/login`         | ⚠️ DEPRECATED - Returns 410 Gone          | Public    |
+| `POST` | `/api/auth-cookie/login`  | Log in via session (CURRENT)              | Public    |
 | `GET`  | `/api/auth/me`            | Get the profile of the logged-in user.    | Private   |
 | `POST` | `/speech-to-text`         | Transcribe an audio file to text.         | Public    |
 | `POST` | `/text-to-speech`         | Convert text into an audio file.          | Public    |

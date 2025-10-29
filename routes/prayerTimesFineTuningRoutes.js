@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const fineTuningService = require('../services/prayerTimesFineTuningService');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 
 /**
  * GET /api/prayer-times-fine-tuning/region

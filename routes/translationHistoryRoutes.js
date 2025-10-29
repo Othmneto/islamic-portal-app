@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const TranslationHistory = require('../models/TranslationHistory');
 const partialTranslationService = require('../services/partialTranslationService');
-const auth = require('../middleware/auth');
+const { attachUser: auth } = require('../middleware/authMiddleware');
 const logger = require('../utils/logger');
 
 // Get user's translation history

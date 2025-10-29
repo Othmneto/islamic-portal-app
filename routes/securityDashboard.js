@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { securityMonitor, SecurityEvent } = require('../services/securityMonitor');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 
 // Get security dashboard data
 router.get('/dashboard', authMiddleware, async (req, res) => {

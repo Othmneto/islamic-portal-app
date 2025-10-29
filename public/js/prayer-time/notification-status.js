@@ -53,9 +53,10 @@ class NotificationStatusDashboard {
 
   async connectWebSocket() {
     try {
-      const token = this.api?.getAuthToken();
-      if (!token) {
-        console.warn('[NotificationStatus] No auth token for WebSocket');
+      // Session-based auth - no token needed
+      // Check if user is authenticated via session
+      if (!window.tokenManager?.isAuthenticated()) {
+        console.warn('[NotificationStatus] User not authenticated for WebSocket');
         return;
       }
 
@@ -74,7 +75,7 @@ class NotificationStatusDashboard {
 
       this.socket = io({
         path: '/socket.io/',
-        auth: { token },
+        // Session-based auth - no token needed
         reconnection: true,
         reconnectionAttempts: this.maxReconnectAttempts,
         reconnectionDelay: this.reconnectDelay,
@@ -137,15 +138,12 @@ class NotificationStatusDashboard {
 
   async loadCurrentStatus() {
     try {
-      const token = this.api?.getAuthToken();
-      if (!token) {
-        console.warn('[NotificationStatus] No auth token available');
-        return;
-      }
+      // Session-based auth - no token check needed
+      // The API will handle session authentication
 
       console.log('[NotificationStatus] Loading current status...');
       const response = await fetch('/api/notification-status/current', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include' // Session-based auth
       });
 
       console.log('[NotificationStatus] Response status:', response.status);
@@ -212,15 +210,10 @@ class NotificationStatusDashboard {
 
   async loadHistory() {
     try {
-      const token = this.api?.getAuthToken();
-      if (!token) {
-        console.warn('[NotificationStatus] No auth token for history');
-        return;
-      }
-
-      console.log('[NotificationStatus] Loading history with token:', token.substring(0, 20) + '...');
+      // Session-based auth - no token check needed
+      console.log('[NotificationStatus] Loading history...');
       const response = await fetch('/api/notification-status/history', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include' // Session-based auth
       });
 
       console.log('[NotificationStatus] History response status:', response.status);

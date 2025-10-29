@@ -16,8 +16,8 @@ class ImamInterface {
         this.durationInterval = null;
         this.translationCount = 0;
 
-        // Get token
-        this.token = localStorage.getItem('accessToken') || localStorage.getItem('authToken');
+        // Session-based auth: no client-side token needed
+        this.token = null;
 
         // Initialize UI elements
         this.initializeElements();
@@ -524,9 +524,8 @@ class ImamInterface {
     async fetchSessionStats() {
         try {
             const response = await fetch(`/api/live-translation/session/${this.sessionId}`, {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
+                credentials: 'include',
+                headers: {}
             });
 
             if (response.ok) {

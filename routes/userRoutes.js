@@ -3,7 +3,7 @@
 
 const express = require("express");
 const User = require("../models/User");
-const authMiddleware = require("../middleware/auth");
+const { attachUser: authMiddleware } = require("../middleware/authMiddleware");
 const { validate, z } = require("../middleware/validate");
 const moment = require("moment-timezone");
 
@@ -201,6 +201,9 @@ router.put("/preferences", authMiddleware, validate(preferencesSchema), async (r
     // Notification preferences
     if (typeof reminderMinutes !== "undefined") {
       $set["notificationPreferences.reminderMinutes"] = reminderMinutes;
+      
+      // Force immediate re-schedule by emitting event
+      console.log(`[UserRoutes] Reminder time changed to ${reminderMinutes} minutes for user ${req.user.id}`);
     }
 
     // UI preferences
@@ -241,6 +244,7 @@ router.put("/preferences", authMiddleware, validate(preferencesSchema), async (r
     // Emit event for dynamic scheduler updates
     const eventEmitter = require('../services/eventEmitter');
     eventEmitter.emit('userPreferencesChanged', req.user.id);
+    console.log(`[UserRoutes] Emitted userPreferencesChanged event for user ${req.user.id}`);
 
     return res.json({ success: true, message: "Preferences updated" });
   } catch (error) {
@@ -280,10 +284,10 @@ router.get("/notification-preferences", authMiddleware, async (req, res) => {
 });
 
 /**
- * PUT /api/user/notification-preferences
+ * PUT/POST /api/user/notification-preferences
  * Updates notification preferences including reminderMinutes
  */
-router.put("/notification-preferences", authMiddleware, validate(notificationPreferencesSchema), async (req, res) => {
+const notificationPreferencesHandler = async (req, res) => {
   try {
     const { 
       enabled, reminderMinutes, prayerReminders, calculationMethod, madhab, timezone,
@@ -297,6 +301,9 @@ router.put("/notification-preferences", authMiddleware, validate(notificationPre
     }
     if (typeof reminderMinutes !== "undefined") {
       $set["notificationPreferences.reminderMinutes"] = reminderMinutes;
+      
+      // Force immediate re-schedule by emitting event
+      console.log(`[UserRoutes] Reminder time changed to ${reminderMinutes} minutes for user ${req.user.id}`);
     }
     if (prayerReminders && typeof prayerReminders === "object") {
       $set["notificationPreferences.prayerReminders"] = {
@@ -360,18 +367,26 @@ router.put("/notification-preferences", authMiddleware, validate(notificationPre
       logger.warn?.("Audio preferences validation skipped:", audioError.message);
     }
 
+    console.log(`[UserRoutes] Updating notification-preferences for user ${req.user.id}:`, Object.keys($set));
     await User.findByIdAndUpdate(req.user.id, { $set });
+    console.log(`[UserRoutes] Updated notification-preferences for user ${req.user.id}`);
 
     // Emit event for dynamic scheduler updates
     const eventEmitter = require('../services/eventEmitter');
     eventEmitter.emit('userPreferencesChanged', req.user.id);
+    console.log(`[UserRoutes] Emitted userPreferencesChanged event for user ${req.user.id}`);
 
     return res.json({ success: true, message: "Notification preferences updated" });
   } catch (error) {
     logger.error?.("Error updating notification preferences", error);
+    console.error('[UserRoutes] Error body:', error?.message);
     return res.status(500).json({ success: false, message: "Server Error" });
   }
-});
+};
+
+// Register both PUT and POST methods for notification-preferences
+router.put("/notification-preferences", authMiddleware, validate(notificationPreferencesSchema), notificationPreferencesHandler);
+router.post("/notification-preferences", authMiddleware, validate(notificationPreferencesSchema), notificationPreferencesHandler);
 
 /* -------------------------------------------------------
  * NEW: Saved Locations API
@@ -531,6 +546,99 @@ router.post("/clear-google-tokens", authMiddleware, async (req, res) => {
     res.status(500).json({
       success: false,
       error: "Failed to clear Google tokens"
+    });
+  }
+});
+
+// Occasion preferences schema
+const occasionPreferencesSchema = z.object({
+  selectedOccasions: z.array(z.string()).default([]),
+  autoUpdate: z.boolean().default(false),
+  country: z.string().min(2).max(2).default('AE'),
+  includeIslamic: z.boolean().default(true),
+  includeNational: z.boolean().default(true)
+});
+
+/**
+ * Save user occasion preferences
+ * POST /api/user/occasion-preferences
+ */
+router.post("/occasion-preferences", authMiddleware, validate(z.object({
+  body: occasionPreferencesSchema
+})), async (req, res) => {
+  try {
+    const { selectedOccasions, autoUpdate, country, includeIslamic, includeNational } = req.body;
+    
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    // Update occasion preferences
+    user.preferences.occasionPreferences = {
+      autoUpdate,
+      selectedOccasions,
+      country,
+      includeIslamic,
+      includeNational,
+      lastUpdated: new Date()
+    };
+
+    await user.save();
+
+    logger.info(`Occasion preferences saved for user: ${user.email}`);
+
+    res.json({
+      success: true,
+      message: "Occasion preferences saved successfully",
+      preferences: user.preferences.occasionPreferences
+    });
+
+  } catch (error) {
+    logger.error("Error saving occasion preferences:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to save occasion preferences"
+    });
+  }
+});
+
+/**
+ * Load user occasion preferences
+ * GET /api/user/occasion-preferences
+ */
+router.get("/occasion-preferences", authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found"
+      });
+    }
+
+    const preferences = user.preferences.occasionPreferences || {
+      autoUpdate: false,
+      selectedOccasions: [],
+      country: 'AE',
+      includeIslamic: true,
+      includeNational: true,
+      lastUpdated: null
+    };
+
+    res.json({
+      success: true,
+      preferences: preferences
+    });
+
+  } catch (error) {
+    logger.error("Error loading occasion preferences:", error);
+    res.status(500).json({
+      success: false,
+      error: "Failed to load occasion preferences"
     });
   }
 });

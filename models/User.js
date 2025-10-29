@@ -70,6 +70,16 @@ const userSchema = new mongoose.Schema(
       isDefault: { type: Boolean, default: false }
     },
 
+    // Custom event categories
+    customCategories: [{
+      id: { type: String, required: true },
+      name: { type: String, required: true },
+      color: { type: String, default: '#667eea' }, // Hex color
+      icon: { type: String, default: 'calendar' }, // Icon name
+      isDefault: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now }
+    }],
+
     // Calendar events
     calendarEvents: [{
       id: { type: String, required: true },
@@ -79,15 +89,62 @@ const userSchema = new mongoose.Schema(
       description: { type: String, default: '' },
       startDate: { type: Date, required: true },
       endDate: { type: Date },
+      allDay: { type: Boolean, default: false },
       category: { type: String, default: 'personal' },
-      priority: { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+      color: { type: String }, // Custom color override
+      priority: { type: String, enum: ['low', 'medium', 'high', 'urgent'], default: 'medium' },
       location: { type: String, default: '' },
+      locationCoords: { 
+        lat: { type: Number },
+        lon: { type: Number }
+      },
       tags: [{ type: String }],
+      attendees: [{ type: String }], // Email addresses
+      attachments: [{ 
+        name: String,
+        url: String,
+        type: String
+      }],
+      privacy: { type: String, enum: ['public', 'private', 'confidential'], default: 'public' },
       isIslamicEvent: { type: Boolean, default: false },
       prayerTime: { type: String },
       isExternal: { type: Boolean, default: false }, // True if synced from external calendar
+      isRecurring: { type: Boolean, default: false },
+      recurrenceRule: {
+        frequency: { type: String, enum: ['daily', 'weekly', 'monthly', 'yearly', 'custom'] },
+        interval: { type: Number, default: 1 }, // every N days/weeks/months
+        daysOfWeek: [{ type: Number }], // 0=Sunday, 6=Saturday
+        dayOfMonth: { type: Number }, // For monthly: 1-31
+        monthOfYear: { type: Number }, // For yearly: 1-12
+        count: { type: Number }, // Number of occurrences
+        until: { type: Date }, // End date
+        exceptions: [{ type: Date }] // Dates to skip
+      },
+      recurrenceParentId: { type: String }, // Link to parent event
+      reminders: [{
+        type: { type: String, enum: ['email', 'notification', 'sms'], default: 'notification' },
+        minutesBefore: { type: Number, required: true }
+      }],
+      syncToGoogle: { type: Boolean, default: false },
+      syncToMicrosoft: { type: Boolean, default: false },
       createdAt: { type: Date, default: Date.now },
       updatedAt: { type: Date, default: Date.now }
+    }],
+
+    // Saved searches
+    savedSearches: [{
+      id: { type: String, required: true },
+      name: { type: String, required: true }, // User-defined name
+      query: { type: String },
+      filters: { type: Object }, // Advanced filter criteria
+      createdAt: { type: Date, default: Date.now }
+    }],
+
+    // Search history
+    searchHistory: [{
+      query: { type: String },
+      filters: { type: Object },
+      timestamp: { type: Date, default: Date.now }
     }],
 
     // Provider of authentication
@@ -276,7 +333,16 @@ const userSchema = new mongoose.Schema(
         cooldownSeconds: { type: Number, default: 30, min: 0, max: 300 }
       },
       // Per-prayer audio overrides (optional)
-      audioOverrides: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} }
+      audioOverrides: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
+      // Occasion preferences for Islamic holidays and national holidays
+      occasionPreferences: {
+        autoUpdate: { type: Boolean, default: false },
+        selectedOccasions: [String], // IDs of selected occasions
+        country: String,
+        includeIslamic: { type: Boolean, default: true },
+        includeNational: { type: Boolean, default: true },
+        lastUpdated: Date
+      }
     },
 
     // Other data

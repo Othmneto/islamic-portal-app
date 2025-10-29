@@ -469,9 +469,9 @@ export class UserFeedbackSystem {
         try {
             const response = await fetch('/api/user-feedback/error', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     error: errorData,
@@ -666,9 +666,9 @@ export class UserFeedbackSystem {
         try {
             const response = await fetch('/api/user-feedback/interactions', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     interactions: interactions,
@@ -693,9 +693,9 @@ export class UserFeedbackSystem {
         try {
             const response = await fetch('/api/user-feedback/performance', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     metrics: metrics,

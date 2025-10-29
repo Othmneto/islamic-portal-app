@@ -86,10 +86,20 @@ class GlobalNavbar {
             // Wait a bit for token manager to be ready
             if (window.tokenManager) {
                 console.log('⏳ [GlobalNavbar] Waiting for token manager to be ready...');
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 500));
             }
 
             await this.initializeUserState();
+            
+            // Start session heartbeat
+            this.startSessionHeartbeat();
+            
+            // If no user found but token manager says authenticated, retry after delay
+            if (window.tokenManager && window.tokenManager.isAuthenticated() && !this.currentUser) {
+                console.log('🔄 [GlobalNavbar] User authenticated but no user data, retrying...');
+                setTimeout(() => this.retryUserStateInitialization(), 1000);
+            }
+            
             this.initializeTheme();
             this.initializeNotifications();
             this.initializeSearch();
@@ -614,55 +624,56 @@ class GlobalNavbar {
      */
     async initializeUserState() {
         try {
-            // Use token manager if available, otherwise fallback to old method
-            let authToken = null;
+            // Try to load last known user from cache first
+            const cachedUser = this.getCachedUser();
+            if (cachedUser) {
+                console.log('👤 [GlobalNavbar] Loaded cached user:', cachedUser.email || cachedUser.username);
+                this.currentUser = cachedUser;
+                this.updateUserDisplay();
+                // Still fetch fresh data in background
+            }
+
+            // Check if user is authenticated via session
             let isAuthenticated = false;
 
             if (window.tokenManager && window.tokenManager.isAuthenticated()) {
-                authToken = window.tokenManager.getAccessToken();
                 isAuthenticated = true;
-                console.log('🔑 [GlobalNavbar] Using token manager, token available:', !!authToken);
+                console.log('🔑 [GlobalNavbar] Using session-based authentication');
             } else {
-                authToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
-                isAuthenticated = !!authToken;
-                console.log('🔑 [GlobalNavbar] Using localStorage, token available:', !!authToken);
+                console.log('🔑 [GlobalNavbar] No session found');
             }
 
-            if (authToken && isAuthenticated) {
-                console.log('🔍 [GlobalNavbar] Verifying token with server...');
+            if (isAuthenticated || cachedUser) {
+                console.log('🔍 [GlobalNavbar] Getting user info from server...');
 
                 try {
-                    // Verify token and get user info
+                    // Get user info using session-based auth
                     const response = await fetch('/api/user/profile', {
+                        credentials: 'include', // Session-based auth
                         headers: {
-                            'Authorization': `Bearer ${authToken}`,
                             'Content-Type': 'application/json'
                         }
                     });
 
                     if (response.ok) {
                         const userData = await response.json();
-                        this.currentUser = userData;
+                        this.currentUser = userData.user || userData; // Handle both response structures
+
+                        // Cache successful user fetch
+                        this.cacheUser(this.currentUser);
 
                         // Update global state
                         this.updateGlobalStateData({
-                            currentUser: userData,
+                            currentUser: this.currentUser,
                             isAuthenticated: true
                         });
 
                         this.updateUserDisplay();
                         console.log('👤 [GlobalNavbar] User authenticated:', this.currentUser.email || this.currentUser.username);
-                    } else {
-                        console.warn('⚠️ [GlobalNavbar] Token verification failed, status:', response.status);
-
-                        // Token invalid, clear it
-                        if (window.tokenManager) {
-                            window.tokenManager.clearTokens();
-                        } else {
-                            localStorage.removeItem('authToken');
-                            localStorage.removeItem('token');
-                            localStorage.removeItem('jwt');
-                        }
+                    } else if (response.status === 401 || response.status === 403) {
+                        // Real authentication failure - clear cache
+                        console.warn('⚠️ [GlobalNavbar] Session expired (401/403)');
+                        this.clearCachedUser();
                         this.currentUser = null;
 
                         // Update global state
@@ -672,23 +683,127 @@ class GlobalNavbar {
                         });
 
                         this.updateUserDisplay();
+                    } else {
+                        // Server error - keep cached user
+                        console.warn(`⚠️ [GlobalNavbar] Server error ${response.status}, keeping cached user`);
+                        if (!this.currentUser && cachedUser) {
+                            this.currentUser = cachedUser;
+                        }
                     }
                 } catch (fetchError) {
-                    console.warn('⚠️ [GlobalNavbar] Token verification request failed:', fetchError);
-                    // Don't clear tokens on network errors, just show as guest
-                    this.currentUser = null;
-                    this.updateUserDisplay();
+                    // Network error - keep cached user and retry
+                    console.warn('⚠️ [GlobalNavbar] Network error, keeping cached user:', fetchError.message);
+                    if (!this.currentUser && cachedUser) {
+                        this.currentUser = cachedUser;
+                        this.updateUserDisplay();
+                    }
+                    // Schedule retry
+                    this.scheduleUserStateRetry();
                 }
             } else {
-                console.log('👤 [GlobalNavbar] No auth data found, showing guest');
+                // No session and no cache - guest user
+                console.log('👤 [GlobalNavbar] No session found, showing guest');
                 this.currentUser = null;
                 this.updateUserDisplay();
             }
         } catch (error) {
-            console.warn('⚠️ [GlobalNavbar] Failed to initialize user state:', error);
-            this.currentUser = null;
-            this.updateUserDisplay();
+            console.error('❌ [GlobalNavbar] Critical error in initializeUserState:', error);
         }
+    }
+
+    /**
+     * Get cached user from localStorage
+     */
+    getCachedUser() {
+        try {
+            const cached = localStorage.getItem('lastKnownUser');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                // Check if cache is not too old (e.g., < 7 days)
+                if (parsed.cachedAt && (Date.now() - parsed.cachedAt < 7 * 24 * 60 * 60 * 1000)) {
+                    return parsed.user;
+                }
+            }
+        } catch (e) {
+            console.warn('⚠️ [GlobalNavbar] Failed to parse cached user');
+        }
+        return null;
+    }
+
+    /**
+     * Cache user to localStorage
+     */
+    cacheUser(user) {
+        try {
+            localStorage.setItem('lastKnownUser', JSON.stringify({
+                user: user,
+                cachedAt: Date.now()
+            }));
+        } catch (e) {
+            console.warn('⚠️ [GlobalNavbar] Failed to cache user');
+        }
+    }
+
+    /**
+     * Clear cached user from localStorage
+     */
+    clearCachedUser() {
+        try {
+            localStorage.removeItem('lastKnownUser');
+        } catch (e) {}
+    }
+
+    /**
+     * Schedule a retry of user state initialization
+     */
+    scheduleUserStateRetry() {
+        if (this._retryTimeout) return; // Already scheduled
+        
+        this._retryTimeout = setTimeout(() => {
+            console.log('🔄 [GlobalNavbar] Retrying user state fetch...');
+            this._retryTimeout = null;
+            this.initializeUserState();
+        }, 5000); // Retry after 5 seconds
+    }
+
+    /**
+     * Start session heartbeat to maintain 90-day session
+     */
+    startSessionHeartbeat() {
+        // Don't start multiple heartbeats
+        if (this._heartbeatInterval) return;
+        
+        this._heartbeatInterval = setInterval(async () => {
+            if (this.currentUser) {
+                try {
+                    const response = await fetch('/api/session/heartbeat', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                    
+                    if (response.ok) {
+                        console.log('💓 [GlobalNavbar] Session heartbeat successful');
+                    } else if (response.status === 401) {
+                        console.warn('⚠️ [GlobalNavbar] Session expired during heartbeat');
+                        this.clearCachedUser();
+                        this.currentUser = null;
+                        this.updateUserDisplay();
+                    }
+                } catch (error) {
+                    console.warn('⚠️ [GlobalNavbar] Heartbeat network error (will retry):', error.message);
+                }
+            }
+        }, 30 * 60 * 1000); // Every 30 minutes
+    }
+
+    /**
+     * Retry user state initialization after a delay
+     */
+    async retryUserStateInitialization() {
+        console.log('🔄 [GlobalNavbar] Retrying user state initialization...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        await this.initializeUserState();
     }
 
     /**
@@ -857,20 +972,29 @@ class GlobalNavbar {
      */
     async initializeNotifications() {
         try {
-            const authToken = localStorage.getItem('authToken');
-            if (authToken) {
-                const response = await fetch('/api/notifications', {
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    this.notifications = await response.json();
-                    this.updateNotificationDisplay();
-                }
+            // Check if user is authenticated
+            if (!window.tokenManager || !window.tokenManager.isAuthenticated()) {
+                console.log('[GlobalNavbar] Skipping notifications - user not authenticated');
+                return;
             }
+
+            // TODO: Implement notifications endpoint or remove this call
+            // For now, skip to avoid 404 errors
+            console.log('[GlobalNavbar] Notifications feature not yet implemented');
+            return;
+
+            // Original code commented out:
+            // const response = await fetch('/api/notifications', {
+            //     credentials: 'include', // Session-based auth
+            //     headers: {
+            //         'Content-Type': 'application/json'
+            //     }
+            // });
+
+            // if (response.ok) {
+            //     this.notifications = await response.json();
+            //     this.updateNotificationDisplay();
+            // }
         } catch (error) {
             console.warn('⚠️ [GlobalNavbar] Failed to load notifications:', error);
         }
@@ -931,62 +1055,63 @@ class GlobalNavbar {
             return;
         }
 
-        const authToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
-        const userData = localStorage.getItem('userData') || localStorage.getItem('user');
+        // Use session-based authentication
+        const isAuthenticated = window.tokenManager && window.tokenManager.isAuthenticated();
 
-        if (authToken && userData) {
-            try {
-                const user = JSON.parse(userData);
-                console.log('👤 [GlobalNavbar] User data found:', user);
+        // If authenticated but user not yet loaded, defer UI change to avoid guest flash
+        if (isAuthenticated && !this.currentUser) {
+            console.log('⏳ [GlobalNavbar] Authenticated; waiting for user profile before updating UI');
+            return;
+        }
 
-                // Update user display
-                if (this.elements.userName) {
-                    this.elements.userName.textContent = user.username || user.email || 'User';
-                    console.log('✅ [GlobalNavbar] Updated userName to:', user.username || user.email || 'User');
-                } else {
-                    console.log('ℹ️ [GlobalNavbar] userName element not found (optional)');
-                }
-                if (this.elements.userNameLarge) {
-                    this.elements.userNameLarge.textContent = user.username || user.email || 'User';
-                    console.log('✅ [GlobalNavbar] Updated userNameLarge to:', user.username || user.email || 'User');
-                } else {
-                    console.log('ℹ️ [GlobalNavbar] userNameLarge element not found (optional)');
-                }
-                if (this.elements.userEmail) {
-                    this.elements.userEmail.textContent = user.email || '';
-                    console.log('✅ [GlobalNavbar] Updated userEmail to:', user.email || '');
-                } else {
-                    console.log('ℹ️ [GlobalNavbar] userEmail element not found (optional)');
-                }
+        if (isAuthenticated && this.currentUser) {
+            console.log('👤 [GlobalNavbar] User authenticated, updating display');
 
-                // Update avatar
-                if (this.elements.userAvatar) {
-                    this.elements.userAvatar.innerHTML = `<i class="fas fa-user"></i>`;
-                }
-                if (this.elements.userAvatarLarge) {
-                    this.elements.userAvatarLarge.innerHTML = `<i class="fas fa-user"></i>`;
-                }
-
-                // Show logout, hide login
-                if (this.elements.logoutLink) {
-                    this.elements.logoutLink.style.display = 'block';
-                    console.log('✅ [GlobalNavbar] Showing logout button');
-                } else {
-                    console.log('ℹ️ [GlobalNavbar] logoutLink element not found (optional)');
-                }
-                if (this.elements.loginLink) {
-                    this.elements.loginLink.style.display = 'none';
-                    console.log('✅ [GlobalNavbar] Hiding login button');
-                } else {
-                    console.log('ℹ️ [GlobalNavbar] loginLink element not found (optional)');
-                }
-
-                console.log('✅ [GlobalNavbar] Auth status updated successfully');
-            } catch (error) {
-                console.error('❌ [GlobalNavbar] Error parsing user data:', error);
+            // Update user display
+            if (this.elements.userName) {
+                this.elements.userName.textContent = this.currentUser.username || this.currentUser.email || 'User';
+                console.log('✅ [GlobalNavbar] Updated userName to:', this.currentUser.username || this.currentUser.email || 'User');
+            } else {
+                console.log('ℹ️ [GlobalNavbar] userName element not found (optional)');
             }
+            if (this.elements.userNameLarge) {
+                this.elements.userNameLarge.textContent = this.currentUser.username || this.currentUser.email || 'User';
+                console.log('✅ [GlobalNavbar] Updated userNameLarge to:', this.currentUser.username || this.currentUser.email || 'User');
+            } else {
+                console.log('ℹ️ [GlobalNavbar] userNameLarge element not found (optional)');
+            }
+            if (this.elements.userEmail) {
+                this.elements.userEmail.textContent = this.currentUser.email || '';
+                console.log('✅ [GlobalNavbar] Updated userEmail to:', this.currentUser.email || '');
+            } else {
+                console.log('ℹ️ [GlobalNavbar] userEmail element not found (optional)');
+            }
+
+            // Update avatar
+            if (this.elements.userAvatar) {
+                this.elements.userAvatar.innerHTML = `<i class="fas fa-user"></i>`;
+            }
+            if (this.elements.userAvatarLarge) {
+                this.elements.userAvatarLarge.innerHTML = `<i class="fas fa-user"></i>`;
+            }
+
+            // Show logout, hide login
+            if (this.elements.logoutLink) {
+                this.elements.logoutLink.style.display = 'block';
+                console.log('✅ [GlobalNavbar] Showing logout button');
+            } else {
+                console.log('ℹ️ [GlobalNavbar] logoutLink element not found (optional)');
+            }
+            if (this.elements.loginLink) {
+                this.elements.loginLink.style.display = 'none';
+                console.log('✅ [GlobalNavbar] Hiding login button');
+            } else {
+                console.log('ℹ️ [GlobalNavbar] loginLink element not found (optional)');
+            }
+
+            console.log('✅ [GlobalNavbar] Auth status updated successfully');
         } else {
-            console.log('👤 [GlobalNavbar] No auth data found, showing guest');
+            console.log('👤 [GlobalNavbar] No session found, showing guest');
 
             // Show guest state
             if (this.elements.userName) {
@@ -1208,12 +1333,12 @@ class GlobalNavbar {
      */
     async markAllNotificationsRead() {
         try {
-            const authToken = localStorage.getItem('authToken');
-            if (authToken) {
+            // Check if user is authenticated
+            if (window.tokenManager && window.tokenManager.isAuthenticated()) {
                 const response = await fetch('/api/notifications/mark-all-read', {
                     method: 'POST',
+                    credentials: 'include', // Session-based auth
                     headers: {
-                        'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -1272,20 +1397,18 @@ class GlobalNavbar {
      */
     async handleLogout() {
         try {
-            const authToken = localStorage.getItem('authToken');
-            if (authToken) {
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${authToken}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-            }
+            // Use session-based logout
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                credentials: 'include', // Session-based auth
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
         } catch (error) {
             console.warn('⚠️ [GlobalNavbar] Logout API call failed:', error);
         } finally {
-            // Clear local storage and redirect
+            // Clear any remaining local storage
             localStorage.removeItem('accessToken');
             localStorage.removeItem('authToken');
             localStorage.removeItem('token');
@@ -1293,7 +1416,16 @@ class GlobalNavbar {
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('user');
             localStorage.removeItem('userData');
+            
+            // Clear current user state
             this.currentUser = null;
+            
+            // Update global state
+            this.updateGlobalStateData({
+                currentUser: null,
+                isAuthenticated: false
+            });
+            
             this.updateUserDisplay();
             window.location.href = '/';
         }

@@ -5,7 +5,7 @@ const router = express.Router();
 
 const PushSubscription = require('../models/PushSubscription');
 const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const { env } = require('../config');
 const { validate, z } = require('../middleware/validate');

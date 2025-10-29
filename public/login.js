@@ -1,6 +1,6 @@
 // translator-backend/public/login.js
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initLoginPage() {
   // Force cache-busting by adding timestamp to URL
   const urlParams = new URLSearchParams(window.location.search);
   const currentTime = Date.now();
@@ -28,53 +28,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     messageDiv.style.color = '';
   }
 
-  // Check if user is already logged in (but only if not coming from OAuth callback)
-  const existingToken = localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token') || localStorage.getItem('jwt');
+  // Check if user is already logged in via session (OAuth callback check)
   const isOAuthCallback = urlParams.get('token') || urlParams.get('code');
 
   console.log('🔍 [Login] Auth check:', {
-    existingToken: !!existingToken,
     isOAuthCallback: !!isOAuthCallback,
     tokenManagerAvailable: !!window.tokenManager,
     tokenManagerAuthenticated: window.tokenManager ? window.tokenManager.isAuthenticated() : false
   });
 
-  // Only redirect if we have a valid, non-expired token
-  if (existingToken && !isOAuthCallback) {
-    try {
-      // Check if token is expired
-      const payload = JSON.parse(atob(existingToken.split('.')[1]));
-      const now = Math.floor(Date.now() / 1000);
-      const isExpired = payload.exp && payload.exp < now;
-
-      if (!isExpired) {
-        console.log('✅ Frontend: User already logged in with valid token, redirecting to home');
-        window.location.href = '/index.html';
-        return;
-      } else {
-        console.log('⚠️ Frontend: Token expired, clearing and staying on login page');
-        // Clear expired tokens
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('token');
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('refreshToken');
-        if (window.tokenManager) {
-          window.tokenManager.clearTokens();
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ Frontend: Invalid token format, clearing and staying on login page');
-      // Clear invalid tokens
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('token');
-      localStorage.removeItem('jwt');
-      localStorage.removeItem('refreshToken');
-      if (window.tokenManager) {
-        window.tokenManager.clearTokens();
-      }
-    }
+  // Check session authentication instead of localStorage tokens
+  if (window.tokenManager && window.tokenManager.isAuthenticated() && !isOAuthCallback) {
+    console.log('✅ Frontend: User already logged in via session, redirecting to home');
+    window.location.href = '/index.html';
+    return;
   }
 
   // Handle OAuth error messages from URL parameters
@@ -176,8 +143,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     return null;
   }
 
-  loginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function handleLoginSubmit(e) {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
 
     const emailEl = document.getElementById('email') || document.getElementById('login-email');
     const passEl  = document.getElementById('password') || document.getElementById('login-password');
@@ -227,33 +194,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // Save tokens using the new token management system
-      if (data.token && data.refreshToken) {
-        // Use the new token manager
-        if (window.tokenManager) {
-          window.tokenManager.saveTokens(data.token, data.refreshToken);
-        } else {
-          // Fallback to old method if token manager not available
-          localStorage.setItem('accessToken', data.token);
-          localStorage.setItem('refreshToken', data.refreshToken);
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('token');
-          localStorage.removeItem('jwt');
-        }
-        console.log('✅ [Login] Tokens saved successfully (rememberMe:', data.rememberMe, ')');
-      } else if (data.token) {
-        // Legacy support for old API responses
-        localStorage.setItem('accessToken', data.token);
-        console.warn('[login.js] Using legacy token storage - refresh token not available');
-      } else {
-        console.warn('[login.js] Login succeeded but no token was returned.');
-      }
-
-      // Save user data
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userData', JSON.stringify(data.user)); // For navbar compatibility
-      }
+      // Session-based authentication - session is managed by server cookies
+      // Session is automatically established via cookies, no need to check
+      console.log('✅ [Login] Session established successfully via cookies');
 
       setMessage('Login successful! Loading account options...', true);
 
@@ -291,8 +234,22 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('[login.js] Network/Unexpected error:', err);
       setMessage('An error occurred. Please try again.');
     }
-  });
-});
+  }
+
+  // Attach both submit and button click to ensure robustness
+  loginForm.addEventListener('submit', handleLoginSubmit);
+  const submitBtn = loginForm.querySelector('button[type="submit"]');
+  if (submitBtn) {
+    submitBtn.addEventListener('click', handleLoginSubmit);
+  }
+  console.log('🔧 [Login] Event handlers bound for #login-form (submit & click)');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initLoginPage);
+} else {
+  initLoginPage();
+}
 
 // Function to clear OAuth error message
 function clearOAuthError() {
@@ -360,11 +317,8 @@ function addResendVerificationButton(email) {
 // Enhanced authentication functions
 async function loadUserAuthMethods(userId) {
   try {
-    const token = localStorage.getItem('authToken');
     const response = await fetch(`/api/auth/auth-methods/${userId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+      credentials: 'include'
     });
 
     if (response.ok) {
@@ -438,18 +392,15 @@ async function handleOAuthSuccess(token, refreshToken = null) {
     const payload = JSON.parse(atob(token.split('.')[1]));
     const userId = payload.user.id;
 
-    // Store tokens using the new token management system
+    // Store tokens using the new token management system (legacy compatibility)
     if (window.tokenManager && refreshToken) {
       window.tokenManager.saveTokens(token, refreshToken);
     } else {
-      // Fallback to old method
-      localStorage.setItem('authToken', token);
-      if (refreshToken) {
-        localStorage.setItem('refreshToken', refreshToken);
-      }
+      // Session-based auth: tokens handled server-side via cookies
+      console.log('✅ [Login] Session established successfully');
     }
 
-    // Store user data
+    // Store user data for UI components that still rely on local storage
     localStorage.setItem('user', JSON.stringify(payload.user));
     localStorage.setItem('userData', JSON.stringify(payload.user)); // For navbar compatibility
 

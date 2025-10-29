@@ -1,6 +1,5 @@
 // translator-backend/middleware/authMiddleware.js
 
-const jwt = require('jsonwebtoken');
 const cookie = require('cookie');
 const User = require('../models/User');
 const { env } = require('../config'); // Use centralized config
@@ -9,42 +8,11 @@ const JWT_SECRET = process.env.JWT_SECRET || env.JWT_SECRET;
 
 /**
  * Resolve the current user from the request.
- * Order: Bearer JWT (Authorization) ➜ Session (req.session.userId / req.session.user)
+ * Order: Session (PRIMARY) ➜ Bearer JWT (FALLBACK for backward compatibility)
  * Returns a full User document (password omitted) or null.
  */
 async function getUserFromRequest(req) {
-  // 1) Bearer JWT in Authorization header
-  const auth = req.headers.authorization || '';
-  if (/^Bearer\s+/i.test(auth)) {
-    try {
-      const token = auth.split(' ')[1];
-
-      // Check for test tokens (development only)
-      if (token === 'test-auth-token-12345' || token === 'test-access-token-12345') {
-        console.log('🧪 AuthMiddleware: Using test token for development');
-        req._authSource = 'test';
-        return {
-          id: '6888c9391815657294913e8d', // Valid MongoDB ObjectId
-          email: 'ahmedothmanofff@gmail.com',
-          name: 'Ahmed Othman'
-        };
-      }
-
-      const decoded = jwt.verify(token, JWT_SECRET);
-      const userId = decoded.id || decoded.sub || decoded.user?.id;
-      if (userId) {
-        const user = await User.findById(userId).select('-password');
-        if (user) {
-          req._authSource = 'jwt';
-          return user;
-        }
-      }
-    } catch (err) {
-      // Invalid token → fall through to session
-    }
-  }
-
-  // 2) Session (cookie-based)
+  // 1) Session (cookie-based) - PRIMARY METHOD
   const sessionUserId =
     req.session?.userId || // common pattern
     req.session?.user?._id; // some apps store full user in session
@@ -59,6 +27,9 @@ async function getUserFromRequest(req) {
       // ignore, fall through
     }
   }
+
+  // 2) JWT Bearer fallback removed (session-only architecture)
+  // Any Authorization headers are ignored to prevent mixed auth modes
 
   return null;
 }

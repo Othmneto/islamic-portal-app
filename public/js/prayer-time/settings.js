@@ -41,17 +41,14 @@ export class PrayerTimesSettings {
   // Load settings from server
   async loadFromServer() {
     try {
-      const token = this.api?.getAuthToken();
-      if (!token) {
-        console.log("[Settings] No auth token available, using localStorage");
-        return null;
-      }
+      // Session-based: Always try server first, fallback to localStorage
+      console.log("[Settings] Attempting to load settings from server with session authentication");
 
       const response = await fetch("/api/user/preferences", {
         headers: {
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
-        }
+        },
+        credentials: "include"
       });
 
       if (response.ok) {
@@ -61,9 +58,9 @@ export class PrayerTimesSettings {
         // Merge with notification preferences
         const notificationResponse = await fetch("/api/user/notification-preferences", {
           headers: {
-            "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json"
-          }
+          },
+          credentials: "include"
         });
 
         if (notificationResponse.ok) {
@@ -277,11 +274,8 @@ export class PrayerTimesSettings {
   // Save to server (background)
   async saveToServer() {
     try {
-      const token = this.api?.getAuthToken();
-      if (!token) {
-        console.log("[Settings] No auth token available, skipping server save");
-        return;
-      }
+      // Session-based: Always try server save
+      console.log("[Settings] Attempting to save settings to server with session authentication");
 
       // Debounce server saves to avoid too many API calls
       if (this._saveTimeout) {
@@ -300,60 +294,90 @@ export class PrayerTimesSettings {
   // Perform actual server save
   async performServerSave() {
     try {
-      const token = this.api?.getAuthToken();
-      if (!token) return;
+      // Session-based: Always try server save
+
+      // Prepare CSRF header (cookie-based)
+      const csrf = (this.api && typeof this.api.getCsrf === 'function') ? this.api.getCsrf() : null;
+      const baseHeaders = {
+        "Content-Type": "application/json",
+        ...(csrf ? { "X-CSRF-Token": csrf } : {})
+      };
+      console.log("[Settings] Using CSRF header:", !!csrf);
+
+      // Simple retry helper for transient network failures
+      const doFetchWithRetry = async (url, options, retries = 1) => {
+        let lastError = null;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+          try {
+            return await fetch(url, options);
+          } catch (err) {
+            lastError = err;
+            console.warn(`[Settings] Network error on ${url} (attempt ${attempt + 1}/${retries + 1}):`, err);
+            if (attempt < retries) await new Promise(r => setTimeout(r, 500));
+          }
+        }
+        throw lastError;
+      };
 
       // Save all preferences to the main preferences endpoint
-      const preferencesResponse = await fetch("/api/user/preferences", {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          calculationMethod: this.core.state.settings.calculationMethod,
-          madhab: this.core.state.settings.madhab,
-          theme: this.core.state.settings.theme,
-          language: this.core.state.settings.language,
-          is24Hour: this.core.state.settings.is24Hour,
-          audioEnabled: this.core.state.settings.audioEnabled,
-          selectedAdhanSrc: this.core.state.settings.selectedAdhanSrc,
-          adhanVolume: this.core.state.settings.adhanVolume,
-          prayerReminders: this.core.state.settings.prayerReminders || {
-            fajr: true,
-            dhuhr: true,
-            asr: true,
-            maghrib: true,
-            isha: true
-          }
-        })
-      });
+      let preferencesResponse;
+      try {
+        preferencesResponse = await doFetchWithRetry("/api/user/preferences", {
+          method: "PUT",
+          headers: baseHeaders,
+          credentials: "include",
+          body: JSON.stringify({
+            calculationMethod: this.core.state.settings.calculationMethod,
+            madhab: this.core.state.settings.madhab,
+            theme: this.core.state.settings.theme,
+            language: this.core.state.settings.language,
+            is24Hour: this.core.state.settings.is24Hour,
+            audioEnabled: this.core.state.settings.audioEnabled,
+            selectedAdhanSrc: this.core.state.settings.selectedAdhanSrc,
+            adhanVolume: this.core.state.settings.adhanVolume,
+            prayerReminders: this.core.state.settings.prayerReminders || {
+              fajr: true,
+              dhuhr: true,
+              asr: true,
+              maghrib: true,
+              isha: true
+            }
+          })
+        }, 1);
+      } catch (prefErr) {
+        console.warn("[Settings] Preferences save failed due to network error:", prefErr);
+        preferencesResponse = { ok: false, status: 0 };
+      }
 
       // Save notification preferences separately (including audio prefs)
-      const notificationResponse = await fetch("/api/user/notification-preferences", {
-        method: "PUT",
-        headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          reminderMinutes: this.core.state.settings.reminderMinutes,
-          calculationMethod: this.core.state.settings.calculationMethod,
-          madhab: this.core.state.settings.madhab,
-          timezone: this.core.state.tz,
-          // NEW: Audio preferences
-          audioProfileMain: this.core.state.settings.audioProfileMain || { name: 'madinah', file: '/audio/adhan_madinah.mp3' },
-          audioProfileReminder: this.core.state.settings.audioProfileReminder || { name: 'short', file: '/audio/adhan.mp3' },
-          audioSettings: this.core.state.settings.audioSettings || { volume: 0.8, fadeInMs: 3000, vibrateOnly: false, cooldownSeconds: 30 },
-          prayerReminders: this.core.state.settings.prayerReminders || {
-            fajr: true,
-            dhuhr: true,
-            asr: true,
-            maghrib: true,
-            isha: true
-          }
-        })
-      });
+      let notificationResponse;
+      try {
+        notificationResponse = await doFetchWithRetry("/api/user/notification-preferences", {
+          method: "PUT",
+          headers: baseHeaders,
+          credentials: "include",
+          body: JSON.stringify({
+            reminderMinutes: this.core.state.settings.reminderMinutes,
+            calculationMethod: this.core.state.settings.calculationMethod,
+            madhab: this.core.state.settings.madhab,
+            timezone: this.core.state.tz,
+            // NEW: Audio preferences
+            audioProfileMain: this.core.state.settings.audioProfileMain || { name: 'madinah', file: '/audio/adhan_madinah.mp3' },
+            audioProfileReminder: this.core.state.settings.audioProfileReminder || { name: 'short', file: '/audio/adhan.mp3' },
+            audioSettings: this.core.state.settings.audioSettings || { volume: 0.8, fadeInMs: 3000, vibrateOnly: false, cooldownSeconds: 30 },
+            prayerReminders: this.core.state.settings.prayerReminders || {
+              fajr: true,
+              dhuhr: true,
+              asr: true,
+              maghrib: true,
+              isha: true
+            }
+          })
+        }, 1);
+      } catch (notifErr) {
+        console.warn("[Settings] Notification preferences save failed due to network error:", notifErr);
+        notificationResponse = { ok: false, status: 0 };
+      }
 
       if (preferencesResponse.ok && notificationResponse.ok) {
         console.log("[Settings] Settings saved to server successfully");
@@ -364,6 +388,24 @@ export class PrayerTimesSettings {
           preferences: preferencesResponse.status,
           notifications: notificationResponse.status
         });
+        // Fallback: If notification endpoint failed but preferences endpoint succeeded,
+        // try to persist reminderMinutes via /preferences as a backup.
+        if (preferencesResponse.ok && !notificationResponse.ok && Number.isFinite(this.core.state.settings.reminderMinutes)) {
+          try {
+            console.log("[Settings] Attempting fallback: saving reminderMinutes via /api/user/preferences");
+            const fallbackRes = await doFetchWithRetry("/api/user/preferences", {
+              method: "PUT",
+              headers: baseHeaders,
+              credentials: "include",
+              body: JSON.stringify({
+                reminderMinutes: this.core.state.settings.reminderMinutes
+              })
+            }, 1);
+            console.log("[Settings] Fallback save status:", fallbackRes.status);
+          } catch (fbErr) {
+            console.warn("[Settings] Fallback save failed:", fbErr);
+          }
+        }
       }
     } catch (error) {
       console.warn("[Settings] Server save failed:", error);

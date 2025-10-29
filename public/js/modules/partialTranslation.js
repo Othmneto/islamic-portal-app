@@ -27,9 +27,9 @@ export class PartialTranslation {
         try {
             const response = await fetch('/api/translation-history/partial', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     text: text.trim(),
@@ -79,9 +79,9 @@ export class PartialTranslation {
         try {
             const response = await fetch('/api/translation-history/finalize', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
                     conversationId,
@@ -176,9 +176,9 @@ export class PartialTranslation {
         try {
             const response = await fetch(`/api/translation-history/${translationId}/favorite`, {
                 method: 'PATCH',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ isFavorite })
             });
@@ -200,9 +200,9 @@ export class PartialTranslation {
         try {
             const response = await fetch(`/api/translation-history/${translationId}/tags`, {
                 method: 'PATCH',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ tags })
             });
@@ -246,9 +246,9 @@ export class PartialTranslation {
         try {
             const response = await fetch('/api/translation-history/export', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.getAuthToken()}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({ format, ...options })
             });

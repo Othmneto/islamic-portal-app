@@ -4,7 +4,10 @@
    - Push subscription management
    - Notification preferences
    - Test notifications
+   - Cross-browser compatibility
 ------------------------------------------------------------------- */
+
+import { browserDetection } from './browser-detection.js';
 
 export class PrayerTimesNotifications {
   constructor(core, api) {
@@ -13,6 +16,11 @@ export class PrayerTimesNotifications {
     this.api = api;
     this.initializationComplete = false;
     this.isSubscribing = false; // Prevent concurrent subscription calls
+    this.browserDetection = browserDetection;
+    
+    // Log browser compatibility on initialization
+    const compat = this.browserDetection.getCompatibilityStatus();
+    console.log(`[Notifications] Browser compatibility: ${compat.level}`, compat);
   }
 
   // Base64 to Uint8Array conversion
@@ -36,8 +44,11 @@ export class PrayerTimesNotifications {
       console.log("[Notifications] Service worker not supported");
       return null;
     }
-    const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-    await navigator.serviceWorker.ready;
+    const reg = await navigator.serviceWorker.register("/sw.js", { 
+      scope: "/",
+      updateViaCache: 'none' // Force fresh SW on updates for better Chrome background support
+    });
+    await navigator.serviceWorker.ready; // Wait for SW to be ready
     this.core.state.swRegistration = reg;
     console.log("[Notifications] Service worker registered successfully");
     return reg;
@@ -59,12 +70,20 @@ export class PrayerTimesNotifications {
     const r = await fetch("/api/notifications/vapid-public-key", { credentials: "include" });
     if (!r.ok) throw new Error("VAPID key error");
     const vapid = await r.text();
+    
+    // Request persistent notification permission for Chrome background support
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.warn('[Notifications] Permission denied for background notifications');
+      throw new Error('Notification permission denied');
+    }
+    
     const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
+      userVisibleOnly: true, // Required for background notifications
       applicationServerKey: this.b64ToU8(vapid),
     });
     this.core.state.pushSubscription = sub;
-    console.log("[Notifications] Created fresh subscription");
+    console.log("[Notifications] Created fresh subscription for background notifications");
     return sub;
   }
 
@@ -142,14 +161,14 @@ export class PrayerTimesNotifications {
 
       // Always derive preferences from current UI/state (dynamic reminder minutes)
       const prefs = this.getPreferences(enabled);
-      const token = this.api.getAuthToken();
 
-      if (!token) {
-        console.warn("[Notifications] No auth token available for subscription");
+      // Session-based authentication - check if user is authenticated
+      if (!window.tokenManager?.isAuthenticated()) {
+        console.warn("[Notifications] User not authenticated for subscription");
         throw new Error("Authentication required");
       }
 
-      console.log("[Notifications] Auth token available, getting CSRF...");
+      console.log("[Notifications] User authenticated, getting CSRF...");
       const csrf =
         this.api.getCsrf() ||
         (await fetch("/api/auth/csrf", { credentials: "include" })
@@ -158,10 +177,12 @@ export class PrayerTimesNotifications {
 
       const headers = {
         "Content-Type": "application/json",
-        ...(token && { Authorization: `Bearer ${token}` }),
         ...(csrf && { "X-CSRF-Token": csrf }),
       };
 
+      // Add browser information for backend logging and debugging
+      const browserInfo = this.browserDetection.getSummary();
+      
       const body = {
         subscription: this.core.state.pushSubscription,
         tz: this.core.state.tz,
@@ -169,13 +190,20 @@ export class PrayerTimesNotifications {
         location: this.core.state.coords
           ? { lat: this.core.state.coords.lat, lon: this.core.state.coords.lon, city: this.core.state.cityLabel }
           : null,
+        browserInfo: {
+          browser: browserInfo.browser,
+          os: browserInfo.os,
+          pushService: browserInfo.pushService,
+          canBackgroundNotify: browserInfo.canBackgroundNotify
+        }
       };
 
       console.log("[Notifications] Sending subscription request with body:", {
         hasSubscription: !!body.subscription,
         tz: body.tz,
         preferences: body.preferences,
-        hasLocation: !!body.location
+        hasLocation: !!body.location,
+        browserInfo: body.browserInfo
       });
 
       const res = await fetch("/api/notifications/subscribe", {
@@ -284,13 +312,11 @@ export class PrayerTimesNotifications {
   async unsubscribePush() {
     try {
       if (this.core.state.pushSubscription) await this.core.state.pushSubscription.unsubscribe();
-      const token = this.api.getAuthToken();
       const csrf = this.api.getCsrf();
       await fetch("/api/notifications/unsubscribe", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
           ...(csrf && { "X-CSRF-Token": csrf }),
         },
         credentials: "include",
@@ -343,17 +369,17 @@ export class PrayerTimesNotifications {
   // Load notification state from server
   async loadNotificationStateFromServer() {
     try {
-      const token = this.api.getAuthToken();
-      if (!token) {
-        console.log("[Notifications] No auth token available, using local state");
+      // Session-based authentication - check if user is authenticated
+      if (!window.tokenManager?.isAuthenticated()) {
+        console.log("[Notifications] User not authenticated, using local state");
         return null;
       }
 
       const response = await fetch("/api/user/notification-preferences", {
         headers: {
-          "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
-        }
+        },
+        credentials: "include"
       });
 
       if (response.ok) {
@@ -383,9 +409,9 @@ export class PrayerTimesNotifications {
     }
 
     try {
-      const token = this.api.getAuthToken();
-      if (!token) {
-        console.warn("[Notifications] No auth token available for test");
+      // Session-based authentication - check if user is authenticated
+      if (!window.tokenManager?.isAuthenticated()) {
+        console.warn("[Notifications] User not authenticated for test");
         this.core.toast("Please login to test notifications", "error");
         return;
       }
@@ -401,7 +427,6 @@ export class PrayerTimesNotifications {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
           ...(csrf && { "X-CSRF-Token": csrf }),
         },
         credentials: "include",
@@ -428,7 +453,6 @@ export class PrayerTimesNotifications {
     }
 
     try {
-      const token = this.api.getAuthToken();
       const csrf = this.api.getCsrf();
       // Ensure active subscription exists before testing
       const reg = await this.registerSW();
@@ -438,7 +462,6 @@ export class PrayerTimesNotifications {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(token && { Authorization: `Bearer ${token}` }),
           ...(csrf && { "X-CSRF-Token": csrf }),
         },
         credentials: "include",

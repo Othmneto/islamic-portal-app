@@ -511,16 +511,29 @@ async function rescheduleNotificationsForUser(userId) {
 /** Schedule notifications for a single user for today's prayer times. */
 async function scheduleNotificationsForUser(user) {
   try {
+    // Before starting scheduling, ensure subscriptions are fresh
     const subscriptions = await PushSubscription.find({ 
       userId: user._id,
       isActive: true 
     })
-    .sort({ createdAt: -1 })
+    .sort({ updatedAt: -1 }) // Sort by most recent first for better Chrome support
     .lean();
+    
     if (!subscriptions || subscriptions.length === 0) {
       logger?.info?.(`No push subscriptions for ${user.email}; skipping schedule.`);
       return;
     }
+
+    console.log(`[PrayerScheduler] Found ${subscriptions.length} active subscription(s) for ${user.email}`);
+    subscriptions.forEach(sub => {
+      const pushType = sub.subscription?.endpoint?.includes('fcm') ? 'Chrome' : 
+                       sub.subscription?.endpoint?.includes('mozilla') ? 'Firefox' : 'Other';
+      console.log(`  - ${pushType}: Updated ${new Date(sub.updatedAt).toISOString()}`);
+    });
+
+    // Clear any existing jobs BEFORE getting new reminder minutes
+    // This ensures old reminder times don't persist
+    await cancelUserJobs(user._id);
 
     const { lat, lon, tz, source } = resolveGeoAndTz(user, subscriptions);
     if (typeof lat !== "number" || typeof lon !== "number") {
@@ -638,6 +651,7 @@ async function scheduleNotificationsForUser(user) {
             const cronStartTime = Date.now();
             const cronStartTimeStr = new Date().toISOString();
             console.log(`🔔 [PrayerScheduler] ${prayerName} time! Cron fired at ${cronStartTimeStr}`);
+            console.log(`🔔 [PrayerScheduler] Cron running in timezone ${tz} for user ${user.email}`);
 
             // RELOAD subscriptions fresh from DB to avoid 410 errors
             const freshSubs = await PushSubscription.find({ 
@@ -661,6 +675,17 @@ async function scheduleNotificationsForUser(user) {
               enabledSubs.map(async (sub) => {
                 const sendStartTime = Date.now();
                 try {
+                  // DEBUG: Log payload structure before sending
+                  console.log(`🔍 [PrayerScheduler] Pre-send payload check for ${prayerName}:`, {
+                    notificationType: payload.notificationType,
+                    prayerName: payload.prayerName,
+                    hasAudioFile: !!payload.audioFile,
+                    audioFileValue: payload.audioFile,
+                    hasDataAudioFile: !!payload.data?.audioFile,
+                    dataAudioFileValue: payload.data?.audioFile,
+                    title: payload.title
+                  });
+                  
                   await notificationService.sendNotification(sub, payload);
                   const sendTime = Date.now() - sendStartTime;
                   console.log(`✅ [PrayerScheduler] ${prayerName} sent to ${user.email} (${sendTime}ms)`);
@@ -740,7 +765,12 @@ async function scheduleNotificationsForUser(user) {
           }
         );
 
+        // NEW: Log cron job creation details
+        console.log(`✅ [PrayerScheduler] Main prayer cron job created for ${prayerName} at ${cronExpr} (timezone: ${tz})`);
+        console.log(`✅ [PrayerScheduler] Cron task scheduled: ${task ? 'YES' : 'NO'}, running: ${task?.running ? 'YES' : 'NO'}`);
+
         entry.prayerJobs.set(prayerName, task);
+        console.log(`📋 [PrayerScheduler] Stored ${prayerName} cron job in registry for user ${user.email}`);
         console.log(`✅ [PrayerScheduler] ${prayerName} scheduled for ${formattedPrayerTime} in ${tz}`);
 
         scheduled++;
@@ -793,14 +823,22 @@ async function scheduleNotificationsForUser(user) {
             async () => {
               console.log(`🔔 [PrayerScheduler] ${prayerName} reminder time! Sending reminder notifications...`);
 
-              // RELOAD subscriptions fresh from DB to avoid 410 errors
-              const freshSubs = await PushSubscription.find({ 
-                userId: user._id,
-                isActive: true 
-              })
-              .sort({ createdAt: -1 })
-              .lean();
-              console.log(`📬 [PrayerScheduler] Reloaded ${freshSubs.length} fresh subscription(s) from DB for reminder`);
+            // RELOAD subscriptions fresh from DB to avoid 410 errors
+            const freshSubs = await PushSubscription.find({ 
+              userId: user._id,
+              isActive: true 
+            })
+            .sort({ createdAt: -1 })
+            .lean();
+            console.log(`📬 [PrayerScheduler] Reloaded ${freshSubs.length} fresh subscription(s) from DB for reminder`);
+            
+            // Log browser-specific subscription breakdown
+            console.log(`[PrayerScheduler] Reminder subscriptions breakdown:`);
+            freshSubs.forEach(sub => {
+              const pushService = sub.subscription?.endpoint?.includes('fcm') ? 'FCM' : 
+                                  sub.subscription?.endpoint?.includes('mozilla') ? 'Firefox' : 'Other';
+              console.log(`  - ${pushService}: ${sub.subscription?.endpoint?.substring(0, 60)}... (Active: ${sub.isActive})`);
+            });
 
               // Send reminder notifications to all user's subscriptions
               for (const sub of freshSubs) {
@@ -809,8 +847,9 @@ async function scheduleNotificationsForUser(user) {
 
                 try {
                   // Send reminder notification immediately
+                  const pushType = sub.subscription?.endpoint?.includes('mozilla') ? 'FIREFOX' : 'CHROME';
                   await notificationService.sendNotification(sub, reminderPayload);
-                  console.log(`✅ [PrayerScheduler] ${prayerName} reminder sent to ${user.email}`);
+                  console.log(`✅ [PrayerScheduler] ${pushType} ${prayerName} reminder sent to ${user.email}`);
 
                   // Log successful reminder notification
                   try {
@@ -839,7 +878,9 @@ async function scheduleNotificationsForUser(user) {
                     reminderMinutes: reminderMinutes
                   });
                 } catch (err) {
-                  console.error(`❌ [PrayerScheduler] Failed to send reminder to sub ${sub._id} for ${user.email}:`, err);
+                  const pushType = sub.subscription?.endpoint?.includes('mozilla') ? 'FIREFOX' : 'CHROME';
+                  console.error(`❌ [PrayerScheduler] ${pushType} reminder send failed for ${user.email}:`, err.message);
+                  console.error(`❌ [PrayerScheduler] Failed to send reminder to sub ${sub._id}:`, err);
 
                   // Log failed reminder notification
                   try {
@@ -959,9 +1000,37 @@ function capitalize(s) {
   return typeof s === "string" && s.length ? s[0].toUpperCase() + s.slice(1) : s;
 }
 
+/**
+ * Get schedule status for a specific user (for debugging)
+ * @param {string} userId - User ID to check
+ * @returns {object} - Schedule status with cron job details
+ */
+function getUserScheduleStatus(userId) {
+  const entry = registry.get(userId);
+  if (!entry) {
+    return { scheduled: false, message: "No cron jobs found for user" };
+  }
+
+  const jobs = {};
+  for (const [prayer, task] of entry.prayerJobs.entries()) {
+    jobs[prayer] = {
+      exists: !!task,
+      running: task?.running || false
+    };
+  }
+
+  return {
+    scheduled: true,
+    prayerJobs: jobs,
+    dailyJobExists: !!entry.dailyJob,
+    dailyJobRunning: entry.dailyJob?.running || false
+  };
+}
+
 module.exports = {
   initialize,
   getScheduleStatus,
+  getUserScheduleStatus, // NEW: Debug function to check cron job status
   // Optionals for testing/diagnostics:
   _registry: registry,
   _scheduleNotificationsForUser: scheduleNotificationsForUser,

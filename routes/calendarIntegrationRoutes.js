@@ -1,7 +1,6 @@
 // Calendar Integration Routes
 const express = require('express');
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const { env } = require('../config');
 const User = require('../models/User');
 const { requireUser } = require('../middleware/authMiddleware');

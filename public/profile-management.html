@@ -960,16 +960,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('👤 [Profile Management] Page loaded, initializing...');
             
-            // Check authentication
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                console.log('❌ [Profile Management] No auth token found, redirecting to login');
+            // Check authentication via session
+            try {
+                const sess = await fetch('/api/auth/session', { credentials: 'include' }).then(r=>r.json()).catch(()=>({authenticated:false}));
+                if (!sess || !sess.authenticated) {
+                    console.log('❌ [Profile Management] No active session, redirecting to login');
+                    window.location.href = '/login.html';
+                    return;
+                }
+                console.log('✅ [Profile Management] Active session detected, loading profile data...');
+                await loadProfileData();
+            } catch (e) {
+                console.error('❌ [Profile Management] Session check failed:', e);
                 window.location.href = '/login.html';
                 return;
             }
-
-            console.log('✅ [Profile Management] Auth token found, loading profile data...');
-            loadProfileData();
             setupEventListeners();
         });
 
@@ -1424,21 +1429,19 @@
         }
 
         // Utility functions
-        function makeAuthenticatedRequest(url, options = {}) {
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-                window.location.href = '/login.html';
-                return Promise.reject('No auth token');
+        async function makeAuthenticatedRequest(url, options = {}) {
+            const reqOpts = { credentials: 'include', ...options };
+            // Add CSRF token for unsafe methods
+            const method = (options.method || 'GET').toUpperCase();
+            if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+                try {
+                    const csrf = await fetch('/api/csrf-token', { credentials: 'include' }).then(r=>r.json()).catch(()=>({}));
+                    reqOpts.headers = { 'Content-Type': 'application/json', ...(options.headers||{}), 'X-CSRF-Token': csrf.csrfToken || '' };
+                } catch {}
+            } else {
+                reqOpts.headers = { ...(options.headers||{}) };
             }
-            
-            const defaultOptions = {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    ...options.headers
-                }
-            };
-            
-            return fetch(url, { ...defaultOptions, ...options });
+            return fetch(url, reqOpts);
         }
 
         function showNotification(message, type) {

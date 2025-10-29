@@ -18,7 +18,7 @@ const { z } = require("zod");
 const PushSubscription = require("../models/PushSubscription");
 const User = require("../models/User");
 const logger = require("../utils/logger");
-const authMiddleware = require("../middleware/auth");
+const { attachUser: authMiddleware, attachUser } = require("../middleware/authMiddleware");
 const { env } = require("../config");
 const { sendNotification } = require("../services/notificationService"); // Delayed queue-based send for snooze
 
@@ -58,6 +58,8 @@ const PreferencesSchema = z
     method: z.string().default("auto"),
     madhab: z.string().default("auto"),
     highLatRule: z.string().optional(),
+    // Reminder minutes validation: 0 (disabled) or 1-60 minutes
+    reminderMinutes: z.number().int().min(0).max(60).optional().default(0),
     audio: z
       .object({
         file: z.string().default("adhan.mp3"),
@@ -77,6 +79,14 @@ const SubscribeBodySchema = z.object({
       city: z.string().optional(),
     })
     .nullable()
+    .optional(),
+  browserInfo: z
+    .object({
+      browser: z.string().optional(),
+      os: z.string().optional(),
+      pushService: z.string().optional(),
+      canBackgroundNotify: z.boolean().optional(),
+    })
     .optional(),
 });
 const UnsubscribeBodySchema = z.object({
@@ -118,6 +128,7 @@ router.post("/subscribe", async (req, res) => {
       tz: raw?.tz || null,
       hasPrefs: !!raw?.preferences,
       hasLoc: !!raw?.location,
+      browserInfo: raw?.browserInfo || null,
     });
 
     // Debug authentication
@@ -148,22 +159,9 @@ router.post("/subscribe", async (req, res) => {
       "subscription.endpoint": { $in: [null, "", undefined] }
     });
 
-    // Deactivate ALL other subscriptions for this user
-    if (userId) {
-      await PushSubscription.updateMany(
-        { 
-          userId: userId,
-          "subscription.endpoint": { $ne: s.endpoint } // Don't deactivate the current one
-        },
-        { 
-          $set: { 
-            isActive: false,
-            updatedAt: new Date()
-          } 
-        }
-      );
-      console.log("[/api/notifications/subscribe] Deactivated old subscriptions for user:", userId);
-    }
+    // REMOVED: Multi-device support - Keep ALL subscriptions active for different browsers/devices
+    // Users can now receive notifications on all logged-in browsers simultaneously
+    console.log("[/api/notifications/subscribe] Keeping all existing subscriptions active (multi-device support)");
 
     // Use upsert to handle existing subscriptions properly
     const doc = await PushSubscription.findOneAndUpdate(
@@ -182,6 +180,7 @@ router.post("/subscribe", async (req, res) => {
           tz: body.tz || "UTC",
           preferences: body.preferences || undefined,
           location: body.location || undefined,
+          browserInfo: body.browserInfo || undefined, // Store browser information
           ua: req.headers["user-agent"] || "",
           isActive: true, // Mark subscription as active
           lastHealthCheck: new Date(),
@@ -197,6 +196,17 @@ router.post("/subscribe", async (req, res) => {
       id: doc._id,
       endpoint: doc.subscription?.endpoint,
       userId: doc.userId
+    });
+
+    // Log ALL subscriptions for this user to verify multi-device setup
+    const allUserSubs = await PushSubscription.find({ userId: doc.userId }).lean();
+    console.log(`[subscribe] User ${doc.userId} now has ${allUserSubs.length} subscription(s):`);
+    allUserSubs.forEach((sub, idx) => {
+      const pushService = sub.subscription?.endpoint?.includes('fcm') ? 'FCM(Chrome)' : 
+                          sub.subscription?.endpoint?.includes('mozilla') ? 'Mozilla(Firefox)' :
+                          sub.subscription?.endpoint?.includes('push.apple.com') ? 'APNs(Safari)' :
+                          'Unknown';
+      console.log(`  ${idx + 1}. ${pushService} - Active: ${sub.isActive} - Browser: ${sub.browserInfo?.browser || 'unknown'}`);
     });
 
     return res.status(200).json({ ok: true, id: doc._id });
@@ -505,6 +515,357 @@ router.post("/test-immediate", async (req, res) => {
   } catch (e) {
     logger.error("[notifications] /test-immediate error:", e);
     return res.status(500).json({ error: "UnexpectedError", message: e.message });
+  }
+});
+
+/**
+ * POST /trigger-main-now -> Immediately trigger a MAIN prayer notification (for debugging)
+ * Body: { prayerName: 'fajr'|'dhuhr'|'asr'|'maghrib'|'isha' }
+ */
+router.post("/trigger-main-now", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const { prayerName } = req.body || {};
+    const allowed = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+    if (!allowed.includes(String(prayerName || "").toLowerCase())) {
+      return res.status(400).json({ error: "Invalid prayerName. Use one of fajr|dhuhr|asr|maghrib|isha" });
+    }
+
+    // Find all active subscriptions for the user
+    const subscriptions = await PushSubscription.find({ userId, isActive: true }).lean();
+    if (!subscriptions || subscriptions.length === 0) {
+      return res.status(404).json({ error: "No active subscription found for user" });
+    }
+
+    // Build a MAIN prayer-like payload (matches scheduler payload structure)
+    const p = String(prayerName).toLowerCase();
+    const templateTitles = {
+      fajr: "🌅 Fajr Prayer Time",
+      dhuhr: "☀️ Dhuhr Prayer Time",
+      asr: "🌤️ Asr Prayer Time",
+      maghrib: "🌅 Maghrib Prayer Time",
+      isha: "🌙 Isha Prayer Time"
+    };
+
+    const title = templateTitles[p] || "🕌 Prayer Time";
+    const payload = {
+      title,
+      body: `It's time for ${p.toUpperCase()} prayer`,
+      icon: "/favicon.ico",
+      badge: "/favicon.ico",
+      color: "#2196F3",
+      tag: `${p}-debug-${Date.now()}`,
+      requireInteraction: true,
+      prayerName: p,
+      notificationType: 'main',
+      data: {
+        url: "/prayer-time.html",
+        prayer: p,
+        time: new Date().toLocaleTimeString(),
+        location: 'Your location',
+        category: "prayer-reminders",
+        timestamp: new Date().toISOString(),
+        userTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        audioFile: "/audio/adhan.mp3"
+      },
+      actions: [
+        { action: 'prayer-time', title: 'Prayer Time' },
+        { action: 'dismiss', title: 'Dismiss' }
+      ],
+      category: "prayer-reminders",
+      priority: 'high',
+      vibrate: [200, 100, 200],
+      audioFile: "/audio/adhan.mp3"
+    };
+
+    // Send to all active subscriptions (parallel)
+    const results = await Promise.allSettled(
+      subscriptions.map((sub) => sendNotification(sub, payload))
+    );
+
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    return res.status(200).json({ ok: true, sent: successful, total: subscriptions.length });
+  } catch (e) {
+    logger.error("[notifications] /trigger-main-now error:", e);
+    return res.status(500).json({ error: "UnexpectedError", message: e.message });
+  }
+});
+
+/**
+ * GET /cron-status -> List all active prayer cron jobs (for debugging)
+ */
+router.get("/cron-status", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    // Access the scheduler registry
+    const scheduler = require('../tasks/prayerNotificationScheduler');
+    const status = scheduler.getUserScheduleStatus ? 
+      scheduler.getUserScheduleStatus(userId.toString()) : 
+      { message: "Registry not exposed" };
+
+    return res.json({
+      ok: true,
+      userId: userId.toString(),
+      status
+    });
+  } catch (e) {
+    logger.error("[notifications] /cron-status error:", e);
+    return res.status(500).json({ error: e.message });
+  }
+});
+
+/** Test scheduled reminder endpoint - mimics cron behavior with short delay */
+router.post("/test-scheduled-reminder", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const { delayMinutes = 2 } = req.body;
+    
+    // Get ALL user subscriptions (same as cron does)
+    const subscriptions = await PushSubscription.find({ 
+      userId,
+      isActive: true 
+    }).lean();
+    
+    if (!subscriptions || subscriptions.length === 0) {
+      return res.status(404).json({ error: "No active subscriptions found" });
+    }
+    
+    console.log(`[test-scheduled-reminder] Found ${subscriptions.length} subscription(s) for user ${userId}`);
+    subscriptions.forEach(sub => {
+      const pushService = sub.subscription?.endpoint?.includes('fcm') ? 'FCM(Chrome)' : 
+                          sub.subscription?.endpoint?.includes('mozilla') ? 'Mozilla(Firefox)' : 'Unknown';
+      console.log(`  - ${pushService}: Active=${sub.isActive}`);
+    });
+    
+    const payload = {
+      title: "⏰ Test Scheduled Reminder",
+      body: `This is a ${delayMinutes}-minute delayed reminder test to verify background notifications work across all browsers`,
+      icon: "/favicon.ico",
+      tag: "test-scheduled-reminder",
+      requireInteraction: true,
+      notificationType: 'reminder',
+      data: {
+        url: "/prayer-time.html",
+        category: "test-reminders",
+        timestamp: new Date().toISOString()
+      }
+    };
+    
+    const scheduledFor = new Date(Date.now() + delayMinutes * 60 * 1000);
+    
+    // Schedule for all subscriptions (simulating cron behavior)
+    setTimeout(async () => {
+      console.log(`[test-scheduled-reminder] Sending to ${subscriptions.length} subscription(s) NOW`);
+      
+      const results = await Promise.allSettled(
+        subscriptions.map(async (sub) => {
+          const pushType = sub.subscription?.endpoint?.includes('mozilla') ? 'FIREFOX' : 
+                           sub.subscription?.endpoint?.includes('fcm') ? 'CHROME' : 'OTHER';
+          
+          try {
+            await notificationService.sendNotification(sub, payload);
+            console.log(`✅ [test-scheduled-reminder] ${pushType} notification sent successfully`);
+            return { success: true, pushType };
+          } catch (error) {
+            console.error(`❌ [test-scheduled-reminder] ${pushType} notification failed:`, error.message);
+            return { success: false, pushType, error: error.message };
+          }
+        })
+      );
+      
+      const successful = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      console.log(`[test-scheduled-reminder] Completed: ${successful}/${subscriptions.length} successful`);
+    }, delayMinutes * 60 * 1000);
+    
+    return res.status(200).json({ 
+      ok: true, 
+      message: `Reminder scheduled for ${subscriptions.length} device(s)`,
+      scheduledFor: scheduledFor.toISOString(),
+      subscriptionCount: subscriptions.length
+    });
+  } catch (error) {
+    console.error("[test-scheduled-reminder] Error:", error);
+    return res.status(500).json({ error: error.message });
+  }
+});
+
+// --- GET /api/notifications/subscription - List user's active subscriptions ---
+router.get("/subscription", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    const subscriptions = await PushSubscription.find({ userId })
+      .sort({ updatedAt: -1 })
+      .lean();
+
+    // Enrich with browser info
+    const enrichedSubs = subscriptions.map(sub => {
+      const endpoint = sub.subscription?.endpoint || '';
+      const pushService = endpoint.includes('fcm.googleapis.com') ? 'FCM(Chrome/Edge)' :
+                          endpoint.includes('mozilla.com') ? 'Mozilla(Firefox)' :
+                          endpoint.includes('push.apple.com') ? 'APNs(Safari)' : 'Unknown';
+      
+      return {
+        id: sub._id,
+        isActive: sub.isActive,
+        pushService,
+        detectedBrowser: sub.detectedBrowser,
+        endpoint: endpoint.substring(0, 60) + '...',
+        createdAt: sub.createdAt,
+        updatedAt: sub.updatedAt,
+        preferences: sub.preferences
+      };
+    });
+
+    res.json({
+      success: true,
+      subscriptions: enrichedSubs,
+      total: enrichedSubs.length,
+      active: enrichedSubs.filter(s => s.isActive).length
+    });
+  } catch (error) {
+    logger.error("[notifications] /subscription error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// --- GET /api/notifications/history - Notification delivery history ---
+router.get("/history", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    const limit = parseInt(req.query.limit) || 20;
+    const skip = parseInt(req.query.skip) || 0;
+
+    const NotificationHistory = require("../models/NotificationHistory");
+    
+    const [history, total] = await Promise.all([
+      NotificationHistory.find({ userId })
+        .sort({ sentTime: -1 })
+        .limit(limit)
+        .skip(skip)
+        .lean(),
+      NotificationHistory.countDocuments({ userId })
+    ]);
+
+    res.json({
+      success: true,
+      history,
+      pagination: {
+        total,
+        limit,
+        skip,
+        hasMore: skip + limit < total
+      }
+    });
+  } catch (error) {
+    logger.error("[notifications] /history error:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// --- GET /api/notifications/schedule - Current prayer schedule ---
+router.get("/schedule", authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?._id || req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ success: false, error: "Unauthorized" });
+    }
+
+    const user = await User.findById(userId).select('timezone lastKnownLocation preferences').lean();
+    if (!user) {
+      return res.status(404).json({ success: false, error: "User not found" });
+    }
+
+    // Get prayer times from the calculation service
+    const prayerTimeService = require("../services/prayerTimeService");
+    const tz = user.timezone || 'UTC';
+    const location = user.lastKnownLocation;
+
+    if (!location || !location.lat || !location.lon) {
+      return res.json({
+        success: true,
+        schedule: null,
+        message: "No location set. Please set your location to see prayer times."
+      });
+    }
+
+    const { lat, lon } = location;
+    const prayerTimes = await prayerTimeService.getPrayerTimes(lat, lon, tz);
+
+    // Find next prayer
+    const now = new Date();
+    const prayers = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+    let nextPrayer = null;
+    let nextReminder = null;
+
+    for (const prayer of prayers) {
+      const prayerTime = new Date(prayerTimes[prayer]);
+      if (prayerTime > now) {
+        nextPrayer = {
+          name: prayer,
+          time: prayerTime.toISOString(),
+          timeFormatted: prayerTime.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            timeZone: tz 
+          })
+        };
+
+        // Calculate reminder time
+        const reminderMinutes = user.preferences?.reminderMinutes || 15;
+        const reminderTime = new Date(prayerTime.getTime() - reminderMinutes * 60000);
+        if (reminderTime > now) {
+          nextReminder = {
+            prayerName: prayer,
+            time: reminderTime.toISOString(),
+            timeFormatted: reminderTime.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              timeZone: tz 
+            }),
+            minutesBefore: reminderMinutes
+          };
+        }
+        break;
+      }
+    }
+
+    res.json({
+      success: true,
+      schedule: {
+        timezone: tz,
+        reminderMinutes: user.preferences?.reminderMinutes || 15,
+        prayerTimes,
+        nextPrayer,
+        nextReminder,
+        location: {
+          lat: location.lat,
+          lon: location.lon,
+          accuracy: location.accuracy,
+          timestamp: location.timestamp
+        }
+      }
+    });
+  } catch (error) {
+    logger.error("[notifications] /schedule error:", error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

@@ -345,10 +345,10 @@ export class TranslationCore {
     }
 
     // Get authentication token
+    // DEPRECATED: Session-based auth does not use client-side tokens
     getAuthToken() {
-        return localStorage.getItem('authToken') ||
-               sessionStorage.getItem('authToken') ||
-               this.getTokenFromCookie();
+        // Session-based auth: return null, server handles via cookies
+        return null;
     }
 
     // Get token from cookie

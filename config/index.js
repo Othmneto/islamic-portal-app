@@ -99,6 +99,10 @@ const envSchema = z.object({
   AUDIO_MAX_FADE_MS: z.coerce.number().default(10000),
   AUDIO_COOLDOWN_SECONDS: z.coerce.number().default(30),
   AUDIO_DEFAULT_PROFILE: z.string().default('madinah'),
+
+  // Holiday API Keys (optional)
+  CALENDARIFIC_API_KEY: z.string().optional(),
+  ABSTRACT_HOLIDAYS_API_KEY: z.string().optional(),
 });
 
 let env;

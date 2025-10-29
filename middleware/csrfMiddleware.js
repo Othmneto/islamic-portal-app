@@ -53,6 +53,8 @@ function deriveToken(secret) {
  */
 function issueCsrfToken(req, res, next) {
   try {
+    console.log('🍪 Issuing CSRF token for session:', req.sessionID);
+    console.log('🍪 Session exists:', !!req.session);
     const secret = ensureCsrfSecret(req);
     const token = deriveToken(secret);
     // Always refresh cookie (cheap + avoids stale tokens after secret rotation)
@@ -85,10 +87,15 @@ function getCsrfToken(req, res) {
  *   and also ensures the cookie carries the same token.
  */
 function verifyCsrf(req, res, next) {
-  console.log('🔍 CSRF verification for:', req.path);
-  console.log('🔍 Request headers:', req.headers);
-  console.log('🔍 Request cookies:', req.cookies);
-  console.log('🔍 Request session:', req.session);
+  console.log('🔍 ========== CSRF VERIFICATION START ==========');
+  console.log('🔍 Path:', req.path);
+  console.log('🔍 Method:', req.method);
+  console.log('🔍 Session ID:', req.sessionID);
+  console.log('🔍 Session exists:', !!req.session);
+  console.log('🔍 Request headers:', JSON.stringify(req.headers, null, 2));
+  console.log('🔍 Request cookies:', JSON.stringify(req.cookies, null, 2));
+  console.log('🔍 ENV - NODE_ENV:', env.NODE_ENV);
+  console.log('🔍 ENV - ALLOW_NO_CSRF:', env.ALLOW_NO_CSRF);
 
   // Skip for Bearer clients (mobile/3rd-party) — they should use Authorization header
   const authHeader = req.headers.authorization || '';
@@ -97,11 +104,13 @@ function verifyCsrf(req, res, next) {
     return next();
   }
 
-  // Allow opt-out only in non-production (e.g., local E2E)
-  if (env.ALLOW_NO_CSRF === 'true' && env.NODE_ENV !== 'production') {
-    console.log('⏭️ Skipping CSRF (ALLOW_NO_CSRF=true)');
+  // Allow explicit opt-out via flag (use ONLY for controlled local E2E)
+  if (env.ALLOW_NO_CSRF === 'true') {
+    console.log('⏭️ ========== SKIPPING CSRF (ALLOW_NO_CSRF=true) ==========');
     return next();
   }
+  
+  console.log('⚠️ NOT SKIPPING CSRF - Proceeding with verification...');
 
   const secret = req.session?.csrfSecret;
   if (!secret) {

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
-const auth = require('../middleware/auth');
+const { attachUser: auth } = require('../middleware/authMiddleware');
 const { safeLogAuthEvent, safeLogSecurityViolation } = require('../middleware/securityLogging');
 const { createError } = require('../middleware/errorHandler');
 const bcrypt = require('bcryptjs');

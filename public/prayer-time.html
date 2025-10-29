@@ -20,9 +20,83 @@
   
   <!-- Include global navbar CSS -->
   <link rel="stylesheet" href="/css/global-navbar.css">
+  
+  <!-- Notification Debug Script -->
+  <script>
+    // Debug notification permissions and test notifications
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('🔔 [NotificationDebug] Checking notification permissions...');
+      
+      // Check notification permission
+      if ('Notification' in window) {
+        console.log('🔔 [NotificationDebug] Notification API available');
+        console.log('🔔 [NotificationDebug] Current permission:', Notification.permission);
+        
+        if (Notification.permission === 'granted') {
+          console.log('✅ [NotificationDebug] Notifications are allowed');
+          // REMOVED: Automatic test notification on page load to prevent spam
+        } else if (Notification.permission === 'denied') {
+          console.warn('❌ [NotificationDebug] Notifications are blocked by user');
+        } else {
+          console.log('⚠️ [NotificationDebug] Notification permission not yet requested');
+        }
+      } else {
+        console.warn('❌ [NotificationDebug] Notification API not available');
+      }
+    });
+  </script>
 
   <!-- Adhan.js for local fallback -->
-  <script src="https://cdn.jsdelivr.net/npm/adhan@4/dist/Adhan.js"></script>
+  <script>
+    // Try CDN first, fallback to local if CDN fails
+    (function() {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/adhan@4/dist/Adhan.js';
+      script.onerror = function() {
+        console.warn('[Adhan] CDN failed, using local fallback');
+        // Create a minimal Adhan object for local fallback
+        window.Adhan = {
+          CalculationMethod: {
+            MuslimWorldLeague: 'MuslimWorldLeague',
+            Egyptian: 'Egyptian',
+            Karachi: 'Karachi',
+            NorthAmerica: 'NorthAmerica',
+            Dubai: 'Dubai',
+            UmmAlQura: 'UmmAlQura'
+          },
+          Madhab: {
+            Shafi: 'shafii',
+            Hanafi: 'hanafi'
+          },
+          Coordinates: function(lat, lng) {
+            this.latitude = lat;
+            this.longitude = lng;
+          },
+          CalculationParameters: function(method, madhab) {
+            this.method = method;
+            this.madhab = madhab;
+            this.fajrAngle = 18;
+            this.ishaAngle = 18;
+          },
+          PrayerTimes: function(coordinates, date, params) {
+            this.coordinates = coordinates;
+            this.date = date;
+            this.params = params;
+            this.fajr = new Date();
+            this.sunrise = new Date();
+            this.dhuhr = new Date();
+            this.asr = new Date();
+            this.maghrib = new Date();
+            this.isha = new Date();
+          }
+        };
+      };
+      script.onload = function() {
+        console.log('[Adhan] CDN loaded successfully');
+      };
+      document.head.appendChild(script);
+    })();
+  </script>
   
   <!-- Socket.IO for real-time updates -->
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
@@ -386,13 +460,26 @@
           <!-- NEW: Pre-Prayer Reminder -->
           <div class="settings-group">
             <label for="reminder-select">Pre-Prayer Reminder</label>
-            <select id="reminder-select">
-              <option value="0">No Reminder</option>
-              <option value="5">5 minutes before</option>
-              <option value="10">10 minutes before</option>
-              <option value="15">15 minutes before</option>
-              <option value="20">20 minutes before</option>
-            </select>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <select id="reminder-select" style="flex: 1;">
+                <option value="0">No Reminder</option>
+                <option value="5">5 minutes before</option>
+                <option value="10">10 minutes before</option>
+                <option value="15">15 minutes before</option>
+                <option value="20">20 minutes before</option>
+                <option value="custom">Custom...</option>
+              </select>
+              <input 
+                type="number" 
+                id="custom-reminder-input" 
+                min="1" 
+                max="60" 
+                placeholder="Minutes" 
+                style="width: 100px; display: none;"
+                aria-label="Custom reminder minutes (1-60)"
+              />
+            </div>
+            <small style="color: #666; margin-top: 5px; display: block;">Choose 5, 10, 15, 20 minutes or enter a custom value (1-60 minutes)</small>
           </div>
 
           <div class="settings-group toggle-group">
@@ -409,6 +496,16 @@
               <input type="checkbox" id="notification-toggle" />
               <span>Enable Notifications</span>
             </label>
+          </div>
+
+          <!-- Chrome Background Notification Notice -->
+          <div class="alert alert-info" id="chrome-background-notice" style="display: none; margin-top: 10px; padding: 10px; background: #e3f2fd; border: 1px solid #2196f3; border-radius: 4px; font-size: 0.9em;">
+            <strong>Chrome Users:</strong> For background notifications when browser is closed:
+            <ol style="margin: 5px 0 0 0; padding-left: 20px;">
+              <li>Open Chrome Settings</li>
+              <li>Go to "System"</li>
+              <li>Enable "Continue running background apps when Google Chrome is closed"</li>
+            </ol>
           </div>
         </div>
 
@@ -540,11 +637,34 @@
         </div>
       </div>
       
+      <!-- Browser Compatibility -->
+      <div class="status-section">
+        <h4>Browser Compatibility</h4>
+        <div class="browser-compat-info" id="browserCompatInfo">
+          <div class="loading">Checking browser compatibility...</div>
+        </div>
+      </div>
+      
       <!-- Connection Status -->
       <div class="status-section">
         <div class="connection-status">
           <span class="status-indicator" id="wsStatus">●</span>
           <span id="wsStatusText">Connecting...</span>
+        </div>
+      </div>
+      
+      <!-- Notification Test -->
+      <div class="status-section">
+        <h4>Test Notifications</h4>
+        <div class="test-buttons">
+          <button id="testBasicNotification" class="btn btn-sm btn-primary">Test Basic Notification</button>
+          <button id="testServerNotification" class="btn btn-sm btn-secondary">Test Server Notification</button>
+          <button id="testScheduledReminder" class="btn btn-sm btn-info">Test Scheduled Reminder (2 min)</button>
+          <button id="runDiagnostics" class="btn btn-sm btn-warning">🔍 Run Full Diagnostics</button>
+        </div>
+        <div id="diagnosticResults" class="diagnostics-results" style="margin-top: 15px; display: none;">
+          <h5>🔍 Diagnostic Results</h5>
+          <div id="diagnosticsContent"></div>
         </div>
       </div>
     </div>
@@ -586,6 +706,71 @@
   <!-- Scripts -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js"></script>
   
+  <!-- Browser Compatibility Display -->
+  <script type="module">
+    import { browserDetection } from './js/prayer-time/browser-detection.js';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+      const compatInfo = document.getElementById('browserCompatInfo');
+      if (!compatInfo) return;
+      
+      const compat = browserDetection.getCompatibilityStatus();
+      const summary = browserDetection.getSummary();
+      
+      let statusClass = 'compat-' + compat.level;
+      let statusIcon = '';
+      
+      if (compat.level === 'excellent') {
+        statusIcon = '✅';
+      } else if (compat.level === 'good') {
+        statusIcon = '✔️';
+      } else if (compat.level === 'limited') {
+        statusIcon = '⚠️';
+      } else {
+        statusIcon = '❌';
+      }
+      
+      let html = `
+        <div class="compat-status ${statusClass}">
+          <div class="compat-header">
+            <span class="compat-icon">${statusIcon}</span>
+            <span class="compat-message">${compat.message}</span>
+          </div>
+          <div class="compat-details">
+            <div class="info-row">
+              <span class="label">Browser:</span>
+              <span class="value">${summary.browser}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">OS:</span>
+              <span class="value">${summary.os}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Push Service:</span>
+              <span class="value">${summary.pushService}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Background Notifications:</span>
+              <span class="value">${summary.canBackgroundNotify ? 'Supported' : 'Limited'}</span>
+            </div>
+      `;
+      
+      if (compat.details && compat.details.length > 0) {
+        html += '<div class="compat-warnings"><strong>Notes:</strong><ul>';
+        compat.details.forEach(detail => {
+          html += `<li>${detail}</li>`;
+        });
+        html += '</ul></div>';
+      }
+      
+      html += '</div></div>';
+      
+      compatInfo.innerHTML = html;
+      
+      console.log('🌐 [BrowserCompat] Displayed compatibility status:', compat.level);
+    });
+  </script>
+  
   <script type="module" src="prayer-time.js"></script>
 
   <!-- Theme Manager (load first) -->
@@ -600,15 +785,15 @@
   <script src="/js/tokenManager.js"></script>
   <script src="/js/prayer-time/api.js"></script>
   
-  <!-- Service Worker token relay -->
+  <!-- Service Worker session relay -->
   <script>
     if (navigator.serviceWorker) {
       navigator.serviceWorker.addEventListener('message', (event) => {
         try {
           const data = event.data || {};
-          if (data && data.type === 'GET_TOKEN' && event.ports && event.ports[0]) {
-            const token = localStorage.getItem('accessToken') || null;
-            event.ports[0].postMessage({ token });
+          if (data && data.type === 'GET_SESSION' && event.ports && event.ports[0]) {
+            // Session-based auth - no token needed
+            event.ports[0].postMessage({ authenticated: window.tokenManager?.isAuthenticated() || false });
           }
         } catch (err) {
           console.error('[Page] SW message handler error', err);
@@ -621,6 +806,211 @@
     // Navbar is automatically initialized by global-navbar.js
     // No need to create it here to avoid multiple initializations
     
+    // Custom reminder handling
+    document.addEventListener('DOMContentLoaded', function() {
+      // Show Chrome background notice only for Chrome users
+      if (navigator.userAgent.includes('Chrome') && !navigator.userAgent.includes('Edg')) {
+        const chromeNotice = document.getElementById('chrome-background-notice');
+        if (chromeNotice) {
+          chromeNotice.style.display = 'block';
+        }
+      }
+      
+      const reminderSelect = document.getElementById('reminder-select');
+      const customReminderInput = document.getElementById('custom-reminder-input');
+      
+      if (reminderSelect && customReminderInput) {
+        // Show/hide custom input based on selection
+        reminderSelect.addEventListener('change', function() {
+          if (this.value === 'custom') {
+            customReminderInput.style.display = 'block';
+            customReminderInput.focus();
+          } else {
+            customReminderInput.style.display = 'none';
+          }
+        });
+        
+        // Handle custom input changes
+        customReminderInput.addEventListener('change', function() {
+          const value = parseInt(this.value, 10);
+          if (value >= 1 && value <= 60) {
+            console.log(`[CustomReminder] Set to ${value} minutes before prayer`);
+            // The value will be read by the settings module when saving
+            // We need to update the select to reflect the custom value
+            const existingOption = Array.from(reminderSelect.options).find(opt => opt.value === String(value));
+            if (!existingOption) {
+              // Add custom option
+              const option = document.createElement('option');
+              option.value = value;
+              option.textContent = `${value} minutes before (custom)`;
+              option.selected = true;
+              // Insert before "Custom..." option
+              const customOption = Array.from(reminderSelect.options).find(opt => opt.value === 'custom');
+              if (customOption) {
+                reminderSelect.insertBefore(option, customOption);
+              } else {
+                reminderSelect.appendChild(option);
+              }
+            } else {
+              existingOption.selected = true;
+            }
+            // Trigger change event to save the setting
+            reminderSelect.dispatchEvent(new Event('change'));
+          } else {
+            alert('Please enter a value between 1 and 60 minutes (maximum 1 hour before prayer)');
+            this.value = '';
+          }
+        });
+        
+        // Load custom value if it exists in settings
+        const currentValue = reminderSelect.value;
+        if (currentValue && currentValue !== 'custom' && currentValue !== '0' && 
+            !['5', '10', '15', '20'].includes(currentValue)) {
+          // This is a custom value, show the input
+          customReminderInput.value = currentValue;
+          customReminderInput.style.display = 'block';
+        }
+      }
+    });
+    
+    // Notification test functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const testBasicBtn = document.getElementById('testBasicNotification');
+      const testServerBtn = document.getElementById('testServerNotification');
+      
+      if (testBasicBtn) {
+        testBasicBtn.addEventListener('click', function() {
+          console.log('🔔 [NotificationTest] Testing basic notification...');
+          
+          if (Notification.permission === 'granted') {
+            const notification = new Notification('Test Basic Notification', {
+              body: 'This is a basic browser notification test',
+              icon: '/favicon.ico',
+              tag: 'basic-test'
+            });
+            
+            notification.onclick = function() {
+              console.log('✅ [NotificationTest] Basic notification clicked');
+              notification.close();
+            };
+            
+            setTimeout(() => notification.close(), 5000);
+          } else {
+            alert('Please allow notifications first');
+          }
+        });
+      }
+      
+      if (testServerBtn) {
+        testServerBtn.addEventListener('click', function() {
+          console.log('🔔 [NotificationTest] Testing server notification...');
+          
+          fetch('/api/notifications/test-immediate', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('✅ [NotificationTest] Server notification sent:', data);
+            alert('Server notification sent! Check your notifications.');
+          })
+          .catch(error => {
+            console.error('❌ [NotificationTest] Server notification failed:', error);
+            alert('Server notification failed: ' + error.message);
+          });
+        });
+      }
+      
+      // Test Scheduled Reminder button
+      const testScheduledReminderBtn = document.getElementById('testScheduledReminder');
+      if (testScheduledReminderBtn) {
+        testScheduledReminderBtn.addEventListener('click', async function() {
+          console.log('🔔 [NotificationTest] Scheduling reminder for 2 minutes from now...');
+          
+          try {
+            const response = await fetch('/api/notifications/test-scheduled-reminder', {
+              method: 'POST',
+              credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ delayMinutes: 2 })
+            });
+            
+            const data = await response.json();
+            console.log('✅ [NotificationTest] Scheduled reminder response:', data);
+            alert(`Reminder scheduled for ${data.subscriptionCount} device(s)! Check in 2 minutes.\nScheduled for: ${new Date(data.scheduledFor).toLocaleTimeString()}\n\n${data.message}`);
+          } catch (error) {
+            console.error('❌ [NotificationTest] Failed to schedule reminder:', error);
+            alert('Failed to schedule reminder: ' + error.message);
+          }
+        });
+      }
+
+      // Diagnostic tool button
+      const runDiagnosticsBtn = document.getElementById('runDiagnostics');
+      if (runDiagnosticsBtn) {
+        runDiagnosticsBtn.addEventListener('click', async function() {
+          console.log('🔍 [NotificationTest] Running full diagnostics...');
+          const resultsDiv = document.getElementById('diagnosticResults');
+          
+          try {
+            // Import diagnostics module
+            const { NotificationDiagnostics } = await import('./js/prayer-time/notification-diagnostics.js');
+            
+            // Show loading
+            if (resultsDiv) {
+              resultsDiv.style.display = 'block';
+              resultsDiv.innerHTML = '<p style="color: #3b82f6;">⏳ Running diagnostics tests...</p>';
+            }
+
+            // Run all tests
+            const diagnostics = new NotificationDiagnostics();
+            const report = await diagnostics.runFullDiagnostics();
+            
+            // Display results
+            if (resultsDiv) {
+              let html = '<div class="diagnostic-summary">';
+              html += `<h6>Summary</h6>`;
+              html += `<p>Total Tests: ${report.summary.total} | Passed: ${report.summary.passed} | Failed: ${report.summary.failed} | Warnings: ${report.summary.warnings}</p>`;
+              html += '</div>';
+              
+              html += '<div class="diagnostic-tests"><h6>Test Results</h6>';
+              report.results.forEach(result => {
+                const statusIcon = result.status === 'passed' ? '✅' : result.status === 'failed' ? '❌' : '⚠️';
+                html += `<div class="test-result ${result.status}">`;
+                html += `<h6>${statusIcon} ${result.test}</h6>`;
+                html += `<p>${result.details.join('<br>')}</p>`;
+                html += '</div>';
+              });
+              html += '</div>';
+              
+              if (report.recommendations && report.recommendations.length > 0) {
+                html += '<div class="diagnostic-recommendations">';
+                html += '<h6>🔧 Recommendations</h6>';
+                html += '<ul>';
+                report.recommendations.forEach(rec => {
+                  html += `<li>${rec}</li>`;
+                });
+                html += '</ul>';
+                html += '</div>';
+              }
+              
+              resultsDiv.innerHTML = html;
+            }
+
+            console.log('✅ [NotificationTest] Diagnostics complete:', report);
+          } catch (error) {
+            console.error('❌ [NotificationTest] Error running diagnostics:', error);
+            if (resultsDiv) {
+              resultsDiv.style.display = 'block';
+              resultsDiv.innerHTML = '<p style="color: #ef4444;">❌ Error: ' + error.message + '</p>';
+            }
+          }
+        });
+      }
+    });
   </script>
 
     <script src="/js/navbar-enhancements.js"></script>

@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 const { safeLogAuthEvent, safeLogSecurityViolation } = require('../middleware/securityLogging');
 const bcrypt = require('bcryptjs');
 

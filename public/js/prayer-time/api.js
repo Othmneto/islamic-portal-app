@@ -7,129 +7,35 @@ class PrayerTimeAPI {
     }
 
     /**
-     * Get current auth token
-     */
-    getAuthToken() {
-        return localStorage.getItem('accessToken') || localStorage.getItem('authToken') || localStorage.getItem('token');
-    }
-
-    /**
-     * Attempt token refresh when stale
-     */
-    async attemptTokenRefreshWhenStale() {
-        if (this.isRefreshing && this.refreshPromise) {
-            return this.refreshPromise;
-        }
-
-        this.isRefreshing = true;
-        this.refreshPromise = this._performTokenRefresh();
-
-        try {
-            const result = await this.refreshPromise;
-            return result;
-        } finally {
-            this.isRefreshing = false;
-            this.refreshPromise = null;
-        }
-    }
-
-    /**
-     * Perform actual token refresh
-     */
-    async _performTokenRefresh() {
-        const refreshToken = localStorage.getItem('refreshToken');
-        if (!refreshToken) {
-            throw new Error('No refresh token available');
-        }
-
-        try {
-            const response = await fetch('/api/token/refresh', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ refreshToken })
-            });
-
-            if (!response.ok) {
-                throw new Error('Token refresh failed');
-            }
-
-            const data = await response.json();
-
-            // Update tokens
-            localStorage.setItem('accessToken', data.data.accessToken);
-            localStorage.setItem('refreshToken', data.data.refreshToken);
-
-            console.log('✅ [API] Token refreshed successfully');
-            return true;
-        } catch (error) {
-            console.error('❌ [API] Token refresh failed:', error);
-            // Clear tokens and redirect to login
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('token');
-            window.location.href = '/login.html';
-            throw error;
-        }
-    }
-
-    /**
-     * Enhanced fetch with sliding renewal header handling and 401 auto-retry
+     * Enhanced fetch with session-based authentication
+     * NO JWT TOKENS - Pure session-based authentication
      */
     async apiFetchWithSlidingRenewalHeader(endpoint, options = {}) {
-        const token = this.getAuthToken();
-
-        // Add auth header if token exists
+        // Session-based: No Authorization header needed
         const headers = {
             'Content-Type': 'application/json',
             ...options.headers
         };
 
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-
         const requestOptions = {
             ...options,
-            headers
+            headers,
+            credentials: 'include' // Always include session cookies
         };
 
         try {
             const response = await fetch(endpoint, requestOptions);
 
-            // Handle X-New-Token header (sliding renewal)
-            const newToken = response.headers.get('X-New-Token');
-            if (newToken) {
-                console.log('🔄 [API] Received new token from sliding renewal');
-                localStorage.setItem('accessToken', newToken);
-
-                // Broadcast token update to other tabs
-                if (window.broadcastTokenUpdateCrossTabSync) {
-                    window.broadcastTokenUpdateCrossTabSync(newToken);
-                }
-            }
+            // Session-based: No token handling needed
 
             // Handle 401 with auto-retry
             if (response.status === 401) {
                 console.log('🔄 [API] 401 received, attempting token refresh...');
 
-                try {
-                    const refreshed = await this.attemptTokenRefreshWhenStale();
-                    if (refreshed) {
-                        // Retry the original request with new token
-                        const newToken = this.getAuthToken();
-                        if (newToken) {
-                            requestOptions.headers['Authorization'] = `Bearer ${newToken}`;
-                            return await fetch(endpoint, requestOptions);
-                        }
-                    }
-                } catch (refreshError) {
-                    console.error('❌ [API] Token refresh failed, redirecting to login');
-                    window.location.href = '/login.html';
-                    return response; // Return original 401 response
-                }
+                // Session-based: No token refresh needed, just redirect to login
+                console.log('🔐 [API] Session expired, redirecting to login...');
+                window.location.href = '/login.html';
+                throw new Error('Session expired');
             }
 
             return response;
@@ -244,22 +150,13 @@ class PrayerTimeAPI {
     }
 
     /**
-     * Generic API fetch method with sliding renewal and 401 auto-retry
+     * Generic API fetch method with session-based authentication
+     * NO JWT TOKENS - Pure session-based authentication
      */
     async apiFetch(endpoint, options = {}) {
-        const token = this.getAuthToken();
-
-        // Add authorization header if token is available
-        if (token) {
-            options.headers = {
-                ...options.headers,
-                'Authorization': `Bearer ${token}`
-            };
-        }
-
-        // Add CSRF token if available
+        // Add CSRF token for write operations
         const csrfToken = this.getCsrfToken();
-        if (csrfToken) {
+        if (csrfToken && options.method && options.method !== 'GET') {
             options.headers = {
                 ...options.headers,
                 'X-CSRF-Token': csrfToken
@@ -274,31 +171,17 @@ class PrayerTimeAPI {
             };
         }
 
+        // Always include credentials for session cookies
+        options.credentials = 'include';
+
         try {
             const response = await fetch(endpoint, options);
 
-            // Handle X-New-Token header for sliding renewal
-            const newToken = response.headers.get('X-New-Token');
-            if (newToken) {
-                localStorage.setItem('accessToken', newToken);
-                console.log('🔄 [API] Token renewed via X-New-Token header');
-            }
-
-            // Handle 401 with auto-retry
+            // Handle 401 - redirect to login
             if (response.status === 401) {
-                console.log('🔄 [API] 401 received, attempting token refresh...');
-                const refreshed = await this.attemptTokenRefreshWhenStale();
-                if (refreshed) {
-                    // Retry the original request with new token
-                    const newToken = this.getAuthToken();
-                    if (newToken) {
-                        options.headers = {
-                            ...options.headers,
-                            'Authorization': `Bearer ${newToken}`
-                        };
-                        return fetch(endpoint, options);
-                    }
-                }
+                console.log('🔐 [API] Session expired, redirecting to login...');
+                window.location.href = '/login.html';
+                throw new Error('Session expired');
             }
 
             return response;
@@ -332,17 +215,35 @@ class PrayerTimeAPI {
     /**
      * Save user location (placeholder for compatibility)
      */
-    async saveUserLocation(location) {
+    async saveUserLocation(lat, lon, display, tz) {
         try {
+            // Session-based: Let server handle authentication
+            console.log('🔐 [PrayerTimeAPI] Attempting to save location with session authentication');
+
+            const body = {
+                lat,
+                lng: lon,
+                city: display || undefined,
+                country: undefined,
+                timezone: tz || undefined
+            };
             const response = await this.apiFetch('/api/user/location', {
-                method: 'POST',
-                body: JSON.stringify(location)
+                method: 'PUT',
+                body: JSON.stringify(body)
             });
-            return response.json();
+            return response.ok ? response.json() : response;
         } catch (error) {
             console.error('❌ [PrayerTimeAPI] Error saving user location:', error);
             throw error;
         }
+    }
+
+    /**
+     * Session-based authentication - no tokens needed
+     */
+    getAuthToken() {
+        // Session-based: return null to indicate session authentication
+        return null;
     }
 }
 

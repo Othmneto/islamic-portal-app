@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const PrayerTimeReport = require('../models/PrayerTimeReport');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 
 /**
  * POST /api/prayer-time-reports

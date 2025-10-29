@@ -134,9 +134,9 @@ export class TranslationAlternatives {
             for (const styleConfig of styles) {
                 const response = await fetch('/api/text-translation/translate', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
                         text: text,

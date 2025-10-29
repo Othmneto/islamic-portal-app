@@ -14,8 +14,8 @@ class WorshipperInterface {
         this.volume = 0.8;
         this.translationData = []; // Translation history data array
 
-        // Get token
-        this.token = localStorage.getItem('accessToken') || localStorage.getItem('authToken');
+        // Session-based auth: no client-side token needed
+        this.token = null;
 
         // Initialize UI elements
         this.initializeElements();

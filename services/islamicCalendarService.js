@@ -268,6 +268,113 @@ class IslamicCalendarService {
         }
     }
 
+    // Get yearly holidays for a specific year and country
+    async getYearlyHolidays(year, country = 'AE', includeIslamic = true, includeNational = true) {
+        try {
+            console.log(`🕌 [IslamicCalendarService] Getting yearly holidays for ${year}, country: ${country}`);
+            
+            const holidays = [];
+            const yearStart = new Date(year, 0, 1);
+            const yearEnd = new Date(year, 11, 31);
+            
+            // Get all Islamic holidays for the year
+            if (includeIslamic) {
+                const islamicHolidays = await this.getIslamicHolidays(yearStart, yearEnd, country);
+                islamicHolidays.forEach(holiday => {
+                    const hijriKey = `${holiday.hijriDate.month}-${holiday.hijriDate.day}`;
+                    const duration = this.getHolidayDuration(hijriKey);
+                    
+                    holidays.push({
+                        id: `${holiday.name.toLowerCase().replace(/\s+/g, '-')}-${year}`,
+                        name: holiday.name,
+                        nameAr: holiday.nameAr,
+                        date: holiday.date,
+                        hijriDate: hijriKey,
+                        type: 'religious',
+                        duration: duration,
+                        country: country,
+                        isPublic: holiday.isPublic
+                    });
+                });
+            }
+            
+            // Get national holidays for the country
+            if (includeNational && this.countryHolidays[country]) {
+                const nationalHolidays = this.countryHolidays[country];
+                Object.keys(nationalHolidays).forEach(hijriKey => {
+                    const holiday = nationalHolidays[hijriKey];
+                    if (holiday.type === 'national') {
+                        // Convert Hijri date to Gregorian for the given year
+                        const gregorianDate = this.convertHijriToGregorian(hijriKey, year);
+                        if (gregorianDate) {
+                            const duration = this.getHolidayDuration(hijriKey);
+                            
+                            holidays.push({
+                                id: `${holiday.name.toLowerCase().replace(/\s+/g, '-')}-${year}`,
+                                name: holiday.name,
+                                nameAr: holiday.nameAr,
+                                date: gregorianDate,
+                                hijriDate: hijriKey,
+                                type: 'national',
+                                duration: duration,
+                                country: country,
+                                isPublic: true
+                            });
+                        }
+                    }
+                });
+            }
+            
+            // Sort by date
+            holidays.sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            console.log(`✅ [IslamicCalendarService] Found ${holidays.length} holidays for ${year}`);
+            return holidays;
+            
+        } catch (error) {
+            console.error('❌ [IslamicCalendarService] Error getting yearly holidays:', error);
+            logger.error('Error getting yearly holidays:', error);
+            return [];
+        }
+    }
+
+    // Helper method to get holiday duration
+    getHolidayDuration(hijriKey) {
+        const multiDayHolidays = {
+            '10-1': 3, // Eid al-Fitr
+            '10-2': 3, // Eid al-Fitr (2nd Day)
+            '10-3': 3, // Eid al-Fitr (3rd Day)
+            '12-9': 4, // Eid al-Adha
+            '12-10': 4, // Eid al-Adha (2nd Day)
+            '12-11': 4, // Eid al-Adha (3rd Day)
+            '12-12': 4, // Eid al-Adha (4th Day)
+            '9-1': 30, // Ramadan
+            '12-1': 2, // UAE National Day
+            '12-2': 2, // UAE National Day (2nd Day)
+            '2-22': 1  // Saudi National Day
+        };
+        return multiDayHolidays[hijriKey] || 1;
+    }
+
+    // Helper method to convert Hijri date to Gregorian
+    convertHijriToGregorian(hijriKey, year) {
+        try {
+            const [hijriMonth, hijriDay] = hijriKey.split('-').map(Number);
+            
+            // Create a date in the middle of the year to avoid month boundary issues
+            const midYear = new Date(year, 5, 15); // June 15th
+            const hijriMoment = moment(midYear).iYear(year).iMonth(hijriMonth - 1).iDate(hijriDay);
+            
+            if (hijriMoment.isValid()) {
+                return hijriMoment.format('YYYY-MM-DD');
+            }
+            return null;
+        } catch (error) {
+            console.error('Error converting Hijri to Gregorian:', error);
+            return null;
+        }
+    }
+
     // Create prayer time events for a specific date
     async createPrayerTimeEvents(date, latitude, longitude, country = 'AE') {
         try {
@@ -277,10 +384,9 @@ class IslamicCalendarService {
             const events = [];
             const dateStr = date.toISOString().split('T')[0];
 
-            // Create events for each prayer time
+            // Create events for each prayer time (excluding Sunrise as it's not a prayer)
             const prayers = [
                 { name: 'Fajr', time: prayerTimes.fajr, color: '#2E7D32' },
-                { name: 'Sunrise', time: prayerTimes.sunrise, color: '#FF9800' },
                 { name: 'Dhuhr', time: prayerTimes.dhuhr, color: '#1976D2' },
                 { name: 'Asr', time: prayerTimes.asr, color: '#7B1FA2' },
                 { name: 'Maghrib', time: prayerTimes.maghrib, color: '#D32F2F' },
@@ -349,11 +455,43 @@ class IslamicCalendarService {
     async getMonthlyIslamicEvents(year, month, latitude, longitude, country = 'AE') {
         try {
             console.log(`🕌 [IslamicCalendarService] Getting monthly events (holidays only) for ${year}-${month}`);
-            const startDate = new Date(year, month - 1, 1);
-            const endDate = new Date(year, month, 0);
+            
+            // Use holiday aggregator to get holidays for the year
+            const holidayAggregator = require('./holidayAggregatorService');
+            console.log(`🕌 [IslamicCalendarService] Calling holiday aggregator for ${country} ${year}`);
+            const allHolidays = await holidayAggregator.getHolidaysForCountry(
+                country,
+                year,
+                ['islamic', 'religious', 'national', 'public', 'observance']
+            );
+            console.log(`🕌 [IslamicCalendarService] Holiday aggregator returned ${allHolidays.length} holidays`);
+            console.log(`🕌 [IslamicCalendarService] Sample holidays:`, allHolidays.slice(0, 3).map(h => ({ name: h.name, date: h.date })));
 
-            const holidays = await this.getIslamicHolidays(startDate, endDate, country);
-            console.log(`🕌 [IslamicCalendarService] Found ${holidays.length} holidays`);
+            // Filter holidays for the specific month
+            const monthHolidays = allHolidays.filter(holiday => {
+                const holidayDate = new Date(holiday.date);
+                const matches = holidayDate.getFullYear() === year && holidayDate.getMonth() === (month - 1);
+                if (matches) {
+                    console.log(`✅ Match found:`, { name: holiday.name, date: holiday.date, month: holidayDate.getMonth() + 1 });
+                }
+                return matches;
+            });
+
+            console.log(`🕌 [IslamicCalendarService] Found ${monthHolidays.length} holidays for ${year}-${month}`);
+
+            // Transform to the expected format
+            const holidays = monthHolidays.map(h => ({
+                id: h.uniqueId,
+                name: h.name,
+                nameAr: h.nameAr || h.nameLocal,
+                date: h.date,
+                hijriDate: h.hijriDate,
+                type: h.type,
+                duration: h.duration || 1,
+                country: h.countryCode,
+                isPublic: h.isPublicHoliday,
+                description: h.description
+            }));
 
             // NOTE: Prayer events are now handled by the dedicated monthly-prayer-times endpoint
             // to avoid duplication. This endpoint only returns holidays.

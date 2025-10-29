@@ -1,7 +1,6 @@
 // Enhanced Production-Grade OAuth Implementation
 const express = require('express');
 const axios = require('axios');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { env } = require('../config');
 const User = require('../models/User');
@@ -262,11 +261,7 @@ router.get('/microsoft/callback', async (req, res) => {
 
     const { access_token, refresh_token, id_token } = tokenResponse.data;
 
-    // Verify ID token
-    const decodedToken = jwt.decode(id_token);
-    if (!decodedToken) {
-      throw new Error('Invalid ID token');
-    }
+    // Optionally decode ID token (no signature verification) - not required for flow
 
     // Get user information
     const userResponse = await axios.get(OAUTH_CONFIG.microsoft.userInfoUrl, {
@@ -352,18 +347,11 @@ router.get('/microsoft/callback', async (req, res) => {
       }
     }
 
-    // Generate JWT token
-    const payload = {
-      id: user.id,
-      role: user.role,
-      email: user.email,
-      username: user.username,
-      authProvider: 'microsoft',
-      iat: Math.floor(Date.now() / 1000),
-      jti: crypto.randomUUID()
-    };
-
-    const token = jwt.sign(payload, env.JWT_SECRET); // No expiry for persistent auth
+    // Establish session (session-based auth)
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((err) => err ? reject(err) : resolve());
+    });
+    req.session.userId = user._id;
 
     // Check if this is a calendar re-authorization BEFORE clearing session data
     const isCalendarReauth = req.session.oauthState && req.session.oauthState.calendarReauth;
@@ -372,9 +360,9 @@ router.get('/microsoft/callback', async (req, res) => {
     delete req.session.oauthState;
     delete req.session.codeVerifier;
     if (isCalendarReauth) {
-        res.redirect(`/authCallback.html?token=${token}&provider=microsoft&redirect=/calendar.html`);
+        res.redirect(`/authCallback.html?provider=microsoft&redirect=/calendar.html`);
     } else {
-        res.redirect(`/authCallback.html?token=${token}&provider=microsoft`);
+        res.redirect(`/authCallback.html?provider=microsoft`);
     }
 
   } catch (error) {
@@ -496,11 +484,7 @@ router.get('/google/callback', async (req, res) => {
       id_token: id_token ? id_token.substring(0, 20) + '...' : 'null'
     });
 
-    // Verify ID token
-    const decodedToken = jwt.decode(id_token);
-    if (!decodedToken) {
-      throw new Error('Invalid ID token');
-    }
+    // Optionally decode ID token (no signature verification) - not required for flow
 
     // Get user information
     const userResponse = await axios.get(OAUTH_CONFIG.google.userInfoUrl, {
@@ -676,20 +660,13 @@ router.get('/google/callback', async (req, res) => {
     }
     }
 
-    // Generate JWT token
-    const payload = {
-      id: user.id,
-      role: user.role,
-      email: user.email,
-      username: user.username,
-      authProvider: 'google',
-      iat: Math.floor(Date.now() / 1000),
-      jti: crypto.randomUUID()
-    };
+    // Establish session (session-based auth)
+    await new Promise((resolve, reject) => {
+      req.session.regenerate((err) => err ? reject(err) : resolve());
+    });
+    req.session.userId = user._id;
 
-    const token = jwt.sign(payload, env.JWT_SECRET); // No expiry for persistent auth
-
-    // Redirect to frontend with token
+    // Redirect to frontend without token
     // Check if this is a calendar re-authorization by looking for calendar scopes in the original request
     // IMPORTANT: determine before clearing session
     const isCalendarReauth = req.session.oauthState && req.session.oauthState.calendarReauth;
@@ -698,9 +675,9 @@ router.get('/google/callback', async (req, res) => {
     delete req.session.oauthState;
     delete req.session.codeVerifier;
     if (isCalendarReauth) {
-      res.redirect(`/authCallback.html?token=${token}&provider=google&redirect=/calendar.html`);
+      res.redirect(`/authCallback.html?provider=google&redirect=/calendar.html`);
     } else {
-      res.redirect(`/authCallback.html?token=${token}&provider=google`);
+      res.redirect(`/authCallback.html?provider=google`);
     }
 
   } catch (error) {

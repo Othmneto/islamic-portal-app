@@ -1,0 +1,512 @@
+{
+  "AE": {
+    "2025": [
+      {
+        "name": "New Year's Day",
+        "nameAr": "رأس السنة الميلادية",
+        "date": "2025-01-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "New Year's Day celebration"
+      },
+      {
+        "name": "Mawlid al-Nabi",
+        "nameAr": "المولد النبوي",
+        "date": "2025-01-29",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Prophet Muhammad's birthday"
+      },
+      {
+        "name": "Ramadan Begins",
+        "nameAr": "بداية شهر رمضان",
+        "date": "2025-03-29",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Ramadan"
+      },
+      {
+        "name": "Lailat al-Qadr",
+        "nameAr": "ليلة القدر",
+        "date": "2025-04-23",
+        "type": "islamic",
+        "isPublicHoliday": false,
+        "duration": 1,
+        "description": "Night of Power"
+      },
+      {
+        "name": "Eid al-Fitr",
+        "nameAr": "عيد الفطر",
+        "date": "2025-04-28",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 3,
+        "description": "End of Ramadan celebration"
+      },
+      {
+        "name": "Arafat Day",
+        "nameAr": "يوم عرفة",
+        "date": "2025-06-05",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Day of Arafat during Hajj"
+      },
+      {
+        "name": "Eid al-Adha",
+        "nameAr": "عيد الأضحى",
+        "date": "2025-06-06",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 4,
+        "description": "Festival of Sacrifice"
+      },
+      {
+        "name": "Islamic New Year",
+        "nameAr": "رأس السنة الهجرية",
+        "date": "2025-07-19",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Islamic year"
+      },
+      {
+        "name": "Ashura",
+        "nameAr": "يوم عاشوراء",
+        "date": "2025-07-28",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Day of Ashura"
+      },
+      {
+        "name": "Prophet's Ascension",
+        "nameAr": "ليلة المعراج",
+        "date": "2025-10-15",
+        "type": "islamic",
+        "isPublicHoliday": false,
+        "duration": 1,
+        "description": "Prophet's night journey"
+      },
+      {
+        "name": "UAE National Day",
+        "nameAr": "اليوم الوطني",
+        "date": "2025-12-02",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 2,
+        "description": "United Arab Emirates National Day"
+      },
+      {
+        "name": "UAE Flag Day",
+        "nameAr": "يوم العلم",
+        "date": "2025-11-03",
+        "type": "national",
+        "isPublicHoliday": false,
+        "duration": 1,
+        "description": "UAE Flag Day celebration"
+      },
+      {
+        "name": "Commemoration Day",
+        "nameAr": "يوم الشهيد",
+        "date": "2025-11-30",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Martyrs' Day"
+      }
+    ],
+    "2026": [
+      {
+        "name": "New Year's Day",
+        "nameAr": "رأس السنة الميلادية",
+        "date": "2026-01-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "New Year's Day celebration"
+      },
+      {
+        "name": "Mawlid al-Nabi",
+        "nameAr": "المولد النبوي",
+        "date": "2026-01-18",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Prophet Muhammad's birthday"
+      },
+      {
+        "name": "Ramadan Begins",
+        "nameAr": "بداية شهر رمضان",
+        "date": "2026-03-19",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Ramadan"
+      },
+      {
+        "name": "Eid al-Fitr",
+        "nameAr": "عيد الفطر",
+        "date": "2026-04-18",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 3,
+        "description": "End of Ramadan celebration"
+      },
+      {
+        "name": "Eid al-Adha",
+        "nameAr": "عيد الأضحى",
+        "date": "2026-05-26",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 4,
+        "description": "Festival of Sacrifice"
+      },
+      {
+        "name": "Islamic New Year",
+        "nameAr": "رأس السنة الهجرية",
+        "date": "2026-07-08",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Islamic year"
+      },
+      {
+        "name": "Ashura",
+        "nameAr": "يوم عاشوراء",
+        "date": "2026-07-17",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Day of Ashura"
+      },
+      {
+        "name": "UAE National Day",
+        "nameAr": "اليوم الوطني",
+        "date": "2026-12-02",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 2,
+        "description": "United Arab Emirates National Day"
+      }
+    ]
+  },
+  "SA": {
+    "2025": [
+      {
+        "name": "New Year's Day",
+        "nameAr": "رأس السنة الميلادية",
+        "date": "2025-01-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "New Year's Day celebration"
+      },
+      {
+        "name": "Mawlid al-Nabi",
+        "nameAr": "المولد النبوي",
+        "date": "2025-01-29",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Prophet Muhammad's birthday"
+      },
+      {
+        "name": "Ramadan Begins",
+        "nameAr": "بداية شهر رمضان",
+        "date": "2025-03-29",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Ramadan"
+      },
+      {
+        "name": "Eid al-Fitr",
+        "nameAr": "عيد الفطر",
+        "date": "2025-04-28",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 3,
+        "description": "End of Ramadan celebration"
+      },
+      {
+        "name": "Eid al-Adha",
+        "nameAr": "عيد الأضحى",
+        "date": "2025-06-06",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 4,
+        "description": "Festival of Sacrifice"
+      },
+      {
+        "name": "Islamic New Year",
+        "nameAr": "رأس السنة الهجرية",
+        "date": "2025-07-19",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Islamic year"
+      },
+      {
+        "name": "Ashura",
+        "nameAr": "يوم عاشوراء",
+        "date": "2025-07-28",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Day of Ashura"
+      },
+      {
+        "name": "Saudi National Day",
+        "nameAr": "اليوم الوطني السعودي",
+        "date": "2025-09-23",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Saudi Arabia National Day"
+      }
+    ]
+  },
+  "US": {
+    "2025": [
+      {
+        "name": "New Year's Day",
+        "date": "2025-01-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "New Year's Day"
+      },
+      {
+        "name": "Martin Luther King Jr. Day",
+        "date": "2025-01-20",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Martin Luther King Jr. Day"
+      },
+      {
+        "name": "Presidents' Day",
+        "date": "2025-02-17",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Presidents' Day"
+      },
+      {
+        "name": "Memorial Day",
+        "date": "2025-05-26",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Memorial Day"
+      },
+      {
+        "name": "Independence Day",
+        "date": "2025-07-04",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Independence Day"
+      },
+      {
+        "name": "Labor Day",
+        "date": "2025-09-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Labor Day"
+      },
+      {
+        "name": "Columbus Day",
+        "date": "2025-10-13",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Columbus Day"
+      },
+      {
+        "name": "Veterans Day",
+        "date": "2025-11-11",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Veterans Day"
+      },
+      {
+        "name": "Thanksgiving Day",
+        "date": "2025-11-27",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Thanksgiving Day"
+      },
+      {
+        "name": "Christmas Day",
+        "date": "2025-12-25",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Christmas Day"
+      }
+    ]
+  },
+  "GB": {
+    "2025": [
+      {
+        "name": "New Year's Day",
+        "date": "2025-01-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "New Year's Day"
+      },
+      {
+        "name": "Good Friday",
+        "date": "2025-04-18",
+        "type": "religious",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Good Friday"
+      },
+      {
+        "name": "Easter Monday",
+        "date": "2025-04-21",
+        "type": "religious",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Easter Monday"
+      },
+      {
+        "name": "Early May Bank Holiday",
+        "date": "2025-05-05",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Early May Bank Holiday"
+      },
+      {
+        "name": "Spring Bank Holiday",
+        "date": "2025-05-26",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Spring Bank Holiday"
+      },
+      {
+        "name": "Summer Bank Holiday",
+        "date": "2025-08-25",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Summer Bank Holiday"
+      },
+      {
+        "name": "Christmas Day",
+        "date": "2025-12-25",
+        "type": "religious",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Christmas Day"
+      },
+      {
+        "name": "Boxing Day",
+        "date": "2025-12-26",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Boxing Day"
+      }
+    ]
+  },
+  "EG": {
+    "2025": [
+      {
+        "name": "New Year's Day",
+        "nameAr": "رأس السنة الميلادية",
+        "date": "2025-01-01",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "New Year's Day"
+      },
+      {
+        "name": "Mawlid al-Nabi",
+        "nameAr": "المولد النبوي",
+        "date": "2025-01-29",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Prophet Muhammad's birthday"
+      },
+      {
+        "name": "Ramadan Begins",
+        "nameAr": "بداية شهر رمضان",
+        "date": "2025-03-29",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Ramadan"
+      },
+      {
+        "name": "Eid al-Fitr",
+        "nameAr": "عيد الفطر",
+        "date": "2025-04-28",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 3,
+        "description": "End of Ramadan celebration"
+      },
+      {
+        "name": "Eid al-Adha",
+        "nameAr": "عيد الأضحى",
+        "date": "2025-06-06",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 4,
+        "description": "Festival of Sacrifice"
+      },
+      {
+        "name": "Islamic New Year",
+        "nameAr": "رأس السنة الهجرية",
+        "date": "2025-07-19",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "First day of Islamic year"
+      },
+      {
+        "name": "Ashura",
+        "nameAr": "يوم عاشوراء",
+        "date": "2025-07-28",
+        "type": "islamic",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Day of Ashura"
+      },
+      {
+        "name": "Revolution Day",
+        "nameAr": "عيد الثورة",
+        "date": "2025-07-23",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Revolution Day"
+      },
+      {
+        "name": "Armed Forces Day",
+        "nameAr": "عيد القوات المسلحة",
+        "date": "2025-10-06",
+        "type": "national",
+        "isPublicHoliday": true,
+        "duration": 1,
+        "description": "Armed Forces Day"
+      }
+    ]
+  }
+}
+
+

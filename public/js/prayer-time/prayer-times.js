@@ -559,7 +559,12 @@ export class PrayerTimesCalculator {
     if (this.core.el.loading) this.core.el.loading.style.display = "none";
     if (this.core.el.content) this.core.el.content.style.display = "block";
 
-    this.api.saveUserLocation(this.core.state.coords?.lat, this.core.state.coords?.lon, this.core.state.cityLabel).catch(() => {});
+    this.api.saveUserLocation(
+      this.core.state.coords?.lat,
+      this.core.state.coords?.lon,
+      this.core.state.cityLabel,
+      this.core.state.tz
+    ).catch(() => {});
     if (Number.isFinite(this.core.state.coords?.lat) && Number.isFinite(this.core.state.coords?.lon)) {
       localStorage.setItem(
         "lastLocation",

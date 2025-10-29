@@ -1,0 +1,16 @@
+{
+  "url": "https://quran.kemenag.go.id",
+  "contentType": "quran",
+  "timestamp": "2025-10-25T02:00:06.099Z",
+  "content": {
+    "verses": [],
+    "translations": [],
+    "tafsir": [],
+    "surahs": []
+  },
+  "metadata": {
+    "title": "Qur’an Kemenag",
+    "description": "",
+    "language": "en"
+  }
+}

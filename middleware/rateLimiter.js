@@ -15,6 +15,7 @@ const RATE_LIMITS = {
 
   // OAuth endpoints
   oauth: { windowMs: 15 * 60 * 1000, max: 50, message: 'Too many OAuth attempts' },
+  oauthSync: { windowMs: 5 * 60 * 1000, max: 10, message: 'Too many sync requests. Please wait before syncing again.' },
 
   // API endpoints
   api: { windowMs: 15 * 60 * 1000, max: 100, message: 'Too many API requests' },
@@ -127,6 +128,7 @@ const rateLimiters = {
 
   // OAuth rate limiters
   oauth: createRateLimiter(RATE_LIMITS.oauth),
+  oauthSync: createRateLimiter(RATE_LIMITS.oauthSync),
 
   // API rate limiters
   api: createRateLimiter(RATE_LIMITS.api),

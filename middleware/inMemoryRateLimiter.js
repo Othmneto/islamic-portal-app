@@ -6,8 +6,8 @@ const TokenBucketRateLimiter = require('../services/rateLimiterTokenBucket');
 
 // Create rate limiter instances with enhanced per-user:IP support
 const generalLimiter = new InMemoryRateLimiter({
-  windowMs: 60 * 60 * 1000, // 60 minutes (increased)
-  max: 2000, // 2000 requests per window (increased)
+  windowMs: 60 * 60 * 1000, // 60 minutes
+  max: 20000, // allow up to 20k general requests per hour (dev-friendly)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -22,7 +22,7 @@ const generalLimiter = new InMemoryRateLimiter({
 
 const authLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests per window (increased for Remember Me)
+  max: 1000, // higher headroom for auth-related endpoints
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -37,7 +37,7 @@ const authLimiter = new InMemoryRateLimiter({
 
 const loginLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 30, // 30 login attempts per window
+  max: 200, // allow manual testing without 429s
   message: 'Too many login attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -49,7 +49,7 @@ const loginLimiter = new InMemoryRateLimiter({
 
 const translationLimiter = new InMemoryRateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  max: 60, // 60 translations per minute (1 per second)
+  max: 600, // 10 per second
   message: 'Too many translation requests, please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -64,7 +64,7 @@ const translationLimiter = new InMemoryRateLimiter({
 
 const notificationLimiter = new InMemoryRateLimiter({
   windowMs: 60 * 1000, // 1 minute
-  max: 60, // 60 notification requests per minute (1 per second)
+  max: 600, // 10 per second
   message: 'Too many notification requests, please slow down.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -79,7 +79,7 @@ const notificationLimiter = new InMemoryRateLimiter({
 
 const apiLimiter = new InMemoryRateLimiter({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // 200 API requests per window
+  max: 5000, // aggressive headroom for app-wide API
   message: 'Too many API requests, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,

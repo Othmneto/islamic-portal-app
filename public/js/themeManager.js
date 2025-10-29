@@ -39,8 +39,8 @@ class ThemeManager {
       if (!token) return null;
 
       const response = await fetch('/api/user/preferences', {
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
@@ -66,8 +66,8 @@ class ThemeManager {
 
       const response = await fetch('/api/user/preferences', {
         method: 'PUT',
+        credentials: 'include',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ theme })
@@ -176,10 +176,9 @@ class ThemeManager {
 
   // Get auth token (helper method)
   getAuthToken() {
-    return localStorage.getItem('accessToken') ||
-           localStorage.getItem('authToken') ||
-           localStorage.getItem('token') ||
-           localStorage.getItem('jwt');
+    // DEPRECATED: Session-based auth does not use client-side tokens
+    // Return null - server handles auth via httpOnly cookies
+    return null;
   }
 }
 

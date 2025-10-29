@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 const mfaService = require('../services/mfaService');
 const emailMfaService = require('../services/emailMfaService');
-const auth = require('../middleware/auth');
+const { attachUser: auth } = require('../middleware/authMiddleware');
 // Simple async handler wrapper
 const asyncHandler = (fn) => (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);

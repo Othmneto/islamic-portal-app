@@ -1,9 +1,8 @@
 // translator-backend/routes/authCookieRoutes.js
 
 const express = require('express');
-const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 const sessionManagementService = require('../services/sessionManagementService');
 const { CSRF_COOKIE_NAME, verifyCsrf } = require('../middleware/csrfMiddleware'); // single source of truth
 const { logger } = require('../config/logger');
@@ -12,8 +11,6 @@ const { validate, z } = require('../middleware/validate'); // Zod-based validati
 
 const router = express.Router();
 
-// Use validated secret from ./config (no weak fallback)
-const JWT_SECRET = env.JWT_SECRET;
 
 // ---------- Helpers ----------
 
@@ -52,12 +49,24 @@ const loginSchema = z.object({
  */
 async function handleLogin(req, res) {
   try {
+    console.log('🔐 [Login] ========== LOGIN ATTEMPT ==========');
+    console.log('🔐 [Login] Request body:', { email: req.body.email, rememberMe: req.body.rememberMe, passwordLength: req.body.password?.length });
+    console.log('🔐 [Login] Session ID:', req.sessionID);
+    console.log('🔐 [Login] Session data:', req.session);
+    console.log('🔐 [Login] Cookies:', Object.keys(req.cookies || {}));
+    console.log('🔐 [Login] Headers:', req.headers);
+    
     const { email, password, rememberMe = false } = req.body; // already validated by zod middleware
 
     const user = await User.findOne({ email });
+    console.log('🔐 [Login] User found:', !!user);
+    
     if (!user || !(await user.comparePassword(password))) {
+      console.log('❌ [Login] Invalid credentials');
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+    
+    console.log('✅ [Login] Credentials valid, creating session...');
 
     // Create session and issue tokens using sessionManagementService
     const sessionResult = await sessionManagementService.createSessionRememberMeAware(user, req, rememberMe);
@@ -84,8 +93,6 @@ async function handleLogin(req, res) {
       return res.status(200).json({
         message: 'Login successful',
         user: sessionResult.user,
-        token: sessionResult.accessToken,
-        refreshToken: sessionResult.refreshToken,
         rememberMe: rememberMe,
         sessionId: sessionResult.sessionId,
         expiresIn: sessionResult.expiresIn

@@ -2,7 +2,6 @@
 
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
-const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { env } = require('../config'); // Use centralized config
 const sendEmail = require('../utils/sendEmail');
@@ -92,91 +91,17 @@ exports.register = async (req, res, next) => {
 };
 
 // @route   POST /api/auth/login
-// @desc    Authenticate user & get token
+// @desc    DEPRECATED - JWT login removed, use session-based auth at /api/auth-cookie/login
 // @access  Public
+// DEPRECATION NOTICE: This JWT-based login has been removed in favor of session-based authentication.
+// All web clients should use /api/auth-cookie/login instead.
 exports.login = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { email, password } = req.body;
-    const clientIP = req.ip || req.connection.remoteAddress || 'unknown';
-
-    try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            // Don't reveal if user exists or not
-            return res.status(400).json({ msg: 'Invalid Credentials' });
-        }
-
-        // Check if account is locked
-        if (user.isAccountLocked()) {
-            return res.status(423).json({
-                msg: 'Account is temporarily locked due to multiple failed login attempts',
-                lockedUntil: user.accountLockedUntil
-            });
-        }
-
-        const isMatch = await user.comparePassword(password);
-        if (!isMatch) {
-            // Increment failed login attempts
-            await user.incrementLoginAttempts();
-
-            // Log security event
-            console.warn(`🚨 Failed login attempt for user: ${user.email} from IP: ${clientIP}`);
-            await logAuthEvent('LOGIN_FAILED', req, { email: user.email });
-
-            return res.status(400).json({ msg: 'Invalid Credentials' });
-        }
-
-        // Check if email is verified
-        if (!user.isVerified) {
-            return res.status(400).json({
-                msg: 'Please verify your email before logging in',
-                requiresVerification: true,
-                email: user.email
-            });
-        }
-
-        // Reset failed login attempts on successful login
-        await user.resetLoginAttempts();
-
-        // Generate JWT token
-        const payload = {
-            id: user.id,
-            role: user.role,
-            email: user.email
-        };
-
-        jwt.sign(
-            payload,
-            env.JWT_SECRET,
-            { expiresIn: '1h' },
-            (err, token) => {
-                if (err) throw err;
-
-                // Log successful login
-                console.log(`✅ Successful login: ${user.email} from IP: ${clientIP}`);
-                logAuthEvent('LOGIN_SUCCESS', req, { email: user.email });
-
-                res.json({
-                    msg: 'Login successful',
-                    token,
-                    user: {
-                        id: user.id,
-                        email: user.email,
-                        username: user.username,
-                        role: user.role
-                    }
-                });
-            }
-        );
-
-    } catch (err) {
-        console.error('Server error during login:', err);
-        next(err);
-    }
+    return res.status(410).json({
+        error: 'JWT login deprecated',
+        message: 'This endpoint has been deprecated. Please use /api/auth-cookie/login with session-based authentication.',
+        migrationUrl: '/api/auth-cookie/login',
+        documentation: 'See docs/AUTHENTICATION.md for migration guide'
+    });
 };
 
 // @route   GET /api/auth/me

@@ -32,6 +32,9 @@ class AdhanAudioPlayer {
     // Listen for Service Worker messages
     this.setupServiceWorkerListener();
     
+    // Check for autoplay query parameter
+    this.checkAutoplayParameter();
+    
     console.log(`🎵 [Audio] Audio player initialized (enabled: ${this.enabled})`);
   }
 
@@ -113,8 +116,72 @@ class AdhanAudioPlayer {
 
         // Request playback leadership
         this.requestPlayback(data);
+      } else if (data.type === 'CHECK_AND_PLAY_ADHAN') {
+        console.log('🎵 [Audio] Service worker requested adhan check from notification action');
+        
+        // Check if adhan is currently playing
+        if (this.isPlaying) {
+          console.log('🎵 [Audio] Adhan already playing - doing nothing');
+          return;
+        }
+        
+        // Check if audio is enabled
+        if (!this.enabled) {
+          console.log('⏭️ [Audio] Audio not enabled, skipping');
+          return;
+        }
+        
+        // Adhan not playing - start it
+        console.log('🎵 [Audio] Starting adhan from notification action');
+        this.requestPlayback({
+          source: 'notification-action',
+          notificationType: 'prayer'
+        });
       }
     });
+  }
+
+  /**
+   * Check for autoplay query parameter from notification action
+   */
+  checkAutoplayParameter() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('autoplay') === 'true') {
+      console.log('🎵 [Audio] Autoplay parameter detected from notification action');
+      
+      // Wait for page to fully load
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => {
+          this.handleAutoplay();
+        });
+      } else {
+        this.handleAutoplay();
+      }
+    }
+  }
+
+  /**
+   * Handle autoplay after page is ready
+   */
+  handleAutoplay() {
+    // Small delay to ensure audio system and preferences are ready
+    setTimeout(() => {
+      if (!this.enabled) {
+        console.log('⏭️ [Audio] Audio not enabled, skipping autoplay');
+        return;
+      }
+      
+      if (this.isPlaying) {
+        console.log('🎵 [Audio] Adhan already playing, skipping autoplay');
+        return;
+      }
+      
+      console.log('🎵 [Audio] Auto-playing adhan from new tab (notification action)');
+      this.requestPlayback({
+        source: 'notification-autoplay',
+        notificationType: 'prayer'
+      });
+    }, 1000); // 1 second delay to ensure everything is loaded
   }
 
   /**
@@ -191,13 +258,13 @@ class AdhanAudioPlayer {
     // Check if already playing
     if (this.isPlaying) {
       console.log('⏭️ [Audio] Already playing');
-      return;
-    }
+        return;
+      }
 
     // Check cooldown
     if (!this.checkCooldown(cooldownSeconds)) {
-      return;
-    }
+          return;
+        }
 
     try {
       console.log(`🎵 [Audio] Playing ${notificationType}: ${audioFile} (volume: ${volume}, fade: ${fadeInMs}ms)`);
@@ -261,13 +328,13 @@ class AdhanAudioPlayer {
         this.currentPlayback = null;
       };
 
-      // Setup error handler with 2s timeout
+      // Setup safety timeout (10 minutes max for adhan playback)
       const playbackTimeout = setTimeout(() => {
         if (this.isPlaying) {
-          console.warn('⚠️ [Audio] Playback timeout, stopping');
+          console.warn('⚠️ [Audio] Playback timeout (10min), stopping');
           this.stopAdhan();
         }
-      }, 2000 + fadeInMs);
+      }, 600000); // 10 minutes in milliseconds
 
       this.audioElement.onerror = () => {
         clearTimeout(playbackTimeout);

@@ -131,13 +131,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return getToken();
     }
 
-    // Fallback to old method if getToken not available
-    const authToken = localStorage.getItem("authToken");
-    const token = localStorage.getItem("token");
-    const jwt = localStorage.getItem("jwt");
-    const accessToken = localStorage.getItem("access_token");
+    // Session-based auth: no tokens needed
+    // Legacy token references removed - using session cookies only
 
-    // Only log token info in debug mode or when there are issues
+    // Only log auth info in debug mode or when there are issues
     if (window.location.search.includes('debug') || (!authToken && !token && !jwt && !accessToken)) {
       console.log('🔍 Profile: Available tokens in localStorage:', {
         authToken: authToken ? authToken.substring(0, 20) + '...' : 'None',
@@ -249,11 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Clear any expired tokens from localStorage
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('token');
-      localStorage.removeItem('jwt');
-      localStorage.removeItem('access_token');
+      // Clear any user data from localStorage (tokens auto-cleared by tokenManager)
       localStorage.removeItem('userData');
 
       // Clear token manager if available

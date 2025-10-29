@@ -83,6 +83,24 @@ const sendNotification = async (subscription, payload, delay = 0) => {
   if (!subscription || !payload) return;
 
   try {
+    // Identify push service type for debugging
+    const endpoint = subscription.subscription?.endpoint || 'unknown';
+    const pushService = endpoint.includes('fcm.googleapis.com') ? 'FCM(Chrome)' : 
+                        endpoint.includes('mozilla.com') ? 'Mozilla(Firefox)' :
+                        endpoint.includes('push.apple.com') ? 'APNs(Safari)' : 'Unknown';
+    
+    const pushType = endpoint.includes('fcm') ? 'CHROME' : 
+                     endpoint.includes('mozilla') ? 'FIREFOX' : 'OTHER';
+    
+    // Enhanced logging for notification send
+    console.log(`📤 [NotificationService] Attempting to send notification:`);
+    console.log(`   Type: ${payload.notificationType || 'unknown'}`);
+    console.log(`   Prayer: ${payload.prayerName || 'N/A'}`);
+    console.log(`   User: ${subscription.userId || 'unknown'}`);
+    console.log(`   Push Service: ${pushService}`);
+    console.log(`   Endpoint: ${endpoint.substring(0, 60)}...`);
+    console.log(`   Title: ${payload.title}`);
+    
     // Generate unique notification ID for tracking
     const notificationId = require('crypto').randomUUID();
 
@@ -157,12 +175,29 @@ const sendNotification = async (subscription, payload, delay = 0) => {
       }
 
       await queueService.addPushJob(jobData, options);
+      console.log(`✅ [NotificationService] Notification queued successfully`);
       logger?.info?.(
         `Added notification job to queue for endpoint: ${subscription?.subscription?.endpoint || 'unknown'}`,
         { notificationId, delay }
       );
     }
   } catch (error) {
+    console.error(`❌ [NotificationService] Failed to send notification:`, error.message);
+    // Enhanced error logging for browser-specific issues
+    const endpoint = subscription.subscription?.endpoint || 'unknown';
+    const pushService = endpoint.includes('fcm.googleapis.com') ? 'FCM(Chrome)' : 
+                        endpoint.includes('mozilla.com') ? 'Mozilla(Firefox)' :
+                        endpoint.includes('push.apple.com') ? 'APNs(Safari)' : 'Unknown';
+    
+    console.error(`❌ [NotificationService] ${pushService} push failed:`, error.message);
+    if (endpoint.includes('mozilla.com')) {
+      console.error(`❌ [NotificationService] Mozilla Push specific error details:`, {
+        message: error.message,
+        stack: error.stack,
+        endpoint: endpoint.substring(0, 100)
+      });
+    }
+    
     logger?.error?.('Failed to add notification job:', error);
   }
 };

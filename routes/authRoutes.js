@@ -1,14 +1,13 @@
 // routes/authRoutes.js - Text-only translation routes
 const express = require('express');
 const router = express.Router();
-const { body } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const passport = require('passport');
-const jwt = require('jsonwebtoken');
 const { env } = require('../config'); // <-- THIS LINE IS CRITICAL
 
 // --- Import Controller and Middleware ---
 const authController = require('../controllers/authController');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 const { verifyCsrf } = require('../middleware/csrfMiddleware');
 const unifiedAuthService = require('../services/unifiedAuthService');
 const User = require('../models/User');
@@ -55,8 +54,25 @@ const resetPasswordValidation = [
 
 // --- Route Definitions ---
 router.post('/register', registerValidation, authController.register);
+
+// DEPRECATED: JWT-based login - returns 410 Gone
 router.post('/login', loginValidation, authController.login);
+
 router.get('/me', authMiddleware, authController.getMe);
+
+// Session status check for frontend
+router.get('/session', async (req, res) => {
+  try {
+    const authenticated = !!(req.session && req.session.userId);
+    res.json({
+      authenticated,
+      userId: req.session?.userId || null
+    });
+  } catch (error) {
+    console.error('[AuthRoutes] Session check error:', error);
+    res.json({ authenticated: false });
+  }
+});
 
 // Password reset routes
 router.post('/forgot-password', verifyCsrf, forgotPasswordValidation, authController.forgotPassword);
@@ -70,29 +86,11 @@ router.post('/unified-login', [
   body('email', 'Please enter a valid email address').isEmail().normalizeEmail(),
   body('password', 'Password is required').notEmpty(),
 ], async (req, res) => {
-  try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const { email, password } = req.body;
-    const ip = req.ip || req.connection.remoteAddress;
-    const userAgent = req.get('User-Agent');
-
-    // Authenticate with email and password
-    const user = await unifiedAuthService.authenticateWithEmail(email, password, ip, userAgent);
-    const token = unifiedAuthService.generateToken(user);
-    const response = unifiedAuthService.createLoginResponse(user, token);
-
-    res.json(response);
-  } catch (error) {
-    console.error('Unified login error:', error);
-    res.status(401).json({
-      success: false,
-      message: error.message || 'Authentication failed'
-    });
-  }
+  return res.status(410).json({
+    success: false,
+    error: 'Deprecated',
+    message: 'Use /api/auth-cookie/login (session-based). This endpoint is no longer supported.'
+  });
 });
 
 // Get user authentication methods
@@ -522,6 +520,58 @@ router.post('/update-location', authMiddleware, checkPersistentAuth, async (req,
         res.status(500).json({
             success: false,
             error: 'Failed to update location'
+        });
+    }
+});
+
+// --- GET /api/auth/status - Check session status ---
+router.get('/status', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user?._id || req.user?.id;
+        
+        if (!userId) {
+            return res.status(401).json({
+                success: false,
+                authenticated: false,
+                message: 'Not authenticated'
+            });
+        }
+
+        // Get user details
+        const user = await User.findById(userId).select('email username timezone lastKnownLocation preferences').lean();
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                authenticated: false,
+                message: 'User not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            authenticated: true,
+            user: {
+                id: userId.toString(),
+                email: user.email,
+                username: user.username,
+                timezone: user.timezone,
+                location: user.lastKnownLocation,
+                preferences: user.preferences
+            },
+            session: {
+                id: req.sessionID,
+                cookie: {
+                    maxAge: req.session?.cookie?.maxAge,
+                    expires: req.session?.cookie?.expires
+                }
+            }
+        });
+    } catch (error) {
+        console.error('❌ [Auth] Error checking status:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to check authentication status'
         });
     }
 });

@@ -4,6 +4,32 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Islamic Calendar — Modern UI/UX (Production)</title>
+  
+  <!-- PWA Meta Tags -->
+  <meta name="application-name" content="Islamic Calendar">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Islamic Calendar">
+  <meta name="description" content="A comprehensive Islamic calendar with prayer times, holidays, and event management">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-config" content="/browserconfig.xml">
+  <meta name="msapplication-TileColor" content="#6366f1">
+  <meta name="msapplication-tap-highlight" content="no">
+  <meta name="theme-color" content="#6366f1">
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Apple Touch Icons -->
+  <link rel="apple-touch-icon" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-167x167.png">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="shortcut icon" href="/favicon.ico">
 
   <!-- Google Fonts (keeps the v3 look) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +44,10 @@
   <script src="/js/calendar-renderers.js?v=1.0.1"></script>
   
   <!-- External production JS (main calendar logic) -->
+  <script src="js/calendar-event-modal.js?v=1.0.1" defer></script>
+  <script src="js/calendar-import-modal.js?v=1.0.1" defer></script>
+  <script src="js/offline-manager.js?v=1.0.1" defer></script>
+  <script src="js/pwa-manager.js?v=1.0.1" defer></script>
   <script src="calendar.js?v=1.0.1" defer></script>
 </head>
 <body>
@@ -53,9 +83,19 @@
         <button class="btn ghost" id="open-occasions">Occasions</button>
         <button class="btn ghost" id="open-reminders">Prayer Reminders</button>
         <div class="oauth-mini" id="oauth-status">
-          <span class="pill-status disconnected" id="oauth-google-status" data-provider="google"><span class="dot"></span>Google</span>
-          <span class="pill-status disconnected" id="oauth-microsoft-status" data-provider="microsoft"><span class="dot"></span>Microsoft</span>
+          <span class="pill-status disconnected" id="oauth-google-status" data-provider="google">
+            <span class="dot"></span>Google
+            <button class="oauth-sync-btn" id="google-sync-btn" style="display: none;">Sync</button>
+          </span>
+          <span class="pill-status disconnected" id="oauth-microsoft-status" data-provider="microsoft">
+            <span class="dot"></span>Microsoft
+            <button class="oauth-sync-btn" id="microsoft-sync-btn" style="display: none;">Sync</button>
+          </span>
         </div>
+        <button class="btn ghost" id="import-events">
+          <i class="fa-solid fa-upload"></i>
+          Import
+        </button>
         <button class="btn primary" id="add-event">+ Add Event</button>
       </div>
     </div>
@@ -65,9 +105,62 @@
        Main Content Area
        ========================== -->
   <main class="wrap">
-    <!-- Calendar Surface (IDs match your scripts) -->
-    <section id="calendar" class="main card fade-in">
-      <div class="calendar-surface">
+    <div class="main-layout">
+      <!-- Today Panel -->
+      <aside class="today-panel" id="today-panel">
+        <div class="today-panel-header">
+          <h3>Today</h3>
+          <button class="btn ghost btn-sm" id="refresh-today">Refresh</button>
+        </div>
+        
+        <div class="today-panel-content">
+          <!-- Current Date & Time -->
+          <div class="today-info">
+            <!-- Gregorian Calendar -->
+            <div class="calendar-section gregorian">
+              <div class="calendar-label">Gregorian</div>
+              <div class="today-date" id="today-date"></div>
+              <div class="today-day-name" id="today-day-name"></div>
+            </div>
+            
+            <!-- Hijri Calendar -->
+            <div class="calendar-section hijri">
+              <div class="calendar-label">Hijri</div>
+              <div class="today-hijri" id="today-hijri"></div>
+              <div class="today-hijri-day" id="today-hijri-day"></div>
+            </div>
+            
+            <!-- Current Time -->
+            <div class="time-section">
+              <div class="today-time" id="today-time"></div>
+              <div class="today-timezone" id="today-timezone"></div>
+            </div>
+          </div>
+
+
+          <!-- Today's Events -->
+          <div class="today-section">
+            <h4>Today's Events</h4>
+            <div class="today-events" id="today-events">
+              <div class="no-events">No events today</div>
+            </div>
+          </div>
+
+          <!-- Upcoming Events -->
+          <div class="today-section">
+            <h4>Upcoming</h4>
+            <div class="upcoming-events" id="upcoming-events">
+              <div class="no-events">No upcoming events</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Calendar Container -->
+      <div class="calendar-main">
+        <!-- Calendar Surface (IDs match your scripts) -->
+        <section id="calendar" class="main card fade-in">
+          <div class="calendar-surface">
         <!-- Header: view switch + period navigator + calendar type -->
         <div class="calendar-header">
           <div class="period">
@@ -82,16 +175,6 @@
               <div class="pill" id="period-label">October 2025</div>
               <button class="icon-btn" id="next-button" data-nav="next" aria-label="Next">⟩</button>
             </div>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="select" style="min-width: 160px;">
-              <select id="calendarType" aria-label="Calendar type">
-                <option value="both" selected>Both calendars</option>
-                <option value="gregorian">Gregorian</option>
-                <option value="hijri">Hijri</option>
-              </select>
-            </div>
-            <div class="pill" id="today-hijri" title="Hijri date today">11 Rabi' al-Thani 1447 AH</div>
           </div>
         </div>
 
@@ -114,26 +197,8 @@
       </div>
     </section>
 
-    <!-- Right rail with today list and prayer times -->
-    <aside class="right card fade-in">
-      <div class="card-header">
-        <div style="font-weight:700;">Today in Dubai</div>
-        <span class="pill" id="today-label">Loading...</span>
-      </div>
-      <div class="card-body">
-        <div class="list" id="today-list" style="margin-bottom:16px;"></div>
-        <div class="row" style="margin-bottom: 12px; gap:8px;">
-          <button class="btn ghost" id="quick-occasions">View Occasions</button>
-          <button class="btn ghost" id="quick-reminders">Email Reminders</button>
-        </div>
-      </div>
-    </aside>
   </main>
 
-  <footer>
-    <div>Production build • External CSS/JS, keeps your latest UI.</div>
-    <div class="pill">Keyboard: ← → • T • 1‑4</div>
-  </footer>
 
   <!-- ==========================
        Modals (Occasions, Reminders, Day Details)
@@ -163,14 +228,31 @@
           <div class="field">
             <label for="year-select">Year</label>
             <select id="year-select">
-              <option>2025</option>
-              <option selected>2026</option>
+              <option>2024</option>
+              <option selected>2025</option>
+              <option>2026</option>
               <option>2027</option>
             </select>
           </div>
           <div class="field col-span-2">
+            <label>Search Events</label>
+            <input type="text" id="occasions-search" class="ring" placeholder="Search holidays by name or date..." />
+          </div>
+          <div class="field col-span-2">
             <label>Events</label>
-            <ul id="occasions-list" class="list-clean"></ul>
+            <div class="occasion-controls">
+              <label class="chk select-all-control">
+                <input type="checkbox" id="select-all-occasions" />
+                <span>Select All</span>
+              </label>
+            </div>
+            <ul id="occasions-list" class="list-clean occasions-list"></ul>
+            <div class="occasion-controls">
+              <label class="chk auto-update-control">
+                <input type="checkbox" id="auto-update-occasions" />
+                <span>Auto-update next year</span>
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -237,6 +319,277 @@
       <div class="card-footer">
         <button class="btn ghost" data-close="day">Close</button>
         <button class="btn primary" id="create-event-on-day">+ Add Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Advanced Event Creation/Edit Modal -->
+  <div id="event-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="event-modal-title">
+    <div class="backdrop" data-close="event"></div>
+    <div class="card event-modal-card">
+      <div class="card-header">
+        <strong id="event-modal-title">Create Event</strong>
+        <button class="close-x" data-close="event">✕</button>
+      </div>
+      <div class="card-body">
+        <form id="event-form">
+          <input type="hidden" id="event-id" name="eventId" />
+          
+          <!-- Basic Information -->
+          <div class="form-section">
+            <h3 class="form-section-title">Basic Information</h3>
+            <div class="form-grid">
+              <div class="field col-span-2">
+                <label for="event-title">Title <span class="required">*</span></label>
+                <input type="text" id="event-title" name="title" class="ring" placeholder="Event title" required />
+              </div>
+              
+              <div class="field col-span-2">
+                <label for="event-description">Description</label>
+                <textarea id="event-description" name="description" class="ring" rows="3" placeholder="Add description..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date & Time -->
+          <div class="form-section">
+            <h3 class="form-section-title">Date & Time</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="event-start-date">Start Date <span class="required">*</span></label>
+                <input type="date" id="event-start-date" name="startDate" class="ring" required />
+              </div>
+              
+              <div class="field">
+                <label for="event-start-time">Start Time</label>
+                <input type="time" id="event-start-time" name="startTime" class="ring" />
+              </div>
+              
+              <div class="field">
+                <label for="event-end-date">End Date</label>
+                <input type="date" id="event-end-date" name="endDate" class="ring" />
+              </div>
+              
+              <div class="field">
+                <label for="event-end-time">End Time</label>
+                <input type="time" id="event-end-time" name="endTime" class="ring" />
+              </div>
+              
+              <div class="field col-span-2">
+                <label class="chk">
+                  <input type="checkbox" id="event-all-day" name="allDay" />
+                  <span>All Day Event</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Category & Color -->
+          <div class="form-section">
+            <h3 class="form-section-title">Category & Appearance</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label for="event-category">Category</label>
+                <select id="event-category" name="category" class="ring">
+                  <option value="personal">Personal</option>
+                  <option value="work">Work</option>
+                  <option value="religious">Religious</option>
+                  <option value="prayer">Prayer</option>
+                  <option value="holiday">Holiday</option>
+                  <option value="meeting">Meeting</option>
+                  <option value="family">Family</option>
+                </select>
+              </div>
+              
+              <div class="field">
+                <label for="event-color">Custom Color</label>
+                <input type="color" id="event-color" name="color" class="ring" value="#667eea" />
+              </div>
+              
+              <div class="field">
+                <label for="event-priority">Priority</label>
+                <select id="event-priority" name="priority" class="ring">
+                  <option value="low">Low</option>
+                  <option value="medium" selected>Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              
+              <div class="field">
+                <label for="event-privacy">Privacy</label>
+                <select id="event-privacy" name="privacy" class="ring">
+                  <option value="public" selected>Public</option>
+                  <option value="private">Private</option>
+                  <option value="confidential">Confidential</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location & Tags -->
+          <div class="form-section">
+            <h3 class="form-section-title">Location & Tags</h3>
+            <div class="form-grid">
+              <div class="field col-span-2">
+                <label for="event-location">Location</label>
+                <input type="text" id="event-location" name="location" class="ring" placeholder="Add location" />
+              </div>
+              
+              <div class="field col-span-2">
+                <label for="event-tags">Tags</label>
+                <input type="text" id="event-tags" name="tags" class="ring" placeholder="Add tags (comma-separated)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Attendees -->
+          <div class="form-section">
+            <h3 class="form-section-title">Attendees</h3>
+            <div class="form-grid">
+              <div class="field col-span-2">
+                <label for="event-attendees">Attendees</label>
+                <input type="text" id="event-attendees" name="attendees" class="ring" placeholder="Email addresses (comma-separated)" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Recurrence -->
+          <div class="form-section">
+            <h3 class="form-section-title">Recurrence</h3>
+            <div class="form-grid">
+              <div class="field col-span-2">
+                <label class="chk">
+                  <input type="checkbox" id="event-recurring" name="isRecurring" />
+                  <span>Recurring Event</span>
+                </label>
+              </div>
+              
+              <div id="recurrence-options" style="display: none;" class="field col-span-2">
+                <div class="form-grid">
+                  <div class="field">
+                    <label for="recurrence-frequency">Repeat</label>
+                    <select id="recurrence-frequency" name="recurrenceFrequency" class="ring">
+                      <option value="daily">Daily</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="yearly">Yearly</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field">
+                    <label for="recurrence-interval">Every</label>
+                    <input type="number" id="recurrence-interval" name="recurrenceInterval" class="ring" value="1" min="1" />
+                  </div>
+                  
+                  <div class="field">
+                    <label for="recurrence-end-type">Ends</label>
+                    <select id="recurrence-end-type" name="recurrenceEndType" class="ring">
+                      <option value="never">Never</option>
+                      <option value="on">On Date</option>
+                      <option value="after">After Occurrences</option>
+                    </select>
+                  </div>
+                  
+                  <div class="field" id="recurrence-end-date-field" style="display: none;">
+                    <label for="recurrence-end-date">End Date</label>
+                    <input type="date" id="recurrence-end-date" name="recurrenceEndDate" class="ring" />
+                  </div>
+                  
+                  <div class="field" id="recurrence-count-field" style="display: none;">
+                    <label for="recurrence-count">Occurrences</label>
+                    <input type="number" id="recurrence-count" name="recurrenceCount" class="ring" value="10" min="1" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reminders -->
+          <div class="form-section">
+            <h3 class="form-section-title">Reminders</h3>
+            <div class="form-grid">
+              <div class="field col-span-2">
+                <div id="reminders-list">
+                  <div class="reminder-item">
+                    <select class="ring reminder-time">
+                      <option value="0">At time of event</option>
+                      <option value="5">5 minutes before</option>
+                      <option value="15" selected>15 minutes before</option>
+                      <option value="30">30 minutes before</option>
+                      <option value="60">1 hour before</option>
+                      <option value="1440">1 day before</option>
+                    </select>
+                    <button type="button" class="btn ghost btn-sm remove-reminder">Remove</button>
+                  </div>
+                </div>
+                <button type="button" id="add-reminder" class="btn ghost btn-sm">+ Add Reminder</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- OAuth Sync -->
+          <div class="form-section">
+            <h3 class="form-section-title">Sync Options</h3>
+            <div class="form-grid">
+              <div class="field">
+                <label class="chk">
+                  <input type="checkbox" id="sync-to-google" name="syncToGoogle" />
+                  <span>Sync to Google Calendar</span>
+                </label>
+              </div>
+              
+              <div class="field">
+                <label class="chk">
+                  <input type="checkbox" id="sync-to-microsoft" name="syncToMicrosoft" />
+                  <span>Sync to Microsoft Calendar</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conflict Warning -->
+          <div id="conflict-warning" class="alert alert-warning" style="display: none;">
+            <strong>⚠️ Conflict Detected</strong>
+            <p id="conflict-message"></p>
+            <button type="button" id="view-conflicts" class="btn ghost btn-sm">View Details</button>
+          </div>
+        </form>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="event">Cancel</button>
+        <button class="btn ghost" id="save-as-template">Save as Template</button>
+        <button class="btn primary" id="save-event">Save Event</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Management Modal -->
+  <div id="category-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="category-modal-title">
+    <div class="backdrop" data-close="category"></div>
+    <div class="card">
+      <div class="card-header">
+        <strong id="category-modal-title">Manage Categories</strong>
+        <button class="close-x" data-close="category">✕</button>
+      </div>
+      <div class="card-body">
+        <div class="categories-list" id="categories-list">
+          <!-- Categories will be rendered here -->
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label for="new-category-name">New Category Name</label>
+            <input type="text" id="new-category-name" class="ring" placeholder="Category name" />
+          </div>
+          <div class="field">
+            <label for="new-category-color">Color</label>
+            <input type="color" id="new-category-color" class="ring" value="#667eea" />
+          </div>
+        </div>
+      </div>
+      <div class="card-footer">
+        <button class="btn ghost" data-close="category">Close</button>
+        <button class="btn primary" id="add-category">Add Category</button>
       </div>
     </div>
   </div>

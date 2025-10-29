@@ -82,6 +82,7 @@ const namesRoutes = require('./routes/api/names');
 const userRoutes = require('./routes/userRoutes');
 const authCookieRoutes = require('./routes/authCookieRoutes');
 const tokenRoutes = require('./routes/tokenRoutes');
+const sessionRoutes = require('./routes/sessionRoutes');
 const notificationsRouter = require('./routes/notifications');
 const notificationConfirmationRoutes = require('./routes/notificationConfirmationRoutes');
 const locationRoutes = require('./routes/locationRoutes');
@@ -105,7 +106,29 @@ const app = express();
 const server = http.createServer(app);
 app.set('trust proxy', 1);
 
-// --- Socket.io ---
+// --- Shared Session Configuration ---
+const sessionMiddleware = session({
+  name: 'sid',
+  secret: env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+  rolling: true, // Renew cookie maxAge on every request for 90-day persistence
+  store: MongoStore.create({
+    mongoUrl: env.MONGO_URI,
+    dbName: env.DB_NAME,
+    collectionName: 'sessions',
+    touchAfter: 24 * 3600
+  }),
+  cookie: {
+    httpOnly: true,
+    secure: (env.NODE_ENV === 'production') || String(env.COOKIE_SECURE).toLowerCase() === 'true',
+    sameSite: 'lax',
+    maxAge: 90 * 24 * 60 * 60 * 1000, // 90 days
+    domain: env.COOKIE_DOMAIN || undefined
+  }
+});
+
+// --- Socket.io with Session-Based Authentication ---
 const io = new Server(server, {
   cors: {
     origin: env.CLIENT_ORIGIN || 'http://localhost:3000',
@@ -114,9 +137,27 @@ const io = new Server(server, {
   },
 });
 
-// JWT Authentication for Socket.IO
-const socketAuth = require('./middleware/socketAuth');
-io.use(socketAuth);
+// Wrap Express session middleware for Socket.IO
+io.use((socket, next) => {
+  sessionMiddleware(socket.request, {}, next);
+});
+
+// Session-based Socket.IO authentication
+io.use((socket, next) => {
+  const userId = socket.request.session?.userId;
+  if (userId) {
+    socket.userId = userId;
+    socket.user = { id: userId };
+    console.log(`[SocketAuth] Authenticated user via session: ${userId}`);
+    next();
+  } else {
+    console.warn('[SocketAuth] No session found for socket connection');
+    // Allow connection but mark as unauthenticated
+    socket.userId = null;
+    socket.user = null;
+    next();
+  }
+});
 
 require('./websockets/socketManager')(io);
 
@@ -176,6 +217,8 @@ app.use(
           "https://kaabah-ai-model-1-0-0.onrender.com",
           "https://nominatim.openstreetmap.org",
           "https://cdnjs.cloudflare.com",
+          "https://cdn.jsdelivr.net",
+          "https://cdn.socket.io",
           "https://fonts.googleapis.com",
           "https://fonts.gstatic.com",
           "https://api.openai.com",
@@ -214,28 +257,7 @@ app.use(express.json({ limit: process.env.JSON_LIMIT || '200kb' }));
 app.use(express.urlencoded({ extended: true, limit: process.env.FORM_LIMIT || '200kb' }));
 
 // --- Session (must be before Passport) ---
-app.use(
-  session({
-    name: 'sid',
-    secret: env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: true, // CHANGED: Always create session for CSRF protection
-    store: MongoStore.create({
-      mongoUrl: env.MONGO_URI,
-      dbName: env.DB_NAME,
-      collectionName: 'sessions',
-      touchAfter: 24 * 3600 // Lazy session update (once per 24 hours)
-      // do not set a global ttl here; sessions persisted server-side and handled per-login
-    }),
-    cookie: {
-      httpOnly: true,
-      secure: env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days default for session cookie
-      // This can be overridden per-login to support session vs persistent cookie
-    },
-  })
-);
+app.use(sessionMiddleware);
 
 // --- Passport (strategies + session support) ---
 require('./config/passport');
@@ -287,13 +309,34 @@ app.get('/api/csrf-token', getCsrfToken);
 // Use our new in-memory rate limiters with disk persistence
 // Note: The rate limiters are already imported above
 
-// Apply general rate limiting to all routes
-app.use(generalLimiter);
+// Apply general rate limiting to all routes with safe dev bypass and static skip
+const isDevEnv = !process.env.NODE_ENV || process.env.NODE_ENV !== 'production';
+const isLocalRequest = (req) => {
+  const ip = req.ip || '';
+  const host = req.hostname || '';
+  const fwd = (req.headers['x-forwarded-for'] || '').toString();
+  return host === 'localhost' || host === '127.0.0.1' || ip.includes('127.0.0.1') || ip === '::1' || fwd.includes('127.0.0.1');
+};
+if (!isDevEnv) {
+  app.use((req, res, next) => {
+    // Skip common static assets to avoid throttling icons/css/js
+    const isStatic = req.method === 'GET' && /\.(html|js|css|png|jpe?g|gif|svg|ico|woff2?|ttf|map)$/.test(req.path);
+    if (isStatic || isLocalRequest(req)) return next();
+    return generalLimiter(req, res, next);
+  });
+}
 
 // --- Routes (after session/passport) ---
-app.use('/api/auth/login', loginLimiter); // Apply strict rate limiting to login
-app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/auth-cookie', authLimiter, authCookieRoutes);
+// Helper to bypass rate limiter for dev or local requests
+const bypassIfDevOrLocal = (limiter) => (req, res, next) => {
+  if (isDevEnv || isLocalRequest(req)) return next();
+  return limiter(req, res, next);
+};
+
+// Auth routes - disable rate limiting in dev/local to avoid 429s while testing
+app.use('/api/auth/login', bypassIfDevOrLocal(loginLimiter));
+app.use('/api/auth', bypassIfDevOrLocal(authLimiter), authRoutes);
+app.use('/api/auth-cookie', bypassIfDevOrLocal(authLimiter), authCookieRoutes);
 app.use('/api/token', tokenRoutes);
 // Removed Passport OAuth routes to allow custom PKCE implementation to take precedence
 app.use('/api/auth', require('./routes/enhancedOAuth'));
@@ -329,8 +372,21 @@ app.use('/api/hijri', require('./routes/hijriCalendarRoutes'));
 // Enhanced Islamic Calendar Routes
 app.use('/api/islamic-calendar', require('./routes/islamicCalendarRoutes'));
 
+// Calendar Search Routes
+app.use('/api/search', require('./routes/calendarSearchRoutes'));
+
+// Category Routes
+app.use('/api/categories', require('./routes/categoryRoutes'));
+
+// Import Routes
+app.use('/api/import', require('./routes/importRoutes'));
+
 // OAuth Sync Routes
 app.use('/api/oauth-sync', require('./routes/oauthSyncRoutes'));
+
+// Recurring Events Routes
+app.use('/api/recurring', require('./routes/recurringEventsRoutes'));
+
 // Clear OAuth Tokens Route (for testing)
 app.use('/api', require('./routes/clearOAuthTokens'));
 // Direct token clearing route
@@ -340,6 +396,7 @@ app.use('/api/history', requireSession, historyRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/user', accountManagementRoutes);
 app.use('/api/user', require('./routes/profileRoutes'));
+app.use(sessionRoutes);
 // Add MFA routes only if they loaded successfully
 if (mfaRoutes) {
     app.use('/api/mfa', mfaRoutes);
@@ -354,7 +411,8 @@ app.use('/api/offline-prayer-times', offlinePrayerTimesRoutes);
 app.use('/api/prayer-time-reports', prayerTimeReportRoutes);
 app.use('/api/timezone', require('./routes/smartTimezoneRoutes'));
 app.use('/api/security', securityDashboard);
-app.use('/api', apiLimiter, apiRoutes);
+// General API limiter - disabled in dev/local
+app.use('/api', bypassIfDevOrLocal(apiLimiter), apiRoutes);
 
 // Enhanced health check endpoints
 app.get('/api/health/database', async (req, res) => {
@@ -592,6 +650,18 @@ async function startServer() {
     }
 
     // Query optimization monitoring removed - service not available
+
+    // Warm up holiday cache
+    try {
+      const hotCache = require('./services/hotCacheService');
+      setTimeout(() => {
+        hotCache.warmUp(['US', 'GB', 'AE', 'SA', 'IN', 'PK', 'TR', 'EG', 'MY', 'ID'])
+          .then(() => logger.info?.('🔥 [HotCache] Initial cache warming completed'))
+          .catch(err => logger.error?.('Failed to warm cache:', err));
+      }, 5000); // Wait 5 seconds after server start
+    } catch (error) {
+      logger.warn?.('Cache warming skipped:', error.message);
+    }
 
     server.listen(env.PORT || 3000, () => {
       console.log(`Server running on port ${env.PORT || 3000}...`);

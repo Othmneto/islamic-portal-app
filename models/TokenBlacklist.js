@@ -44,14 +44,13 @@ TokenBlacklistSchema.statics.isBlacklisted = async function(token) {
 // Static method to blacklist a token
 TokenBlacklistSchema.statics.blacklistToken = async function(token, userId, reason = 'logout') {
   try {
-    // Decode the token to get expiration time
-    const jwt = require('jsonwebtoken');
-    const decoded = jwt.decode(token);
-
-    if (!decoded || !decoded.exp) {
-      throw new Error('Invalid token format');
-    }
-
+    // Decode the token (base64url) to get expiration time without jsonwebtoken
+    const parts = String(token).split('.');
+    if (parts.length < 2) throw new Error('Invalid token format');
+    const payloadB64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payloadJson = Buffer.from(payloadB64, 'base64').toString('utf8');
+    const decoded = JSON.parse(payloadJson);
+    if (!decoded || !decoded.exp) throw new Error('Invalid token payload');
     const expiresAt = new Date(decoded.exp * 1000);
 
     // Create blacklist entry

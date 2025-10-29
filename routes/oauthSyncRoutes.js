@@ -3,6 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const { requireAuth } = require('../middleware/authMiddleware');
+const { rateLimiters } = require('../middleware/rateLimiter');
 const oauthCalendarSyncService = require('../services/oauthCalendarSyncService');
 const axios = require('axios');
 
@@ -33,8 +34,8 @@ router.get('/microsoft/reauth', (req, res) => {
     }
 });
 
-// Sync with Google Calendar
-router.post('/google/sync', requireAuth, async (req, res) => {
+// Sync with Google Calendar (with rate limiting: 10 syncs per 5 minutes)
+router.post('/google/sync', rateLimiters.oauthSync, requireAuth, async (req, res) => {
     try {
         console.log('🔄 [OAuth Sync] Starting Google sync for user:', req.user.id);
 
@@ -57,8 +58,8 @@ router.post('/google/sync', requireAuth, async (req, res) => {
     }
 });
 
-// Sync with Microsoft Calendar
-router.post('/microsoft/sync', requireAuth, async (req, res) => {
+// Sync with Microsoft Calendar (with rate limiting: 10 syncs per 5 minutes)
+router.post('/microsoft/sync', rateLimiters.oauthSync, requireAuth, async (req, res) => {
     try {
         console.log('🔄 [OAuth Sync] Starting Microsoft sync for user:', req.user.id);
 

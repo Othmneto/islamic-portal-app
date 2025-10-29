@@ -4,10 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('notification-settings-form');
     const messageDiv = document.getElementById('settings-message');
     // Get token from multiple possible sources (consistent with other pages)
-    const token = localStorage.getItem('authToken') ||
-                  localStorage.getItem('token') ||
-                  localStorage.getItem('jwt') ||
-                  localStorage.getItem('access_token');
+    // Session-based auth: no tokens required
 
     // ------------------------------- Logout Functionality -------------------------------
     // Logout button
@@ -53,13 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetches current settings and populates the form
     async function loadSettings() {
-        if (!token) {
-            showMessage('You must be logged in to view settings.', 'error');
-            return;
-        }
         try {
             const response = await fetch('/api/user/preferences', {
-                headers: { 'Authorization': `Bearer ${token}` }
+                credentials: 'include'
             });
             if (!response.ok) throw new Error('Failed to load settings.');
 
@@ -82,10 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Handles form submission to save updated settings
     form.addEventListener('submit', async (event) => {
         event.preventDefault();
-        if (!token) {
-            showMessage('You must be logged in to save settings.', 'error');
-            return;
-        }
         showMessage('Saving...', 'info');
 
         const updatedPrefs = {
@@ -100,11 +89,17 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
+            // Fetch CSRF token for double-submit
+            const csrfRes = await fetch('/api/csrf-token', { credentials: 'include' });
+            const csrfData = csrfRes.ok ? await csrfRes.json() : { csrfToken: null };
+            const csrfToken = csrfData.csrfToken || '';
+
             const response = await fetch('/api/user/preferences', {
                 method: 'PUT',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'X-CSRF-Token': csrfToken
                 },
                 body: JSON.stringify({ notificationPreferences: updatedPrefs })
             });

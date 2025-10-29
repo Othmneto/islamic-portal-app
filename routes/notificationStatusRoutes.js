@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 const NotificationHistory = require('../models/NotificationHistory');
 const { getScheduleStatus } = require('../tasks/prayerNotificationScheduler');
 

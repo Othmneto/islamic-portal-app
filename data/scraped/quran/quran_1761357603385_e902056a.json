@@ -1,0 +1,16 @@
+{
+  "url": "https://www.alquran.cloud",
+  "contentType": "quran",
+  "timestamp": "2025-10-25T02:00:03.383Z",
+  "content": {
+    "verses": [],
+    "translations": [],
+    "tafsir": [],
+    "surahs": []
+  },
+  "metadata": {
+    "title": "Al Quran Cloud",
+    "description": "AlQuran Cloud - A resource to read, hear and progamatically interact with the Quran",
+    "language": "en"
+  }
+}

@@ -26,6 +26,13 @@ const sessionSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
   lastActivity: { type: Date, default: Date.now },
 
+  // TTL expiration field - sessions expire after 90 days
+  expires: {
+    type: Date,
+    default: () => new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
+    index: { expires: 0 } // TTL index
+  },
+
   // Token rotation fields
   currentRefreshTokenHash: { type: String, default: null },
   previousRefreshTokenHash: { type: String, default: null },

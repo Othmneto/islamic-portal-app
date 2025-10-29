@@ -6,7 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const offlineService = require('../services/offlinePrayerTimesService');
-const authMiddleware = require('../middleware/auth');
+const { attachUser: authMiddleware } = require('../middleware/authMiddleware');
 
 /**
  * GET /api/offline-prayer-times/30-days

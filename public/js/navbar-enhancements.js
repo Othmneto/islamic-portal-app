@@ -268,8 +268,7 @@ class NavbarEnhancements {
      * Update user menu based on authentication
      */
     updateUserMenu() {
-        const authToken = localStorage.getItem('authToken');
-        const isAuthenticated = !!authToken;
+        const isAuthenticated = window.tokenManager && window.tokenManager.isAuthenticated && window.tokenManager.isAuthenticated();
 
         const loginLink = document.getElementById('login-link');
         const logoutLink = document.getElementById('logout-link');
@@ -282,10 +281,10 @@ class NavbarEnhancements {
             if (loginLink) loginLink.style.display = 'none';
             if (logoutLink) logoutLink.style.display = 'block';
 
-            // Get user info from token (simplified)
-            const userInfo = this.getUserInfoFromToken(authToken);
-            if (userName) userName.textContent = userInfo.name || 'User';
-            if (userNameLarge) userNameLarge.textContent = userInfo.name || 'User';
+            // Try to use global navbar cache if present
+            const userInfo = (window.globalNavbar && window.globalNavbar.currentUser) ? window.globalNavbar.currentUser : {};
+            if (userName) userName.textContent = userInfo.username || userInfo.name || 'User';
+            if (userNameLarge) userNameLarge.textContent = userInfo.username || userInfo.name || 'User';
             if (userEmail) userEmail.textContent = userInfo.email || 'user@example.com';
         } else {
             // User is not logged in

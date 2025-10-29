@@ -10,41 +10,11 @@ const { createError } = require('../middleware/errorHandler');
  * @access  Public
  */
 router.post('/refresh', async (req, res) => {
-    try {
-        const { refreshToken } = req.body;
-
-        if (!refreshToken) {
-            return res.status(400).json({
-                success: false,
-                message: 'Refresh token is required'
-            });
-        }
-
-        console.log('🔄 [Token Refresh] Attempting hashed rotation...');
-
-        const result = await sessionManagementService.rotateRefreshTokenHashedRotation(refreshToken);
-
-        console.log('✅ [Token Refresh] Token refreshed and rotated successfully');
-
-        res.json({
-            success: true,
-            message: 'Token refreshed successfully',
-            data: {
-                accessToken: result.accessToken,
-                refreshToken: result.newRefreshToken, // New rotated token
-                expiresIn: result.expiresIn,
-                sessionId: result.sessionId
-            }
-        });
-    } catch (error) {
-        console.error('❌ [Token Refresh] Error:', error.message);
-
-        res.status(401).json({
-            success: false,
-            message: error.message || 'Failed to refresh token',
-            code: error.code || 'REFRESH_FAILED'
-        });
-    }
+    return res.status(410).json({
+        success: false,
+        error: 'JWT flow deprecated',
+        message: 'Use session-based authentication. Tokens are no longer supported.'
+    });
 });
 
 /**
@@ -53,46 +23,11 @@ router.post('/refresh', async (req, res) => {
  * @access  Public
  */
 router.post('/validate', async (req, res) => {
-    try {
-        const { accessToken } = req.body;
-
-        if (!accessToken) {
-            return res.status(400).json({
-                success: false,
-                message: 'Access token is required'
-            });
-        }
-
-        const tokenInfo = sessionManagementService.getTokenInfo(accessToken);
-
-        if (!tokenInfo) {
-            return res.status(401).json({
-                success: false,
-                message: 'Invalid token'
-            });
-        }
-
-        res.json({
-            success: true,
-            message: 'Token validated successfully',
-            data: {
-                isValid: !tokenInfo.isExpired,
-                isExpired: tokenInfo.isExpired,
-                needsRefresh: tokenInfo.needsRefresh,
-                expiresAt: tokenInfo.expiresAt,
-                timeUntilExpiry: tokenInfo.timeUntilExpiry,
-                userId: tokenInfo.userId
-            }
-        });
-    } catch (error) {
-        console.error('❌ [Token Validate] Error:', error.message);
-
-        res.status(401).json({
-            success: false,
-            message: 'Token validation failed',
-            code: 'VALIDATION_FAILED'
-        });
-    }
+    return res.status(410).json({
+        success: false,
+        error: 'JWT flow deprecated',
+        message: 'Use session-based authentication. Token validation is not supported.'
+    });
 });
 
 /**
@@ -101,45 +36,11 @@ router.post('/validate', async (req, res) => {
  * @access  Public
  */
 router.post('/auto-refresh', async (req, res) => {
-    try {
-        const { accessToken, refreshToken } = req.body;
-
-        if (!accessToken || !refreshToken) {
-            return res.status(400).json({
-                success: false,
-                message: 'Both access token and refresh token are required'
-            });
-        }
-
-        console.log('🔄 [Auto Refresh] Checking if token needs refresh...');
-
-        const result = await sessionManagementService.autoRefreshToken(accessToken, refreshToken);
-
-        if (result.needsRefresh) {
-            console.log('✅ [Auto Refresh] Token refreshed successfully');
-        } else {
-            console.log('ℹ️ [Auto Refresh] Token does not need refresh');
-        }
-
-        res.json({
-            success: true,
-            message: result.needsRefresh ? 'Token refreshed successfully' : 'Token is still valid',
-            data: {
-                accessToken: result.accessToken,
-                refreshToken: result.refreshToken,
-                needsRefresh: result.needsRefresh,
-                expiresIn: result.expiresIn
-            }
-        });
-    } catch (error) {
-        console.error('❌ [Auto Refresh] Error:', error.message);
-
-        res.status(401).json({
-            success: false,
-            message: error.message || 'Auto refresh failed',
-            code: error.code || 'AUTO_REFRESH_FAILED'
-        });
-    }
+    return res.status(410).json({
+        success: false,
+        error: 'JWT flow deprecated',
+        message: 'Use session-based authentication. Auto refresh is not supported.'
+    });
 });
 
 /**

@@ -3,33 +3,22 @@
 // --- Authentication Helper Functions ---
 
 // Function to get the stored JWT token
+// DEPRECATED: Session-based auth does not use client-side tokens
 function getToken() {
-    // Use token manager if available, otherwise fallback to old method
-    if (window.tokenManager && window.tokenManager.isAuthenticated()) {
-        return window.tokenManager.getAccessToken();
-    }
-
-    return localStorage.getItem('authToken') ||
-           localStorage.getItem('token') ||
-           localStorage.getItem('jwt') ||
-           localStorage.getItem('access_token');
+    // Session-based auth: tokens managed server-side via httpOnly cookies
+    // Return null to indicate no client-side token
+    return null;
 }
 
 // Function to remove the stored JWT token (for logout)
+// DEPRECATED: Session cleared server-side via /api/auth-cookie/logout
 function removeToken() {
-    // Use token manager if available
+    // Use token manager for session-based logout
     if (window.tokenManager) {
         window.tokenManager.clearTokens();
-    } else {
-        // Fallback to old method
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('token');
-        localStorage.removeItem('jwt');
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refreshToken');
     }
 
-    // Clear any specific user data from local storage if applicable
+    // Clear any specific user data from local storage
     localStorage.removeItem('userData');
     localStorage.removeItem('userPreferences');
     localStorage.removeItem('savedLocations');
@@ -44,31 +33,24 @@ async function logout() {
             return true;
         }
 
-        // Fallback to old method
-        const token = getToken();
-
-        if (token) {
-            // Call logout API to log the event server-side
-            try {
-                const response = await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    console.log('✅ Logout API call successful');
-                } else if (response.status === 401) {
-                    console.log('ℹ️ Token already expired, proceeding with client-side logout');
-                } else {
-                    console.warn('⚠️ Logout API call failed, but continuing with client-side logout');
+        // Fallback to session-based logout
+        try {
+            const response = await fetch('/api/auth-cookie/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
                 }
-            } catch (apiError) {
-                console.warn('⚠️ Logout API call failed:', apiError.message);
-                // Continue with client-side logout even if API fails
+            });
+
+            if (response.ok) {
+                console.log('✅ Logout (session) successful');
+            } else {
+                console.warn('⚠️ Logout (session) failed, proceeding with client-side cleanup');
             }
+        } catch (apiError) {
+            console.warn('⚠️ Logout (session) request error:', apiError.message);
+            // Continue with client-side cleanup even if API fails
         }
 
         // Clear all client-side data
