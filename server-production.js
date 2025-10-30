@@ -18,9 +18,8 @@ const {
     strictLimiter
 } = require('./middleware/enhancedRateLimiting');
 
-// Import enhanced authentication
-const enhancedAuth = require('./middleware/enhancedAuth');
-const enhancedAuthController = require('./controllers/enhancedAuthController');
+// Session-based auth helpers
+const { requireSession } = require('./middleware/authMiddleware');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -115,7 +114,7 @@ app.get('/health', (req, res) => {
 
 // API routes with enhanced security
 app.use('/api/auth', authRoutes);
-app.use('/api/user', enhancedAuth, userRoutes);
+app.use('/api/user', requireSession, userRoutes);
 app.use('/api/', apiRoutes);
 
 // Enhanced OAuth routes

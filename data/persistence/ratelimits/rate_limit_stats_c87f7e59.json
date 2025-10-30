@@ -16,19 +16,30 @@
         "blockedRequests": 0,
         "allowedRequests": 0,
         "violations": 0,
-        "blacklisted": 0
+        "blacklisted": 0,
+        "value": {
+          "totalRequests": 0,
+          "blockedRequests": 0,
+          "allowedRequests": 0,
+          "violations": 0,
+          "blacklisted": 0
+        },
+        "timestamp": 1761732794418,
+        "ttl": null,
+        "category": "ratelimits",
+        "key": "rate_limit_stats"
       },
-      "timestamp": 1761732794418,
+      "timestamp": 1761739986347,
       "ttl": null,
       "category": "ratelimits",
       "key": "rate_limit_stats"
     },
-    "timestamp": 1761739986347,
+    "timestamp": 1761775255778,
     "ttl": null,
     "category": "ratelimits",
     "key": "rate_limit_stats"
   },
-  "timestamp": 1761775255778,
+  "timestamp": 1761817306825,
   "ttl": null,
   "category": "ratelimits",
   "key": "rate_limit_stats"

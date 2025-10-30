@@ -1,18 +1,24 @@
 {
   "value": {
     "value": {
-      "value": {},
-      "timestamp": 1761732794418,
+      "value": {
+        "value": {},
+        "timestamp": 1761732794418,
+        "ttl": null,
+        "category": "ratelimits",
+        "key": "rate_limit_violations"
+      },
+      "timestamp": 1761739986347,
       "ttl": null,
       "category": "ratelimits",
       "key": "rate_limit_violations"
     },
-    "timestamp": 1761739986347,
+    "timestamp": 1761775255778,
     "ttl": null,
     "category": "ratelimits",
     "key": "rate_limit_violations"
   },
-  "timestamp": 1761775255778,
+  "timestamp": 1761817306825,
   "ttl": null,
   "category": "ratelimits",
   "key": "rate_limit_violations"
